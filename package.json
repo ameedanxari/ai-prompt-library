@@ -1,0 +1,18 @@
+{
+  "name": "ai-prompt-library",
+  "version": "1.0.0",
+  "description": "AI Prompt Library for generating production-ready software specifications",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest --run",
+    "test:watch": "vitest",
+    "test:pbt": "vitest --run --reporter=verbose tests/property-tests"
+  },
+  "devDependencies": {
+    "@types/node": "^20.0.0",
+    "fast-check": "^3.15.0",
+    "typescript": "^5.0.0",
+    "vitest": "^1.0.0"
+  },
+  "type": "module"
+}

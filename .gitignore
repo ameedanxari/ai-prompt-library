@@ -1,0 +1,53 @@
+# Dependencies
+node_modules/
+.pnp/
+.pnp.js
+
+# Build outputs
+dist/
+build/
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# IDE and editors
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS files
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Generated outputs (when using the library)
+prompts/outputs/*
+!prompts/outputs/README.md
+prompts/working_copy/*
+!prompts/working_copy/README.md
+
+# Development artifacts
+chat-transcript.md
+raw_chat.txt
+
+# Kiro specs (internal development)
+.kiro/

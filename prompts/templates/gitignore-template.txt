@@ -1,0 +1,13 @@
+# AI Prompt Library Integration
+# Add these lines to your project's .gitignore when integrating the AI Prompt Library
+
+# Exclude the prompt library folder (if cloned into your project)
+.ai-prompts/
+
+# Exclude generated outputs (keep specs in version control if desired)
+# Uncomment the line below if you don't want to track generated specs
+# .ai-prompts/prompts/outputs/
+
+# Exclude working copy assets (user uploads)
+.ai-prompts/prompts/working_copy/*
+!.ai-prompts/prompts/working_copy/README.md
