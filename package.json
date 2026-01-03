@@ -6,13 +6,25 @@
   "scripts": {
     "test": "vitest --run",
     "test:watch": "vitest",
-    "test:pbt": "vitest --run --reporter=verbose tests/property-tests"
+    "test:pbt": "vitest --run --reporter=verbose tests/property-tests",
+    "prepare": "husky install",
+    "lint-staged": "lint-staged"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",
     "fast-check": "^3.15.0",
+    "husky": "^8.0.0",
+    "lint-staged": "^15.0.0",
     "typescript": "^5.0.0",
     "vitest": "^1.0.0"
+  },
+  "lint-staged": {
+    "*.{ts,js,md}": [
+      "npm test"
+    ],
+    "prompts/modules/**/*.md": [
+      "npm run test:pbt"
+    ]
   },
   "type": "module"
 }

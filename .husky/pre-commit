@@ -1,0 +1,39 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Run tests before commit
+npm test
+
+# Check for any .kiro files that might have been accidentally staged
+if git diff --cached --name-only | grep -q "\.kiro"; then
+  echo "❌ Error: .kiro files should not be committed"
+  echo "These files are for internal development only:"
+  git diff --cached --name-only | grep "\.kiro"
+  echo ""
+  echo "Please unstage these files:"
+  echo "git reset HEAD $(git diff --cached --name-only | grep '\.kiro' | tr '\n' ' ')"
+  exit 1
+fi
+
+# Check for any temporary or generated files
+TEMP_FILES=$(git diff --cached --name-only | grep -E "\.(tmp|temp|log)$|chat-transcript\.md|raw_chat\.txt")
+if [ ! -z "$TEMP_FILES" ]; then
+  echo "❌ Error: Temporary files should not be committed:"
+  echo "$TEMP_FILES"
+  echo ""
+  echo "Please unstage these files and add them to .gitignore if needed"
+  exit 1
+fi
+
+# Check for large files (>1MB)
+LARGE_FILES=$(git diff --cached --name-only | xargs -I {} sh -c 'if [ -f "{}" ] && [ $(stat -f%z "{}" 2>/dev/null || stat -c%s "{}" 2>/dev/null || echo 0) -gt 1048576 ]; then echo "{}"; fi')
+if [ ! -z "$LARGE_FILES" ]; then
+  echo "⚠️  Warning: Large files detected (>1MB):"
+  echo "$LARGE_FILES"
+  echo ""
+  echo "Consider if these files should be committed or added to .gitignore"
+  echo "Press Enter to continue or Ctrl+C to abort"
+  read
+fi
+
+echo "✅ Pre-commit checks passed"

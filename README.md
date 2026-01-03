@@ -39,6 +39,12 @@ A **modular, agentic prompt library** that transforms minimal user input into co
 | **Token-Aware** | Choose Low/Medium/High verification depth to balance cost vs thoroughness |
 | **Dry-Run Mode** | Validate outputs before committing tokens to full generation |
 
+## 🚀 Get Started for Free (No Credit Card Required)
+
+New to AI-assisted development? We've curated a list of **free AI tools, IDEs, and trials** to help you build your MVP without spending a dime.
+
+👉 **[View Free AI Resources Guide](docs/FREE_RESOURCES.md)**
+
 ---
 
 ## Quick Start: One-Prompt Setup
@@ -225,6 +231,7 @@ We're actively looking for feedback and contributions! Here's how you can help:
 ## Support & Contact
 
 **Need help getting started?** 
+- 🚀 Check out our [Free AI Resources Guide](docs/FREE_RESOURCES.md) for a $0 build stack
 - 📖 Read the [AGENTS.md](prompts/AGENTS.md) for detailed instructions
 - 💬 [Open a discussion](https://github.com/ameedanxari/ai-prompt-library/discussions)
 
