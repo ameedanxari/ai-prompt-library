@@ -4,7 +4,77 @@
 This template provides comprehensive patterns for implementing advanced search capabilities in media streaming applications, including full-text search, voice search, visual search, and semantic search powered by AI. It covers search indexing, query processing, result ranking, and multi-modal search experiences.
 
 ## Context
-Use this template when building media streaming applications that need sophisticated search functionality to help users discover content through various input methods. Suitable for music streaming, video platforms, podcast services, and any media application requiring advanced content discovery capabilities.
+Search is a critical feature for content discovery in media streaming platforms. Modern search systems go beyond keyword matching to include voice commands, image recognition, and semantic understanding. This template addresses the complexity of building multi-modal search systems that understand user intent, handle natural language queries, and deliver relevant results across millions of content items.
+
+## Instructions
+
+1. **Setup Search Infrastructure**: Configure search engines and indexing systems
+2. **Implement Text Search**: Build full-text search with fuzzy matching and autocomplete
+3. **Add Voice Search**: Integrate speech-to-text and natural language processing
+4. **Enable Visual Search**: Implement image recognition and visual similarity matching
+5. **Configure Semantic Search**: Set up AI-powered contextual and meaning-based search
+6. **Optimize Search Ranking**: Implement relevance scoring and personalized results
+7. **Add Search Analytics**: Track search performance and user behavior metrics
+
+## Examples
+
+### Example 1: Multi-Modal Search System
+```typescript
+interface SearchSystem {
+  textSearch(query: string, filters?: SearchFilters): Promise<SearchResults>;
+  voiceSearch(audioData: ArrayBuffer): Promise<SearchResults>;
+  visualSearch(imageData: ImageData): Promise<SearchResults>;
+}
+
+const searchSystem = new SearchSystem();
+const results = await searchSystem.textSearch('jazz piano', {
+  contentTypes: ['music'],
+  genres: ['jazz'],
+  dateRange: { start: '2020-01-01', end: '2024-01-01' }
+});
+```
+
+### Example 2: Voice Search Integration
+```typescript
+const voiceSearchResults = await searchSystem.voiceSearch(audioBuffer);
+// Automatically converts speech to text and processes search
+// Returns: { query: "play some relaxing music", results: [...] }
+```
+
+### Example 3: Semantic Search with AI
+```typescript
+const semanticResults = await searchSystem.semanticSearch(
+  "songs that make me feel nostalgic",
+  { userId: "user-123", includePersonalization: true }
+);
+// Returns contextually relevant results based on meaning, not just keywords
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| searchEngine | Primary search engine provider | string | Yes | N/A |
+| indexingStrategy | Content indexing approach | string | No | "real-time" |
+| enableVoiceSearch | Enable voice search capabilities | boolean | No | false |
+| enableVisualSearch | Enable visual search features | boolean | No | false |
+| enableSemanticSearch | Enable AI-powered semantic search | boolean | No | false |
+| maxResults | Maximum results per search query | number | No | 50 |
+| searchTimeout | Search query timeout (ms) | number | No | 5000 |
+| enablePersonalization | Enable personalized search results | boolean | No | true |
+| enableAutocomplete | Enable search autocomplete | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Multi-Modal Search Engine**: Text, voice, visual, and semantic search capabilities
+- **Advanced Query Processing**: Natural language understanding and intent recognition
+- **Intelligent Result Ranking**: Personalized and contextually relevant search results
+- **Real-Time Indexing**: Automatic content indexing and search optimization
+- **Search Analytics**: Comprehensive search performance and user behavior tracking
+- **Autocomplete System**: Smart search suggestions and query completion
+- **Filter Management**: Advanced filtering and faceted search capabilities
+- **Search API**: RESTful API for search integration across platforms
 
 ## Implementation Patterns
 

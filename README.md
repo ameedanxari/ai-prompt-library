@@ -56,32 +56,65 @@ I want to integrate the AI Prompt Library into my project for spec-driven develo
 
 Please do the following:
 
-1. Clone the AI Prompt Library into a `.ai-prompts` folder in my project root:
-   - Repository: https://github.com/ameedanxari/ai-prompt-library
-   - Target folder: .ai-prompts/
+1. Check if my project is a git repository:
+   - If YES (git repo exists): Add the library as a git submodule:
+     git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+   - If NO (not a git repo): Ask me if I want to initialize git. If yes, run `git init` first then add submodule. If no, clone instead and add `.ai-prompts/` to .gitignore.
 
 2. Set up the library as a prompt pre-processor:
    - If AGENTS.md exists in my project root, append a reference to `.ai-prompts/prompts/AGENTS.md`
    - If AGENTS.md doesn't exist, create one that includes the AI Prompt Library instructions
    - The goal: any chat/prompt I send should be enhanced by the library's templates
 
-3. Update .gitignore to exclude the prompt library from version control:
-   - Add `.ai-prompts/` to .gitignore
-   - Do NOT overwrite existing .gitignore content — append to it
-   - If .gitignore doesn't exist, create one with `.ai-prompts/` and common defaults
-
-4. Create a quick-start file at `.ai-prompts/MY_PROJECT.md` with:
+3. Create a quick-start file at `.ai-prompts/MY_PROJECT.md` with:
    - A placeholder for my project brief
    - Instructions for how to use the library with my specific project
 
-After setup, show me how to start using the library with a simple example.
+4. After setup, show me:
+   - How to update the library when new versions are released
+   - A simple example of using the library
+
+Note: If using submodule (recommended), do NOT add .ai-prompts to .gitignore — submodules are tracked by reference, not content.
 ```
 
 ---
 
 ## Manual Setup
 
-### Option 1: Clone into your project
+### Choosing Your Integration Approach
+
+| Approach | Updates | Contributions | Bloat | Git Required |
+|----------|---------|---------------|-------|--------------|
+| **Submodule** ⭐ | Single command | Fork workflow | None (reference only) | Yes |
+| **Clone + .gitignore** | Manual re-clone | Copy to fork | None (ignored) | No |
+| **Fork** | Pull from upstream | Direct PR | Full history | Yes |
+
+### Option 1: Git Submodule (Recommended) ⭐
+
+The cleanest approach — your project tracks a reference to the library, not its contents.
+
+```bash
+# Navigate to your project root
+cd your-project
+
+# Add the library as a submodule
+git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+
+# Commit the submodule reference
+git commit -m "Add AI Prompt Library as submodule"
+```
+
+**Why submodules?**
+- ✅ No repository bloat — only stores a commit reference
+- ✅ Easy updates with `git submodule update --remote`
+- ✅ Clear version tracking — see exactly which library version you're using
+- ✅ Clean contribution workflow via fork
+
+> **Note:** Do NOT add `.ai-prompts/` to `.gitignore` when using submodules — Git tracks submodules by reference automatically.
+
+### Option 2: Clone + .gitignore (For Non-Git Projects)
+
+Use this if your project isn't a git repository or you prefer simplicity over version tracking.
 
 ```bash
 # Navigate to your project root
@@ -94,18 +127,155 @@ git clone https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
 echo ".ai-prompts/" >> .gitignore
 ```
 
-### Option 2: Use as a submodule (for version tracking)
+**Trade-offs:**
+- ⚠️ Manual updates — delete and re-clone to get new versions
+- ⚠️ No version tracking — can't see which library version you're using
+- ⚠️ Harder to contribute — must manually copy changes to a fork
+
+### Option 3: Fork and Customize
+
+Best for teams who want to maintain their own version with custom templates.
+
+1. Fork this repository on GitHub
+2. Customize templates for your team's workflow
+3. Add your fork as a submodule: `git submodule add https://github.com/YOUR-USERNAME/ai-prompt-library.git .ai-prompts`
+4. Pull upstream updates periodically to stay current
+
+---
+
+## Updating the Library
+
+### If Using Submodule (Recommended)
 
 ```bash
-git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
-echo ".ai-prompts/" >> .gitignore
+# Pull the latest version
+git submodule update --remote .ai-prompts
+
+# Commit the updated reference
+git add .ai-prompts
+git commit -m "Update AI Prompt Library to latest version"
 ```
 
-### Option 3: Fork and customize
+This updates your submodule to the latest commit on the main branch. Your project now tracks the new version.
 
-1. Fork this repository
-2. Customize templates for your team's workflow
-3. Clone your fork into projects
+### If Using Clone + .gitignore
+
+```bash
+# Remove the old version
+rm -rf .ai-prompts
+
+# Clone fresh
+git clone https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+```
+
+### Troubleshooting Updates
+
+**Submodule shows "modified content":**
+```bash
+# Discard local changes in the submodule
+cd .ai-prompts
+git checkout .
+cd ..
+```
+
+**Merge conflicts in .gitmodules:**
+```bash
+# Accept the incoming changes (usually correct)
+git checkout --theirs .gitmodules
+git add .gitmodules
+```
+
+**Submodule not initialized after clone:**
+```bash
+# Initialize and update submodules after cloning a project
+git submodule init
+git submodule update
+```
+
+---
+
+## Contributing from Your Project
+
+Made improvements to the library while working on your project? Here's how to contribute them back.
+
+### Step 1: Fork the Repository
+
+1. Go to [github.com/ameedanxari/ai-prompt-library](https://github.com/ameedanxari/ai-prompt-library)
+2. Click "Fork" to create your own copy
+
+### Step 2: Point Your Submodule to Your Fork
+
+```bash
+# Change the submodule remote to your fork
+cd .ai-prompts
+git remote set-url origin https://github.com/YOUR-USERNAME/ai-prompt-library.git
+git remote add upstream https://github.com/ameedanxari/ai-prompt-library.git
+cd ..
+```
+
+### Step 3: Make Changes and Push
+
+```bash
+cd .ai-prompts
+
+# Create a branch for your changes
+git checkout -b feature/my-improvement
+
+# Make your changes, then commit
+git add .
+git commit -m "Add: description of your improvement"
+
+# Push to your fork
+git push origin feature/my-improvement
+
+cd ..
+```
+
+### Step 4: Create a Pull Request
+
+1. Go to your fork on GitHub
+2. Click "Compare & pull request"
+3. Describe your changes and submit
+
+### Switching Back to Upstream
+
+After your PR is merged (or if you want upstream updates):
+
+```bash
+cd .ai-prompts
+
+# Switch back to main and pull from upstream
+git checkout main
+git remote set-url origin https://github.com/ameedanxari/ai-prompt-library.git
+git pull origin main
+
+cd ..
+
+# Update your project's submodule reference
+git add .ai-prompts
+git commit -m "Update AI Prompt Library"
+```
+
+### Preserving Local Changes During Updates
+
+If you have local modifications you want to keep:
+
+```bash
+cd .ai-prompts
+
+# Stash your changes
+git stash
+
+# Pull updates
+git pull origin main
+
+# Reapply your changes
+git stash pop
+
+cd ..
+```
+
+> **New to Git submodules?** Check out the [Git Submodules documentation](https://git-scm.com/book/en/v2/Git-Tools-Submodules) for a deeper dive.
 
 ---
 

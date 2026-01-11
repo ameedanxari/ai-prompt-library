@@ -4,7 +4,80 @@
 This template provides comprehensive patterns for audio/video processing, transcoding, and media manipulation in streaming applications. It covers format conversion, quality optimization, thumbnail generation, and automated media processing pipelines.
 
 ## Context
-Use this template when building media streaming platforms that need to process user-uploaded content, convert between formats, generate multiple quality versions, extract metadata, and create thumbnails or previews. Suitable for video platforms, music streaming, podcast services, and any application handling media content.
+Media processing is the backbone of streaming platforms, transforming raw content into optimized formats for delivery across devices and network conditions. This template addresses the complexity of building scalable processing pipelines that handle video transcoding, audio normalization, thumbnail generation, and metadata extraction while maintaining quality and minimizing processing time.
+
+## Instructions
+
+1. **Setup Processing Pipeline**: Configure media processing infrastructure and job queues
+2. **Implement Transcoding**: Set up multi-format transcoding with quality profiles
+3. **Add Quality Analysis**: Implement audio/video quality assessment and optimization
+4. **Configure Batch Processing**: Set up automated processing workflows and scheduling
+5. **Enable Real-Time Processing**: Implement live transcoding for streaming content
+6. **Add Metadata Extraction**: Extract and process media metadata and thumbnails
+7. **Monitor Processing Performance**: Track processing times, quality, and resource usage
+
+## Examples
+
+### Example 1: Media Transcoding Pipeline
+```typescript
+interface MediaProcessor {
+  transcodeAudio(input: MediaFile, profiles: AudioProfile[]): Promise<TranscodingJob>;
+  transcodeVideo(input: MediaFile, profiles: VideoProfile[]): Promise<TranscodingJob>;
+}
+
+const processor = new MediaProcessor();
+const job = await processor.transcodeAudio(inputFile, [
+  { bitrate: 128000, format: 'mp3', quality: 'standard' },
+  { bitrate: 320000, format: 'mp3', quality: 'high' },
+  { bitrate: 1000000, format: 'flac', quality: 'lossless' }
+]);
+```
+
+### Example 2: Real-Time Processing
+```typescript
+const liveProcessor = await processor.setupLiveTranscoding({
+  inputStream: 'rtmp://input.stream',
+  outputProfiles: [
+    { resolution: '720p', bitrate: 2500000 },
+    { resolution: '480p', bitrate: 1000000 }
+  ]
+});
+```
+
+### Example 3: Batch Processing Workflow
+```typescript
+const batchJob = await processor.processBatch({
+  inputFiles: ['file1.wav', 'file2.wav'],
+  operations: ['transcode', 'normalize', 'extract_metadata'],
+  priority: 'high'
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| processingEngine | Media processing engine | string | Yes | N/A |
+| maxConcurrentJobs | Maximum concurrent processing jobs | number | No | 10 |
+| supportedFormats | Supported input/output formats | array | Yes | N/A |
+| qualityProfiles | Available quality/bitrate profiles | array | No | standard |
+| enableGPUAcceleration | Use GPU for processing acceleration | boolean | No | false |
+| processingTimeout | Processing job timeout (minutes) | number | No | 60 |
+| enableQualityAnalysis | Analyze media quality metrics | boolean | No | true |
+| storageLocation | Processed media storage location | string | Yes | N/A |
+| enableMetadataExtraction | Extract media metadata | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Media Processing Pipeline**: Automated transcoding and format conversion system
+- **Quality Optimization**: Multi-bitrate encoding and quality analysis
+- **Batch Processing System**: Scalable processing workflows and job management
+- **Real-Time Transcoding**: Live media processing for streaming applications
+- **Metadata Extraction**: Automatic extraction of media information and thumbnails
+- **Performance Monitoring**: Processing analytics and resource utilization tracking
+- **Format Standardization**: Consistent output formats across all processed media
+- **Error Handling**: Robust error recovery and processing retry mechanisms
 
 ## Implementation Patterns
 

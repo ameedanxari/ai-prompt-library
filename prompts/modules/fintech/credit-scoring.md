@@ -4,12 +4,111 @@
 Provides comprehensive patterns for risk assessment, credit evaluation, scoring algorithms, and alternative data analysis in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Traditional and alternative credit scoring models
-- Risk assessment and creditworthiness evaluation
-- Machine learning-based scoring algorithms
-- Alternative data integration and analysis
-- Credit decision automation and explainability
+Credit scoring is fundamental to lending decisions, enabling financial institutions to assess creditworthiness and manage risk. Modern credit scoring goes beyond traditional bureau data to incorporate alternative data sources and machine learning models. This template addresses the complexity of building fair, accurate, and explainable credit scoring systems that comply with regulatory requirements while expanding access to credit for underserved populations.
+
+## Instructions
+1. Analyze credit risk assessment requirements and regulatory compliance
+2. Design comprehensive credit scoring models with traditional and alternative data
+3. Implement machine learning algorithms for creditworthiness evaluation
+4. Build alternative data integration for thin-file and no-file customers
+5. Create credit decision automation with explainable AI
+6. Add real-time risk monitoring and portfolio management
+7. Implement regulatory compliance for fair lending practices
+8. Build credit score explanation and improvement recommendations
+9. Create A/B testing frameworks for model validation
+10. Add integration with credit bureaus and alternative data providers
+
+## Examples
+
+### Example 1: ML-Based Credit Scoring
+```typescript
+// Advanced credit scoring with alternative data
+class MLCreditScorer {
+  async calculateCreditScore(applicant: CreditApplicant): Promise<CreditScoreResult> {
+    const traditionalData = await this.getCreditBureauData(applicant.ssn);
+    const alternativeData = await this.getAlternativeData(applicant);
+    
+    const features = this.extractFeatures({
+      traditional: traditionalData,
+      alternative: alternativeData,
+      application: applicant
+    });
+    
+    const score = await this.mlModel.predict(features);
+    const explanation = await this.explainScore(features, score);
+    
+    return { score, explanation, confidence: score.confidence };
+  }
+}
+```
+
+### Example 2: Alternative Data Integration
+```typescript
+// Alternative data sources for credit assessment
+class AlternativeDataProcessor {
+  async gatherAlternativeData(applicant: CreditApplicant): Promise<AlternativeDataProfile> {
+    const [bankingData, utilityData, telecomData, socialData] = await Promise.all([
+      this.getBankingBehavior(applicant.bankAccounts),
+      this.getUtilityPaymentHistory(applicant.address),
+      this.getTelecomPaymentHistory(applicant.phone),
+      this.getSocialMediaInsights(applicant.socialProfiles)
+    ]);
+    
+    return this.aggregateAlternativeData({
+      banking: bankingData,
+      utilities: utilityData,
+      telecom: telecomData,
+      social: socialData
+    });
+  }
+}
+```
+
+### Example 3: Explainable Credit Decisions
+```typescript
+// Transparent credit decision explanations
+class CreditDecisionExplainer {
+  async explainCreditDecision(scoreResult: CreditScoreResult): Promise<CreditExplanation> {
+    const factors = await this.identifyKeyFactors(scoreResult);
+    const improvements = await this.suggestImprovements(scoreResult);
+    
+    return {
+      primaryFactors: factors.positive,
+      negativeFactors: factors.negative,
+      scoreRange: this.getScoreRange(scoreResult.score),
+      improvementSuggestions: improvements,
+      fairLendingCompliance: await this.validateFairLending(scoreResult)
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| scoringModel | string | Credit scoring algorithm type | 'ml_ensemble' | Yes |
+| alternativeData | boolean | Use alternative data sources | true | No |
+| creditBureaus | array | Credit bureau integrations | ['experian', 'equifax'] | Yes |
+| riskThresholds | object | Risk level thresholds | standard_thresholds | Yes |
+| explainableAI | boolean | Provide score explanations | true | Yes |
+| fairLendingCompliance | boolean | Fair lending validation | true | Yes |
+| realTimeScoring | boolean | Real-time score calculation | true | No |
+| modelValidation | boolean | A/B testing and validation | true | No |
+| regulatoryReporting | boolean | Compliance reporting | true | Yes |
+| portfolioMonitoring | boolean | Portfolio risk monitoring | false | No |
+
+## Expected Output
+A comprehensive credit scoring system featuring:
+- Advanced ML-based credit scoring with traditional and alternative data sources
+- Real-time creditworthiness assessment with explainable AI decisions
+- Alternative data integration for thin-file and underbanked populations
+- Fair lending compliance with bias detection and mitigation
+- Credit decision automation with customizable risk thresholds
+- Portfolio risk monitoring with early warning systems
+- Regulatory compliance reporting for credit risk management
+- Credit score improvement recommendations and financial education
+- A/B testing framework for model validation and optimization
+- Integration with credit bureaus and alternative data providers
 
 ## Core Components
 

@@ -6,7 +6,109 @@ This template provides comprehensive patterns for supporting multiple payment me
 
 ## Context
 
-Modern e-commerce applications must support a wide variety of payment methods and currencies to serve global customers effectively. This template addresses the complexity of managing different payment types, currency conversions, regional payment preferences, and regulatory requirements across different markets.
+Modern e-commerce requires support for diverse payment methods across different regions and customer preferences. This template addresses the complexity of integrating multiple payment providers, digital wallets, alternative payment methods, and multi-currency support to maximize conversion rates and provide seamless checkout experiences globally.
+
+## Instructions
+1. Analyze payment method requirements and regional preferences
+2. Design flexible payment method registry and configuration system
+3. Implement comprehensive card payment validation and processing
+4. Integrate digital wallet solutions (Apple Pay, Google Pay, etc.)
+5. Add alternative payment methods (BNPL, bank transfers, crypto)
+6. Build multi-currency support with real-time exchange rates
+7. Create intelligent payment method selection and recommendation
+8. Implement payment method security and tokenization
+9. Add payment method analytics and performance tracking
+10. Ensure mobile-optimized payment experiences
+
+## Examples
+
+### Example 1: Multi-Payment Method Integration
+```typescript
+// Comprehensive payment method registry
+class PaymentMethodRegistry {
+  async getAvailablePaymentMethods(context: PaymentContext): Promise<PaymentMethod[]> {
+    const methods = await this.getAllPaymentMethods();
+    
+    return methods
+      .filter(method => this.isAvailableInRegion(method, context.country))
+      .filter(method => this.supportsAmount(method, context.amount))
+      .filter(method => this.supportsCurrency(method, context.currency))
+      .sort((a, b) => this.calculatePreferenceScore(b, context) - this.calculatePreferenceScore(a, context));
+  }
+}
+```
+
+### Example 2: Smart Currency Detection and Conversion
+```typescript
+// Intelligent currency handling
+class CurrencyService {
+  async detectAndConvertCurrency(amount: number, customerContext: CustomerContext): Promise<CurrencyResult> {
+    const detectedCurrency = await this.detectCustomerCurrency(
+      customerContext.country, 
+      customerContext.ipAddress
+    );
+    
+    const convertedAmount = await this.convertCurrency(
+      amount, 
+      'USD', 
+      detectedCurrency
+    );
+    
+    return {
+      originalAmount: amount,
+      originalCurrency: 'USD',
+      convertedAmount,
+      targetCurrency: detectedCurrency,
+      exchangeRate: await this.getExchangeRate('USD', detectedCurrency)
+    };
+  }
+}
+```
+
+### Example 3: Digital Wallet Integration
+```typescript
+// Apple Pay and Google Pay integration
+class DigitalWalletProcessor {
+  async processApplePayPayment(paymentRequest: ApplePayRequest): Promise<PaymentResult> {
+    const session = new ApplePaySession(3, {
+      countryCode: paymentRequest.countryCode,
+      currencyCode: paymentRequest.currency,
+      supportedNetworks: ['visa', 'masterCard', 'amex'],
+      merchantCapabilities: ['supports3DS'],
+      total: { label: 'Total', amount: paymentRequest.amount.toString() }
+    });
+    
+    return await this.processDigitalWalletPayment(session);
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| supportedMethods | array | List of enabled payment methods | ['card', 'paypal'] | Yes |
+| currencies | array | Supported currency codes | ['USD'] | Yes |
+| regions | array | Supported country/region codes | ['US'] | Yes |
+| cardBrands | array | Accepted credit card brands | ['visa', 'mastercard'] | No |
+| digitalWallets | array | Enabled digital wallet options | [] | No |
+| alternativePayments | array | BNPL and other alternative methods | [] | No |
+| currencyConversion | boolean | Enable real-time currency conversion | false | No |
+| paymentMethodSelection | string | Selection algorithm type | 'smart' | No |
+| mobileOptimization | boolean | Mobile-first payment experience | true | No |
+| securityLevel | string | Payment security level | 'standard' | No |
+
+## Expected Output
+A comprehensive payment methods system featuring:
+- Flexible payment method registry with regional configuration
+- Complete card payment processing with validation and security
+- Digital wallet integrations (Apple Pay, Google Pay, Samsung Pay)
+- Alternative payment methods (BNPL, bank transfers, cryptocurrency)
+- Multi-currency support with real-time exchange rate conversion
+- Intelligent payment method selection and recommendation engine
+- Mobile-optimized payment experiences with touch-friendly interfaces
+- Payment method analytics and performance tracking
+- Security features including tokenization and fraud detection
+- Localized payment preferences and regional method support
 
 ## Core Payment Method Patterns
 

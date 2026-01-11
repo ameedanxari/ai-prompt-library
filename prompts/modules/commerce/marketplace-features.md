@@ -1,5 +1,114 @@
 # Marketplace Features and Multi-Vendor Management
 
+## Purpose
+Generate comprehensive marketplace platforms that support multi-vendor operations, commission tracking, vendor management, dispute resolution, and marketplace-specific features for both B2B and B2C environments.
+
+## Instructions
+1. Analyze marketplace requirements and vendor management needs
+2. Design multi-vendor architecture with vendor onboarding workflows
+3. Implement commission calculation and payout systems
+4. Create vendor performance tracking and tier management
+5. Build product approval and quality control processes
+6. Add dispute resolution and mediation systems
+7. Include marketplace analytics and reporting dashboards
+8. Implement vendor storefront customization capabilities
+9. Create marketplace-wide search and discovery features
+10. Add compliance and policy enforcement mechanisms
+
+## Examples
+
+### Example 1: Vendor Onboarding System
+```typescript
+// Comprehensive vendor onboarding with verification
+class VendorOnboardingService {
+  async registerVendor(data: VendorRegistrationData): Promise<Vendor> {
+    const vendor = await this.createVendor({
+      businessInfo: data.businessInfo,
+      contactInfo: data.contactInfo,
+      status: 'pending_verification'
+    });
+    
+    const workflow = await this.createOnboardingWorkflow({
+      vendorId: vendor.id,
+      steps: ['business_verification', 'tax_setup', 'bank_account', 'product_catalog'],
+      requirements: await this.getVerificationRequirements(data.businessInfo)
+    });
+    
+    return { vendor, workflow };
+  }
+}
+```
+
+### Example 2: Commission Management System
+```typescript
+// Dynamic commission calculation with tier-based rates
+class CommissionService {
+  async calculateCommission(order: Order, vendor: Vendor): Promise<Commission> {
+    const baseRate = await this.getBaseCommissionRate(order.categoryId);
+    const tierAdjustment = this.getTierAdjustment(vendor.tier);
+    const volumeDiscount = await this.getVolumeDiscount(vendor.id);
+    
+    const finalRate = baseRate * (1 - tierAdjustment) * (1 - volumeDiscount);
+    
+    return {
+      orderId: order.id,
+      vendorId: vendor.id,
+      saleAmount: order.total,
+      commissionRate: finalRate,
+      commissionAmount: order.total * (finalRate / 100),
+      fees: await this.calculateFees(order, vendor)
+    };
+  }
+}
+```
+
+### Example 3: Marketplace Analytics Dashboard
+```typescript
+// Comprehensive marketplace performance analytics
+class MarketplaceAnalytics {
+  async generateMarketplaceReport(): Promise<MarketplaceReport> {
+    const metrics = await this.getMarketplaceMetrics();
+    
+    return {
+      totalRevenue: metrics.totalSales,
+      commissionRevenue: metrics.totalCommissions,
+      activeVendors: metrics.vendorCount,
+      topPerformingVendors: await this.getTopVendors(10),
+      categoryPerformance: await this.getCategoryMetrics(),
+      customerSatisfaction: await this.getCustomerSatisfactionScore(),
+      disputeResolutionRate: await this.getDisputeMetrics()
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| marketplaceType | string | Type of marketplace (B2B/B2C/hybrid) | 'B2C' | Yes |
+| commissionStructure | object | Commission rates and fee structure | - | Yes |
+| vendorTiers | array | Vendor tier definitions and benefits | standard_tiers | No |
+| onboardingSteps | array | Required vendor onboarding steps | default_steps | No |
+| payoutFrequency | string | Vendor payout schedule | 'weekly' | No |
+| disputeResolution | boolean | Enable dispute management system | true | No |
+| vendorStorefronts | boolean | Allow custom vendor storefronts | false | No |
+| productApproval | boolean | Require product approval workflow | true | No |
+| performanceTracking | boolean | Enable vendor performance metrics | true | No |
+| multiCurrency | boolean | Support multiple currencies | false | No |
+
+## Expected Output
+A complete marketplace platform featuring:
+- Multi-vendor registration and onboarding system
+- Dynamic commission calculation with tier-based rates
+- Vendor performance tracking and tier management
+- Product approval and quality control workflows
+- Comprehensive payout and financial management
+- Dispute resolution and mediation system
+- Vendor storefront customization capabilities
+- Marketplace-wide analytics and reporting
+- Search and discovery optimization for multi-vendor products
+- Policy enforcement and compliance management tools
+
 ## Overview
 Comprehensive marketplace platform supporting multi-vendor operations, commission tracking, vendor management, dispute resolution, and marketplace-specific features for both B2B and B2C environments.
 

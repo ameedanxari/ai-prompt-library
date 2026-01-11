@@ -1,12 +1,79 @@
 # Engagement Features Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing user engagement features in social applications, covering likes, comments, shares, reactions, and advanced interaction mechanisms that drive user participation and community building.
 
 ## Context
+Engagement features are the social currency of modern platforms, enabling users to interact with content and each other. Well-designed engagement systems foster community building, provide valuable feedback to creators, and drive content discovery through social signals. This template addresses the complexity of building scalable engagement infrastructure, implementing diverse interaction types, and balancing engagement optimization with healthy user behavior.
 
-Engagement features are the core mechanisms that enable users to interact with content and each other in social platforms. This template addresses traditional engagement patterns (likes, comments, shares) as well as modern interaction features (reactions, polls, collaborative features) that foster community engagement.
+## Instructions
+
+1. **Setup Engagement System**: Configure engagement tracking and interaction storage
+2. **Implement Basic Interactions**: Build likes, comments, shares, and bookmarking features
+3. **Add Advanced Reactions**: Implement emoji reactions and custom reaction systems
+4. **Configure Social Sharing**: Enable content sharing within and outside the platform
+5. **Add Interactive Features**: Implement polls, quizzes, and collaborative content
+6. **Enable Engagement Analytics**: Track interaction metrics and user engagement patterns
+7. **Test Engagement Flows**: Validate all interaction types and engagement workflows
+
+## Examples
+
+### Example 1: Basic Engagement System
+```typescript
+interface EngagementService {
+  likeContent(userId: string, contentId: string): Promise<EngagementResult>;
+  commentOnContent(userId: string, contentId: string, comment: string): Promise<Comment>;
+  shareContent(userId: string, contentId: string, shareOptions: ShareOptions): Promise<Share>;
+}
+
+const engagementService = new EngagementService();
+const like = await engagementService.likeContent('user-123', 'post-456');
+const comment = await engagementService.commentOnContent('user-123', 'post-456', 'Great post!');
+```
+
+### Example 2: Advanced Reaction System
+```typescript
+const reaction = await engagementService.reactToContent('user-123', 'post-456', {
+  reactionType: 'love',
+  emoji: '❤️',
+  intensity: 'high'
+});
+```
+
+### Example 3: Interactive Content Features
+```typescript
+const poll = await engagementService.createPoll('user-123', {
+  question: 'What\'s your favorite programming language?',
+  options: ['JavaScript', 'Python', 'TypeScript', 'Go'],
+  duration: 24 * 60 * 60 * 1000 // 24 hours
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableLikes | Enable like/favorite functionality | boolean | No | true |
+| enableComments | Enable comment system | boolean | No | true |
+| enableSharing | Enable content sharing features | boolean | No | true |
+| enableReactions | Enable emoji reaction system | boolean | No | false |
+| enablePolls | Enable poll creation features | boolean | No | false |
+| enableBookmarks | Enable bookmark/save functionality | boolean | No | true |
+| maxCommentLength | Maximum comment character limit | number | No | 500 |
+| enableCommentThreading | Enable threaded comment replies | boolean | No | true |
+| enableEngagementAnalytics | Track engagement metrics | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Comprehensive Engagement System**: Likes, comments, shares, and reaction features
+- **Advanced Reaction Framework**: Emoji reactions and custom interaction types
+- **Social Sharing Engine**: Internal and external content sharing mechanisms
+- **Interactive Content Tools**: Polls, quizzes, and collaborative features
+- **Engagement Analytics**: Detailed interaction tracking and user behavior insights
+- **Notification System**: Real-time engagement notifications and alerts
+- **Moderation Tools**: Engagement content filtering and abuse prevention
+- **Gamification Features**: Engagement rewards and achievement systems
 
 ## Implementation Guidance
 

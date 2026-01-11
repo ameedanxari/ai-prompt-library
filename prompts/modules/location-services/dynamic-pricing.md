@@ -4,7 +4,127 @@
 Implement sophisticated dynamic pricing algorithms for on-demand services that automatically adjust prices based on real-time supply and demand, market conditions, time of day, weather, events, and other factors to optimize revenue and service availability.
 
 ## Context
-This template provides patterns for implementing surge pricing systems used in ride-sharing, food delivery, and other on-demand platforms where price elasticity and market dynamics require real-time pricing adjustments.
+Dynamic pricing enables on-demand platforms to balance supply and demand in real-time, ensuring service availability during peak periods while maximizing revenue. Modern pricing systems use machine learning to predict demand, monitor market conditions, and adjust prices transparently. This template addresses the complexity of building fair, transparent, and effective pricing systems that optimize both business outcomes and customer satisfaction.
+
+## Instructions
+1. Analyze dynamic pricing requirements and market conditions
+2. Design sophisticated surge pricing algorithms with real-time adjustments
+3. Implement demand forecasting with machine learning models
+4. Build supply-demand balancing with automated price optimization
+5. Create pricing rules engine with flexible configuration
+6. Add market condition monitoring with external data integration
+7. Implement customer communication for pricing transparency
+8. Build pricing analytics with revenue optimization insights
+9. Create A/B testing framework for pricing strategies
+10. Add regulatory compliance for pricing fairness and transparency
+
+## Examples
+
+### Example 1: Real-time Surge Pricing Engine
+```typescript
+// Advanced surge pricing with ML-based demand prediction
+class SurgePricingEngine {
+  async calculateSurgeMultiplier(area: GeographicArea): Promise<SurgeResult> {
+    const [demandForecast, supplyData, marketConditions] = await Promise.all([
+      this.demandPredictor.forecast(area, 30), // 30-minute forecast
+      this.getSupplyMetrics(area),
+      this.getMarketConditions(area)
+    ]);
+    
+    const surgeMultiplier = await this.surgeAlgorithm.calculate({
+      demand: demandForecast,
+      supply: supplyData,
+      conditions: marketConditions,
+      historicalData: await this.getHistoricalPricing(area)
+    });
+    
+    return {
+      multiplier: surgeMultiplier,
+      confidence: demandForecast.confidence,
+      duration: this.estimateSurgeDuration(demandForecast),
+      reasoning: this.explainSurgeDecision(surgeMultiplier)
+    };
+  }
+}
+```
+
+### Example 2: Demand-Supply Balancing System
+```typescript
+// Intelligent demand-supply balancing with pricing
+class DemandSupplyBalancer {
+  async balanceMarket(area: GeographicArea): Promise<BalancingResult> {
+    const imbalance = await this.detectImbalance(area);
+    
+    if (imbalance.severity > 0.7) {
+      const pricingAdjustment = await this.calculatePricingAdjustment(imbalance);
+      const incentives = await this.generateSupplyIncentives(area, imbalance);
+      
+      await Promise.all([
+        this.applyPricingAdjustment(area, pricingAdjustment),
+        this.activateSupplyIncentives(area, incentives),
+        this.notifyStakeholders(area, imbalance, pricingAdjustment)
+      ]);
+      
+      return { action: 'balanced', adjustment: pricingAdjustment };
+    }
+    
+    return { action: 'no_adjustment_needed' };
+  }
+}
+```
+
+### Example 3: Revenue Optimization Engine
+```typescript
+// Revenue optimization with pricing elasticity analysis
+class RevenueOptimizer {
+  async optimizePricing(objectives: OptimizationObjective[]): Promise<PricingOptimization> {
+    const elasticityData = await this.analyzePriceElasticity();
+    const competitorPricing = await this.getCompetitorPricing();
+    
+    const optimization = await this.optimizationEngine.optimize({
+      objectives,
+      constraints: await this.getPricingConstraints(),
+      elasticity: elasticityData,
+      competition: competitorPricing,
+      historicalPerformance: await this.getHistoricalRevenue()
+    });
+    
+    return {
+      recommendedPricing: optimization.pricing,
+      projectedRevenue: optimization.revenueProjection,
+      riskAssessment: optimization.risks,
+      implementationPlan: optimization.rolloutStrategy
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| pricingModel | string | Pricing algorithm type | 'surge_based' | Yes |
+| demandForecasting | boolean | ML-based demand prediction | true | No |
+| supplyTracking | boolean | Real-time supply monitoring | true | Yes |
+| marketConditions | array | External factors to consider | ['weather', 'events'] | No |
+| pricingTransparency | boolean | Show pricing factors to users | true | No |
+| competitorMonitoring | boolean | Track competitor pricing | false | No |
+| revenueOptimization | boolean | Revenue maximization focus | true | No |
+| customerSegmentation | boolean | Segment-based pricing | false | No |
+| pricingCompliance | boolean | Regulatory compliance checks | true | Yes |
+| abTesting | boolean | Pricing strategy testing | true | No |
+
+## Expected Output
+A comprehensive dynamic pricing system featuring:
+- Real-time surge pricing with ML-based demand forecasting and supply monitoring
+- Sophisticated pricing algorithms with market condition integration
+- Revenue optimization engine with elasticity analysis and competitor monitoring
+- Transparent pricing communication with clear factor explanation to customers
+- Flexible pricing rules engine with configurable business logic
+- A/B testing framework for pricing strategy validation and optimization
+- Regulatory compliance with fair pricing practices and transparency requirements
+- Customer segmentation with personalized pricing strategies
+- Market balancing mechanisms with automated supply incentives
+- Comprehensive analytics with pricing performance and revenue insights
 
 ## Implementation Approach
 

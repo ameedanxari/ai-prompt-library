@@ -6,7 +6,116 @@ This template provides comprehensive patterns for implementing PCI DSS complianc
 
 ## Context
 
-Payment security is critical for any e-commerce application. This template addresses PCI DSS compliance requirements, fraud detection and prevention, secure data handling, and regulatory compliance to protect both businesses and customers from payment-related security threats.
+Payment security is critical for any e-commerce application handling financial transactions. This template addresses the complexity of PCI DSS compliance requirements, fraud detection and prevention, secure data handling with tokenization, and real-time security monitoring to protect both businesses and customers from payment-related threats.
+
+## Instructions
+1. Analyze PCI DSS compliance requirements and security standards
+2. Implement comprehensive data protection and tokenization systems
+3. Build multi-layered fraud detection and prevention mechanisms
+4. Create secure communication protocols and encryption standards
+5. Establish strong authentication and access control systems
+6. Implement real-time security monitoring and alerting
+7. Build compliance reporting and audit trail systems
+8. Create incident response and security breach procedures
+9. Add security testing and vulnerability assessment processes
+10. Ensure regulatory compliance across multiple jurisdictions
+
+## Examples
+
+### Example 1: PCI DSS Compliant Payment Processing
+```typescript
+// Secure payment processing with tokenization
+class SecurePaymentProcessor {
+  async processPayment(cardData: CardData): Promise<PaymentResult> {
+    // Never store sensitive data - tokenize immediately
+    const token = await this.tokenizeCardData(cardData);
+    
+    const paymentResult = await this.paymentProvider.processPayment({
+      token: token.id,
+      amount: cardData.amount,
+      currency: cardData.currency
+    });
+    
+    // Store only non-sensitive data
+    await this.storePaymentRecord({
+      tokenId: token.id,
+      last4Digits: cardData.last4Digits,
+      status: paymentResult.status
+    });
+    
+    return paymentResult;
+  }
+}
+```
+
+### Example 2: Real-time Fraud Detection
+```typescript
+// Multi-layered fraud detection system
+class FraudDetectionEngine {
+  async analyzeTransaction(transaction: Transaction): Promise<FraudAnalysis> {
+    const riskFactors = await Promise.all([
+      this.checkVelocityRules(transaction),
+      this.checkGeolocationRisk(transaction),
+      this.checkDeviceFingerprint(transaction),
+      this.checkBehavioralPatterns(transaction)
+    ]);
+    
+    const riskScore = this.calculateRiskScore(riskFactors.flat());
+    
+    return {
+      riskScore,
+      riskLevel: this.determineRiskLevel(riskScore),
+      riskFactors: riskFactors.flat(),
+      recommendedAction: this.getRecommendedAction(riskScore)
+    };
+  }
+}
+```
+
+### Example 3: Security Monitoring and Alerting
+```typescript
+// Comprehensive security monitoring system
+class SecurityMonitor {
+  async monitorSecurityEvents(): Promise<void> {
+    const recentEvents = await this.getRecentSecurityEvents();
+    const anomalies = await this.detectAnomalies(recentEvents);
+    
+    for (const anomaly of anomalies) {
+      if (anomaly.severity === 'CRITICAL') {
+        await this.triggerImmediateAlert(anomaly);
+        await this.executeAutomaticResponse(anomaly);
+      }
+    }
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| pciComplianceLevel | string | PCI DSS compliance level (1-4) | 'Level 1' | Yes |
+| encryptionStandard | string | Encryption algorithm standard | 'AES-256-GCM' | Yes |
+| fraudDetection | boolean | Enable real-time fraud detection | true | Yes |
+| securityMonitoring | boolean | Enable security event monitoring | true | Yes |
+| accessControl | string | Access control method | 'RBAC' | No |
+| sessionTimeout | number | Session timeout in minutes | 30 | No |
+| mfaRequired | boolean | Require multi-factor authentication | true | No |
+| auditLogging | boolean | Enable comprehensive audit logging | true | No |
+| vulnerabilityScanning | boolean | Enable automated security scanning | true | No |
+| incidentResponse | boolean | Enable automated incident response | false | No |
+
+## Expected Output
+A comprehensive payment security system featuring:
+- Full PCI DSS compliance implementation with all 12 requirements
+- Advanced fraud detection with machine learning and behavioral analysis
+- Secure data handling with tokenization and encryption at rest/transit
+- Multi-layered access control with role-based permissions and MFA
+- Real-time security monitoring with automated threat detection
+- Comprehensive audit logging and compliance reporting
+- Incident response automation with threat containment
+- Security testing integration with vulnerability assessments
+- Regulatory compliance across multiple jurisdictions
+- Security awareness training and policy enforcement tools
 
 ## Core Security Patterns
 

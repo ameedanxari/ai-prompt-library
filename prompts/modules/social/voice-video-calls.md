@@ -1,12 +1,80 @@
 # Voice and Video Calls Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing voice and video calling features in social applications, covering WebRTC integration, call management, quality optimization, and advanced calling features.
 
 ## Context
+Voice and video calling has become essential for modern social applications, enabling real-time communication beyond text messaging. WebRTC technology enables peer-to-peer audio and video streaming directly in browsers and mobile apps. This template addresses the complexity of implementing reliable calling infrastructure, managing call quality across varying network conditions, and providing advanced features like screen sharing and group conferencing.
 
-Voice and video calling capabilities are essential features for modern social applications, enabling real-time audio and video communication between users. This template addresses the complete calling ecosystem from peer-to-peer calls to group conferences and broadcast streaming.
+## Instructions
+
+1. **Setup WebRTC Infrastructure**: Configure WebRTC servers and signaling infrastructure
+2. **Implement Call Management**: Build call initiation, acceptance, and termination workflows
+3. **Add Quality Optimization**: Implement adaptive bitrate and network-aware calling
+4. **Configure Group Calling**: Set up multi-party video conferences and group calls
+5. **Enable Advanced Features**: Add screen sharing, recording, and interactive features
+6. **Add Call Analytics**: Track call quality, duration, and user engagement metrics
+7. **Test Call Performance**: Validate call quality across different network conditions
+
+## Examples
+
+### Example 1: Voice/Video Call System
+```typescript
+interface CallService {
+  initiateCall(callerId: string, recipientId: string, type: CallType): Promise<Call>;
+  acceptCall(callId: string, userId: string): Promise<CallSession>;
+  endCall(callId: string, userId: string): Promise<void>;
+}
+
+const callService = new CallService();
+const call = await callService.initiateCall('user-123', 'user-456', 'video');
+const session = await callService.acceptCall(call.id, 'user-456');
+```
+
+### Example 2: Group Video Conference
+```typescript
+const groupCall = await callService.createGroupCall({
+  hostId: 'user-123',
+  participants: ['user-456', 'user-789', 'user-012'],
+  maxParticipants: 10,
+  features: ['screen_share', 'recording', 'chat']
+});
+```
+
+### Example 3: Call Quality Management
+```typescript
+const qualitySettings = await callService.optimizeCallQuality({
+  callId: 'call-123',
+  networkConditions: 'poor',
+  deviceCapabilities: { camera: '720p', microphone: 'high_quality' }
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableVoiceCalls | Enable voice calling functionality | boolean | No | true |
+| enableVideoCalls | Enable video calling functionality | boolean | No | true |
+| enableGroupCalls | Enable group/conference calling | boolean | No | false |
+| maxGroupParticipants | Maximum participants in group calls | number | No | 10 |
+| enableScreenSharing | Enable screen sharing features | boolean | No | false |
+| enableCallRecording | Enable call recording functionality | boolean | No | false |
+| enableCallAnalytics | Track call quality and metrics | boolean | No | true |
+| adaptiveQuality | Enable adaptive call quality | boolean | No | true |
+| enableCallWaiting | Enable call waiting features | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **WebRTC Call System**: Peer-to-peer voice and video calling infrastructure
+- **Call Management**: Complete call lifecycle management and user interfaces
+- **Group Conferencing**: Multi-party video conferences and group calling features
+- **Quality Optimization**: Adaptive bitrate and network-aware call quality
+- **Advanced Features**: Screen sharing, recording, and interactive call tools
+- **Call Analytics**: Comprehensive call quality and usage analytics
+- **Cross-Platform Support**: Consistent calling experience across web and mobile
+- **Security Features**: Encrypted calls and privacy protection measures
 
 ## Implementation Guidance
 

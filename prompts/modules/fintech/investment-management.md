@@ -4,12 +4,125 @@
 Provides comprehensive patterns for portfolio tracking, trading capabilities, investment analytics, and wealth management features in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Portfolio management and asset allocation
-- Trading execution and order management
-- Investment research and analytics
-- Risk assessment and performance tracking
-- Robo-advisory and automated investing
+Investment management is a critical component of modern fintech platforms, enabling users to build wealth through diversified portfolios, automated investing, and sophisticated trading capabilities. This template addresses the complexity of building compliant investment platforms that handle real-time market data, execute trades efficiently, and provide comprehensive analytics while meeting regulatory requirements for investment services.
+
+## Instructions
+1. Analyze investment management requirements and client objectives
+2. Design comprehensive portfolio management and asset allocation systems
+3. Implement trading execution and order management workflows
+4. Build investment research and analytics capabilities
+5. Create risk assessment and performance tracking tools
+6. Add robo-advisory and automated investing features
+7. Implement regulatory compliance for investment services
+8. Build client reporting and communication systems
+9. Create market data integration and real-time pricing
+10. Add tax optimization and harvesting capabilities
+
+## Examples
+
+### Example 1: Automated Portfolio Management
+```typescript
+// Robo-advisor with automated rebalancing
+class RoboAdvisor {
+  async managePortfolio(portfolioId: string): Promise<ManagementResult> {
+    const portfolio = await this.getPortfolio(portfolioId);
+    const marketData = await this.getMarketData(portfolio.holdings);
+    
+    const rebalanceNeeded = await this.assessRebalanceNeed(portfolio, marketData);
+    
+    if (rebalanceNeeded.required) {
+      const trades = await this.generateRebalanceTrades(portfolio, rebalanceNeeded);
+      const executionResult = await this.executeTrades(trades);
+      
+      return {
+        action: 'rebalanced',
+        trades: executionResult.trades,
+        newAllocation: executionResult.allocation
+      };
+    }
+    
+    return { action: 'no_action_needed', reason: rebalanceNeeded.reason };
+  }
+}
+```
+
+### Example 2: Trading Engine Integration
+```typescript
+// Advanced trading execution system
+class TradingEngine {
+  async executeOrder(order: TradeOrder): Promise<ExecutionResult> {
+    const validation = await this.validateOrder(order);
+    if (!validation.valid) throw new OrderValidationError(validation.errors);
+    
+    const execution = await this.routeOrder(order);
+    const fills = await this.monitorExecution(execution.orderId);
+    
+    await this.updatePortfolio(order.portfolioId, fills);
+    await this.recordTransaction(fills);
+    
+    return {
+      orderId: execution.orderId,
+      fills,
+      averagePrice: this.calculateAveragePrice(fills),
+      totalCost: this.calculateTotalCost(fills)
+    };
+  }
+}
+```
+
+### Example 3: Investment Analytics Engine
+```typescript
+// Comprehensive investment performance analytics
+class InvestmentAnalytics {
+  async calculatePerformanceMetrics(portfolioId: string, period: TimePeriod): Promise<PerformanceReport> {
+    const portfolio = await this.getPortfolio(portfolioId);
+    const historicalData = await this.getHistoricalData(portfolio, period);
+    
+    const metrics = {
+      totalReturn: this.calculateTotalReturn(historicalData),
+      annualizedReturn: this.calculateAnnualizedReturn(historicalData),
+      volatility: this.calculateVolatility(historicalData),
+      sharpeRatio: this.calculateSharpeRatio(historicalData),
+      maxDrawdown: this.calculateMaxDrawdown(historicalData),
+      beta: await this.calculateBeta(portfolio, period)
+    };
+    
+    return {
+      portfolio,
+      period,
+      metrics,
+      benchmark: await this.getBenchmarkComparison(portfolio, period)
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| assetClasses | array | Supported asset classes | ['stocks', 'bonds', 'etfs'] | Yes |
+| tradingVenues | array | Trading venue integrations | ['nasdaq', 'nyse'] | Yes |
+| riskProfiles | array | Available risk profiles | ['conservative', 'moderate'] | Yes |
+| rebalancingStrategy | string | Portfolio rebalancing approach | 'threshold_based' | No |
+| taxOptimization | boolean | Tax-loss harvesting | false | No |
+| fractionalShares | boolean | Fractional share trading | true | No |
+| roboAdvisory | boolean | Automated investment management | true | No |
+| marketDataProvider | string | Market data source | 'alpha_vantage' | Yes |
+| complianceReporting | boolean | Investment compliance tracking | true | Yes |
+| clientReporting | boolean | Client performance reporting | true | No |
+
+## Expected Output
+A comprehensive investment management platform featuring:
+- Portfolio management with automated asset allocation and rebalancing
+- Trading execution with multi-venue routing and best execution
+- Investment analytics with performance tracking and risk assessment
+- Robo-advisory services with goal-based investing and automation
+- Market data integration with real-time pricing and research
+- Tax optimization with tax-loss harvesting and efficient placement
+- Regulatory compliance with investment advisor requirements
+- Client reporting with performance attribution and benchmarking
+- Risk management with portfolio monitoring and alerts
+- Integration with custodians, brokers, and market data providers
 
 ## Core Components
 

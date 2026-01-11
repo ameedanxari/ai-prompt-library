@@ -1,5 +1,125 @@
 # Shopping Cart Management and Wishlist Features
 
+## Purpose
+Comprehensive shopping cart and wishlist management system for e-commerce applications, supporting persistent carts, guest checkout, wishlist functionality, and advanced cart features.
+
+## Instructions
+
+1. **Setup Cart Storage**: Configure persistent cart storage (database, Redis, localStorage)
+2. **Implement Cart Operations**: Deploy add, update, remove, and clear cart functionality
+3. **Configure Guest Carts**: Set up anonymous cart handling and session management
+4. **Setup Wishlist**: Implement wishlist creation, management, and sharing features
+5. **Deploy Cart Recovery**: Configure abandoned cart recovery and email campaigns
+6. **Implement Discounts**: Set up coupon codes, promotions, and discount calculations
+7. **Configure Checkout**: Integrate cart with checkout and payment processing
+
+## Examples
+
+### Example 1: Basic Cart Operations
+```typescript
+interface CartItem {
+  id: string;
+  productId: string;
+  variantId?: string;
+  quantity: number;
+  unitPrice: number;
+  totalPrice: number;
+  customizations?: Record<string, any>;
+  addedAt: Date;
+}
+
+const cartItem = await addToCart({
+  cartId: "cart_123",
+  productId: "prod_456",
+  variantId: "var_789",
+  quantity: 2,
+  customizations: {
+    color: "red",
+    size: "medium",
+    engraving: "Happy Birthday"
+  }
+});
+```
+
+### Example 2: Wishlist Management
+```typescript
+interface WishlistItem {
+  id: string;
+  productId: string;
+  variantId?: string;
+  addedAt: Date;
+  notes?: string;
+  priority: 'low' | 'medium' | 'high';
+  priceAlert?: {
+    enabled: boolean;
+    targetPrice: number;
+  };
+}
+
+const wishlist = await addToWishlist({
+  userId: "user_123",
+  productId: "prod_456",
+  variantId: "var_789",
+  notes: "For anniversary gift",
+  priority: "high",
+  priceAlert: {
+    enabled: true,
+    targetPrice: 99.99
+  }
+});
+```
+
+### Example 3: Cart Recovery System
+```typescript
+interface AbandonedCart {
+  cartId: string;
+  userId?: string;
+  email?: string;
+  items: CartItem[];
+  totalValue: number;
+  abandonedAt: Date;
+  recoveryAttempts: number;
+  lastReminderSent?: Date;
+  recovered: boolean;
+}
+
+const recovery = await triggerCartRecovery({
+  cartId: "cart_123",
+  email: "customer@example.com",
+  recoveryType: "email_sequence",
+  incentive: {
+    type: "discount",
+    value: 10,
+    unit: "percentage"
+  }
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| cartExpiration | Cart expiration time (days) | number | No | 30 |
+| guestCartEnabled | Allow guest carts | boolean | Yes | true |
+| maxCartItems | Maximum items per cart | number | No | 100 |
+| wishlistEnabled | Enable wishlist functionality | boolean | No | true |
+| cartRecoveryEnabled | Enable abandoned cart recovery | boolean | No | true |
+| recoveryEmailDelay | Hours before first recovery email | number | No | 24 |
+| maxRecoveryAttempts | Maximum recovery email attempts | number | No | 3 |
+| persistentCart | Enable cross-device cart sync | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Shopping Cart System**: Full-featured cart management with persistence
+- **Wishlist Platform**: User wishlist creation, management, and sharing
+- **Guest Cart Support**: Anonymous shopping cart functionality
+- **Cart Recovery System**: Abandoned cart email campaigns and recovery
+- **Discount Engine**: Coupon codes, promotions, and pricing calculations
+- **Cross-Device Sync**: Cart synchronization across multiple devices
+- **Analytics Dashboard**: Cart abandonment and conversion tracking
+- **Mobile Applications**: Mobile-optimized cart and wishlist interfaces
+
 ## Overview
 Comprehensive shopping cart and wishlist management system for e-commerce applications, supporting persistent carts, guest checkout, wishlist functionality, and advanced cart features.
 

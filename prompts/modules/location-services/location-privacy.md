@@ -4,7 +4,103 @@
 Implement comprehensive location privacy controls and data management systems that comply with GDPR, CCPA, and other privacy regulations while providing users with granular control over their location data sharing, retention, and usage.
 
 ## Context
-This template provides patterns for privacy-compliant location data handling, user consent management, data anonymization, secure storage, and transparent location data usage across location-based applications.
+Location privacy is a critical concern in modern applications that collect and process user location data. With increasing regulatory requirements like GDPR and CCPA, applications must implement robust privacy controls, consent management, and data protection measures. This template addresses the complexity of building privacy-compliant location systems that balance functionality with user privacy rights and regulatory obligations.
+
+## Instructions
+1. Analyze location privacy requirements and regulatory compliance needs (GDPR, CCPA)
+2. Design comprehensive consent management with granular location permissions
+3. Implement location data anonymization and pseudonymization techniques
+4. Build privacy preference management with user-friendly controls
+5. Create location data retention policies with automated deletion
+6. Add location data export and portability features for user rights
+7. Implement privacy-preserving location analytics and insights
+8. Build audit trails for location data access and usage
+9. Create privacy impact assessments for location features
+10. Add integration with privacy management platforms and compliance tools
+
+## Examples
+
+### Example 1: Location Consent Management
+```typescript
+// Comprehensive location consent system
+class LocationConsentManager {
+  async requestLocationConsent(userId: string, purpose: LocationPurpose): Promise<ConsentResult> {
+    const consentRequest = {
+      userId,
+      purpose,
+      dataTypes: this.getRequiredDataTypes(purpose),
+      retentionPeriod: this.getRetentionPeriod(purpose),
+      sharingScope: this.getSharingScope(purpose)
+    };
+    
+    const consent = await this.presentConsentDialog(consentRequest);
+    await this.recordConsentDecision(consent);
+    
+    return consent;
+  }
+}
+```
+
+### Example 2: Location Data Anonymization
+```typescript
+// Privacy-preserving location data processing
+class LocationAnonymizer {
+  async anonymizeLocationData(locationData: LocationData[]): Promise<AnonymizedLocationData[]> {
+    return locationData.map(location => ({
+      ...location,
+      coordinates: this.addLocationNoise(location.coordinates),
+      timestamp: this.roundTimestamp(location.timestamp),
+      userId: this.pseudonymizeUserId(location.userId)
+    }));
+  }
+}
+```
+
+### Example 3: Privacy Rights Management
+```typescript
+// User privacy rights and data control
+class LocationPrivacyRightsManager {
+  async handleDataSubjectRequest(request: DataSubjectRequest): Promise<RequestResult> {
+    switch (request.type) {
+      case 'access':
+        return await this.exportUserLocationData(request.userId);
+      case 'deletion':
+        return await this.deleteUserLocationData(request.userId);
+      case 'portability':
+        return await this.exportPortableLocationData(request.userId);
+      case 'rectification':
+        return await this.correctLocationData(request.userId, request.corrections);
+    }
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| privacyRegulation | string | Applicable privacy regulation | 'gdpr' | Yes |
+| consentGranularity | string | Consent detail level | 'granular' | No |
+| dataAnonymization | boolean | Anonymize location data | true | Yes |
+| retentionPolicies | boolean | Automated data retention | true | Yes |
+| dataPortability | boolean | User data export features | true | Yes |
+| privacyDashboard | boolean | User privacy control panel | true | No |
+| auditLogging | boolean | Privacy audit trails | true | Yes |
+| privacyByDesign | boolean | Privacy-first architecture | true | Yes |
+| consentManagement | boolean | Comprehensive consent system | true | Yes |
+| dataMinimization | boolean | Collect only necessary data | true | Yes |
+
+## Expected Output
+A comprehensive location privacy system featuring:
+- Granular consent management with purpose-specific location permissions
+- Location data anonymization and pseudonymization for privacy protection
+- Privacy preference dashboard with user-friendly controls and settings
+- Automated data retention policies with configurable deletion schedules
+- Data subject rights management with access, deletion, and portability features
+- Privacy-preserving analytics with differential privacy and aggregation techniques
+- Comprehensive audit trails for location data access and usage tracking
+- Privacy impact assessments with automated compliance checking
+- Regulatory compliance support for GDPR, CCPA, and other privacy laws
+- Integration with privacy management platforms and consent management systems
 
 ## Implementation Approach
 

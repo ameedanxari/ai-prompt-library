@@ -4,7 +4,80 @@
 This template provides comprehensive patterns for implementing content upload, monetization, and creator management features in media streaming applications. It covers content ingestion, metadata management, analytics dashboards, revenue systems, and rights management for artists and content creators.
 
 ## Context
-Use this template when building media streaming platforms that need to support content creators, artists, podcasters, and other media producers. Suitable for music streaming platforms, video platforms, podcast services, and any media application requiring creator-focused tools and monetization capabilities.
+Creator tools are essential for media streaming platforms to attract and retain content creators. A robust creator ecosystem requires seamless content upload workflows, transparent monetization systems, and comprehensive analytics. This template addresses the complexity of building creator-friendly platforms that handle large file uploads, process content efficiently, manage rights and royalties, and provide actionable insights to help creators grow their audience.
+
+## Instructions
+
+1. **Setup Creator Platform**: Initialize creator registration and profile management system
+2. **Implement Upload Service**: Build chunked file upload with progress tracking and validation
+3. **Configure Content Processing**: Set up transcoding, metadata extraction, and quality analysis
+4. **Enable Monetization**: Implement revenue streams, payment processing, and payout systems
+5. **Add Analytics Dashboard**: Create comprehensive analytics with real-time insights
+6. **Setup Rights Management**: Implement copyright detection and licensing systems
+7. **Test Creator Workflows**: Validate upload, monetization, and analytics functionality
+
+## Examples
+
+### Example 1: Content Upload and Processing
+```typescript
+interface UploadService {
+  initiateUpload(creatorId: string, request: UploadRequest): Promise<UploadSession>;
+  handleUploadProgress(uploadId: string, progress: UploadProgress): Promise<void>;
+}
+
+const uploadService = new UploadService();
+const uploadSession = await uploadService.initiateUpload('creator-123', {
+  filename: 'new-track.mp3',
+  fileSize: 8 * 1024 * 1024, // 8MB
+  contentType: 'audio/mpeg'
+});
+```
+
+### Example 2: Creator Analytics Dashboard
+```typescript
+const analytics = await creatorAnalyticsService.generateCreatorDashboard(
+  'creator-123',
+  { start: new Date('2024-01-01'), end: new Date('2024-01-31') }
+);
+// Returns: playback stats, audience demographics, revenue breakdown
+```
+
+### Example 3: Monetization Setup
+```typescript
+const monetizationAccount = await monetizationEngine.setupCreatorMonetization(
+  'creator-123',
+  {
+    revenueSharing: { platform: 0.3, creator: 0.7 },
+    enabledStreams: ['streaming', 'downloads', 'tips', 'subscriptions']
+  }
+);
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| maxUploadSize | Maximum file size for uploads (MB) | number | No | 500 |
+| supportedFormats | Allowed audio/video formats | array | Yes | N/A |
+| revenueSharePercentage | Creator's revenue share percentage | number | No | 70 |
+| minimumPayoutThreshold | Minimum amount for payouts | number | No | 50 |
+| analyticsRetentionDays | Analytics data retention period | number | No | 365 |
+| copyrightDetectionEnabled | Enable copyright detection | boolean | No | true |
+| realTimeAnalytics | Enable real-time analytics | boolean | No | true |
+| autoProcessing | Auto-process uploaded content | boolean | No | true |
+| qualityLevels | Available audio quality levels | array | No | ["128k", "320k", "lossless"] |
+
+## Expected Output
+
+This template will produce:
+- **Creator Registration System**: Profile management and verification workflows
+- **Content Upload Platform**: Chunked upload with progress tracking and validation
+- **Processing Pipeline**: Automated transcoding, metadata extraction, and quality analysis
+- **Monetization Engine**: Revenue tracking, payment processing, and payout systems
+- **Analytics Dashboard**: Comprehensive insights with real-time data and reporting
+- **Rights Management**: Copyright detection, licensing, and dispute resolution
+- **Creator Tools**: Upload management, content organization, and performance tracking
+- **Fan Engagement**: Subscription tiers, tipping, and direct fan interaction features
 
 ## Implementation Patterns
 

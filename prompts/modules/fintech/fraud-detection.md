@@ -4,12 +4,128 @@
 Provides comprehensive patterns for real-time fraud monitoring, prevention, risk assessment, and security measures in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Real-time transaction fraud detection and prevention
-- Machine learning-based risk scoring and anomaly detection
-- Multi-layered security controls and behavioral analysis
-- Compliance with fraud prevention regulations
-- Automated response systems for suspicious activities
+Fraud detection is critical for protecting financial platforms and their users from fraudulent activities. Modern fraud systems combine machine learning, behavioral analysis, and rule-based engines to detect anomalies in real-time. This template addresses the complexity of building multi-layered fraud prevention systems that balance security with user experience while adapting to evolving fraud patterns.
+
+## Instructions
+1. Analyze fraud detection requirements and risk tolerance levels
+2. Design real-time transaction monitoring and analysis systems
+3. Implement machine learning models for anomaly detection
+4. Build multi-layered security controls and behavioral analysis
+5. Create automated fraud response and prevention mechanisms
+6. Add device fingerprinting and geolocation analysis
+7. Implement compliance with fraud prevention regulations
+8. Build fraud investigation and case management workflows
+9. Create fraud analytics and reporting dashboards
+10. Add integration with external fraud prevention services
+
+## Examples
+
+### Example 1: Real-time Fraud Detection
+```typescript
+// ML-powered real-time fraud detection
+class RealTimeFraudDetector {
+  async analyzeTransaction(transaction: Transaction): Promise<FraudAnalysisResult> {
+    const riskContext = await this.buildRiskContext(transaction);
+    const [mlScore, ruleScore, behaviorScore] = await Promise.all([
+      this.mlModel.predict(riskContext.features),
+      this.ruleEngine.evaluate(riskContext.rules),
+      this.behaviorAnalyzer.analyze(riskContext.behavior)
+    ]);
+    
+    const aggregatedScore = this.aggregateScores({
+      ml: mlScore,
+      rules: ruleScore,
+      behavior: behaviorScore
+    });
+    
+    return {
+      riskScore: aggregatedScore.score,
+      riskLevel: this.determineRiskLevel(aggregatedScore.score),
+      recommendedAction: this.getRecommendedAction(aggregatedScore),
+      explanation: this.explainDecision(aggregatedScore)
+    };
+  }
+}
+```
+
+### Example 2: Behavioral Analysis Engine
+```typescript
+// Advanced behavioral pattern analysis
+class BehaviorAnalysisEngine {
+  async analyzeBehaviorPattern(userId: string, activity: UserActivity): Promise<BehaviorAnalysis> {
+    const historicalPattern = await this.getUserBehaviorProfile(userId);
+    const currentPattern = this.extractBehaviorFeatures(activity);
+    
+    const anomalies = await this.detectAnomalies({
+      historical: historicalPattern,
+      current: currentPattern,
+      timeContext: activity.timestamp
+    });
+    
+    return {
+      anomalyScore: anomalies.score,
+      deviations: anomalies.deviations,
+      riskFactors: anomalies.riskFactors,
+      confidence: anomalies.confidence
+    };
+  }
+}
+```
+
+### Example 3: Automated Fraud Response
+```typescript
+// Automated fraud response and mitigation
+class FraudResponseSystem {
+  async handleFraudAlert(alert: FraudAlert): Promise<ResponseResult> {
+    const response = await this.determineResponse(alert);
+    
+    switch (response.action) {
+      case 'BLOCK':
+        await this.blockTransaction(alert.transactionId);
+        await this.freezeAccount(alert.accountId, 'fraud_suspected');
+        break;
+      case 'CHALLENGE':
+        await this.requestAdditionalAuth(alert.accountId);
+        break;
+      case 'MONITOR':
+        await this.enhanceMonitoring(alert.accountId);
+        break;
+    }
+    
+    await this.createFraudCase(alert, response);
+    await this.notifyStakeholders(alert, response);
+    
+    return response;
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| fraudModels | array | ML models for fraud detection | ['ensemble', 'neural_net'] | Yes |
+| riskThresholds | object | Risk level thresholds | standard_thresholds | Yes |
+| realTimeAnalysis | boolean | Real-time transaction analysis | true | Yes |
+| behaviorAnalysis | boolean | User behavior pattern analysis | true | No |
+| deviceFingerprinting | boolean | Device identification tracking | true | No |
+| geolocationAnalysis | boolean | Location-based risk assessment | true | No |
+| automatedResponse | boolean | Automated fraud response | true | No |
+| caseManagement | boolean | Fraud investigation workflows | true | No |
+| externalIntegrations | array | External fraud services | [] | No |
+| complianceReporting | boolean | Regulatory fraud reporting | true | Yes |
+
+## Expected Output
+A comprehensive fraud detection and prevention system featuring:
+- Real-time transaction monitoring with ML-based risk scoring
+- Advanced behavioral analysis with anomaly detection algorithms
+- Multi-layered security controls with device and location intelligence
+- Automated fraud response with customizable action workflows
+- Fraud investigation and case management capabilities
+- Compliance reporting for regulatory fraud prevention requirements
+- Integration with external fraud prevention services and databases
+- Fraud analytics dashboard with real-time monitoring and alerts
+- Machine learning model management with continuous improvement
+- Customer communication and dispute resolution workflows
 
 ## Core Components
 

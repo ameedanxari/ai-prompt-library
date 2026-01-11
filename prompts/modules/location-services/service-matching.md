@@ -4,7 +4,87 @@
 Implement sophisticated service matching algorithms for on-demand platforms that efficiently connect service providers with customers based on location, availability, preferences, ratings, and dynamic factors like demand and supply patterns.
 
 ## Context
-This template provides patterns for real-time matching systems used in ride-sharing, food delivery, home services, and other on-demand platforms where optimal provider-customer pairing is critical for user experience and business efficiency.
+Service matching is the core algorithm powering on-demand platforms like ride-sharing, delivery, and home services. Effective matching balances multiple factors including proximity, provider ratings, customer preferences, and fairness to ensure optimal outcomes for all parties. This template addresses the complexity of building real-time matching systems that scale to millions of requests while maintaining low latency and high match quality.
+
+## Instructions
+
+1. **Define Service Requirements**: Establish service types, provider qualifications, and customer needs
+2. **Implement Core Matching Engine**: Build real-time matching system with scoring algorithms
+3. **Configure Matching Criteria**: Set up distance, availability, rating, and preference scoring
+4. **Add Advanced Features**: Implement predictive matching, ML optimization, and fairness controls
+5. **Setup Real-Time Updates**: Enable live location tracking and status updates
+6. **Optimize Performance**: Add caching, batch processing, and load balancing
+7. **Test Matching Quality**: Validate accuracy, latency, and user satisfaction metrics
+
+## Examples
+
+### Example 1: Basic Service Matching
+```typescript
+interface ServiceMatchingEngine {
+  findBestMatch(request: ServiceRequest): Promise<MatchResult>;
+  scoreProviderMatch(provider: ServiceProvider, request: ServiceRequest): Promise<MatchScore>;
+}
+
+const matchingEngine = new ServiceMatchingEngine();
+const match = await matchingEngine.findBestMatch({
+  customerId: "customer-123",
+  serviceType: "ride-share",
+  location: { latitude: 37.7749, longitude: -122.4194 },
+  urgency: UrgencyLevel.NORMAL,
+  maxWaitTime: 10
+});
+```
+
+### Example 2: Multi-Criteria Scoring
+```typescript
+const matchScore = await matchingEngine.scoreProviderMatch(provider, request);
+// Returns: {
+//   totalScore: 0.85,
+//   factors: {
+//     distance: 0.9,
+//     availability: 1.0,
+//     rating: 0.8,
+//     preferences: 0.7
+//   }
+// }
+```
+
+### Example 3: Real-Time Matching with Updates
+```typescript
+const subscription = matchingEngine.subscribeToMatches((update) => {
+  if (update.type === 'MATCH_FOUND') {
+    handleNewMatch(update.match);
+  } else if (update.type === 'PROVIDER_UNAVAILABLE') {
+    retryMatching(update.requestId);
+  }
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| matchingAlgorithm | Primary matching algorithm type | string | Yes | N/A |
+| searchRadius | Maximum search radius for providers | number | No | 5000 |
+| scoringWeights | Weights for different matching factors | object | No | balanced |
+| maxWaitTime | Maximum acceptable wait time | number | No | 15 |
+| enableMLOptimization | Use machine learning for matching | boolean | No | false |
+| fairnessEnabled | Ensure fair provider distribution | boolean | No | true |
+| realTimeUpdates | Enable live location updates | boolean | No | true |
+| batchProcessing | Process multiple requests together | boolean | No | false |
+| cacheEnabled | Enable matching result caching | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Real-Time Matching Engine**: High-performance provider-customer matching system
+- **Multi-Criteria Scoring**: Comprehensive scoring based on distance, ratings, preferences
+- **ML-Powered Optimization**: Machine learning models for improved matching accuracy
+- **Fairness Controls**: Algorithms ensuring equitable distribution among providers
+- **Performance Monitoring**: Metrics tracking for latency, accuracy, and satisfaction
+- **Scalable Architecture**: System capable of handling high-volume concurrent requests
+- **Privacy-Compliant Matching**: Secure handling of location and personal data
+- **Business Intelligence**: Analytics for demand patterns and optimization insights
 
 ## Implementation Approach
 

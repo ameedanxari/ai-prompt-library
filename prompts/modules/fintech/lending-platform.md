@@ -4,12 +4,121 @@
 Provides comprehensive patterns for loan applications, underwriting workflows, loan management, and lending operations in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Digital loan origination and application processing
-- Automated underwriting and credit decisioning
-- Loan servicing and payment management
-- Risk assessment and portfolio management
-- Regulatory compliance for lending operations
+Digital lending platforms have transformed how consumers and businesses access credit, enabling faster decisions and more inclusive lending practices. This template addresses the complexity of building compliant lending systems that automate underwriting, manage loan lifecycles, and integrate with credit bureaus while meeting regulatory requirements for fair lending and consumer protection.
+
+## Instructions
+1. Analyze lending requirements and regulatory compliance obligations
+2. Design digital loan origination and application processing workflows
+3. Implement automated underwriting and credit decisioning systems
+4. Build loan servicing and payment management capabilities
+5. Create risk assessment and portfolio management tools
+6. Add borrower communication and self-service portals
+7. Implement regulatory compliance for lending operations
+8. Build loan analytics and performance monitoring
+9. Create collections and default management workflows
+10. Add integration with credit bureaus and third-party services
+
+## Examples
+
+### Example 1: Automated Loan Underwriting
+```typescript
+// AI-powered loan underwriting system
+class AutomatedUnderwriter {
+  async underwriteLoan(applicationId: string): Promise<UnderwritingDecision> {
+    const application = await this.getLoanApplication(applicationId);
+    const creditData = await this.getCreditData(application.applicant);
+    const incomeVerification = await this.verifyIncome(application);
+    
+    const riskAssessment = await this.assessRisk({
+      application,
+      creditData,
+      incomeVerification,
+      alternativeData: await this.getAlternativeData(application.applicant)
+    });
+    
+    const decision = await this.makeDecision(riskAssessment);
+    
+    await this.recordDecision(applicationId, decision);
+    await this.notifyApplicant(application, decision);
+    
+    return decision;
+  }
+}
+```
+
+### Example 2: Loan Servicing Platform
+```typescript
+// Comprehensive loan servicing system
+class LoanServicingPlatform {
+  async processPayment(loanId: string, payment: PaymentRequest): Promise<PaymentResult> {
+    const loan = await this.getLoan(loanId);
+    const paymentAllocation = await this.allocatePayment(loan, payment);
+    
+    const result = await this.applyPayment(loan, paymentAllocation);
+    
+    await this.updateLoanBalance(loanId, result.newBalance);
+    await this.recordPaymentHistory(loanId, result.payment);
+    await this.sendPaymentConfirmation(loan.borrowerId, result);
+    
+    // Check for payoff or early payment
+    if (result.newBalance.principal <= 0) {
+      await this.processLoanPayoff(loanId);
+    }
+    
+    return result;
+  }
+}
+```
+
+### Example 3: Risk-Based Pricing Engine
+```typescript
+// Dynamic loan pricing based on risk assessment
+class RiskBasedPricingEngine {
+  async calculateLoanTerms(application: LoanApplication): Promise<LoanTerms> {
+    const riskScore = await this.calculateRiskScore(application);
+    const marketRates = await this.getCurrentMarketRates();
+    
+    const baseRate = this.getBaseRate(application.loanType, marketRates);
+    const riskAdjustment = this.calculateRiskAdjustment(riskScore);
+    const finalRate = baseRate + riskAdjustment;
+    
+    return {
+      interestRate: finalRate,
+      maxLoanAmount: this.calculateMaxLoanAmount(application, riskScore),
+      termOptions: this.getAvailableTerms(application.loanType),
+      fees: this.calculateFees(application, riskScore),
+      conditions: this.getSpecialConditions(riskScore)
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| loanTypes | array | Supported loan products | ['personal', 'auto', 'mortgage'] | Yes |
+| underwritingModel | string | Underwriting approach | 'automated' | Yes |
+| creditBureaus | array | Credit bureau integrations | ['experian', 'equifax'] | Yes |
+| paymentMethods | array | Accepted payment methods | ['ach', 'card'] | Yes |
+| riskBasedPricing | boolean | Dynamic pricing based on risk | true | No |
+| borrowerPortal | boolean | Self-service borrower portal | true | No |
+| collectionsWorkflow | boolean | Automated collections process | true | No |
+| regulatoryCompliance | boolean | Lending compliance tracking | true | Yes |
+| loanAnalytics | boolean | Portfolio performance analytics | true | No |
+| thirdPartyIntegrations | array | External service integrations | [] | No |
+
+## Expected Output
+A comprehensive lending platform featuring:
+- Digital loan origination with streamlined application processing
+- Automated underwriting with AI-powered credit decisioning
+- Loan servicing with payment processing and account management
+- Risk-based pricing with dynamic rate calculation
+- Borrower self-service portal with account access and payments
+- Collections management with automated workflows and communications
+- Regulatory compliance with lending law adherence and reporting
+- Loan analytics with portfolio performance and risk monitoring
+- Integration with credit bureaus, payment processors, and verification services
+- Mobile-optimized borrower experience with document upload and e-signatures
 
 ## Core Components
 

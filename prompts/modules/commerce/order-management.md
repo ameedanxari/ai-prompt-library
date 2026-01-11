@@ -1,5 +1,127 @@
 # Order Management and Fulfillment Tracking
 
+## Purpose
+Generate comprehensive order management systems that handle the complete order lifecycle from creation to delivery, including inventory allocation, fulfillment tracking, returns processing, subscription management, and customer communication.
+
+## Instructions
+1. Analyze order management requirements and fulfillment workflows
+2. Design order lifecycle management with status tracking
+3. Implement inventory allocation and warehouse management
+4. Create fulfillment automation (picking, packing, shipping)
+5. Build order tracking and delivery notifications
+6. Add subscription and recurring order management
+7. Include returns and refunds processing system
+8. Implement order analytics and performance metrics
+9. Create customer communication and notification systems
+10. Add order modification and cancellation capabilities
+
+## Examples
+
+### Example 1: Order Lifecycle Management
+```typescript
+// Complete order processing with status tracking
+class OrderService {
+  async processOrder(orderData: CreateOrderRequest): Promise<Order> {
+    const order = await this.createOrder({
+      ...orderData,
+      status: 'pending_payment',
+      timeline: [{ type: 'created', timestamp: new Date() }]
+    });
+    
+    // Process payment and confirm order
+    const paymentResult = await this.paymentService.processPayment(order);
+    if (paymentResult.success) {
+      await this.confirmOrder(order.id, paymentResult);
+      await this.allocateInventory(order.id);
+      await this.startFulfillment(order.id);
+    }
+    
+    return order;
+  }
+}
+```
+
+### Example 2: Subscription Order Management
+```typescript
+// Recurring subscription order processing
+class SubscriptionService {
+  async createSubscription(data: SubscriptionData): Promise<Subscription> {
+    const subscription = await this.createSubscriptionRecord({
+      customerId: data.customerId,
+      frequency: data.frequency,
+      nextOrderDate: this.calculateNextOrderDate(data.frequency),
+      items: data.items
+    });
+    
+    await this.scheduleRecurringOrder(subscription);
+    return subscription;
+  }
+  
+  async processRecurringOrder(subscriptionId: string): Promise<Order> {
+    const subscription = await this.getSubscription(subscriptionId);
+    const order = await this.orderService.createOrder({
+      ...subscription.orderTemplate,
+      metadata: { isRecurring: true, subscriptionId }
+    });
+    
+    return order;
+  }
+}
+```
+
+### Example 3: Fulfillment Automation
+```typescript
+// Automated fulfillment workflow
+class FulfillmentService {
+  async processFulfillment(orderId: string): Promise<FulfillmentResult> {
+    const order = await this.orderService.getOrder(orderId);
+    
+    // Create picking task
+    const pickingTask = await this.createPickingTask(order);
+    await this.assignToWarehouseWorker(pickingTask);
+    
+    // Generate shipping label
+    const shippingLabel = await this.generateShippingLabel(order);
+    
+    // Create shipment tracking
+    const shipment = await this.createShipment({
+      orderId: order.id,
+      trackingNumber: shippingLabel.trackingNumber,
+      carrier: order.shippingMethod.carrier
+    });
+    
+    return { pickingTask, shippingLabel, shipment };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| orderId | string | Unique order identifier | - | Yes |
+| fulfillmentMethod | string | Fulfillment approach | 'standard' | No |
+| inventoryTracking | boolean | Enable inventory allocation | true | No |
+| subscriptionSupport | boolean | Support recurring orders | false | No |
+| multiWarehouse | boolean | Multiple warehouse support | false | No |
+| trackingNotifications | boolean | Send tracking updates | true | No |
+| returnsProcessing | boolean | Enable returns management | true | No |
+| orderModification | boolean | Allow order modifications | false | No |
+| analyticsTracking | boolean | Enable order analytics | true | No |
+| automatedFulfillment | boolean | Automate fulfillment workflow | false | No |
+
+## Expected Output
+A complete order management system featuring:
+- End-to-end order lifecycle management with status tracking
+- Automated inventory allocation and warehouse management
+- Fulfillment workflow automation (picking, packing, shipping)
+- Real-time order tracking with customer notifications
+- Subscription and recurring order management
+- Returns and refunds processing system
+- Order modification and cancellation capabilities
+- Comprehensive order analytics and reporting
+- Multi-warehouse and multi-carrier support
+- Customer communication and notification systems
+
 ## Overview
 Comprehensive order management system handling the complete order lifecycle from creation to delivery, including inventory allocation, fulfillment tracking, returns processing, and customer communication.
 

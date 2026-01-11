@@ -4,12 +4,113 @@
 Provides comprehensive patterns for financial account creation, KYC/AML verification, identity management, and account lifecycle operations in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Secure account creation and onboarding
-- KYC (Know Your Customer) and AML (Anti-Money Laundering) compliance
-- Identity verification and document validation
-- Account linking and aggregation
-- Account status management and lifecycle operations
+Account management is the foundation of fintech applications, handling user onboarding, identity verification, and account lifecycle operations. Modern fintech platforms must implement robust KYC/AML compliance while providing seamless user experiences. This template addresses the complexity of building secure, compliant account systems that verify identities, prevent fraud, and meet regulatory requirements across jurisdictions.
+
+## Instructions
+1. Analyze account management requirements and regulatory compliance needs
+2. Design secure account creation and onboarding workflows
+3. Implement comprehensive KYC/AML verification processes
+4. Build identity verification with document validation and biometric checks
+5. Create account linking and aggregation capabilities
+6. Add account lifecycle management with status tracking
+7. Implement fraud detection and risk assessment systems
+8. Build compliance reporting and audit trail mechanisms
+9. Create customer communication and notification systems
+10. Add account analytics and performance monitoring
+
+## Examples
+
+### Example 1: Secure Account Onboarding
+```typescript
+// Complete account creation with KYC verification
+class AccountOnboardingService {
+  async createAccount(request: AccountCreationRequest): Promise<Account> {
+    // Validate customer data
+    const validation = await this.validateAccountData(request);
+    if (!validation.isValid) throw new ValidationError(validation.errors);
+    
+    // Create account
+    const account = await this.accountRepository.create({
+      ...request,
+      status: 'pending_verification'
+    });
+    
+    // Initiate KYC process
+    await this.kycService.initiateVerification(account.id, request.documents);
+    
+    return account;
+  }
+}
+```
+
+### Example 2: KYC/AML Compliance System
+```typescript
+// Comprehensive KYC verification with multiple providers
+class KYCComplianceService {
+  async performKYCVerification(accountId: string, documents: Document[]): Promise<VerificationResult> {
+    const [identityCheck, amlScreening, sanctionsCheck] = await Promise.all([
+      this.identityProvider.verifyIdentity(documents),
+      this.amlProvider.screenCustomer(accountId),
+      this.sanctionsProvider.checkSanctions(accountId)
+    ]);
+    
+    const overallResult = this.evaluateVerificationResults({
+      identity: identityCheck,
+      aml: amlScreening,
+      sanctions: sanctionsCheck
+    });
+    
+    await this.updateAccountVerificationStatus(accountId, overallResult);
+    return overallResult;
+  }
+}
+```
+
+### Example 3: Account Aggregation and Linking
+```typescript
+// Bank account linking with real-time balance updates
+class AccountAggregationService {
+  async linkBankAccount(accountId: string, bankDetails: BankAccountDetails): Promise<LinkedAccount> {
+    // Verify bank account ownership
+    const verification = await this.bankVerificationService.verifyOwnership(bankDetails);
+    
+    if (verification.verified) {
+      const linkedAccount = await this.createLinkedAccount(accountId, bankDetails);
+      await this.scheduleBalanceSync(linkedAccount.id);
+      return linkedAccount;
+    }
+    
+    throw new VerificationError('Bank account ownership could not be verified');
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| kycProvider | string | KYC verification service | 'jumio' | Yes |
+| amlScreening | boolean | Enable AML compliance checks | true | Yes |
+| identityVerification | string | Identity verification level | 'enhanced' | No |
+| documentTypes | array | Accepted document types | ['passport', 'license'] | Yes |
+| biometricAuth | boolean | Enable biometric verification | false | No |
+| accountLinking | boolean | Enable bank account linking | true | No |
+| complianceReporting | boolean | Enable regulatory reporting | true | Yes |
+| fraudMonitoring | boolean | Real-time fraud detection | true | Yes |
+| auditTrails | boolean | Comprehensive audit logging | true | Yes |
+| multiRegion | boolean | Multi-jurisdiction support | false | No |
+
+## Expected Output
+A comprehensive account management system featuring:
+- Secure account creation with multi-step verification and validation
+- KYC/AML compliance with automated document verification and screening
+- Identity verification using biometric checks and liveness detection
+- Bank account linking with ownership verification and balance aggregation
+- Account lifecycle management with status tracking and automated workflows
+- Real-time fraud detection with risk scoring and monitoring
+- Regulatory compliance with automated reporting and audit trails
+- Customer communication with notifications and status updates
+- Account analytics with performance metrics and insights
+- Multi-jurisdiction support for international compliance requirements
 
 ## Core Components
 

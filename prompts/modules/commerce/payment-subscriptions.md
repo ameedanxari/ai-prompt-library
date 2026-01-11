@@ -6,7 +6,117 @@ This template provides comprehensive patterns for implementing subscription-base
 
 ## Context
 
-Subscription and recurring billing systems require sophisticated handling of payment schedules, plan changes, proration, dunning management, and customer lifecycle events. This template addresses the complexity of building reliable subscription systems that handle various billing scenarios and provide excellent customer experience.
+Subscription-based business models require sophisticated billing infrastructure that handles recurring payments, plan changes, trial periods, and failed payment recovery. This template addresses the complexity of subscription lifecycle management, proration calculations, dunning workflows, and subscription analytics to help businesses maximize recurring revenue and minimize churn.
+
+## Instructions
+1. Analyze subscription business model and billing requirements
+2. Design flexible subscription plans with multiple billing cycles
+3. Implement subscription lifecycle management (create, update, cancel)
+4. Build automated recurring billing and invoice generation
+5. Create plan change workflows with accurate proration calculations
+6. Implement comprehensive dunning management for failed payments
+7. Add usage-based billing and metered subscription support
+8. Build subscription analytics and revenue tracking (MRR, ARR, churn)
+9. Create customer self-service subscription management portal
+10. Implement subscription compliance and tax handling
+
+## Examples
+
+### Example 1: Flexible Subscription Management
+```typescript
+// Comprehensive subscription lifecycle management
+class SubscriptionManager {
+  async createSubscription(request: CreateSubscriptionRequest): Promise<Subscription> {
+    const plan = await this.planService.getPlan(request.planId);
+    
+    const subscription = {
+      customerId: request.customerId,
+      planId: request.planId,
+      status: plan.trialPeriodDays ? 'trialing' : 'active',
+      billingCycle: plan.interval,
+      currentPeriodStart: new Date(),
+      currentPeriodEnd: this.calculateNextBillingDate(plan),
+      trialEnd: plan.trialPeriodDays ? this.calculateTrialEnd(plan) : null
+    };
+    
+    await this.scheduleRecurringBilling(subscription);
+    return subscription;
+  }
+}
+```
+
+### Example 2: Intelligent Dunning Management
+```typescript
+// Advanced failed payment recovery system
+class DunningManager {
+  async processDunningAttempt(subscription: Subscription, invoice: Invoice): Promise<void> {
+    const dunningRule = await this.getDunningRule(subscription);
+    
+    for (const attempt of dunningRule.attempts) {
+      await this.scheduleRetryAttempt(invoice, attempt.dayOffset);
+      await this.sendDunningNotification(subscription, attempt.escalationLevel);
+      
+      if (attempt.retryPayment) {
+        const result = await this.retryPayment(invoice);
+        if (result.success) return; // Payment recovered
+      }
+    }
+    
+    // Execute final action if all attempts failed
+    await this.executeFinalAction(subscription, dunningRule.finalAction);
+  }
+}
+```
+
+### Example 3: Subscription Analytics and Metrics
+```typescript
+// Comprehensive subscription business metrics
+class SubscriptionAnalytics {
+  async calculateSubscriptionMetrics(): Promise<SubscriptionMetrics> {
+    const [mrr, churnRate, ltv] = await Promise.all([
+      this.calculateMRR(),
+      this.calculateChurnRate(),
+      this.calculateCustomerLTV()
+    ]);
+    
+    return {
+      monthlyRecurringRevenue: mrr,
+      annualRecurringRevenue: mrr * 12,
+      churnRate,
+      customerLifetimeValue: ltv,
+      revenueGrowthRate: await this.calculateGrowthRate(),
+      cohortAnalysis: await this.generateCohortAnalysis()
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| billingCycles | array | Supported billing frequencies | ['monthly', 'annual'] | Yes |
+| trialPeriod | number | Default trial period in days | 14 | No |
+| prorationBehavior | string | How to handle plan changes | 'create_prorations' | No |
+| dunningEnabled | boolean | Enable failed payment recovery | true | No |
+| maxRetryAttempts | number | Maximum payment retry attempts | 4 | No |
+| gracePeriodDays | number | Grace period before cancellation | 3 | No |
+| usageBasedBilling | boolean | Support metered billing | false | No |
+| subscriptionAnalytics | boolean | Enable MRR/churn tracking | true | No |
+| customerPortal | boolean | Self-service subscription management | true | No |
+| taxHandling | string | Tax calculation method | 'automatic' | No |
+
+## Expected Output
+A comprehensive subscription billing system featuring:
+- Flexible subscription plans with multiple billing cycles and trial periods
+- Automated recurring billing with invoice generation and payment processing
+- Intelligent plan change management with accurate proration calculations
+- Advanced dunning management with customizable retry logic and recovery workflows
+- Usage-based and metered billing capabilities for complex pricing models
+- Comprehensive subscription analytics including MRR, ARR, churn, and LTV tracking
+- Customer self-service portal for subscription management and billing history
+- Failed payment recovery with escalating communication and retry strategies
+- Subscription lifecycle automation with webhooks and event-driven workflows
+- Tax compliance and regulatory reporting for subscription businesses
 
 ## Core Subscription Patterns
 

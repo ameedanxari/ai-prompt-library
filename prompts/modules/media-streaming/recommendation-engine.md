@@ -4,7 +4,85 @@
 This template provides comprehensive patterns for implementing content discovery and personalization systems in media streaming applications. It covers collaborative filtering, content-based recommendations, hybrid approaches, and real-time personalization algorithms.
 
 ## Context
-Use this template when building media streaming applications that need intelligent content discovery, personalized recommendations, and user engagement optimization. Suitable for music streaming, video platforms, podcast services, and any media application requiring sophisticated recommendation capabilities.
+Recommendation engines are essential for content discovery in media streaming platforms, helping users find relevant content among millions of options. Modern recommendation systems combine collaborative filtering, content-based analysis, and deep learning to deliver personalized experiences. This template addresses the complexity of building scalable recommendation systems that balance relevance, diversity, and serendipity while adapting to user preferences in real-time.
+
+## Instructions
+
+1. **Setup Recommendation Infrastructure**: Configure ML models and data processing pipelines
+2. **Implement Collaborative Filtering**: Build user-based and item-based recommendation algorithms
+3. **Add Content-Based Filtering**: Implement feature-based content similarity matching
+4. **Configure Hybrid Engine**: Combine multiple recommendation approaches for better results
+5. **Enable Real-Time Personalization**: Implement dynamic recommendations based on current context
+6. **Add Model Training**: Set up continuous learning and model improvement workflows
+7. **Test Recommendation Quality**: Validate recommendation accuracy and user satisfaction
+
+## Examples
+
+### Example 1: Recommendation System Setup
+```typescript
+interface RecommendationEngine {
+  getPersonalizedRecommendations(userId: string, count: number): Promise<Recommendation[]>;
+  getSimilarContent(contentId: string, count: number): Promise<SimilarContent[]>;
+  getTrendingContent(category?: string): Promise<TrendingContent[]>;
+}
+
+const recommendationEngine = new RecommendationEngine();
+const recommendations = await recommendationEngine.getPersonalizedRecommendations(
+  'user-123', 20
+);
+```
+
+### Example 2: Hybrid Recommendation Strategy
+```typescript
+const hybridRecommendations = await recommendationEngine.getHybridRecommendations({
+  userId: 'user-123',
+  algorithms: [
+    { type: 'collaborative', weight: 0.4 },
+    { type: 'content_based', weight: 0.3 },
+    { type: 'trending', weight: 0.3 }
+  ],
+  diversityFactor: 0.2
+});
+```
+
+### Example 3: Real-Time Context-Aware Recommendations
+```typescript
+const contextualRecommendations = await recommendationEngine.getContextualRecommendations({
+  userId: 'user-123',
+  context: {
+    timeOfDay: 'evening',
+    location: 'home',
+    device: 'mobile',
+    currentActivity: 'workout'
+  }
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| recommendationAlgorithm | Primary recommendation algorithm | string | Yes | N/A |
+| enableCollaborativeFiltering | Enable collaborative filtering | boolean | No | true |
+| enableContentBasedFiltering | Enable content-based filtering | boolean | No | true |
+| enableHybridApproach | Enable hybrid recommendation engine | boolean | No | true |
+| realTimePersonalization | Enable real-time personalization | boolean | No | true |
+| diversityFactor | Recommendation diversity factor (0-1) | number | No | 0.2 |
+| modelUpdateFrequency | Model training frequency | string | No | "daily" |
+| minInteractionsForRecommendation | Minimum user interactions needed | number | No | 5 |
+| enableExplainability | Provide recommendation explanations | boolean | No | false |
+
+## Expected Output
+
+This template will produce:
+- **Personalized Recommendation Engine**: AI-powered content discovery system
+- **Multi-Algorithm Approach**: Collaborative, content-based, and hybrid filtering
+- **Real-Time Personalization**: Dynamic recommendations based on current context
+- **Trending Content Discovery**: Popular and emerging content identification
+- **Similarity Matching**: Content similarity and related item recommendations
+- **Model Training Pipeline**: Continuous learning and improvement workflows
+- **A/B Testing Framework**: Recommendation algorithm testing and optimization
+- **Analytics Dashboard**: Recommendation performance and user engagement metrics
 
 ## Implementation Patterns
 

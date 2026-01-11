@@ -6,7 +6,106 @@ This template provides comprehensive patterns for building advanced product sear
 
 ## Context
 
-Product search is often the primary way customers interact with e-commerce catalogs. This template addresses the complexity of implementing search that handles various query types, provides intelligent filtering, delivers personalized results, and scales with large product catalogs. It ensures customers can find what they're looking for quickly while discovering relevant alternatives.
+Effective product search is critical for e-commerce conversion rates and customer satisfaction. This template addresses the complexity of building high-performance search infrastructure, implementing intelligent relevance scoring, providing faceted navigation, and leveraging analytics to continuously optimize search results and product discovery.
+
+## Instructions
+1. Analyze search requirements and product discovery needs
+2. Design scalable search architecture with appropriate indexing
+3. Implement full-text search with relevance scoring and boosting
+4. Build faceted search with dynamic filtering capabilities
+5. Create intelligent autocomplete and search suggestions
+6. Add personalized search results and recommendation integration
+7. Implement search analytics and performance optimization
+8. Build visual search and AI-powered discovery features
+9. Create mobile-optimized search experiences
+10. Add search result merchandising and promotional capabilities
+
+## Examples
+
+### Example 1: Advanced Product Search Engine
+```typescript
+// Comprehensive search with faceting and personalization
+class ProductSearchEngine {
+  async search(query: SearchQuery): Promise<SearchResult> {
+    const searchRequest = {
+      textQuery: this.buildMultiFieldQuery(query.query),
+      filters: this.buildFilters(query),
+      facets: this.buildDynamicFacets(query),
+      personalization: await this.getPersonalizationBoosts(query.userId),
+      sort: this.buildSortCriteria(query)
+    };
+    
+    const results = await this.searchClient.search(searchRequest);
+    return this.enhanceResults(results, query);
+  }
+}
+```
+
+### Example 2: Intelligent Search Suggestions
+```typescript
+// AI-powered autocomplete with multiple suggestion types
+class SearchSuggestionEngine {
+  async getSuggestions(partialQuery: string): Promise<SearchSuggestion[]> {
+    const [queryCompletions, productSuggestions, categorySuggestions] = await Promise.all([
+      this.getQueryCompletions(partialQuery),
+      this.getProductSuggestions(partialQuery),
+      this.getCategorySuggestions(partialQuery)
+    ]);
+    
+    return this.rankAndMergeSuggestions([
+      ...queryCompletions,
+      ...productSuggestions,
+      ...categorySuggestions
+    ]);
+  }
+}
+```
+
+### Example 3: Search Analytics and Optimization
+```typescript
+// Comprehensive search performance analytics
+class SearchAnalyticsEngine {
+  async optimizeSearchRankings(): Promise<OptimizationResult> {
+    const clickThroughData = await this.getClickThroughRates();
+    const conversionData = await this.getSearchConversions();
+    
+    const optimizations = this.generateRankingOptimizations({
+      underperformingProducts: this.findLowCTRProducts(clickThroughData),
+      overperformingProducts: this.findHighCTRProducts(clickThroughData),
+      conversionPatterns: this.analyzeConversionPatterns(conversionData)
+    });
+    
+    return await this.applyOptimizations(optimizations);
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| searchEngine | string | Search backend technology | 'elasticsearch' | Yes |
+| indexingStrategy | string | Product indexing approach | 'real_time' | No |
+| facetedSearch | boolean | Enable faceted filtering | true | Yes |
+| autocomplete | boolean | Enable search suggestions | true | No |
+| personalization | boolean | Personalize search results | false | No |
+| visualSearch | boolean | Enable image-based search | false | No |
+| voiceSearch | boolean | Enable voice search | false | No |
+| searchAnalytics | boolean | Track search performance | true | No |
+| typoTolerance | boolean | Handle search typos | true | No |
+| synonymHandling | boolean | Process search synonyms | true | No |
+
+## Expected Output
+A comprehensive product search and discovery system featuring:
+- High-performance full-text search with relevance scoring and field boosting
+- Dynamic faceted search with intelligent filter generation and counts
+- Advanced autocomplete with query, product, and category suggestions
+- Personalized search results based on user behavior and preferences
+- Search analytics with performance optimization and A/B testing
+- Mobile-optimized search interface with touch-friendly interactions
+- Visual and voice search capabilities for modern discovery experiences
+- Search result merchandising with promotional and featured product placement
+- Real-time search suggestions with typo tolerance and synonym handling
+- Comprehensive search insights and conversion optimization tools
 
 ## Core Search and Discovery Patterns
 

@@ -8,6 +8,134 @@ This template provides comprehensive patterns for building product catalog syste
 
 Product catalogs are the foundation of any e-commerce system. This template covers product data modeling, variant management, attribute systems, category hierarchies, and product relationships. It ensures scalable, flexible catalog management that can handle everything from simple retail products to complex B2B catalogs with custom pricing and configurations.
 
+## Instructions
+
+1. **Setup Product Database**: Configure scalable product data storage with proper indexing
+2. **Implement Product Types**: Define simple, variable, grouped, and configurable products
+3. **Configure Variants**: Set up product variants with attributes and pricing
+4. **Setup Categories**: Implement hierarchical category structure and navigation
+5. **Deploy Search**: Configure product search with filters and faceted navigation
+6. **Implement Media**: Set up product image, video, and document management
+7. **Configure Pricing**: Deploy dynamic pricing rules and customer-specific pricing
+
+## Examples
+
+### Example 1: Basic Product Creation
+```typescript
+interface Product {
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  type: 'simple' | 'variable' | 'grouped' | 'configurable';
+  status: 'active' | 'inactive' | 'draft';
+  basePrice: number;
+  salePrice?: number;
+  categories: string[];
+  attributes: ProductAttribute[];
+  images: ProductImage[];
+  inventory: InventoryInfo;
+}
+
+const product = await createProduct({
+  sku: "SHIRT-001",
+  name: "Premium Cotton T-Shirt",
+  description: "High-quality cotton t-shirt with comfortable fit",
+  type: "variable",
+  basePrice: 29.99,
+  categories: ["clothing", "shirts", "mens"],
+  attributes: [
+    { name: "material", value: "100% Cotton" },
+    { name: "fit", value: "Regular" }
+  ]
+});
+```
+
+### Example 2: Product Variants Management
+```typescript
+interface ProductVariant {
+  id: string;
+  parentProductId: string;
+  sku: string;
+  attributes: VariantAttribute[];
+  price: number;
+  inventory: InventoryInfo;
+  images: string[];
+  status: 'active' | 'inactive';
+}
+
+const variant = await createProductVariant({
+  parentProductId: "prod_123",
+  sku: "SHIRT-001-RED-M",
+  attributes: [
+    { name: "color", value: "Red" },
+    { name: "size", value: "Medium" }
+  ],
+  price: 29.99,
+  inventory: {
+    quantity: 50,
+    trackQuantity: true,
+    allowBackorder: false
+  }
+});
+```
+
+### Example 3: Category Hierarchy
+```typescript
+interface ProductCategory {
+  id: string;
+  name: string;
+  slug: string;
+  description?: string;
+  parentId?: string;
+  level: number;
+  sortOrder: number;
+  isActive: boolean;
+  seoTitle?: string;
+  seoDescription?: string;
+  image?: string;
+}
+
+const category = await createCategory({
+  name: "Men's Clothing",
+  slug: "mens-clothing",
+  parentId: "clothing",
+  level: 2,
+  sortOrder: 1,
+  seoTitle: "Men's Clothing - Premium Fashion",
+  seoDescription: "Discover our premium men's clothing collection"
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| productTypes | Supported product types | string[] | Yes | ["simple", "variable"] |
+| maxVariants | Maximum variants per product | number | No | 100 |
+| categoryDepth | Maximum category hierarchy depth | number | No | 5 |
+| attributeTypes | Supported attribute types | string[] | Yes | ["text", "number", "select"] |
+| imageFormats | Supported image formats | string[] | Yes | ["jpg", "png", "webp"] |
+| maxImages | Maximum images per product | number | No | 20 |
+| seoEnabled | Enable SEO optimization | boolean | Yes | true |
+| bulkImport | Enable bulk product import | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Product Management System**: Comprehensive product creation and management
+- **Variant Engine**: Product variant generation and management
+- **Category System**: Hierarchical category structure and navigation
+- **Attribute Framework**: Flexible product attribute and specification system
+- **Media Management**: Product image, video, and document handling
+- **Search and Filter**: Advanced product search with faceted navigation
+- **Pricing Engine**: Dynamic pricing rules and customer-specific pricing
+- **Import/Export Tools**: Bulk product data management and synchronization
+
+## Context
+
+Product catalogs are the foundation of any e-commerce system. This template covers product data modeling, variant management, attribute systems, category hierarchies, and product relationships. It ensures scalable, flexible catalog management that can handle everything from simple retail products to complex B2B catalogs with custom pricing and configurations.
+
 ## Core Product Management Patterns
 
 ### 1. Product Data Model

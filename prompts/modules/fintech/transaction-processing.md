@@ -4,12 +4,142 @@
 Provides comprehensive patterns for payment processing, transaction handling, reconciliation, and financial transaction management in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Secure payment processing and transaction handling
-- Real-time transaction monitoring and validation
-- Transaction reconciliation and settlement
-- Multi-currency and cross-border payment support
-- Transaction history and reporting
+Transaction processing is the core of financial applications, handling payments, transfers, and financial operations with high reliability and security. Modern transaction systems must support real-time processing, multi-currency operations, and comprehensive reconciliation. This template addresses the complexity of building scalable transaction systems that maintain data integrity, prevent fraud, and comply with payment regulations.
+
+## Instructions
+1. Analyze transaction processing requirements and payment flows
+2. Design secure payment processing and transaction handling systems
+3. Implement real-time transaction monitoring and validation
+4. Build transaction reconciliation and settlement processes
+5. Create multi-currency and cross-border payment support
+6. Add transaction fraud detection and security measures
+7. Implement regulatory compliance for payment processing
+8. Build transaction history and reporting capabilities
+9. Create payment method integration and management
+10. Add transaction analytics and performance monitoring
+
+## Examples
+
+### Example 1: Real-time Transaction Processing
+```typescript
+// High-performance transaction processing engine
+class TransactionProcessor {
+  async processTransaction(request: TransactionRequest): Promise<TransactionResult> {
+    // Validate transaction
+    const validation = await this.validateTransaction(request);
+    if (!validation.valid) throw new ValidationError(validation.errors);
+    
+    // Check fraud and compliance
+    const fraudCheck = await this.fraudDetector.analyze(request);
+    if (fraudCheck.riskLevel === 'HIGH') {
+      return { status: 'blocked', reason: 'fraud_detected' };
+    }
+    
+    // Process payment
+    const transaction = await this.executeTransaction(request);
+    
+    // Update balances and record
+    await Promise.all([
+      this.updateAccountBalance(request.fromAccount, -request.amount.amount),
+      this.updateAccountBalance(request.toAccount, request.amount.amount),
+      this.recordTransaction(transaction)
+    ]);
+    
+    return { status: 'completed', transactionId: transaction.id };
+  }
+}
+```
+
+### Example 2: Multi-Currency Payment System
+```typescript
+// Cross-border payment processing with currency conversion
+class CrossBorderPaymentProcessor {
+  async processCrossBorderPayment(payment: CrossBorderPayment): Promise<PaymentResult> {
+    const exchangeRate = await this.getExchangeRate(
+      payment.sourceCurrency,
+      payment.targetCurrency
+    );
+    
+    const convertedAmount = this.convertCurrency(
+      payment.amount,
+      exchangeRate,
+      payment.targetCurrency
+    );
+    
+    const fees = await this.calculateCrossBorderFees(payment, convertedAmount);
+    
+    const result = await this.executePayment({
+      ...payment,
+      convertedAmount,
+      exchangeRate,
+      fees
+    });
+    
+    await this.recordCurrencyConversion(payment, exchangeRate);
+    return result;
+  }
+}
+```
+
+### Example 3: Transaction Reconciliation Engine
+```typescript
+// Automated transaction reconciliation system
+class ReconciliationEngine {
+  async reconcileTransactions(date: Date): Promise<ReconciliationReport> {
+    const [internalTransactions, externalTransactions] = await Promise.all([
+      this.getInternalTransactions(date),
+      this.getExternalTransactions(date)
+    ]);
+    
+    const matchedTransactions = await this.matchTransactions(
+      internalTransactions,
+      externalTransactions
+    );
+    
+    const discrepancies = await this.identifyDiscrepancies(matchedTransactions);
+    
+    if (discrepancies.length > 0) {
+      await this.createReconciliationTasks(discrepancies);
+    }
+    
+    return {
+      date,
+      totalInternal: internalTransactions.length,
+      totalExternal: externalTransactions.length,
+      matched: matchedTransactions.length,
+      discrepancies: discrepancies.length,
+      status: discrepancies.length === 0 ? 'balanced' : 'requires_attention'
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| paymentMethods | array | Supported payment methods | ['ach', 'wire', 'card'] | Yes |
+| currencies | array | Supported currencies | ['USD'] | Yes |
+| settlementMethods | array | Settlement approaches | ['real_time', 'batch'] | Yes |
+| fraudDetection | boolean | Real-time fraud monitoring | true | Yes |
+| crossBorderPayments | boolean | International payment support | false | No |
+| reconciliationFrequency | string | Reconciliation schedule | 'daily' | No |
+| transactionLimits | object | Transaction amount limits | standard_limits | Yes |
+| complianceReporting | boolean | Regulatory transaction reporting | true | Yes |
+| paymentAnalytics | boolean | Transaction performance analytics | true | No |
+| apiIntegrations | array | Payment processor integrations | [] | Yes |
+
+## Expected Output
+A comprehensive transaction processing system featuring:
+- Real-time payment processing with high availability and performance
+- Multi-currency support with automatic currency conversion and rates
+- Transaction validation with fraud detection and compliance checking
+- Automated reconciliation with discrepancy identification and resolution
+- Cross-border payment capabilities with regulatory compliance
+- Transaction history and reporting with detailed audit trails
+- Payment method integration with multiple processors and gateways
+- Real-time transaction monitoring with alerts and notifications
+- Settlement management with batch and real-time processing options
+- Comprehensive analytics with transaction performance and insights
 
 ## Core Components
 

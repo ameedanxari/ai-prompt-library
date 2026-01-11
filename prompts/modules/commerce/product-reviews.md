@@ -6,7 +6,119 @@ This template provides comprehensive patterns for building robust product review
 
 ## Context
 
-Product reviews are crucial for e-commerce success, influencing purchase decisions and providing valuable feedback. This template addresses the complexity of managing authentic reviews, preventing fake reviews, implementing moderation workflows, and extracting actionable insights from customer feedback while maintaining trust and transparency.
+Product reviews are essential for building customer trust and driving purchase decisions. This template addresses the complexity of collecting verified reviews, implementing fraud detection, moderating content at scale, and extracting actionable insights from customer feedback to improve products and customer experience.
+
+## Instructions
+1. Analyze product review requirements and customer feedback goals
+2. Design comprehensive review collection and verification systems
+3. Implement robust review moderation and quality control workflows
+4. Build advanced fraud detection and prevention mechanisms
+5. Create review analytics and sentiment analysis capabilities
+6. Add review helpfulness voting and community features
+7. Implement review media handling (images, videos)
+8. Build merchant response and customer engagement tools
+9. Create review syndication and display optimization
+10. Add review-based product insights and recommendations
+
+## Examples
+
+### Example 1: Verified Purchase Review System
+```typescript
+// Comprehensive review collection with purchase verification
+class ReviewCollectionManager {
+  async submitVerifiedReview(reviewData: CreateReviewRequest): Promise<ProductReview> {
+    // Verify purchase eligibility
+    const eligibility = await this.checkReviewEligibility(
+      reviewData.customerId, 
+      reviewData.productId, 
+      reviewData.orderId
+    );
+    
+    if (!eligibility.isEligible) {
+      throw new Error(`Review not allowed: ${eligibility.reason}`);
+    }
+    
+    const review = await this.createReview({
+      ...reviewData,
+      isVerifiedPurchase: true,
+      verificationStatus: 'verified'
+    });
+    
+    await this.queueForModeration(review);
+    return review;
+  }
+}
+```
+
+### Example 2: AI-Powered Review Moderation
+```typescript
+// Intelligent review moderation with fraud detection
+class ReviewModerationEngine {
+  async moderateReview(review: ProductReview): Promise<ModerationResult> {
+    const [contentAnalysis, fraudAnalysis] = await Promise.all([
+      this.analyzeReviewContent(review),
+      this.detectFraudulentReview(review)
+    ]);
+    
+    if (fraudAnalysis.riskLevel === 'HIGH' || contentAnalysis.spamScore > 0.8) {
+      return { action: 'REJECT', confidence: 0.9 };
+    }
+    
+    if (review.isVerifiedPurchase && contentAnalysis.qualityScore > 0.7) {
+      return { action: 'APPROVE', confidence: 0.85 };
+    }
+    
+    return { action: 'MANUAL_REVIEW', confidence: 0.6 };
+  }
+}
+```
+
+### Example 3: Review Analytics and Insights
+```typescript
+// Comprehensive review analytics for product insights
+class ReviewAnalyticsEngine {
+  async generateProductInsights(productId: string): Promise<ProductReviewInsights> {
+    const reviews = await this.getProductReviews(productId);
+    
+    const insights = {
+      overallSentiment: await this.analyzeSentiment(reviews),
+      topicAnalysis: await this.extractTopics(reviews),
+      competitiveAnalysis: await this.compareWithCompetitors(productId),
+      qualityTrends: await this.analyzeQualityTrends(reviews),
+      recommendationScore: await this.calculateRecommendationScore(reviews)
+    };
+    
+    return insights;
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| verificationRequired | boolean | Require purchase verification | true | No |
+| moderationEnabled | boolean | Enable review moderation | true | Yes |
+| fraudDetection | boolean | Enable fraud detection | true | Yes |
+| mediaUploads | boolean | Allow image/video uploads | true | No |
+| helpfulnessVoting | boolean | Enable review voting | true | No |
+| merchantResponses | boolean | Allow merchant responses | true | No |
+| reviewIncentives | boolean | Offer review incentives | false | No |
+| sentimentAnalysis | boolean | Enable sentiment analysis | true | No |
+| reviewSyndication | boolean | Syndicate to third parties | false | No |
+| anonymousReviews | boolean | Allow anonymous reviews | false | No |
+
+## Expected Output
+A comprehensive product review system featuring:
+- Verified purchase review collection with automated eligibility checking
+- AI-powered review moderation with spam and fraud detection
+- Review media handling with image and video upload capabilities
+- Community features including helpfulness voting and merchant responses
+- Advanced analytics with sentiment analysis and topic extraction
+- Review quality scoring and authenticity verification
+- Automated review invitation campaigns and follow-up workflows
+- Review syndication and third-party platform integration
+- Competitive analysis and product improvement insights
+- Review-based recommendation and discovery features
 
 ## Core Review System Patterns
 

@@ -1,12 +1,78 @@
 # User Verification and Trust Systems Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing user verification systems, identity validation, trust scoring, and authenticity measures in social applications to combat fraud, spam, and impersonation.
 
 ## Context
+User verification and trust systems are critical for maintaining platform integrity and user safety. As social platforms scale, they face increasing challenges from fake accounts, impersonation, and fraud. This template addresses the complexity of building verification workflows, trust scoring algorithms, and authenticity measures that balance security with user experience while promoting a trustworthy community environment.
 
-User verification systems establish trust and authenticity in social platforms by validating user identities, detecting fake accounts, and providing trust indicators. This template covers multiple verification methods, trust scoring algorithms, and community-based validation approaches.
+## Instructions
+
+1. **Setup Verification Infrastructure**: Configure identity verification and trust scoring systems
+2. **Implement Identity Verification**: Build document verification and biometric validation
+3. **Add Trust Scoring**: Create algorithms for user trust and reputation scoring
+4. **Configure Verification Badges**: Implement verification indicators and trust badges
+5. **Enable Community Verification**: Add community-based validation and reporting
+6. **Add Fraud Detection**: Implement automated fraud and fake account detection
+7. **Test Verification Accuracy**: Validate verification processes and trust algorithms
+
+## Examples
+
+### Example 1: User Verification System
+```typescript
+interface VerificationService {
+  verifyIdentity(userId: string, documents: VerificationDocument[]): Promise<VerificationResult>;
+  calculateTrustScore(userId: string): Promise<TrustScore>;
+  grantVerificationBadge(userId: string, badgeType: BadgeType): Promise<Badge>;
+}
+
+const verificationService = new VerificationService();
+const verification = await verificationService.verifyIdentity('user-123', [
+  { type: 'government_id', document: idDocument },
+  { type: 'phone_number', value: '+1234567890' }
+]);
+```
+
+### Example 2: Trust Score Calculation
+```typescript
+const trustScore = await verificationService.calculateTrustScore('user-123');
+// Returns: { score: 0.85, factors: ['verified_email', 'verified_phone', 'positive_community_feedback'] }
+```
+
+### Example 3: Community Verification
+```typescript
+const communityVerification = await verificationService.enableCommunityVerification({
+  userId: 'user-123',
+  verificationMethod: 'peer_validation',
+  requiredEndorsements: 5
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableIdentityVerification | Enable identity document verification | boolean | No | false |
+| enablePhoneVerification | Enable phone number verification | boolean | No | true |
+| enableEmailVerification | Enable email address verification | boolean | No | true |
+| enableBiometricVerification | Enable biometric verification | boolean | No | false |
+| enableTrustScoring | Enable user trust scoring system | boolean | No | true |
+| enableCommunityVerification | Enable community-based verification | boolean | No | false |
+| verificationBadges | Enable verification badge system | boolean | No | true |
+| fraudDetectionEnabled | Enable automated fraud detection | boolean | No | true |
+| trustScoreThreshold | Minimum trust score for features | number | No | 0.5 |
+
+## Expected Output
+
+This template will produce:
+- **Identity Verification System**: Document and biometric verification workflows
+- **Trust Scoring Engine**: Algorithmic user trust and reputation scoring
+- **Verification Badge System**: Visual trust indicators and verification badges
+- **Community Validation**: Peer-based verification and community endorsements
+- **Fraud Detection**: Automated fake account and fraud detection systems
+- **Verification Analytics**: Trust metrics and verification performance tracking
+- **Appeal Process**: Fair verification appeal and review mechanisms
+- **Security Features**: Enhanced security for verified and trusted users
 
 ## Implementation Guidance
 

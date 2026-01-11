@@ -4,7 +4,104 @@
 Implement comprehensive GPS tracking and real-time location sharing capabilities for location-based applications including ride-sharing, delivery services, fleet management, and social location features.
 
 ## Context
-This template provides patterns for accurate location tracking, real-time position updates, location history management, and privacy-compliant location sharing across mobile and web platforms.
+GPS tracking is fundamental to location-based services, enabling real-time positioning for ride-sharing, delivery tracking, fleet management, and social applications. Modern tracking systems must balance accuracy with battery efficiency while respecting user privacy. This template addresses the complexity of building reliable tracking systems that work across different devices, network conditions, and use cases.
+
+## Instructions
+1. Analyze GPS tracking requirements and accuracy needs for location-based services
+2. Design real-time location tracking with efficient battery and data usage
+3. Implement location data collection with privacy controls and user consent
+4. Build location sharing systems with granular permission management
+5. Create location history and analytics with trend analysis capabilities
+6. Add geolocation accuracy optimization with multiple positioning methods
+7. Implement offline location tracking with data synchronization
+8. Build location-based notifications and proximity alerts
+9. Create location data export and portability features
+10. Add integration with mapping services and location providers
+
+## Examples
+
+### Example 1: Real-time Location Tracking
+```typescript
+// High-accuracy GPS tracking with battery optimization
+class GPSTrackingService {
+  async startLocationTracking(userId: string, options: TrackingOptions): Promise<TrackingSession> {
+    const session = await this.createTrackingSession(userId, options);
+    
+    await this.configureLocationProvider({
+      accuracy: options.accuracy || 'high',
+      updateInterval: options.updateInterval || 5000,
+      batteryOptimization: options.batteryOptimization || true
+    });
+    
+    this.startLocationUpdates(session.id);
+    return session;
+  }
+}
+```
+
+### Example 2: Location Sharing System
+```typescript
+// Secure location sharing with privacy controls
+class LocationSharingService {
+  async shareLocation(userId: string, shareWith: string[], duration: number): Promise<SharingSession> {
+    const permissions = await this.validateSharingPermissions(userId, shareWith);
+    
+    const session = await this.createSharingSession({
+      userId,
+      recipients: shareWith,
+      duration,
+      permissions
+    });
+    
+    await this.notifyRecipients(shareWith, session);
+    return session;
+  }
+}
+```
+
+### Example 3: Location Analytics Engine
+```typescript
+// Location data analytics and insights
+class LocationAnalyticsEngine {
+  async generateLocationInsights(userId: string): Promise<LocationInsights> {
+    const history = await this.getLocationHistory(userId, '30d');
+    
+    return {
+      frequentLocations: await this.identifyFrequentLocations(history),
+      travelPatterns: await this.analyzeTravelPatterns(history),
+      timeSpentAnalysis: await this.analyzeTimeSpent(history),
+      mobilityScore: await this.calculateMobilityScore(history)
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| trackingAccuracy | string | GPS accuracy level | 'high' | No |
+| updateInterval | number | Location update frequency (ms) | 5000 | No |
+| batteryOptimization | boolean | Enable battery saving features | true | No |
+| locationSharing | boolean | Enable location sharing features | true | No |
+| locationHistory | boolean | Store location history | true | No |
+| offlineTracking | boolean | Offline location tracking | false | No |
+| privacyControls | boolean | Granular privacy settings | true | Yes |
+| locationAnalytics | boolean | Location insights and analytics | true | No |
+| geofenceIntegration | boolean | Geofencing capabilities | true | No |
+| multiProvider | boolean | Multiple location providers | false | No |
+
+## Expected Output
+A comprehensive GPS tracking system featuring:
+- Real-time location tracking with high accuracy and battery optimization
+- Location sharing capabilities with granular privacy controls and permissions
+- Location history management with data retention and export capabilities
+- Location analytics with travel patterns, frequent locations, and mobility insights
+- Offline location tracking with automatic synchronization when online
+- Privacy-compliant location handling with user consent and data controls
+- Integration with mapping services and geofencing capabilities
+- Multi-platform support for iOS, Android, and web applications
+- Location-based notifications and proximity alerts
+- Comprehensive location data management with export and deletion options
 
 ## Implementation Approach
 

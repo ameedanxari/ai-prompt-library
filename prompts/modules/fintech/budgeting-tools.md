@@ -4,12 +4,118 @@
 Provides comprehensive patterns for expense tracking, budget management, financial planning, and personal finance management in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Personal and business budget creation and management
-- Expense tracking and categorization
-- Financial goal setting and progress tracking
-- Cash flow forecasting and analysis
-- Financial insights and recommendations
+Personal financial management tools empower users to take control of their finances through intelligent budgeting, expense tracking, and financial goal setting. This template addresses the complexity of building intuitive budgeting systems that automatically categorize transactions, provide actionable insights, and help users achieve their financial goals through data-driven recommendations.
+
+## Instructions
+1. Analyze budgeting and financial planning requirements
+2. Design comprehensive expense tracking and categorization systems
+3. Implement intelligent budget creation and management workflows
+4. Build financial goal setting and progress tracking capabilities
+5. Create cash flow analysis and forecasting tools
+6. Add automated expense categorization with machine learning
+7. Implement financial insights and recommendation engines
+8. Build budget automation and smart notification systems
+9. Create financial health scoring and assessment tools
+10. Add integration with banking and payment systems
+
+## Examples
+
+### Example 1: Intelligent Budget Management
+```typescript
+// AI-powered budget creation and optimization
+class SmartBudgetManager {
+  async createOptimizedBudget(userId: string, preferences: BudgetPreferences): Promise<Budget> {
+    const historicalData = await this.getSpendingHistory(userId, 12);
+    const financialGoals = await this.getFinancialGoals(userId);
+    
+    const optimizedBudget = await this.budgetOptimizer.optimize({
+      income: preferences.monthlyIncome,
+      expenses: historicalData.averageExpenses,
+      goals: financialGoals,
+      riskTolerance: preferences.riskTolerance
+    });
+    
+    return await this.budgetRepository.create(optimizedBudget);
+  }
+}
+```
+
+### Example 2: Automated Expense Categorization
+```typescript
+// Machine learning-based expense categorization
+class ExpenseCategorizationEngine {
+  async categorizeExpense(expense: ExpenseRecord): Promise<CategorizationResult> {
+    const features = this.extractFeatures(expense);
+    const prediction = await this.mlModel.predict(features);
+    
+    const result = {
+      category: prediction.category,
+      confidence: prediction.confidence,
+      alternatives: prediction.alternatives,
+      reasoning: this.explainPrediction(features, prediction)
+    };
+    
+    // Learn from user feedback
+    if (expense.userCategory && expense.userCategory !== result.category) {
+      await this.updateModel(features, expense.userCategory);
+    }
+    
+    return result;
+  }
+}
+```
+
+### Example 3: Financial Goal Tracking
+```typescript
+// Comprehensive goal tracking with milestone management
+class FinancialGoalTracker {
+  async trackGoalProgress(goalId: string): Promise<GoalProgress> {
+    const goal = await this.getFinancialGoal(goalId);
+    const currentSavings = await this.getCurrentSavings(goal.userId, goal.category);
+    
+    const progress = {
+      percentageComplete: (currentSavings / goal.targetAmount) * 100,
+      projectedCompletionDate: this.calculateProjectedCompletion(goal, currentSavings),
+      recommendedMonthlyContribution: this.calculateOptimalContribution(goal),
+      milestoneStatus: await this.checkMilestones(goal, currentSavings)
+    };
+    
+    // Send notifications for milestones
+    if (progress.milestoneStatus.newMilestonesAchieved.length > 0) {
+      await this.sendMilestoneNotifications(goal, progress.milestoneStatus);
+    }
+    
+    return progress;
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| budgetTypes | array | Supported budget types | ['personal', 'household'] | Yes |
+| expenseCategories | array | Default expense categories | standard_categories | Yes |
+| goalTypes | array | Supported financial goal types | ['savings', 'debt_payoff'] | Yes |
+| automationLevel | string | Budget automation level | 'smart' | No |
+| bankIntegration | boolean | Enable bank account integration | true | No |
+| mlCategorization | boolean | AI-powered expense categorization | true | No |
+| cashFlowForecasting | boolean | Enable cash flow predictions | true | No |
+| insightsEngine | boolean | Financial insights and tips | true | No |
+| goalTracking | boolean | Financial goal management | true | No |
+| receiptScanning | boolean | OCR receipt processing | false | No |
+
+## Expected Output
+A comprehensive budgeting and financial planning system featuring:
+- Intelligent budget creation with AI-powered optimization and recommendations
+- Automated expense tracking with machine learning categorization
+- Financial goal setting with milestone tracking and progress monitoring
+- Cash flow analysis with forecasting and trend identification
+- Smart insights engine with personalized financial recommendations
+- Budget automation with rule-based transactions and notifications
+- Bank account integration for real-time expense import and balance tracking
+- Receipt scanning with OCR for automated expense capture
+- Financial health scoring with improvement suggestions
+- Comprehensive reporting and analytics for financial planning
 
 ## Core Components
 

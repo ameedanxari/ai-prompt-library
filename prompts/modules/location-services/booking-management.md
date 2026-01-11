@@ -4,7 +4,122 @@
 Implement comprehensive booking and appointment scheduling systems for service-based applications including healthcare, beauty services, home services, consultations, and any business requiring time-slot management with availability tracking and calendar integration.
 
 ## Context
-This template provides patterns for managing complex scheduling scenarios with real-time availability, recurring appointments, multi-resource booking, calendar synchronization, and automated scheduling optimization.
+Booking management is essential for service-based businesses that need to coordinate appointments between providers and customers. Modern booking systems must handle complex availability rules, multiple resources, recurring appointments, and real-time updates. This template addresses the complexity of building flexible scheduling systems that optimize resource utilization while providing excellent user experiences.
+
+## Instructions
+1. Analyze booking and scheduling requirements for service-based applications
+2. Design comprehensive appointment scheduling with availability management
+3. Implement real-time booking systems with calendar integration
+4. Build multi-resource booking for complex scheduling scenarios
+5. Create recurring appointment management with flexible patterns
+6. Add booking optimization with intelligent slot suggestions
+7. Implement notification systems with automated reminders
+8. Build cancellation and rescheduling workflows with policies
+9. Create booking analytics with utilization and performance metrics
+10. Add integration with calendar systems and third-party scheduling tools
+
+## Examples
+
+### Example 1: Healthcare Appointment Scheduling
+```typescript
+// Medical appointment booking with provider availability
+class HealthcareBookingSystem {
+  async scheduleAppointment(request: AppointmentRequest): Promise<BookingResult> {
+    const availability = await this.getProviderAvailability(
+      request.providerId,
+      request.preferredDate,
+      request.appointmentType
+    );
+    
+    const optimalSlot = await this.findOptimalSlot(availability, request);
+    
+    const booking = await this.createBooking({
+      ...request,
+      scheduledTime: optimalSlot.startTime,
+      duration: optimalSlot.duration
+    });
+    
+    await this.sendConfirmationNotifications(booking);
+    return booking;
+  }
+}
+```
+
+### Example 2: Multi-Resource Booking System
+```typescript
+// Complex booking system with multiple resources
+class MultiResourceBookingSystem {
+  async bookMultipleResources(request: MultiResourceBookingRequest): Promise<BookingResult> {
+    const resourceAvailability = await Promise.all(
+      request.requiredResources.map(resource => 
+        this.getResourceAvailability(resource.id, request.timeRange)
+      )
+    );
+    
+    const availableSlots = await this.findCommonAvailability(
+      resourceAvailability,
+      request.duration
+    );
+    
+    if (availableSlots.length === 0) {
+      return { success: false, reason: 'no_availability' };
+    }
+    
+    return await this.reserveResources(availableSlots[0], request);
+  }
+}
+```
+
+### Example 3: Intelligent Booking Optimization
+```typescript
+// AI-powered booking optimization and suggestions
+class BookingOptimizer {
+  async optimizeSchedule(providerId: string, date: Date): Promise<ScheduleOptimization> {
+    const currentBookings = await this.getBookingsForDate(providerId, date);
+    const availability = await this.getProviderAvailability(providerId, date);
+    
+    const optimization = await this.mlOptimizer.optimize({
+      bookings: currentBookings,
+      availability,
+      constraints: await this.getSchedulingConstraints(providerId),
+      objectives: ['maximize_utilization', 'minimize_gaps']
+    });
+    
+    return {
+      suggestedChanges: optimization.recommendations,
+      utilizationImprovement: optimization.utilizationGain,
+      revenueImpact: optimization.revenueProjection
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| bookingTypes | array | Supported booking types | ['appointment', 'reservation'] | Yes |
+| availabilityGranularity | number | Time slot granularity in minutes | 15 | No |
+| recurringBookings | boolean | Support recurring appointments | true | No |
+| multiResourceBooking | boolean | Multiple resource booking | false | No |
+| calendarIntegration | boolean | Calendar system integration | true | No |
+| automatedReminders | boolean | Automated reminder notifications | true | No |
+| cancellationPolicies | boolean | Flexible cancellation rules | true | No |
+| bookingOptimization | boolean | AI-powered schedule optimization | false | No |
+| waitlistManagement | boolean | Waitlist for full slots | true | No |
+| groupBookings | boolean | Group appointment booking | false | No |
+
+## Expected Output
+A comprehensive booking and appointment scheduling system featuring:
+- Real-time availability management with dynamic slot generation
+- Multi-resource booking capabilities for complex scheduling scenarios
+- Recurring appointment management with flexible pattern configuration
+- Intelligent booking optimization with AI-powered schedule suggestions
+- Automated notification system with customizable reminder workflows
+- Calendar integration with popular calendar systems and sync capabilities
+- Cancellation and rescheduling workflows with flexible policy management
+- Waitlist management with automatic rebooking when slots become available
+- Group booking capabilities for team appointments and events
+- Comprehensive analytics with utilization metrics and performance insights
 
 ## Implementation Approach
 

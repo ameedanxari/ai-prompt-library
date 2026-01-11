@@ -1,12 +1,80 @@
 # Social Graph Management Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing social graph systems, including friend/follow relationships, connection suggestions, relationship management, and social network analysis features.
 
 ## Context
+Social graphs are the backbone of social networking applications, representing the relationships and connections between users. A robust social graph system enables friend discovery, connection recommendations, relationship management, and powers content distribution algorithms. This template addresses the complexity of building scalable graph databases, implementing recommendation algorithms, and managing relationship privacy while fostering meaningful social connections.
 
-Social graphs represent the network of relationships between users in social applications. This template covers bidirectional friendships, unidirectional following, connection discovery, and the algorithms that power social recommendations and content distribution.
+## Instructions
+
+1. **Setup Social Graph Infrastructure**: Configure relationship storage and graph database systems
+2. **Implement Connection Types**: Build friend, follow, and custom relationship systems
+3. **Add Connection Suggestions**: Create algorithms for friend and connection recommendations
+4. **Configure Privacy Controls**: Implement relationship visibility and privacy settings
+5. **Enable Network Analysis**: Add social network analysis and influence tracking
+6. **Add Relationship Management**: Build tools for managing connections and relationships
+7. **Test Social Features**: Validate connection workflows and recommendation quality
+
+## Examples
+
+### Example 1: Social Graph Management
+```typescript
+interface SocialGraphService {
+  createConnection(fromUserId: string, toUserId: string, type: ConnectionType): Promise<Connection>;
+  getConnections(userId: string, type?: ConnectionType): Promise<Connection[]>;
+  suggestConnections(userId: string): Promise<ConnectionSuggestion[]>;
+}
+
+const socialGraph = new SocialGraphService();
+const connection = await socialGraph.createConnection('user-123', 'user-456', 'follow');
+const suggestions = await socialGraph.suggestConnections('user-123');
+```
+
+### Example 2: Friend Request System
+```typescript
+const friendRequest = await socialGraph.sendFriendRequest('user-123', 'user-456', {
+  message: 'Hi! I think we have mutual interests.',
+  includeProfile: true
+});
+
+const response = await socialGraph.respondToFriendRequest('request-789', 'accepted');
+```
+
+### Example 3: Connection Analytics
+```typescript
+const analytics = await socialGraph.getNetworkAnalytics('user-123', {
+  includeInfluenceScore: true,
+  includeMutualConnections: true,
+  includeNetworkGrowth: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableFriendships | Enable bidirectional friend relationships | boolean | No | true |
+| enableFollowing | Enable unidirectional follow relationships | boolean | No | true |
+| enableConnectionSuggestions | Enable connection recommendations | boolean | No | true |
+| maxConnections | Maximum connections per user | number | No | 5000 |
+| enableMutualFriends | Show mutual friend information | boolean | No | true |
+| enableNetworkAnalytics | Enable social network analysis | boolean | No | false |
+| connectionPrivacy | Default connection privacy level | string | No | "friends" |
+| enableConnectionRequests | Require approval for connections | boolean | No | true |
+| enableBlockingFeatures | Enable user blocking functionality | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Social Graph Database**: Scalable relationship storage and management system
+- **Connection Management**: Friend requests, following, and relationship workflows
+- **Suggestion Engine**: AI-powered connection and friend recommendation system
+- **Privacy Controls**: Granular relationship visibility and privacy settings
+- **Network Analysis**: Social influence scoring and network analytics
+- **Relationship Tools**: Connection management and organization features
+- **Blocking and Safety**: User blocking, muting, and safety controls
+- **Social Insights**: Network growth and relationship analytics dashboard
 
 ## Implementation Guidance
 

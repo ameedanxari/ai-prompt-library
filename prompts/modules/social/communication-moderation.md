@@ -1,12 +1,82 @@
 # Communication Moderation Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing communication moderation systems in social applications, covering message filtering, user reporting, automated moderation, and community safety features.
 
 ## Context
+Communication moderation is essential for maintaining safe and healthy online communities. As social platforms scale, the volume of user-generated content requires sophisticated automated filtering combined with human review processes. This template addresses the challenges of real-time content moderation, balancing free expression with user safety, and building scalable moderation systems that can adapt to evolving threats and community standards.
 
-Communication moderation is essential for maintaining safe and healthy social environments. This template addresses automated content filtering, human moderation workflows, user reporting systems, and community guidelines enforcement across all forms of communication.
+## Instructions
+
+1. **Setup Moderation Infrastructure**: Configure automated filtering and moderation systems
+2. **Implement Content Filtering**: Build real-time message scanning and keyword filtering
+3. **Add User Reporting**: Create user reporting mechanisms and abuse detection
+4. **Configure Human Moderation**: Set up moderation workflows and review processes
+5. **Enable Community Moderation**: Implement community-based moderation and governance
+6. **Add Safety Features**: Implement blocking, muting, and safety controls
+7. **Test Moderation Effectiveness**: Validate filtering accuracy and response times
+
+## Examples
+
+### Example 1: Automated Message Filtering
+```typescript
+interface ModerationService {
+  moderateMessage(message: Message): Promise<ModerationResult>;
+  reportUser(reporterId: string, targetId: string, reason: string): Promise<Report>;
+  blockUser(userId: string, blockedUserId: string): Promise<void>;
+}
+
+const moderationService = new ModerationService();
+const result = await moderationService.moderateMessage({
+  content: 'User message content',
+  senderId: 'user-123',
+  channelId: 'channel-456'
+});
+```
+
+### Example 2: User Reporting System
+```typescript
+const report = await moderationService.reportUser('reporter-123', 'target-456', {
+  reason: 'harassment',
+  evidence: 'Screenshots and message history',
+  severity: 'high'
+});
+```
+
+### Example 3: Community Moderation
+```typescript
+const communityModerator = await moderationService.assignCommunityModerator({
+  userId: 'user-789',
+  communityId: 'community-123',
+  permissions: ['delete_messages', 'timeout_users', 'issue_warnings']
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableAutoModeration | Enable automated content filtering | boolean | No | true |
+| enableUserReporting | Enable user reporting system | boolean | No | true |
+| enableCommunityModeration | Enable community-based moderation | boolean | No | false |
+| moderationStrictness | Moderation filter strictness level | string | No | "medium" |
+| enableAppealProcess | Enable moderation appeal process | boolean | No | true |
+| enableBlockingFeatures | Enable user blocking/muting | boolean | No | true |
+| maxReportReasons | Maximum custom report reasons | number | No | 10 |
+| moderationResponseTime | Target moderation response time (hours) | number | No | 24 |
+| enableModerationAnalytics | Track moderation effectiveness | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Automated Moderation System**: Real-time content filtering and safety checks
+- **User Reporting Framework**: Comprehensive reporting and abuse detection system
+- **Human Moderation Workflows**: Efficient review processes and decision tracking
+- **Community Governance Tools**: Community-based moderation and self-governance
+- **Safety Controls**: Blocking, muting, and user protection features
+- **Appeal Process**: Fair and transparent moderation appeal system
+- **Analytics Dashboard**: Moderation effectiveness and community health metrics
+- **Policy Enforcement**: Automated and manual community guidelines enforcement
 
 ## Implementation Guidance
 

@@ -4,6 +4,118 @@
 
 This template provides comprehensive patterns for integrating payment processing capabilities into e-commerce applications, supporting major payment providers (Stripe, PayPal, Square) with production-ready implementation patterns.
 
+## Instructions
+
+1. **Setup Payment Provider Accounts**: Register with Stripe, PayPal, and/or Square
+2. **Configure API Keys**: Set up secure API key management for payment providers
+3. **Implement Payment Abstraction**: Create unified payment interface for multiple providers
+4. **Setup Webhook Handling**: Configure secure webhook endpoints for payment events
+5. **Implement Security**: Deploy PCI compliance and fraud prevention measures
+6. **Configure Testing**: Set up sandbox environments for payment testing
+7. **Deploy Monitoring**: Implement payment analytics and error tracking
+
+## Examples
+
+### Example 1: Stripe Payment Integration
+```typescript
+interface StripePayment {
+  paymentIntentId: string;
+  amount: number;
+  currency: string;
+  customerId?: string;
+  paymentMethodId: string;
+  metadata: Record<string, string>;
+}
+
+const payment = await processStripePayment({
+  amount: 2999, // $29.99 in cents
+  currency: "usd",
+  customerId: "cus_12345",
+  paymentMethodId: "pm_67890",
+  metadata: {
+    orderId: "order_123",
+    productId: "prod_456"
+  }
+});
+```
+
+### Example 2: PayPal Integration
+```typescript
+interface PayPalPayment {
+  orderId: string;
+  amount: {
+    currency_code: string;
+    value: string;
+  };
+  purchase_units: Array<{
+    reference_id: string;
+    amount: PayPalAmount;
+    items: PayPalItem[];
+  }>;
+}
+
+const paypalOrder = await createPayPalOrder({
+  intent: "CAPTURE",
+  purchase_units: [{
+    reference_id: "order_123",
+    amount: {
+      currency_code: "USD",
+      value: "29.99"
+    },
+    items: [{
+      name: "Premium Subscription",
+      quantity: "1",
+      unit_amount: { currency_code: "USD", value: "29.99" }
+    }]
+  }]
+});
+```
+
+### Example 3: Payment Webhook Handling
+```typescript
+interface PaymentWebhook {
+  eventType: 'payment.succeeded' | 'payment.failed' | 'payment.refunded';
+  paymentId: string;
+  amount: number;
+  currency: string;
+  customerId: string;
+  metadata: Record<string, any>;
+  timestamp: Date;
+}
+
+const webhookHandler = await handlePaymentWebhook({
+  provider: "stripe",
+  signature: request.headers["stripe-signature"],
+  payload: request.body,
+  endpointSecret: process.env.STRIPE_WEBHOOK_SECRET
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| paymentProviders | Enabled payment providers | string[] | Yes | N/A |
+| defaultCurrency | Default payment currency | string | Yes | "USD" |
+| webhookSecret | Webhook endpoint secret key | string | Yes | N/A |
+| fraudDetection | Enable fraud detection | boolean | No | true |
+| pciCompliance | PCI compliance level | string | Yes | "Level 1" |
+| refundPolicy | Automatic refund policy | string | No | "manual" |
+| paymentTimeout | Payment timeout (seconds) | number | No | 300 |
+| retryAttempts | Failed payment retry attempts | number | No | 3 |
+
+## Expected Output
+
+This template will produce:
+- **Payment Processing System**: Multi-provider payment integration
+- **Secure Payment Forms**: PCI-compliant payment collection interfaces
+- **Webhook Management**: Automated payment event handling
+- **Fraud Prevention**: Real-time fraud detection and prevention
+- **Payment Analytics**: Transaction monitoring and reporting
+- **Refund Management**: Automated and manual refund processing
+- **Compliance Framework**: PCI DSS compliance implementation
+- **Testing Suite**: Comprehensive payment testing infrastructure
+
 ## Context
 
 Payment processing is the backbone of any e-commerce application. This template addresses the complexity of handling multiple payment providers, ensuring secure transactions, managing payment states, and providing excellent user experience across different payment methods.

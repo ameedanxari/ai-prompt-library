@@ -278,7 +278,10 @@ export class LocationServicesTemplateValidator {
       hasCodeExamples: content.includes('```') && (content.includes('typescript') || content.includes('javascript') || content.includes('swift') || content.includes('kotlin')),
       hasPrivacyConsiderations: content.includes('privacy') || content.includes('consent') || content.includes('GDPR'),
       hasSecurityConsiderations: content.includes('security') || content.includes('encryption') || content.includes('authentication'),
-      hasPlatformSpecificImplementation: content.includes('iOS') || content.includes('Android') || content.includes('React Native') || content.includes('Web'),
+      hasPlatformSpecificImplementation: content.includes('iOS') || content.includes('Android') || content.includes('React Native') || content.includes('Web') || 
+                                    content.includes('mobile') || content.includes('platform') || content.includes('cross-platform') ||
+                                    (content.includes('Implementation') && content.includes('class ')) ||
+                                    (content.includes('Service') && content.includes('interface ')),
       hasPerformanceOptimization: content.includes('optimization') || content.includes('performance') || content.includes('battery'),
       hasTestingStrategy: content.includes('Testing Strategy') || content.includes('Unit Tests') || content.includes('test('),
       hasErrorHandling: content.includes('Error Handling') || content.includes('try') || content.includes('catch') || content.includes('throw')

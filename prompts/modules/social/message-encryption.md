@@ -1,12 +1,80 @@
 # Message Encryption and Security Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing end-to-end encryption and security measures in messaging systems, ensuring private and secure communication between users.
 
 ## Context
+Message encryption is fundamental to user privacy and trust in modern messaging applications. With increasing concerns about data privacy and security, end-to-end encryption has become an expected feature. This template addresses the complexity of implementing cryptographic protocols like Signal Protocol, managing encryption keys across devices, and balancing security with usability while maintaining compliance with relevant regulations.
 
-Message encryption is critical for protecting user privacy and maintaining trust in messaging applications. This template covers end-to-end encryption, key management, secure protocols, and privacy-preserving messaging features.
+## Instructions
+
+1. **Setup Encryption Infrastructure**: Configure end-to-end encryption protocols and key management
+2. **Implement Signal Protocol**: Build secure messaging with perfect forward secrecy
+3. **Add Key Management**: Create secure key exchange and rotation mechanisms
+4. **Configure Group Encryption**: Implement scalable group messaging encryption
+5. **Enable Security Features**: Add message verification, disappearing messages, and security indicators
+6. **Add Backup and Recovery**: Implement secure message backup and account recovery
+7. **Test Security Implementation**: Validate encryption strength and security measures
+
+## Examples
+
+### Example 1: End-to-End Encryption Setup
+```typescript
+interface MessageEncryptionService {
+  initializeEncryption(userId: string): Promise<EncryptionKeys>;
+  encryptMessage(message: string, recipientId: string): Promise<EncryptedMessage>;
+  decryptMessage(encryptedMessage: EncryptedMessage): Promise<string>;
+}
+
+const encryptionService = new MessageEncryptionService();
+const keys = await encryptionService.initializeEncryption('user-123');
+const encrypted = await encryptionService.encryptMessage('Hello!', 'user-456');
+```
+
+### Example 2: Secure Group Messaging
+```typescript
+const groupEncryption = await encryptionService.createSecureGroup({
+  groupId: 'group-789',
+  members: ['user-123', 'user-456', 'user-789'],
+  encryptionProtocol: 'signal'
+});
+```
+
+### Example 3: Message Security Features
+```typescript
+const secureMessage = await encryptionService.sendSecureMessage({
+  content: 'Confidential information',
+  recipientId: 'user-456',
+  disappearAfter: 24 * 60 * 60 * 1000, // 24 hours
+  requireVerification: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| encryptionProtocol | Encryption protocol to use | string | Yes | "signal" |
+| enableE2EEncryption | Enable end-to-end encryption | boolean | No | true |
+| enablePerfectForwardSecrecy | Enable perfect forward secrecy | boolean | No | true |
+| enableDisappearingMessages | Enable disappearing messages | boolean | No | false |
+| enableMessageVerification | Enable message integrity verification | boolean | No | true |
+| enableSecureBackup | Enable encrypted message backup | boolean | No | false |
+| keyRotationInterval | Key rotation interval (days) | number | No | 30 |
+| enableSecurityIndicators | Show encryption status indicators | boolean | No | true |
+| enableDeviceVerification | Enable device verification | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **End-to-End Encryption System**: Signal Protocol implementation for secure messaging
+- **Key Management Framework**: Secure key generation, exchange, and rotation
+- **Group Encryption Support**: Scalable encryption for group conversations
+- **Security Features**: Message verification, disappearing messages, and security indicators
+- **Backup and Recovery**: Secure message backup with encrypted storage
+- **Device Management**: Multi-device support with secure synchronization
+- **Security Audit Tools**: Encryption verification and security monitoring
+- **Privacy Controls**: User-controlled privacy settings and security options
 
 ## Implementation Guidance
 

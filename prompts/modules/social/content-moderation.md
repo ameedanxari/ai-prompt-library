@@ -1,12 +1,84 @@
 # Content Moderation Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing content moderation systems in social applications, covering automated filtering, human moderation workflows, community-based moderation, and content policy enforcement.
 
 ## Context
+Content moderation is critical for maintaining platform integrity and user trust in social applications. As user-generated content scales, platforms must balance freedom of expression with community safety through AI-powered filtering, human review workflows, and community governance. This template addresses the complexity of building fair, transparent, and scalable moderation systems that protect users while preserving healthy community engagement.
 
-Content moderation is essential for maintaining safe, healthy, and engaging social environments. This template addresses automated content screening, human moderation processes, community governance, and policy enforcement across all types of user-generated content.
+## Instructions
+
+1. **Setup Moderation Pipeline**: Configure automated content scanning and filtering systems
+2. **Implement AI Moderation**: Build machine learning-based content classification
+3. **Add Human Review**: Create human moderation workflows and review queues
+4. **Configure Community Moderation**: Enable community-based content governance
+5. **Add Appeal Process**: Implement fair and transparent appeal mechanisms
+6. **Enable Policy Enforcement**: Automate community guidelines enforcement
+7. **Test Moderation Accuracy**: Validate filtering effectiveness and false positive rates
+
+## Examples
+
+### Example 1: Automated Content Moderation
+```typescript
+interface ContentModerationService {
+  moderateContent(content: Content): Promise<ModerationResult>;
+  reviewFlaggedContent(contentId: string): Promise<ReviewResult>;
+  handleAppeal(appealId: string): Promise<AppealResult>;
+}
+
+const moderationService = new ContentModerationService();
+const result = await moderationService.moderateContent({
+  type: 'post',
+  text: 'User post content',
+  media: ['image-123'],
+  authorId: 'user-456'
+});
+```
+
+### Example 2: Community Moderation
+```typescript
+const communityModeration = await moderationService.enableCommunityModeration({
+  communityId: 'community-123',
+  votingThreshold: 5,
+  moderatorPermissions: ['flag_content', 'remove_posts']
+});
+```
+
+### Example 3: Appeal Process
+```typescript
+const appeal = await moderationService.submitAppeal({
+  contentId: 'post-789',
+  userId: 'user-456',
+  reason: 'Content was incorrectly flagged',
+  evidence: 'Additional context and explanation'
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableAIModeration | Enable AI-powered content filtering | boolean | No | true |
+| enableHumanReview | Enable human moderation review | boolean | No | true |
+| enableCommunityModeration | Enable community-based moderation | boolean | No | false |
+| moderationStrictness | Content filtering strictness level | string | No | "medium" |
+| enableAppealProcess | Enable content moderation appeals | boolean | No | true |
+| autoRemoveThreshold | Auto-removal confidence threshold | number | No | 0.9 |
+| humanReviewThreshold | Human review confidence threshold | number | No | 0.7 |
+| enableModerationAnalytics | Track moderation performance | boolean | No | true |
+| maxAppealTime | Maximum time to submit appeals (days) | number | No | 7 |
+
+## Expected Output
+
+This template will produce:
+- **AI-Powered Moderation**: Automated content classification and filtering system
+- **Human Review Workflows**: Efficient moderation queues and review processes
+- **Community Governance**: Community-based content moderation and voting systems
+- **Appeal Framework**: Fair and transparent content moderation appeal process
+- **Policy Enforcement**: Automated community guidelines and terms enforcement
+- **Moderation Analytics**: Performance tracking and accuracy measurement tools
+- **Escalation System**: Multi-tier moderation with appropriate escalation paths
+- **Transparency Reports**: Public reporting on moderation actions and policies
 
 ## Implementation Guidance
 

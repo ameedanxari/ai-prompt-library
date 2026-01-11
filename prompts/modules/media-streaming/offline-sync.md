@@ -4,7 +4,77 @@
 This template provides comprehensive patterns for implementing offline content synchronization, intelligent caching strategies, and seamless online/offline transitions in media streaming applications. It covers content prefetching, storage management, sync conflict resolution, and offline playback capabilities.
 
 ## Context
-Use this template when building media streaming applications that need to work reliably in areas with poor connectivity, provide offline playback capabilities, or optimize bandwidth usage through intelligent content caching. Suitable for music streaming, video platforms, podcast apps, and any media application requiring offline functionality.
+Offline capabilities are essential for modern media streaming applications, enabling users to enjoy content without internet connectivity. This template addresses the complexity of building intelligent caching systems that predict user preferences, manage device storage efficiently, handle sync conflicts gracefully, and provide seamless transitions between online and offline modes.
+
+## Instructions
+
+1. **Setup Offline Storage**: Configure local storage systems and cache management
+2. **Implement Sync Strategy**: Design bidirectional synchronization with conflict resolution
+3. **Add Intelligent Caching**: Implement predictive caching based on user behavior
+4. **Configure Network Monitoring**: Set up network state detection and adaptation
+5. **Enable Offline Playback**: Implement seamless offline content playback
+6. **Add Storage Management**: Implement storage optimization and cleanup policies
+7. **Test Offline Scenarios**: Validate functionality across different connectivity states
+
+## Examples
+
+### Example 1: Offline Content Caching
+```typescript
+interface OfflineSyncSystem {
+  cacheContent(contentId: string, priority: CachePriority): Promise<CacheResult>;
+  syncOfflineChanges(): Promise<SyncResult>;
+  getOfflineContent(): Promise<CachedContent[]>;
+}
+
+const offlineSync = new OfflineSyncSystem();
+await offlineSync.cacheContent('playlist-123', CachePriority.HIGH);
+const offlineContent = await offlineSync.getOfflineContent();
+```
+
+### Example 2: Intelligent Prefetching
+```typescript
+const prefetchStrategy = await offlineSync.setupIntelligentPrefetch({
+  userBehaviorAnalysis: true,
+  predictiveModels: ['listening_history', 'time_patterns'],
+  maxCacheSize: '2GB',
+  networkAware: true
+});
+```
+
+### Example 3: Sync Conflict Resolution
+```typescript
+const syncResult = await offlineSync.syncWithConflictResolution({
+  strategy: 'last_modified_wins',
+  userPromptOnConflict: true,
+  backupConflictedData: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| maxCacheSize | Maximum offline cache size | string | No | "1GB" |
+| cacheStrategy | Caching algorithm strategy | string | No | "intelligent" |
+| syncInterval | Automatic sync interval (minutes) | number | No | 30 |
+| enablePrefetching | Enable predictive content prefetching | boolean | No | true |
+| conflictResolution | Sync conflict resolution strategy | string | No | "last_modified_wins" |
+| networkAwareness | Enable network-aware caching | boolean | No | true |
+| offlinePlayback | Enable offline content playback | boolean | No | true |
+| storageCleanup | Enable automatic storage cleanup | boolean | No | true |
+| encryptOfflineData | Encrypt cached offline data | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Offline Storage System**: Local content caching and storage management
+- **Intelligent Sync Engine**: Bidirectional synchronization with conflict resolution
+- **Predictive Caching**: AI-powered content prefetching based on user patterns
+- **Network Adaptation**: Automatic adjustment based on connectivity status
+- **Offline Playback**: Seamless content playback without internet connection
+- **Storage Optimization**: Automatic cleanup and storage space management
+- **Sync Analytics**: Monitoring and reporting of sync performance and conflicts
+- **Cross-Platform Support**: Consistent offline experience across devices
 
 ## Implementation Patterns
 

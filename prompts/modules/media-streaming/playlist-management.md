@@ -4,7 +4,86 @@
 This template provides comprehensive patterns for implementing playlist creation, management, and collaborative features in media streaming applications. It covers playlist operations, sharing mechanisms, smart playlist generation, and social playlist features.
 
 ## Context
-Use this template when building media streaming applications that need robust playlist functionality. Suitable for music streaming platforms, video platforms, podcast apps, and any media application requiring organized content collections and user-curated experiences.
+Playlists are a core feature of media streaming platforms, enabling users to organize, share, and discover content. Modern playlist systems go beyond simple collections to include collaborative editing, AI-powered smart playlists, and social features. This template addresses the complexity of building scalable playlist systems that support millions of playlists while enabling real-time collaboration and intelligent content curation.
+
+## Instructions
+
+1. **Setup Playlist System**: Configure playlist storage and management infrastructure
+2. **Implement CRUD Operations**: Build create, read, update, delete playlist functionality
+3. **Add Collaboration Features**: Enable shared playlists and collaborative editing
+4. **Configure Smart Playlists**: Implement dynamic playlists based on rules and AI
+5. **Enable Social Features**: Add playlist sharing, following, and discovery
+6. **Add Playlist Analytics**: Track playlist performance and user engagement
+7. **Test Playlist Workflows**: Validate creation, sharing, and collaboration features
+
+## Examples
+
+### Example 1: Playlist Management System
+```typescript
+interface PlaylistManager {
+  createPlaylist(data: PlaylistData): Promise<Playlist>;
+  addToPlaylist(playlistId: string, contentIds: string[]): Promise<void>;
+  sharePlaylist(playlistId: string, shareOptions: ShareOptions): Promise<ShareResult>;
+}
+
+const playlistManager = new PlaylistManager();
+const playlist = await playlistManager.createPlaylist({
+  name: 'My Favorites',
+  description: 'Best songs of 2024',
+  visibility: 'public'
+});
+```
+
+### Example 2: Collaborative Playlist
+```typescript
+const collaborativePlaylist = await playlistManager.enableCollaboration(
+  'playlist-123',
+  {
+    permissions: ['add', 'remove', 'reorder'],
+    inviteUsers: ['user-456', 'user-789'],
+    moderationEnabled: true
+  }
+);
+```
+
+### Example 3: Smart Playlist Generation
+```typescript
+const smartPlaylist = await playlistManager.createSmartPlaylist({
+  name: 'Recently Liked Jazz',
+  rules: [
+    { field: 'genre', operator: 'equals', value: 'jazz' },
+    { field: 'liked_date', operator: 'within', value: '30_days' }
+  ],
+  autoUpdate: true,
+  maxItems: 50
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| maxPlaylistSize | Maximum items per playlist | number | No | 1000 |
+| enableCollaboration | Enable collaborative playlists | boolean | No | true |
+| enableSmartPlaylists | Enable dynamic smart playlists | boolean | No | true |
+| defaultVisibility | Default playlist visibility | string | No | "private" |
+| enableSharing | Enable playlist sharing features | boolean | No | true |
+| enableFollowing | Enable playlist following | boolean | No | true |
+| enableComments | Enable playlist comments | boolean | No | false |
+| enableRatings | Enable playlist ratings | boolean | No | true |
+| autoSyncAcrossDevices | Sync playlists across devices | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Playlist Management System**: Complete CRUD operations for playlist management
+- **Collaborative Features**: Real-time collaborative editing and sharing
+- **Smart Playlist Engine**: AI-powered dynamic playlist generation
+- **Social Integration**: Playlist discovery, following, and community features
+- **Cross-Platform Sync**: Seamless playlist synchronization across devices
+- **Analytics Dashboard**: Playlist performance and engagement metrics
+- **Sharing Mechanisms**: Multiple sharing options and privacy controls
+- **Search and Discovery**: Advanced playlist search and recommendation features
 
 ## Implementation Patterns
 

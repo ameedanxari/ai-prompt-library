@@ -4,7 +4,141 @@
 Implement comprehensive geofencing capabilities for location-based triggers, proximity detection, and automated actions in location-aware applications including delivery services, fleet management, security systems, and location-based marketing.
 
 ## Context
-This template provides patterns for creating virtual boundaries, monitoring location changes, triggering automated actions based on geographic areas, and managing complex geofencing scenarios with high accuracy and performance.
+Geofencing enables location-aware automation by defining virtual boundaries that trigger actions when users enter or exit specific areas. This technology powers delivery notifications, fleet management alerts, location-based marketing, and security systems. This template addresses the complexity of building scalable geofencing systems that handle millions of boundaries while maintaining low-latency detection and efficient battery usage.
+
+## Instructions
+1. Analyze geofencing requirements and location-based trigger needs
+2. Design virtual boundary systems with flexible geometric shapes
+3. Implement location monitoring with high-accuracy detection algorithms
+4. Build automated trigger systems with customizable actions and workflows
+5. Create proximity detection with distance-based and time-based rules
+6. Add geofence analytics with entry/exit tracking and dwell time analysis
+7. Implement privacy controls with location data management and consent
+8. Build scalable geofencing with efficient spatial indexing and queries
+9. Create notification systems with real-time alerts and messaging
+10. Add integration with mapping services and location providers
+
+## Examples
+
+### Example 1: Smart Geofencing System
+```typescript
+// Advanced geofencing with multiple trigger types
+class SmartGeofencingSystem {
+  async createGeofence(definition: GeofenceDefinition): Promise<Geofence> {
+    const geofence = await this.geofenceRepository.create({
+      ...definition,
+      spatialIndex: await this.createSpatialIndex(definition.boundary)
+    });
+    
+    await this.activateGeofence(geofence.id);
+    await this.setupTriggers(geofence.id, definition.triggers);
+    
+    return geofence;
+  }
+  
+  async checkLocationTriggers(location: LocationData, userId: string): Promise<TriggerResult[]> {
+    const activeGeofences = await this.getUserGeofences(userId);
+    const triggers = [];
+    
+    for (const geofence of activeGeofences) {
+      const status = await this.checkGeofenceStatus(location, geofence);
+      if (status.triggered) {
+        triggers.push(await this.executeTrigger(geofence, status, userId));
+      }
+    }
+    
+    return triggers;
+  }
+}
+```
+
+### Example 2: Proximity-Based Marketing
+```typescript
+// Location-based marketing with geofencing
+class ProximityMarketingSystem {
+  async setupMarketingGeofences(campaign: MarketingCampaign): Promise<void> {
+    for (const location of campaign.targetLocations) {
+      await this.createGeofence({
+        name: `${campaign.name}_${location.id}`,
+        boundary: this.createCircularBoundary(location.coordinates, location.radius),
+        triggers: [{
+          type: 'enter',
+          action: 'send_promotion',
+          data: { campaignId: campaign.id, locationId: location.id }
+        }]
+      });
+    }
+  }
+  
+  async handleProximityTrigger(trigger: GeofenceTrigger): Promise<void> {
+    const campaign = await this.getCampaign(trigger.data.campaignId);
+    const userProfile = await this.getUserProfile(trigger.userId);
+    
+    if (this.isEligibleForPromotion(userProfile, campaign)) {
+      await this.sendPromotion(trigger.userId, campaign.promotion);
+    }
+  }
+}
+```
+
+### Example 3: Fleet Geofencing and Monitoring
+```typescript
+// Fleet monitoring with geofenced zones
+class FleetGeofencingSystem {
+  async monitorFleetCompliance(fleetId: string): Promise<ComplianceReport> {
+    const vehicles = await this.getFleetVehicles(fleetId);
+    const complianceZones = await this.getComplianceGeofences(fleetId);
+    
+    const violations = [];
+    
+    for (const vehicle of vehicles) {
+      const currentLocation = await this.getVehicleLocation(vehicle.id);
+      
+      for (const zone of complianceZones) {
+        const status = await this.checkGeofenceStatus(currentLocation, zone);
+        
+        if (zone.type === 'restricted' && status.inside) {
+          violations.push({
+            vehicleId: vehicle.id,
+            zoneId: zone.id,
+            violationType: 'unauthorized_entry',
+            timestamp: new Date()
+          });
+        }
+      }
+    }
+    
+    return { fleetId, violations, timestamp: new Date() };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| geofenceTypes | array | Supported geofence shapes | ['circle', 'polygon'] | Yes |
+| triggerTypes | array | Available trigger types | ['enter', 'exit', 'dwell'] | Yes |
+| locationAccuracy | string | Location detection precision | 'high' | No |
+| dwellTimeTracking | boolean | Track time spent in geofences | true | No |
+| proximityAlerts | boolean | Distance-based notifications | true | No |
+| batchProcessing | boolean | Batch location processing | false | No |
+| spatialIndexing | boolean | Efficient spatial queries | true | Yes |
+| privacyControls | boolean | Location privacy management | true | Yes |
+| analyticsTracking | boolean | Geofence analytics and reporting | true | No |
+| realTimeProcessing | boolean | Real-time location monitoring | true | No |
+
+## Expected Output
+A comprehensive geofencing system featuring:
+- Flexible geofence creation with multiple geometric shapes and boundary types
+- Real-time location monitoring with high-accuracy detection and trigger execution
+- Automated action systems with customizable workflows and business logic
+- Proximity detection with distance-based alerts and time-based rules
+- Geofence analytics with entry/exit tracking, dwell time analysis, and reporting
+- Privacy controls with granular location data management and user consent
+- Scalable architecture with efficient spatial indexing and query optimization
+- Integration with mapping services, GPS providers, and location platforms
+- Mobile SDK support for iOS and Android with background location monitoring
+- Comprehensive notification system with real-time alerts and messaging capabilities
 
 ## Implementation Approach
 

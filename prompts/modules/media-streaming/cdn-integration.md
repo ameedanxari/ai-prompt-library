@@ -4,7 +4,81 @@
 This template provides comprehensive patterns for integrating Content Delivery Networks (CDNs) and implementing adaptive streaming for media applications. It covers global content distribution, edge caching, adaptive bitrate streaming, and performance optimization.
 
 ## Context
-Use this template when building media streaming applications that need to deliver audio/video content globally with optimal performance. Suitable for music streaming, video platforms, podcast services, live streaming, and any application requiring efficient media delivery.
+CDN integration is critical for delivering high-quality media content at scale. Modern streaming platforms require global content distribution with low latency, adaptive bitrate streaming for varying network conditions, and robust edge caching strategies. This template addresses the complexity of building performant content delivery systems that handle millions of concurrent streams while maintaining quality and minimizing buffering.
+
+## Instructions
+
+1. **Choose CDN Provider**: Select primary and backup CDN providers based on global coverage needs
+2. **Configure Edge Locations**: Set up edge servers in target geographic regions
+3. **Implement Adaptive Streaming**: Configure multiple bitrate profiles for optimal delivery
+4. **Setup Caching Strategy**: Define cache rules for different content types and TTL policies
+5. **Enable Security Features**: Implement token authentication, geo-blocking, and DDoS protection
+6. **Configure Monitoring**: Set up performance monitoring and analytics tracking
+7. **Test Global Performance**: Validate delivery speed and quality across different regions
+
+## Examples
+
+### Example 1: CDN Configuration Setup
+```typescript
+interface CDNService {
+  configureCDN(config: CDNConfig): Promise<CDNInstance>;
+  setupAdaptiveStreaming(profiles: StreamProfile[]): Promise<ABRConfiguration>;
+}
+
+const cdnService = new CDNService();
+const cdnInstance = await cdnService.configureCDN({
+  provider: 'aws-cloudfront',
+  regions: ['us-east-1', 'eu-west-1', 'ap-southeast-1'],
+  cacheSettings: {
+    mediaContent: { ttl: 86400, adaptiveStreaming: true },
+    staticAssets: { ttl: 604800, compressionEnabled: true }
+  }
+});
+```
+
+### Example 2: Adaptive Bitrate Streaming
+```typescript
+const abrConfig = await cdnService.setupAdaptiveStreaming([
+  { bitrate: 128000, resolution: '480p', codec: 'aac' },
+  { bitrate: 320000, resolution: '720p', codec: 'aac' },
+  { bitrate: 1000000, resolution: '1080p', codec: 'aac' }
+]);
+```
+
+### Example 3: Content Delivery with Edge Caching
+```typescript
+const deliveryUrl = await cdnService.generateDeliveryUrl('content-123', {
+  adaptiveBitrate: true,
+  secureToken: true,
+  geoRestrictions: ['US', 'CA', 'EU']
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| cdnProvider | Primary CDN service provider | string | Yes | N/A |
+| edgeLocations | Geographic regions for edge servers | array | Yes | N/A |
+| cacheStrategy | Caching strategy configuration | object | No | standard |
+| adaptiveStreaming | Enable adaptive bitrate streaming | boolean | No | true |
+| securityLevel | CDN security configuration level | string | No | "standard" |
+| compressionEnabled | Enable content compression | boolean | No | true |
+| tokenAuthentication | Enable secure token authentication | boolean | No | false |
+| geoBlocking | Enable geographic content blocking | boolean | No | false |
+| monitoringEnabled | Enable performance monitoring | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Global CDN Network**: Distributed content delivery with edge caching
+- **Adaptive Streaming System**: Multiple bitrate profiles for optimal quality
+- **Performance Optimization**: Compression, caching, and delivery optimization
+- **Security Implementation**: Token authentication, geo-blocking, and DDoS protection
+- **Monitoring Dashboard**: Real-time performance metrics and analytics
+- **Failover System**: Automatic failover between CDN providers
+- **Cost Optimization**: Intelligent routing and bandwidth management
+- **Developer Tools**: APIs for content management and delivery control
 
 ## Implementation Patterns
 

@@ -4,7 +4,84 @@
 Implement comprehensive mapping solutions integrating with Google Maps, Mapbox, Apple Maps, and custom mapping services for location-based applications including navigation, visualization, and interactive mapping features.
 
 ## Context
-This template provides patterns for map rendering, route calculation, geocoding, place search, custom map styling, and multi-platform mapping integration across web and mobile applications.
+Map integration is essential for location-based applications, providing visual context for navigation, delivery tracking, and location discovery. Modern mapping solutions require multi-provider support for reliability, custom styling for brand consistency, and performance optimization for smooth user experiences. This template addresses the complexity of building flexible mapping systems that work across providers while delivering rich interactive features.
+
+## Instructions
+
+1. **Choose Map Provider**: Select primary and fallback mapping providers based on requirements
+2. **Initialize Map Service**: Set up map integration with proper API keys and configuration
+3. **Implement Core Features**: Add markers, routes, geocoding, and place search functionality
+4. **Configure Security**: Implement API key management and secure communication protocols
+5. **Add Interactive Features**: Enable drawing, clustering, and custom controls as needed
+6. **Optimize Performance**: Implement caching, viewport optimization, and efficient rendering
+7. **Test Integration**: Validate functionality across different providers and platforms
+
+## Examples
+
+### Example 1: Basic Map Initialization
+```typescript
+interface MapService {
+  initializeMap(containerId: string, options: MapOptions): Promise<MapInstance>;
+  addMarker(mapId: string, marker: MapMarker): Promise<string>;
+  calculateRoute(origin: LocationData, destination: LocationData): Promise<RouteResult>;
+}
+
+const mapService = new MultiProviderMapService();
+const map = await mapService.initializeMap('map-container', {
+  center: { latitude: 37.7749, longitude: -122.4194 },
+  zoom: 15,
+  mapType: 'roadmap'
+});
+```
+
+### Example 2: Route Calculation and Display
+```typescript
+const route = await mapService.calculateRoute(
+  { latitude: 37.7749, longitude: -122.4194 },
+  { latitude: 37.7849, longitude: -122.4094 },
+  { travelMode: 'driving', avoidTolls: true }
+);
+
+await mapService.displayRoute(map.id, route);
+await mapService.fitMapToBounds(map.id, route.bounds);
+```
+
+### Example 3: Multi-Provider Fallback
+```typescript
+const multiProviderMap = await mapService.createMap({
+  preferredProvider: MapProvider.GOOGLE_MAPS,
+  fallbackProviders: [MapProvider.MAPBOX, MapProvider.OPEN_STREET_MAP],
+  center: { latitude: 37.7749, longitude: -122.4194 },
+  zoom: 15,
+  features: ['markers', 'routing', 'geocoding']
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| mapProvider | Primary mapping service provider | string | Yes | N/A |
+| fallbackProviders | Backup providers for redundancy | array | No | [] |
+| apiKeys | Provider-specific API keys | object | Yes | N/A |
+| mapCenter | Initial map center coordinates | object | Yes | N/A |
+| zoomLevel | Initial zoom level | number | No | 15 |
+| mapType | Map display type (roadmap, satellite, etc.) | string | No | "roadmap" |
+| enableClustering | Enable marker clustering | boolean | No | true |
+| cacheEnabled | Enable tile caching | boolean | No | true |
+| securityLevel | Security configuration level | string | No | "standard" |
+
+## Expected Output
+
+This template will produce:
+- **Multi-Provider Map Integration**: Unified interface supporting multiple mapping services
+- **Interactive Map Components**: Markers, routes, overlays, and custom controls
+- **Geocoding Services**: Address-to-coordinate and reverse geocoding functionality
+- **Route Planning**: Turn-by-turn directions and route optimization
+- **Performance Optimization**: Caching, clustering, and efficient rendering
+- **Security Implementation**: API key management and secure communication
+- **Mobile Support**: Cross-platform compatibility for web and mobile apps
+- **Offline Capabilities**: Map caching and offline functionality
 
 ## Implementation Approach
 

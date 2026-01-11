@@ -1,12 +1,85 @@
 # Content Creation Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing content creation systems in social applications, covering post creation, media upload, story features, rich content editing, and publishing workflows.
 
 ## Context
+Content creation is the foundation of user-generated content platforms, enabling users to express themselves and share experiences. A well-designed creation system balances ease of use with powerful features, supporting everything from quick text posts to rich media content. This template addresses the complexity of building intuitive creation tools, efficient media processing pipelines, and flexible publishing workflows that empower creators while maintaining content quality.
 
-Content creation is the foundation of user engagement in social platforms. This template addresses text posts, media content, story features, live content, and collaborative creation tools that enable users to express themselves and share experiences.
+## Instructions
+
+1. **Setup Content Creation System**: Configure content creation infrastructure and storage
+2. **Implement Rich Text Editor**: Build advanced text editing with formatting and media
+3. **Add Media Upload**: Enable photo, video, and file upload with processing
+4. **Configure Story Features**: Implement ephemeral content and story creation
+5. **Enable Collaborative Creation**: Add co-authoring and collaborative content features
+6. **Add Publishing Workflows**: Implement drafts, scheduling, and publishing controls
+7. **Test Creation Flows**: Validate content creation, editing, and publishing workflows
+
+## Examples
+
+### Example 1: Content Creation System
+```typescript
+interface ContentCreationService {
+  createPost(userId: string, content: PostContent): Promise<Post>;
+  uploadMedia(userId: string, media: MediaFile): Promise<MediaUpload>;
+  createStory(userId: string, story: StoryContent): Promise<Story>;
+}
+
+const contentService = new ContentCreationService();
+const post = await contentService.createPost('user-123', {
+  text: 'Check out this amazing sunset!',
+  media: ['photo-456'],
+  tags: ['sunset', 'photography'],
+  visibility: 'public'
+});
+```
+
+### Example 2: Rich Media Upload
+```typescript
+const mediaUpload = await contentService.uploadMedia('user-123', {
+  file: imageFile,
+  type: 'image',
+  caption: 'Beautiful sunset at the beach',
+  altText: 'Orange and pink sunset over ocean waves'
+});
+```
+
+### Example 3: Story Creation
+```typescript
+const story = await contentService.createStory('user-123', {
+  media: 'video-789',
+  duration: 24 * 60 * 60 * 1000, // 24 hours
+  viewers: 'friends',
+  interactive: { polls: true, questions: true }
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableRichTextEditor | Enable rich text formatting | boolean | No | true |
+| enableMediaUpload | Enable photo/video uploads | boolean | No | true |
+| enableStories | Enable story creation features | boolean | No | false |
+| maxMediaSize | Maximum media file size (MB) | number | No | 50 |
+| enableDrafts | Enable draft saving functionality | boolean | No | true |
+| enableScheduling | Enable scheduled post publishing | boolean | No | false |
+| enableCollaboration | Enable collaborative content creation | boolean | No | false |
+| enableHashtags | Enable hashtag functionality | boolean | No | true |
+| enableMentions | Enable user mention functionality | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Rich Content Editor**: Advanced text editing with formatting and media integration
+- **Media Upload System**: Photo, video, and file upload with processing and optimization
+- **Story Creation Tools**: Ephemeral content creation with interactive features
+- **Publishing Workflow**: Draft management, scheduling, and publication controls
+- **Collaborative Features**: Co-authoring and shared content creation capabilities
+- **Content Organization**: Tagging, categorization, and content management tools
+- **Cross-Platform Support**: Consistent content creation across web and mobile
+- **Analytics Integration**: Content performance tracking and creator insights
 
 ## Implementation Guidance
 

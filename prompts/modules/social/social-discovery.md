@@ -1,12 +1,81 @@
 # Social Discovery and Recommendation Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing user discovery systems, recommendation algorithms, and social exploration features that help users find relevant people, communities, and content in social applications.
 
 ## Context
+Social discovery is essential for platform growth and user engagement, enabling users to find relevant connections, communities, and content. Effective discovery systems combine collaborative filtering, content-based recommendations, and social graph analysis to surface personalized suggestions. This template addresses the complexity of building scalable recommendation engines that balance relevance, diversity, and user privacy while fostering meaningful social connections.
 
-Social discovery systems are essential for user engagement and network growth in social platforms. This template covers algorithmic recommendations, interest-based matching, location-based discovery, and community finding features that connect users with relevant social opportunities.
+## Instructions
+
+1. **Setup Discovery Infrastructure**: Configure recommendation engines and discovery algorithms
+2. **Implement People Discovery**: Build user recommendation systems based on interests and connections
+3. **Add Location-Based Discovery**: Enable geographic user and content discovery
+4. **Configure Interest Matching**: Implement interest-based user and content recommendations
+5. **Enable Community Discovery**: Add group and community recommendation features
+6. **Add Social Exploration**: Implement trending content and viral discovery mechanisms
+7. **Test Discovery Quality**: Validate recommendation accuracy and user engagement
+
+## Examples
+
+### Example 1: User Discovery System
+```typescript
+interface SocialDiscoveryService {
+  discoverUsers(userId: string, criteria: DiscoveryCriteria): Promise<UserRecommendation[]>;
+  discoverCommunities(userId: string): Promise<CommunityRecommendation[]>;
+  getTrendingContent(location?: string): Promise<TrendingContent[]>;
+}
+
+const discoveryService = new SocialDiscoveryService();
+const recommendations = await discoveryService.discoverUsers('user-123', {
+  basedOn: ['interests', 'mutual_connections', 'location'],
+  maxResults: 20
+});
+```
+
+### Example 2: Interest-Based Matching
+```typescript
+const interestMatches = await discoveryService.findByInterests('user-123', {
+  interests: ['photography', 'travel', 'technology'],
+  similarity: 0.7,
+  includeNewUsers: true
+});
+```
+
+### Example 3: Location-Based Discovery
+```typescript
+const nearbyUsers = await discoveryService.discoverNearby('user-123', {
+  radius: 10000, // 10km
+  includeEvents: true,
+  includeBusinesses: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableUserDiscovery | Enable user recommendation features | boolean | No | true |
+| enableLocationDiscovery | Enable location-based discovery | boolean | No | false |
+| enableInterestMatching | Enable interest-based recommendations | boolean | No | true |
+| enableCommunityDiscovery | Enable community recommendations | boolean | No | true |
+| maxRecommendations | Maximum recommendations per request | number | No | 20 |
+| similarityThreshold | Minimum similarity score for matches | number | No | 0.5 |
+| enableTrendingContent | Enable trending content discovery | boolean | No | true |
+| discoveryRadius | Default discovery radius (meters) | number | No | 5000 |
+| enablePersonalization | Enable personalized discovery | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **User Recommendation Engine**: AI-powered user discovery and matching system
+- **Interest-Based Matching**: Sophisticated interest and preference matching algorithms
+- **Location Discovery**: Geographic user and content discovery features
+- **Community Recommendations**: Group and community discovery based on user interests
+- **Trending Content System**: Real-time trending and viral content identification
+- **Social Exploration Tools**: Discovery feeds and exploration interfaces
+- **Personalization Engine**: Customized discovery based on user behavior and preferences
+- **Discovery Analytics**: Performance tracking and recommendation quality metrics
 
 ## Implementation Guidance
 

@@ -4,12 +4,118 @@
 Provides comprehensive patterns for regulatory reporting, compliance tracking, audit trails, and financial data management in fintech applications.
 
 ## Context
-Use this template when building financial applications that require:
-- Regulatory compliance reporting (SOX, Basel III, MiFID II, etc.)
-- Automated financial statement generation
-- Audit trail management and compliance tracking
-- Real-time regulatory data submission
-- Risk reporting and capital adequacy calculations
+Financial reporting is essential for regulatory compliance and business transparency in fintech applications. Modern reporting systems must automate complex regulatory submissions, maintain comprehensive audit trails, and adapt to changing requirements across jurisdictions. This template addresses the complexity of building compliant reporting systems that ensure data accuracy, meet regulatory deadlines, and provide actionable insights.
+
+## Instructions
+1. Analyze regulatory reporting requirements and compliance obligations
+2. Design automated financial statement generation and validation
+3. Implement comprehensive audit trail management systems
+4. Build real-time regulatory data collection and submission
+5. Create risk reporting and capital adequacy calculations
+6. Add compliance monitoring and violation detection
+7. Implement multi-jurisdiction regulatory support
+8. Build automated report scheduling and delivery systems
+9. Create data quality validation and reconciliation processes
+10. Add regulatory change management and adaptation capabilities
+
+## Examples
+
+### Example 1: Automated Regulatory Reporting
+```typescript
+// Comprehensive regulatory report generation
+class RegulatoryReportGenerator {
+  async generateCallReport(reportingPeriod: ReportingPeriod): Promise<CallReport> {
+    const financialData = await this.gatherFinancialData(reportingPeriod);
+    const validatedData = await this.validateDataQuality(financialData);
+    
+    const report = await this.buildCallReport({
+      data: validatedData,
+      period: reportingPeriod,
+      templates: await this.getFFIECTemplates()
+    });
+    
+    await this.validateReport(report);
+    return report;
+  }
+}
+```
+
+### Example 2: Real-time Compliance Monitoring
+```typescript
+// Continuous compliance monitoring system
+class ComplianceMonitor {
+  async monitorCompliance(): Promise<ComplianceStatus> {
+    const [capitalRatios, liquidityRatios, riskMetrics] = await Promise.all([
+      this.calculateCapitalAdequacy(),
+      this.assessLiquidityPosition(),
+      this.evaluateRiskExposure()
+    ]);
+    
+    const violations = await this.detectViolations({
+      capital: capitalRatios,
+      liquidity: liquidityRatios,
+      risk: riskMetrics
+    });
+    
+    if (violations.length > 0) {
+      await this.triggerComplianceAlerts(violations);
+    }
+    
+    return { status: 'compliant', violations, timestamp: new Date() };
+  }
+}
+```
+
+### Example 3: Audit Trail Management
+```typescript
+// Comprehensive audit trail system
+class AuditTrailManager {
+  async recordAuditEvent(event: AuditEvent): Promise<void> {
+    const auditRecord = {
+      eventId: this.generateEventId(),
+      timestamp: new Date(),
+      userId: event.userId,
+      action: event.action,
+      resourceType: event.resourceType,
+      resourceId: event.resourceId,
+      changes: event.changes,
+      ipAddress: event.ipAddress,
+      userAgent: event.userAgent,
+      complianceFlags: await this.evaluateComplianceFlags(event)
+    };
+    
+    await this.auditRepository.store(auditRecord);
+    await this.checkComplianceRequirements(auditRecord);
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| regulatoryJurisdiction | array | Applicable jurisdictions | ['US'] | Yes |
+| reportTypes | array | Required report types | ['call_report', 'sar'] | Yes |
+| auditRetention | number | Audit trail retention period | 2555 | Yes |
+| automatedReporting | boolean | Automated report generation | true | No |
+| realTimeMonitoring | boolean | Real-time compliance monitoring | true | No |
+| dataValidation | boolean | Automated data quality checks | true | Yes |
+| multiCurrency | boolean | Multi-currency reporting | false | No |
+| riskCalculations | boolean | Risk metric calculations | true | Yes |
+| complianceAlerts | boolean | Automated compliance alerts | true | No |
+| regulatoryUpdates | boolean | Automatic regulatory updates | true | No |
+
+## Expected Output
+A comprehensive financial reporting and compliance system featuring:
+- Automated regulatory report generation with multi-jurisdiction support
+- Real-time compliance monitoring with violation detection and alerts
+- Comprehensive audit trail management with tamper-proof logging
+- Risk reporting with capital adequacy and liquidity calculations
+- Data quality validation with automated reconciliation processes
+- Regulatory submission automation with deadline management
+- Compliance dashboard with real-time status monitoring
+- Multi-currency and multi-entity reporting capabilities
+- Regulatory change management with automatic updates
+- Integration with regulatory systems and data providers
 
 ## Core Components
 

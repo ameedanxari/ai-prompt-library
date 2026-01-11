@@ -4,7 +4,111 @@
 Implement comprehensive fleet management systems for vehicle tracking, driver coordination, route optimization, maintenance scheduling, and operational efficiency in delivery services, ride-sharing, logistics, and transportation companies.
 
 ## Context
-This template provides patterns for managing vehicle fleets with real-time tracking, predictive maintenance, driver management, fuel optimization, compliance monitoring, and performance analytics across various transportation and logistics applications.
+Fleet management is critical for transportation and logistics businesses that need to track vehicles, coordinate drivers, and optimize operations. Modern fleet systems integrate real-time tracking, predictive maintenance, and route optimization to reduce costs and improve service quality. This template addresses the complexity of building scalable fleet management systems that handle thousands of vehicles while providing real-time visibility and operational insights.
+
+## Instructions
+1. Analyze fleet management requirements and operational objectives
+2. Design comprehensive vehicle tracking and monitoring systems
+3. Implement driver management with performance tracking and coordination
+4. Build route optimization with real-time traffic and efficiency algorithms
+5. Create maintenance scheduling with predictive maintenance capabilities
+6. Add fuel management with consumption tracking and optimization
+7. Implement compliance monitoring with regulatory requirements
+8. Build fleet analytics with performance metrics and cost analysis
+9. Create dispatch systems with automated job assignment
+10. Add integration with telematics devices and third-party systems
+
+## Examples
+
+### Example 1: Real-time Fleet Tracking
+```typescript
+// Comprehensive fleet tracking with live updates
+class FleetTrackingSystem {
+  async trackFleet(fleetId: string): Promise<FleetStatus> {
+    const vehicles = await this.getFleetVehicles(fleetId);
+    const liveData = await Promise.all(
+      vehicles.map(vehicle => this.getVehicleTelemetry(vehicle.id))
+    );
+    
+    return {
+      totalVehicles: vehicles.length,
+      activeVehicles: liveData.filter(v => v.status === 'active').length,
+      locations: liveData.map(v => ({ id: v.vehicleId, location: v.location })),
+      alerts: await this.getFleetAlerts(fleetId)
+    };
+  }
+}
+```
+
+### Example 2: Route Optimization Engine
+```typescript
+// AI-powered route optimization for fleet efficiency
+class RouteOptimizer {
+  async optimizeFleetRoutes(fleetId: string, jobs: DeliveryJob[]): Promise<OptimizedRoutes> {
+    const vehicles = await this.getAvailableVehicles(fleetId);
+    const trafficData = await this.getCurrentTrafficConditions();
+    
+    const optimization = await this.optimizationEngine.solve({
+      vehicles,
+      jobs,
+      constraints: await this.getFleetConstraints(fleetId),
+      objectives: ['minimize_distance', 'minimize_time', 'balance_load']
+    });
+    
+    return optimization.routes;
+  }
+}
+```
+
+### Example 3: Predictive Maintenance System
+```typescript
+// Predictive maintenance with IoT data analysis
+class PredictiveMaintenanceSystem {
+  async analyzeVehicleHealth(vehicleId: string): Promise<MaintenanceRecommendation> {
+    const telemetryData = await this.getVehicleTelemetry(vehicleId, '30d');
+    const maintenanceHistory = await this.getMaintenanceHistory(vehicleId);
+    
+    const healthScore = await this.mlModel.predictHealth({
+      telemetry: telemetryData,
+      history: maintenanceHistory,
+      vehicleSpecs: await this.getVehicleSpecs(vehicleId)
+    });
+    
+    return {
+      healthScore,
+      recommendations: await this.generateMaintenanceRecommendations(healthScore),
+      urgency: this.calculateUrgency(healthScore)
+    };
+  }
+}
+```
+
+## Variables
+| Variable | Type | Description | Default | Required |
+|----------|------|-------------|---------|----------|
+| vehicleTypes | array | Supported vehicle types | ['car', 'truck', 'van'] | Yes |
+| trackingAccuracy | string | GPS tracking precision | 'high' | No |
+| routeOptimization | boolean | Enable route optimization | true | No |
+| predictiveMaintenance | boolean | Predictive maintenance features | false | No |
+| driverManagement | boolean | Driver performance tracking | true | No |
+| fuelManagement | boolean | Fuel consumption tracking | true | No |
+| complianceMonitoring | boolean | Regulatory compliance tracking | true | Yes |
+| telematicsIntegration | boolean | Telematics device integration | true | No |
+| dispatchAutomation | boolean | Automated job dispatch | false | No |
+| fleetAnalytics | boolean | Performance analytics dashboard | true | No |
+
+## Expected Output
+A comprehensive fleet management system featuring:
+- Real-time vehicle tracking with GPS monitoring and live location updates
+- Driver management with performance tracking, scheduling, and coordination
+- Route optimization with AI-powered algorithms and traffic-aware planning
+- Predictive maintenance with IoT data analysis and automated scheduling
+- Fuel management with consumption tracking and cost optimization
+- Compliance monitoring with regulatory requirements and automated reporting
+- Fleet analytics with performance metrics, cost analysis, and efficiency insights
+- Dispatch automation with intelligent job assignment and load balancing
+- Telematics integration with vehicle sensors and diagnostic systems
+- Mobile applications for drivers with navigation, job management, and communication
 
 ## Implementation Approach
 

@@ -8,6 +8,117 @@ This template provides comprehensive patterns for building robust inventory mana
 
 Effective inventory management is crucial for e-commerce success, preventing stockouts while minimizing carrying costs. This template covers real-time stock tracking, automated replenishment, multi-warehouse management, and integration with sales channels. It ensures accurate inventory visibility across all touchpoints while optimizing stock levels and fulfillment efficiency.
 
+## Instructions
+
+1. **Setup Inventory Database**: Configure inventory tracking database with proper indexing
+2. **Implement Stock Tracking**: Deploy real-time inventory quantity management
+3. **Configure Reorder Points**: Set up automated reordering and low stock alerts
+4. **Setup Multi-Location**: Implement multi-warehouse and location tracking
+5. **Deploy Reservations**: Configure inventory reservation and allocation system
+6. **Implement Integrations**: Connect to suppliers, sales channels, and fulfillment
+7. **Configure Reporting**: Set up inventory analytics and reporting dashboards
+
+## Examples
+
+### Example 1: Basic Inventory Tracking
+```typescript
+interface InventoryItem {
+  id: string;
+  productId: string;
+  sku: string;
+  quantity: number;
+  reservedQuantity: number;
+  availableQuantity: number;
+  lowStockThreshold: number;
+  reorderPoint: number;
+  reorderQuantity: number;
+  locationId: string;
+  unitCost: number;
+  lastUpdated: Date;
+}
+
+const inventory = await updateInventory({
+  productId: "prod_123",
+  sku: "SHIRT-RED-M",
+  quantity: 150,
+  lowStockThreshold: 10,
+  reorderPoint: 25,
+  reorderQuantity: 100,
+  locationId: "warehouse_1"
+});
+```
+
+### Example 2: Inventory Reservation System
+```typescript
+interface InventoryReservation {
+  reservationId: string;
+  productId: string;
+  quantity: number;
+  reservedFor: 'order' | 'cart' | 'promotion';
+  referenceId: string;
+  expiresAt: Date;
+  status: 'active' | 'fulfilled' | 'expired' | 'cancelled';
+}
+
+const reservation = await reserveInventory({
+  productId: "prod_123",
+  quantity: 2,
+  reservedFor: "cart",
+  referenceId: "cart_456",
+  expirationMinutes: 30
+});
+```
+
+### Example 3: Automated Reordering
+```typescript
+interface ReorderRule {
+  productId: string;
+  supplierId: string;
+  reorderPoint: number;
+  reorderQuantity: number;
+  leadTimeDays: number;
+  autoReorder: boolean;
+  seasonalAdjustment: boolean;
+  demandForecast: boolean;
+}
+
+const reorderCheck = await checkReorderNeeds({
+  locationId: "warehouse_1",
+  includeSeasonalTrends: true,
+  includeDemandForecast: true,
+  autoExecuteOrders: false
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| trackingMethod | Inventory tracking method (perpetual, periodic) | string | Yes | "perpetual" |
+| reservationTimeout | Cart reservation timeout (minutes) | number | No | 30 |
+| lowStockAlert | Enable low stock alerts | boolean | Yes | true |
+| autoReorder | Enable automatic reordering | boolean | No | false |
+| multiLocation | Enable multi-location inventory | boolean | No | true |
+| backorderAllowed | Allow backorders | boolean | No | false |
+| costingMethod | Inventory costing method (FIFO, LIFO, Average) | string | Yes | "FIFO" |
+| stockAdjustmentApproval | Require approval for stock adjustments | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Inventory Tracking System**: Real-time stock level monitoring and updates
+- **Reservation Engine**: Inventory allocation and reservation management
+- **Reorder Management**: Automated reordering and supplier integration
+- **Multi-Location Support**: Warehouse and location-based inventory tracking
+- **Cost Tracking**: Inventory valuation and cost management
+- **Analytics Dashboard**: Inventory performance and trend analysis
+- **Integration APIs**: Seamless connection with sales channels and suppliers
+- **Mobile Applications**: Mobile inventory management for warehouse staff
+
+## Context
+
+Effective inventory management is crucial for e-commerce success, preventing stockouts while minimizing carrying costs. This template covers real-time stock tracking, automated replenishment, multi-warehouse management, and integration with sales channels. It ensures accurate inventory visibility across all touchpoints while optimizing stock levels and fulfillment efficiency.
+
 ## Core Inventory Management Patterns
 
 ### 1. Inventory Data Model

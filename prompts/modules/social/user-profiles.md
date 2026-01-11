@@ -1,12 +1,88 @@
 # User Profile Management Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing user profile systems in social applications, covering profile creation, customization, privacy controls, and profile management features.
 
 ## Context
+User profiles are the foundation of any social application, serving as the primary identity and representation of users within the platform. A well-designed profile system enables users to express themselves, control their privacy, build trust through verification, and connect with others. This template addresses the complexity of building scalable, secure, and user-friendly profile systems that balance personalization with privacy protection.
 
-User profiles are the foundation of social applications, serving as digital identities that users create and maintain. This template addresses the complete lifecycle of user profiles from initial creation through ongoing management and privacy control.
+## Instructions
+
+1. **Setup Profile System**: Configure user profile database schema and storage
+2. **Implement Profile Creation**: Build profile registration and onboarding workflows
+3. **Add Customization Features**: Enable profile themes, layouts, and personalization
+4. **Configure Privacy Controls**: Implement granular privacy settings and visibility controls
+5. **Add Profile Verification**: Set up identity verification and trust systems
+6. **Enable Profile Discovery**: Implement profile search and recommendation features
+7. **Test Profile Workflows**: Validate creation, editing, privacy, and discovery functionality
+
+## Examples
+
+### Example 1: Profile Creation System
+```typescript
+interface UserProfileService {
+  createProfile(data: ProfileData): Promise<UserProfile>;
+  updateProfile(userId: string, updates: ProfileUpdates): Promise<UserProfile>;
+  getProfile(userId: string, viewerId?: string): Promise<UserProfile>;
+}
+
+const profileService = new UserProfileService();
+const profile = await profileService.createProfile({
+  userId: 'user-123',
+  displayName: 'John Doe',
+  bio: 'Software developer and coffee enthusiast',
+  privacy: { profileVisibility: 'public', contactInfo: 'friends' }
+});
+```
+
+### Example 2: Privacy Controls
+```typescript
+const privacySettings = await profileService.updatePrivacySettings('user-123', {
+  profileVisibility: 'friends',
+  emailVisibility: 'private',
+  phoneVisibility: 'private',
+  locationVisibility: 'friends',
+  allowSearchByEmail: false
+});
+```
+
+### Example 3: Profile Customization
+```typescript
+const customization = await profileService.updateCustomization('user-123', {
+  theme: 'dark',
+  profileLayout: 'grid',
+  showBadges: true,
+  customFields: [
+    { name: 'Favorite Quote', value: 'Code is poetry', visibility: 'public' }
+  ]
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| enableProfilePhotos | Enable profile photo uploads | boolean | No | true |
+| enableCustomFields | Allow custom profile fields | boolean | No | true |
+| enableThemes | Enable profile theme customization | boolean | No | false |
+| enableVerification | Enable profile verification system | boolean | No | false |
+| maxBioLength | Maximum biography character limit | number | No | 500 |
+| enableLocationSharing | Enable location sharing features | boolean | No | false |
+| enableStatusMessages | Enable custom status messages | boolean | No | true |
+| privacyDefaultLevel | Default privacy level for new profiles | string | No | "friends" |
+| enableProfileAnalytics | Enable profile view analytics | boolean | No | false |
+
+## Expected Output
+
+This template will produce:
+- **Profile Management System**: Complete user profile creation and management
+- **Privacy Control Framework**: Granular privacy settings and visibility controls
+- **Customization Engine**: Profile themes, layouts, and personalization options
+- **Verification System**: Identity verification and trust indicators
+- **Profile Discovery**: Search, recommendations, and profile browsing features
+- **Analytics Dashboard**: Profile performance and engagement metrics
+- **Security Features**: Profile protection and abuse prevention mechanisms
+- **Cross-Platform Sync**: Consistent profile experience across devices
 
 ## Implementation Guidance
 

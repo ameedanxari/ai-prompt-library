@@ -4,6 +4,119 @@
 
 This template provides comprehensive guidance for implementing real-time messaging systems in social applications, covering chat functionality, group messaging, media sharing, and real-time communication features.
 
+## Instructions
+
+1. **Setup WebSocket Infrastructure**: Configure real-time communication server
+2. **Implement Message Storage**: Set up efficient message persistence and retrieval
+3. **Configure Media Handling**: Deploy media upload, processing, and storage
+4. **Setup Group Management**: Implement group chat creation and administration
+5. **Deploy Security**: Configure message encryption and privacy controls
+6. **Implement Notifications**: Set up push notifications and delivery confirmations
+7. **Configure Moderation**: Deploy content filtering and abuse prevention
+
+## Examples
+
+### Example 1: Basic Text Messaging
+```typescript
+interface TextMessage {
+  messageId: string;
+  conversationId: string;
+  senderId: string;
+  content: string;
+  timestamp: Date;
+  messageType: 'text' | 'media' | 'system' | 'reaction';
+  replyToMessageId?: string;
+  editedAt?: Date;
+  deletedAt?: Date;
+}
+
+const message = await sendMessage({
+  conversationId: "conv_123",
+  senderId: "user_456",
+  content: "Hello! How are you doing today?",
+  messageType: "text",
+  replyToMessageId: "msg_789"
+});
+```
+
+### Example 2: Group Chat Management
+```typescript
+interface GroupChat {
+  groupId: string;
+  name: string;
+  description?: string;
+  createdBy: string;
+  members: GroupMember[];
+  settings: {
+    isPublic: boolean;
+    allowInvites: boolean;
+    messageRetention: number; // days
+    maxMembers: number;
+  };
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+const groupChat = await createGroupChat({
+  name: "Project Team",
+  description: "Team collaboration chat",
+  createdBy: "user_123",
+  initialMembers: ["user_456", "user_789"],
+  settings: {
+    isPublic: false,
+    allowInvites: true,
+    messageRetention: 365,
+    maxMembers: 50
+  }
+});
+```
+
+### Example 3: Real-time Message Delivery
+```typescript
+interface MessageDelivery {
+  messageId: string;
+  recipientId: string;
+  deliveryStatus: 'sent' | 'delivered' | 'read';
+  deliveredAt?: Date;
+  readAt?: Date;
+  deviceId?: string;
+}
+
+const realTimeDelivery = await deliverMessage({
+  messageId: "msg_123",
+  conversationId: "conv_456",
+  recipients: ["user_789", "user_012"],
+  priority: "normal",
+  requireDeliveryConfirmation: true,
+  enablePushNotification: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| maxMessageLength | Maximum message character limit | number | No | 4000 |
+| mediaUploadLimit | Maximum media file size (MB) | number | No | 25 |
+| messageRetention | Default message retention (days) | number | No | 365 |
+| encryptionEnabled | Enable end-to-end encryption | boolean | Yes | true |
+| typingIndicators | Enable typing indicators | boolean | No | true |
+| readReceipts | Enable read receipts | boolean | No | true |
+| maxGroupMembers | Maximum group chat members | number | No | 256 |
+| offlineMessageLimit | Maximum offline messages per user | number | No | 1000 |
+
+## Expected Output
+
+This template will produce:
+- **Real-time Messaging System**: WebSocket-based instant messaging
+- **Group Chat Management**: Multi-user conversation handling
+- **Media Sharing Platform**: Image, video, and file sharing capabilities
+- **Message Persistence**: Reliable message storage and retrieval
+- **Notification System**: Push notifications and delivery confirmations
+- **Security Framework**: End-to-end encryption and privacy controls
+- **Moderation Tools**: Content filtering and abuse prevention
+- **Mobile Applications**: Cross-platform messaging clients
+
 ## Context
 
 Real-time messaging is a core feature of modern social applications, enabling instant communication between users through text, media, and rich content. This template addresses the complete messaging ecosystem from one-on-one conversations to group chats and broadcast messaging.

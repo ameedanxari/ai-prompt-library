@@ -4,7 +4,80 @@
 This template provides comprehensive patterns for implementing adaptive streaming quality, bandwidth optimization, and network-aware content delivery in media streaming applications. It covers quality adaptation algorithms, bandwidth monitoring, buffer management, and user experience optimization.
 
 ## Context
-Use this template when building media streaming applications that need to provide optimal viewing/listening experience across varying network conditions. Suitable for video streaming, music platforms, live streaming, and any application requiring adaptive quality delivery based on available bandwidth and device capabilities.
+Streaming quality optimization is crucial for user satisfaction in media applications. Users expect smooth playback regardless of network conditions, requiring sophisticated adaptive bitrate algorithms and intelligent buffer management. This template addresses the complexity of building quality-aware streaming systems that dynamically adjust to network conditions, minimize buffering, and maximize playback quality.
+
+## Instructions
+
+1. **Setup Quality Profiles**: Configure multiple bitrate and resolution profiles
+2. **Implement Bandwidth Monitoring**: Build real-time network condition detection
+3. **Add Adaptive Streaming**: Implement dynamic quality adjustment algorithms
+4. **Configure Buffer Management**: Set up optimal buffering strategies and policies
+5. **Enable Network Prediction**: Implement predictive bandwidth and quality algorithms
+6. **Add Quality Controls**: Provide user controls for manual quality selection
+7. **Monitor Streaming Performance**: Track quality metrics and user experience data
+
+## Examples
+
+### Example 1: Adaptive Bitrate Streaming
+```typescript
+interface StreamingQualityManager {
+  setupAdaptiveStreaming(profiles: QualityProfile[]): Promise<ABRConfiguration>;
+  monitorBandwidth(): Promise<BandwidthMetrics>;
+  adjustQuality(targetQuality: QualityLevel): Promise<void>;
+}
+
+const qualityManager = new StreamingQualityManager();
+const abrConfig = await qualityManager.setupAdaptiveStreaming([
+  { name: '480p', bitrate: 1000000, resolution: '854x480' },
+  { name: '720p', bitrate: 2500000, resolution: '1280x720' },
+  { name: '1080p', bitrate: 5000000, resolution: '1920x1080' }
+]);
+```
+
+### Example 2: Bandwidth-Aware Quality Selection
+```typescript
+const optimalQuality = await qualityManager.selectOptimalQuality({
+  availableBandwidth: 3000000, // 3 Mbps
+  deviceCapabilities: { maxResolution: '1080p', hardwareDecoding: true },
+  userPreferences: { preferQuality: true, dataSaver: false }
+});
+```
+
+### Example 3: Buffer Management
+```typescript
+const bufferConfig = await qualityManager.configureBuffering({
+  targetBufferSize: 30, // seconds
+  maxBufferSize: 60,
+  rebufferingThreshold: 5,
+  adaptiveBuffering: true
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| adaptiveStreaming | Enable adaptive bitrate streaming | boolean | No | true |
+| qualityProfiles | Available quality/bitrate profiles | array | Yes | N/A |
+| bandwidthMonitoring | Enable real-time bandwidth monitoring | boolean | No | true |
+| bufferSize | Target buffer size (seconds) | number | No | 30 |
+| qualityAdjustmentSpeed | Quality change responsiveness | string | No | "medium" |
+| enableUserControls | Allow manual quality selection | boolean | No | true |
+| networkPrediction | Enable predictive quality adjustment | boolean | No | false |
+| dataSaverMode | Enable data-saving optimizations | boolean | No | false |
+| qualityMetrics | Track streaming quality metrics | boolean | No | true |
+
+## Expected Output
+
+This template will produce:
+- **Adaptive Streaming System**: Dynamic quality adjustment based on network conditions
+- **Bandwidth Monitoring**: Real-time network performance tracking and analysis
+- **Quality Optimization**: Intelligent quality selection for optimal user experience
+- **Buffer Management**: Advanced buffering strategies to prevent interruptions
+- **User Controls**: Manual quality selection and preference settings
+- **Performance Analytics**: Comprehensive streaming quality and performance metrics
+- **Network Prediction**: Predictive algorithms for proactive quality adjustments
+- **Cross-Platform Support**: Consistent streaming experience across all devices
 
 ## Implementation Patterns
 

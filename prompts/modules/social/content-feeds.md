@@ -1,12 +1,88 @@
 # Content Feeds Template
 
 ## Purpose
-
 This template provides comprehensive guidance for implementing content feed systems in social applications, covering algorithmic and chronological timeline feeds, content ranking, personalization, and feed optimization features.
 
 ## Context
+Content feeds are the primary interface through which users consume content in social applications. The feed algorithm significantly impacts user engagement, content discovery, and creator success. This template addresses the complexity of building scalable feed systems that balance personalization with content diversity, algorithmic ranking with user control, and engagement optimization with user well-being.
 
-Content feeds are the central hub of social applications, determining what users see and how they engage with content. This template addresses both algorithmic and chronological feed approaches, content ranking systems, personalization algorithms, and feed performance optimization.
+## Instructions
+
+1. **Setup Feed Infrastructure**: Configure feed generation and content aggregation systems
+2. **Implement Feed Algorithms**: Build chronological, algorithmic, and hybrid feed approaches
+3. **Add Personalization**: Implement user preference-based content ranking and filtering
+4. **Configure Content Sources**: Set up content aggregation from various sources and connections
+5. **Enable Feed Customization**: Allow users to customize their feed preferences and filters
+6. **Add Performance Optimization**: Implement caching, pagination, and efficient feed delivery
+7. **Test Feed Quality**: Validate content relevance, engagement, and user satisfaction
+
+## Examples
+
+### Example 1: Feed Generation System
+```typescript
+interface ContentFeedService {
+  generateFeed(userId: string, options: FeedOptions): Promise<ContentFeed>;
+  refreshFeed(userId: string): Promise<ContentFeed>;
+  getFeedMetrics(userId: string): Promise<FeedMetrics>;
+}
+
+const feedService = new ContentFeedService();
+const feed = await feedService.generateFeed('user-123', {
+  algorithm: 'hybrid',
+  contentTypes: ['posts', 'stories', 'videos'],
+  maxItems: 50,
+  includePromoted: true
+});
+```
+
+### Example 2: Algorithmic Feed Ranking
+```typescript
+const algorithmicFeed = await feedService.generateFeed('user-123', {
+  algorithm: 'personalized',
+  rankingFactors: {
+    recency: 0.3,
+    engagement: 0.4,
+    relationship: 0.2,
+    interests: 0.1
+  }
+});
+```
+
+### Example 3: Feed Customization
+```typescript
+const customFeed = await feedService.updateFeedPreferences('user-123', {
+  showReposts: false,
+  prioritizeCloseConnections: true,
+  contentFilters: ['sports', 'technology'],
+  hideKeywords: ['politics', 'drama']
+});
+```
+
+## Variables
+
+| Variable | Description | Type | Required | Default |
+|----------|-------------|------|----------|---------|
+| feedAlgorithm | Primary feed algorithm type | string | Yes | N/A |
+| enablePersonalization | Enable personalized content ranking | boolean | No | true |
+| enableChronological | Enable chronological feed option | boolean | No | true |
+| maxFeedItems | Maximum items per feed load | number | No | 50 |
+| enableContentFilters | Allow user content filtering | boolean | No | true |
+| enablePromotedContent | Include promoted/sponsored content | boolean | No | false |
+| feedRefreshInterval | Auto-refresh interval (minutes) | number | No | 15 |
+| enableFeedAnalytics | Track feed performance metrics | boolean | No | true |
+| enableRealTimeUpdates | Enable real-time feed updates | boolean | No | false |
+
+## Expected Output
+
+This template will produce:
+- **Multi-Algorithm Feed System**: Chronological, algorithmic, and hybrid feed generation
+- **Personalization Engine**: AI-powered content ranking and user preference matching
+- **Content Aggregation**: Multi-source content collection and curation
+- **Feed Customization**: User-controlled feed preferences and filtering options
+- **Performance Optimization**: Efficient feed delivery with caching and pagination
+- **Analytics Dashboard**: Feed performance and engagement tracking
+- **Real-Time Updates**: Live feed updates and content streaming
+- **A/B Testing Framework**: Feed algorithm testing and optimization tools
 
 ## Implementation Guidance
 
