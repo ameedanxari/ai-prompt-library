@@ -1,61 +1,123 @@
 # AI Agent Instructions for Prompt Library
 
 ## Purpose
-Provide comprehensive instructions for AI agents working with the AI Prompt Library system. This document ensures consistent, high-quality execution of the prompt library workflow, enabling any AI agent to transform minimal user input into production-ready software specifications through a modular, stage-based approach.
+Provide comprehensive instructions for AI agents working with the AI Prompt Library system. This document ensures consistent, high-quality execution of the prompt library workflow, enabling any AI agent to transform minimal user input into production-ready software specifications through a validated, stage-based approach with proper state management and resumable execution.
 
 ## Instructions
 
 ### How to Use This Document
 
 1. **Read Before Starting**: Review this entire document before beginning any work with the prompt library
-2. **Follow Stage Pipeline**: Execute stages in the specified order (01-10)
+2. **Follow Stage Pipeline**: Execute stages in the specified order (01-10) with proper validation
 3. **Maintain State**: Keep all project state documents updated throughout execution
-4. **Preserve Context**: Ensure any AI agent can continue work at any stage
-5. **Validate Quality**: Run quality gates and validation checks at each stage
-6. **Document Decisions**: Record all architectural and implementation choices
+4. **Preserve Context**: Ensure any AI agent can continue work at any stage through comprehensive state management
+5. **Validate Quality**: Run quality gates and validation checks at each stage transition
+6. **Document Decisions**: Record all architectural and implementation choices with full traceability
+7. **Handle Errors**: Use error recovery system for graceful failure handling
 
 ### Quick Start for New AI Agents
 
 1. **Read NEXT_ACTION.md** - This file tells you exactly what to do next
-2. **If NEXT_ACTION.md doesn't exist**, read MY_PROJECT.md and start Stage 01
-3. **Execute the action** described in NEXT_ACTION.md
-4. **Update state files** after completing the action
-5. **Set up the next action** for the following stage
+2. **If NEXT_ACTION.md doesn't exist**, read MY_PROJECT.md and start Stage 01 (Intake)
+3. **Execute the action** described in NEXT_ACTION.md using appropriate templates
+4. **Validate prerequisites** before proceeding to next stage
+5. **Update state files** after completing the action with full traceability
+6. **Set up the next action** for the following stage
 
-### The "Continue" Protocol
+### The "Continue" Protocol (Enhanced)
 
 When a user says **"Continue"** or **"Resume"**:
 
-1. **Read NEXT_ACTION.md** in the project root
-2. **Follow the instructions** in "What Happens Next"
-3. **Execute the next stage** using templates from `.ai-prompts/prompts/stages/`
-4. **Generate outputs** to `prompts/outputs/`
-5. **Update NEXT_ACTION.md** with the next stage
-6. **Update PROJECT_STATE.md** with progress
+1. **Read NEXT_ACTION.md** in the project root for current status
+2. **Validate prerequisites** for the next stage using quality gates
+3. **Load context** from previous stage outputs and decisions
+4. **Execute the next stage** using templates from appropriate domain and stage
+5. **Generate context-agnostic outputs** to `prompts/outputs/` with proper organization
+6. **Update NEXT_ACTION.md** with the next stage and required context
+7. **Update PROJECT_STATE.md** with progress and decisions
+8. **Document traceability** links between requirements and implementations
 
-This protocol ensures seamless continuation across different chats, IDEs, and AI agents.
+This protocol ensures seamless continuation across different chats, IDEs, and AI agents with full state preservation.
 
 ### State Files (Critical for Flow)
 
 These files must be maintained for the pipeline to work across sessions:
 
-| File | Location | Purpose |
-|------|----------|---------|
-| **NEXT_ACTION.md** | Project root | What to do next (primary control file) |
-| **PROJECT_STATE.md** | `prompts/outputs/` | Pipeline progress and decisions |
-| **MY_PROJECT.md** | Project root | Original project brief |
+| File | Location | Purpose | Updated By |
+|------|----------|---------|------------|
+| **NEXT_ACTION.md** | Project root | What to do next (primary control file) | State Manager |
+| **PROJECT_STATE.md** | `prompts/outputs/` | Pipeline progress and decisions | State Manager |
+| **DEVELOPMENT_LOG.md** | `prompts/outputs/` | Detailed execution log | State Manager |
+| **ARCHITECTURE_DECISIONS.md** | `prompts/outputs/` | Architectural decision records | Documentation System |
+| **COMPLETED_FEATURES.md** | `prompts/outputs/` | Feature completion tracking | State Manager |
+| **MY_PROJECT.md** | Project root | Original project brief | User/Initial Setup |
 
 See `templates/project-state-files.md` for exact formats.
 
-### Stage Execution Workflow
+### 10-Stage Pipeline Execution
 
-1. **Pre-Stage**: Read NEXT_ACTION.md, load context from previous outputs
-2. **During Stage**: Generate outputs using stage templates, log decisions
-3. **Post-Stage**: Update NEXT_ACTION.md and PROJECT_STATE.md
+The corrected pipeline follows these stages with proper validation:
+
+| Stage | ID | Purpose | Key Outputs | Prerequisites |
+|-------|----|---------|-----------|--------------| 
+| **01** | INTAKE | Project validation and setup | Requirements, constraints | Project brief |
+| **02** | ANALYSIS | Domain analysis and planning | Analysis report, scope | Valid requirements |
+| **03** | ARCHITECTURE | System architecture design | Architecture docs, decisions | Completed analysis |
+| **04** | DESIGN | Detailed design specifications | Design specs, wireframes | Architecture approval |
+| **05** | SECURITY | Security implementation | Security plan, compliance | Design completion |
+| **06** | IMPLEMENTATION | Code generation and tasks | Implementation tasks, code | Security validation |
+| **07** | TESTING | Testing strategy and validation | Test plans, quality gates | Implementation ready |
+| **08** | OPTIMIZATION | Performance and optimization | Optimization plan, metrics | Testing complete |
+| **09** | DEPLOYMENT | Deployment and infrastructure | Deployment guides, configs | Optimization done |
+| **10** | HANDOFF | Project handoff and documentation | Final docs, handoff guide | Deployment ready |
+
+### Stage Execution Workflow (Enhanced)
+
+1. **Pre-Stage Validation**: 
+   - Check prerequisites using Quality Gate System
+   - Validate previous stage outputs
+   - Load required context and dependencies
+
+2. **Template Selection**:
+   - Select domain-appropriate core templates
+   - Include cross-cutting concern templates
+   - Compose templates based on project features
+
+3. **Task Generation**:
+   - Generate context-agnostic tasks
+   - Ensure proper task sizing (< 2000 tokens each)
+   - Include all necessary context references
+
+4. **Context Optimization**:
+   - Optimize content for token efficiency
+   - Chunk large content appropriately
+   - Preserve essential information and relationships
+
+5. **Stage Execution**:
+   - Execute stage using selected templates
+   - Generate outputs with proper organization
+   - Document all decisions and rationale
+
+6. **Post-Stage Updates**:
+   - Update all state files with new information
+   - Create traceability links
+   - Set up next stage prerequisites
+   - Validate stage completion
+
+### Error Recovery Protocol
+
+When errors occur during execution:
+
+1. **Error Detection**: Identify error type and stage
+2. **Error Analysis**: Use Error Recovery System to analyze
+3. **Recovery Options**: Present available recovery strategies
+4. **Context Reconstruction**: Rebuild lost or corrupted state
+5. **Alternative Approaches**: Suggest alternative implementation paths
+6. **Validation**: Ensure recovery maintains system integrity
 
 ## Examples
 
-### Example 1: Starting a New Project
+### Example 1: Starting a New Project (Corrected Flow)
 
 ```markdown
 # User provides their idea in the setup prompt
@@ -63,41 +125,87 @@ Brief: "A task management app for remote teams with real-time collaboration"
 
 # AI executes Stage 01 - Intake
 1. Process user input from MY_PROJECT.md
-2. Generate requirements to prompts/outputs/specifications/requirements.md
-3. Update NEXT_ACTION.md:
+2. Select appropriate templates for 'productivity' domain
+3. Generate context-agnostic requirements
+4. Validate requirements completeness
+5. Generate outputs to prompts/outputs/specifications/requirements.md
+6. Update NEXT_ACTION.md:
    - Current Stage: Stage 01 - Intake ✅ COMPLETE
-   - Next Stage: Stage 02 - Charter
-4. Update PROJECT_STATE.md with progress
+   - Next Stage: Stage 02 - Analysis
+   - Prerequisites: [requirements.md, domain validation]
+7. Update PROJECT_STATE.md with progress and decisions
+8. Create traceability links for requirements
 
 # User says "Continue"
-# AI reads NEXT_ACTION.md and executes Stage 02
+# AI reads NEXT_ACTION.md, validates prerequisites, and executes Stage 02
 ```
 
-### Example 2: Agent Handoff Mid-Project
+### Example 2: Agent Handoff Mid-Project (Enhanced)
 
 ```markdown
 # New agent joins project at Stage 05
 # User says "Continue"
 
 1. Read NEXT_ACTION.md:
-   - Current Stage: Stage 04 - Features ✅ COMPLETE
-   - Next Stage: Stage 05 - Testing
+   - Current Stage: Stage 04 - Design ✅ COMPLETE
+   - Next Stage: Stage 05 - Security
+   - Prerequisites: [architecture.md, design-specs.md]
 
-2. Read context files listed in NEXT_ACTION.md:
-   - prompts/outputs/specifications/features.md
-   - prompts/outputs/specifications/architecture.md
+2. Validate prerequisites using Quality Gate System:
+   - Check architecture decisions are documented
+   - Verify design specifications are complete
+   - Validate cross-platform consistency
 
-3. Execute Stage 05:
-   - Load templates from .ai-prompts/prompts/stages/stage-05-testing/
-   - Generate testing strategy
-   - Output to prompts/outputs/specifications/testing.md
+3. Load context from state files:
+   - PROJECT_STATE.md for current progress
+   - ARCHITECTURE_DECISIONS.md for design context
+   - DEVELOPMENT_LOG.md for execution history
 
-4. Update state files:
+4. Execute Stage 05 - Security:
+   - Select security templates for project domain
+   - Generate security implementation tasks
+   - Optimize context for token efficiency
+   - Output to prompts/outputs/security/
+
+5. Update state files:
    - NEXT_ACTION.md: Stage 05 ✅ COMPLETE, Next: Stage 06
-   - PROJECT_STATE.md: Update pipeline progress table
+   - PROJECT_STATE.md: Update pipeline progress
+   - DEVELOPMENT_LOG.md: Log security decisions
+   - Create traceability links for security requirements
 ```
 
-### Example 3: Error Recovery
+### Example 3: Error Recovery (New)
+
+```markdown
+# Error occurs during Stage 06 - Implementation
+# Missing dependency detected
+
+1. Error Detection:
+   - Type: missing-dependency
+   - Stage: Stage 06 - Implementation
+   - Component: authentication-service
+
+2. Error Recovery Analysis:
+   - Can recover: true
+   - Recovery steps: [add missing dependency, update architecture]
+   - Alternative approaches: [use different auth provider, implement custom]
+
+3. Context Reconstruction:
+   - Rebuild implementation context
+   - Validate architecture decisions
+   - Check dependency compatibility
+
+4. Recovery Execution:
+   - Update architecture with missing dependency
+   - Regenerate implementation tasks
+   - Validate new approach
+   - Continue with corrected implementation
+
+5. State Updates:
+   - Log recovery in DEVELOPMENT_LOG.md
+   - Update ARCHITECTURE_DECISIONS.md
+   - Create traceability for recovery decisions
+```
 
 ```markdown
 # Scenario: Context loss during Stage 07

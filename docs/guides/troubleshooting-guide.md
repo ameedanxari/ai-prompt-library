@@ -1,667 +1,412 @@
-# Troubleshooting Guide
+# AI Prompt Library Troubleshooting Guide
 
-## Overview
+## Purpose
+Comprehensive troubleshooting guide for common issues encountered when using the AI Prompt Library system. This guide helps developers and AI agents quickly identify and resolve problems during pipeline execution.
 
-This guide helps resolve common issues when working with the AI Prompt Library v2 templates. Issues are organized by category with symptoms, causes, and solutions.
+## Common Issues and Solutions
 
----
+### 1. Pipeline Execution Issues
 
-## Template Selection Issues
-
-### Issue: Templates Don't Cover My Use Case
-
+#### Issue: Stage Prerequisites Not Met
 **Symptoms:**
-- Can't find templates for specific functionality
-- Existing templates seem incomplete
+- Quality gate validation fails
+- "Cannot proceed to next stage" errors
+- Missing required outputs from previous stages
 
-**Causes:**
-- Looking in wrong domain category
-- Need to combine multiple templates
-- Custom functionality required
+**Diagnosis:**
+```bash
+# Check current project state
+cat NEXT_ACTION.md
+cat prompts/outputs/PROJECT_STATE.md
+
+# Verify stage outputs exist
+ls -la prompts/outputs/specifications/
+ls -la prompts/outputs/architecture/
+```
 
 **Solutions:**
+1. **Complete Missing Prerequisites:**
+   - Review NEXT_ACTION.md for required files
+   - Re-execute previous stage if outputs are missing
+   - Validate output completeness using quality gates
 
-1. **Search across domains:**
-   ```markdown
-   # Example: Looking for "user authentication"
-   
-   Check these locations:
-   - security/multi-factor-auth.md (primary)
-   - feature-patterns/auth-oauth.md (OAuth specific)
-   - enterprise-saas/sso-integration.md (enterprise SSO)
-   ```
+2. **Force Stage Progression (Use with caution):**
+   - Update NEXT_ACTION.md manually
+   - Add placeholder outputs for missing prerequisites
+   - Document the bypass in DEVELOPMENT_LOG.md
 
-2. **Combine templates:**
-   ```markdown
-   # Example: Building a marketplace
-   
-   Combine:
-   - commerce/product-catalog.md
-   - commerce/marketplace-features.md
-   - enterprise-saas/multi-tenancy.md (for seller isolation)
-   ```
+**Prevention:**
+- Always validate stage completion before proceeding
+- Use quality gate system for prerequisite checking
+- Maintain comprehensive state documentation
 
-3. **Extend existing templates:**
-   ```typescript
-   // Extend base template functionality
-   class CustomProductService extends ProductService {
-     async customFeature(): Promise<void> {
-       // Your custom implementation
-     }
-   }
-   ```
-
----
-
-### Issue: Template Conflicts
-
+#### Issue: Context Token Limit Exceeded
 **Symptoms:**
-- Two templates define similar interfaces differently
-- Conflicting recommendations between templates
+- "Token limit exceeded" errors
+- Incomplete task generation
+- Context optimization failures
 
-**Causes:**
-- Templates designed for different contexts
-- Version mismatches
-- Overlapping functionality
+**Diagnosis:**
+```bash
+# Check content sizes
+wc -c prompts/outputs/**/*.md
+grep -r "token" prompts/outputs/DEVELOPMENT_LOG.md
+```
 
 **Solutions:**
+1. **Enable Context Optimization:**
+   - Use ContextOptimizationService for large content
+   - Enable chunking for oversized specifications
+   - Remove redundant information from outputs
 
-1. **Identify the primary template:**
-   ```markdown
-   # When commerce/payment-processing.md conflicts with 
-   # fintech/transaction-processing.md
-   
-   Choose based on context:
-   - E-commerce app → Use commerce/payment-processing.md
-   - Banking app → Use fintech/transaction-processing.md
-   ```
+2. **Reduce Content Scope:**
+   - Break large features into smaller components
+   - Use incremental prompt generation
+   - Focus on essential information only
 
-2. **Create adapter layer:**
-   ```typescript
-   // Adapter to unify different payment interfaces
-   interface UnifiedPayment {
-     processPayment(amount: Money): Promise<PaymentResult>;
-   }
-   
-   class CommercePaymentAdapter implements UnifiedPayment {
-     constructor(private commerceService: CommercePaymentService) {}
-     
-     async processPayment(amount: Money): Promise<PaymentResult> {
-       return this.commerceService.charge(amount);
-     }
-   }
-   ```
+**Prevention:**
+- Monitor token usage throughout pipeline
+- Use context optimization proactively
+- Keep individual outputs under 2000 tokens
 
-3. **Document your choices:**
-   ```markdown
-   # ADR: Payment Template Selection
-   
-   Chose commerce/payment-processing.md because:
-   - Primary use case is e-commerce
-   - Better Stripe integration
-   - Simpler for our needs
-   ```
+### 2. State Management Issues
 
----
-
-## Implementation Issues
-
-### Issue: Template Code Doesn't Compile
-
+#### Issue: Corrupted or Missing State Files
 **Symptoms:**
-- TypeScript errors in template examples
-- Missing type definitions
-- Import errors
+- NEXT_ACTION.md missing or malformed
+- PROJECT_STATE.md inconsistencies
+- Cannot resume pipeline execution
 
-**Causes:**
-- Template uses pseudocode or simplified examples
-- Missing dependencies
-- Different TypeScript version
+**Diagnosis:**
+```bash
+# Check state file integrity
+file NEXT_ACTION.md PROJECT_STATE.md
+head -20 NEXT_ACTION.md
+grep -E "Stage|Status" prompts/outputs/PROJECT_STATE.md
+```
 
 **Solutions:**
+1. **Reconstruct State from Outputs:**
+   - Use StateManager.reconstructContext()
+   - Rebuild state from existing output files
+   - Validate reconstructed state consistency
 
-1. **Install required dependencies:**
+2. **Manual State Recovery:**
+   - Create new NEXT_ACTION.md from template
+   - Rebuild PROJECT_STATE.md from available outputs
+   - Update DEVELOPMENT_LOG.md with recovery actions
+
+**Recovery Template:**
+```markdown
+# NEXT_ACTION.md Recovery Template
+## Current Status
+- **Current Stage**: [Determine from outputs]
+- **Status**: [IN_PROGRESS/COMPLETED]
+- **Last Completed**: [Check output timestamps]
+
+## What Happens Next
+1. Validate existing outputs
+2. Determine next stage based on completions
+3. Resume pipeline execution
+
+## Context Files
+- [List available output files]
+```
+
+**Prevention:**
+- Regular state file backups
+- Use atomic state updates
+- Validate state consistency after each stage
+
+#### Issue: Agent Handoff Failures
+**Symptoms:**
+- New agent cannot understand project context
+- Missing critical information for continuation
+- Inconsistent execution across agents
+
+**Diagnosis:**
+```bash
+# Check context completeness
+grep -r "TODO\|FIXME\|INCOMPLETE" prompts/outputs/
+cat prompts/outputs/ARCHITECTURE_DECISIONS.md
+```
+
+**Solutions:**
+1. **Enhance Context Documentation:**
+   - Update ARCHITECTURE_DECISIONS.md with rationale
+   - Add detailed execution history to DEVELOPMENT_LOG.md
+   - Include traceability links in outputs
+
+2. **Standardize Handoff Protocol:**
+   - Use DocumentationTraceabilitySystem
+   - Generate comprehensive project documentation
+   - Validate context completeness before handoff
+
+**Prevention:**
+- Maintain detailed decision documentation
+- Use standardized output formats
+- Regular context validation checks
+
+### 3. Template and Task Generation Issues
+
+#### Issue: Template Selection Failures
+**Symptoms:**
+- No templates selected for domain/stage
+- Inappropriate template combinations
+- Missing cross-cutting concerns
+
+**Diagnosis:**
+```bash
+# Check template availability
+ls -la prompts/modules/
+grep -r "domain.*commerce" prompts/modules/
+```
+
+**Solutions:**
+1. **Verify Template Library:**
+   - Check template completeness for domain
+   - Validate template metadata and tagging
+   - Update template library if needed
+
+2. **Manual Template Selection:**
+   - Override automatic selection
+   - Specify required templates explicitly
+   - Document manual selections in decisions
+
+**Prevention:**
+- Regular template library validation
+- Comprehensive domain coverage testing
+- Template dependency verification
+
+#### Issue: Context-Agnostic Task Generation Failures
+**Symptoms:**
+- Tasks contain hardcoded references
+- Missing context information in tasks
+- Tasks cannot be executed independently
+
+**Diagnosis:**
+```bash
+# Check task quality
+grep -r "TODO\|FIXME" prompts/outputs/tasks/
+grep -r "see above\|previous" prompts/outputs/tasks/
+```
+
+**Solutions:**
+1. **Regenerate Tasks with Full Context:**
+   - Include all necessary context references
+   - Add self-contained information blocks
+   - Validate task independence
+
+2. **Enhance Task Templates:**
+   - Update task generation templates
+   - Add context inclusion patterns
+   - Improve task validation rules
+
+**Prevention:**
+- Use TaskGenerationEngine validation
+- Regular task quality audits
+- Context-agnostic testing
+
+### 4. Performance Issues
+
+#### Issue: Slow Pipeline Execution
+**Symptoms:**
+- Long stage execution times
+- Memory usage growth
+- File system performance degradation
+
+**Diagnosis:**
+```bash
+# Monitor performance
+time ls -la prompts/outputs/
+du -sh prompts/outputs/
+ps aux | grep node
+```
+
+**Solutions:**
+1. **Optimize Content Processing:**
+   - Enable context optimization
+   - Use incremental processing
+   - Clean up temporary files
+
+2. **Resource Management:**
+   - Monitor memory usage
+   - Use streaming for large files
+   - Implement garbage collection
+
+**Prevention:**
+- Regular performance monitoring
+- Resource usage limits
+- Efficient file organization
+
+#### Issue: Large Output File Sizes
+**Symptoms:**
+- Output files exceed reasonable sizes
+- File system space issues
+- Slow file operations
+
+**Solutions:**
+1. **Content Optimization:**
+   - Remove redundant information
+   - Use compression for large outputs
+   - Split large files into components
+
+2. **Output Management:**
+   - Regular cleanup of old outputs
+   - Archive completed projects
+   - Use efficient file formats
+
+### 5. Integration and Deployment Issues
+
+#### Issue: Cross-Platform Inconsistencies
+**Symptoms:**
+- Different behavior on different platforms
+- Platform-specific template failures
+- Inconsistent output formats
+
+**Solutions:**
+1. **Platform Validation:**
+   - Test on all target platforms
+   - Use platform-agnostic templates
+   - Validate cross-platform compatibility
+
+2. **Standardization:**
+   - Use consistent file formats
+   - Standardize path handling
+   - Implement platform abstraction
+
+#### Issue: Compliance Validation Failures
+**Symptoms:**
+- Regulatory compliance checks fail
+- Security validation errors
+- Audit trail inconsistencies
+
+**Solutions:**
+1. **Enhanced Compliance Checking:**
+   - Use QualityGateSystem for validation
+   - Implement comprehensive audit trails
+   - Regular compliance reviews
+
+2. **Documentation Enhancement:**
+   - Maintain detailed compliance records
+   - Document all security decisions
+   - Create audit-ready documentation
+
+## Diagnostic Tools and Commands
+
+### State Validation
+```bash
+# Check pipeline state
+cat NEXT_ACTION.md | head -20
+grep "Stage.*COMPLETE" prompts/outputs/PROJECT_STATE.md
+
+# Validate file integrity
+find prompts/outputs -name "*.md" -exec wc -l {} \;
+find prompts/outputs -name "*.md" -exec head -5 {} \;
+```
+
+### Performance Monitoring
+```bash
+# Monitor resource usage
+du -sh prompts/outputs/*
+ls -la prompts/outputs/ | wc -l
+ps aux | grep -E "node|npm"
+```
+
+### Content Analysis
+```bash
+# Check content quality
+grep -r "TODO\|FIXME\|INCOMPLETE" prompts/outputs/
+grep -r "Error\|Failed\|Missing" prompts/outputs/DEVELOPMENT_LOG.md
+```
+
+### Template Validation
+```bash
+# Verify template availability
+find prompts/modules -name "*.md" | wc -l
+find prompts/stages -name "*.md" | wc -l
+```
+
+## Emergency Recovery Procedures
+
+### Complete State Recovery
+1. **Backup Current State:**
    ```bash
-   # Common dependencies for templates
-   npm install @types/node typescript
-   
-   # Domain-specific dependencies
-   npm install stripe  # For payment templates
-   npm install @aws-sdk/client-s3  # For storage templates
+   cp -r prompts/outputs prompts/outputs.backup.$(date +%Y%m%d_%H%M%S)
    ```
 
-2. **Create missing types:**
-   ```typescript
-   // types/template-types.ts
-   
-   // If template uses Money type
-   interface Money {
-     amount: number;
-     currency: string;
-   }
-   
-   // If template uses Result type
-   type Result<T, E = Error> = 
-     | { success: true; data: T }
-     | { success: false; error: E };
-   ```
+2. **Reconstruct from Outputs:**
+   - Analyze existing output files
+   - Determine last completed stage
+   - Rebuild state files from templates
 
-3. **Adapt pseudocode to real code:**
-   ```typescript
-   // Template pseudocode:
-   // await database.store(user)
-   
-   // Real implementation:
-   await prisma.user.create({ data: user });
-   // or
-   await userRepository.save(user);
-   ```
+3. **Validate Recovery:**
+   - Test pipeline continuation
+   - Verify output consistency
+   - Document recovery process
 
----
+### Pipeline Reset
+1. **Preserve Critical Data:**
+   - Save MY_PROJECT.md
+   - Backup important outputs
+   - Document current progress
 
-### Issue: Template Patterns Don't Scale
-
-**Symptoms:**
-- Performance degrades with more data
-- Memory issues with large datasets
-- Slow response times
-
-**Causes:**
-- Template examples optimized for clarity, not scale
-- Missing caching
-- N+1 query problems
-
-**Solutions:**
-
-1. **Add caching:**
-   ```typescript
-   // Template pattern (no caching):
-   async getProduct(id: string): Promise<Product> {
-     return this.database.findById(id);
-   }
-   
-   // Scaled pattern (with caching):
-   async getProduct(id: string): Promise<Product> {
-     const cached = await this.cache.get(`product:${id}`);
-     if (cached) return cached;
-     
-     const product = await this.database.findById(id);
-     await this.cache.set(`product:${id}`, product, { ttl: 300 });
-     return product;
-   }
-   ```
-
-2. **Fix N+1 queries:**
-   ```typescript
-   // Template pattern (N+1):
-   const orders = await getOrders();
-   for (const order of orders) {
-     order.items = await getOrderItems(order.id);  // N queries
-   }
-   
-   // Scaled pattern (batch):
-   const orders = await getOrders();
-   const orderIds = orders.map(o => o.id);
-   const allItems = await getOrderItemsBatch(orderIds);  // 1 query
-   
-   for (const order of orders) {
-     order.items = allItems.filter(i => i.orderId === order.id);
-   }
-   ```
-
-3. **Add pagination:**
-   ```typescript
-   // Template pattern (load all):
-   async getProducts(): Promise<Product[]> {
-     return this.database.findAll();
-   }
-   
-   // Scaled pattern (paginated):
-   async getProducts(cursor?: string, limit = 20): Promise<{
-     products: Product[];
-     nextCursor?: string;
-   }> {
-     const products = await this.database.findMany({
-       cursor,
-       take: limit + 1
-     });
-     
-     const hasMore = products.length > limit;
-     return {
-       products: products.slice(0, limit),
-       nextCursor: hasMore ? products[limit - 1].id : undefined
-     };
-   }
-   ```
-
----
-
-## Integration Issues
-
-### Issue: Templates Don't Work Together
-
-**Symptoms:**
-- Services can't communicate
-- Data format mismatches
-- Circular dependencies
-
-**Causes:**
-- Missing integration layer
-- Incompatible data models
-- Poor service boundaries
-
-**Solutions:**
-
-1. **Create shared contracts:**
-   ```typescript
-   // shared/contracts.ts
-   
-   // Shared event types
-   interface UserCreatedEvent {
-     type: 'user.created';
-     userId: string;
-     email: string;
-     timestamp: Date;
-   }
-   
-   // Shared data types
-   interface UserReference {
-     id: string;
-     displayName: string;
-   }
-   ```
-
-2. **Use event-driven integration:**
-   ```typescript
-   // User service publishes event
-   await eventBus.publish({
-     type: 'user.created',
-     userId: user.id,
-     email: user.email
-   });
-   
-   // Other services subscribe
-   eventBus.subscribe('user.created', async (event) => {
-     await notificationService.sendWelcomeEmail(event.userId);
-     await analyticsService.trackSignup(event.userId);
-   });
-   ```
-
-3. **Break circular dependencies:**
-   ```typescript
-   // ❌ Circular: UserService → OrderService → UserService
-   
-   // ✅ Fixed: Use events or shared interface
-   
-   // shared/interfaces.ts
-   interface UserLookup {
-     getUser(id: string): Promise<UserReference>;
-   }
-   
-   // OrderService depends on interface, not UserService
-   class OrderService {
-     constructor(private userLookup: UserLookup) {}
-   }
-   ```
-
----
-
-### Issue: External Service Integration Fails
-
-**Symptoms:**
-- API calls to Stripe/PayPal fail
-- Webhook handlers don't receive events
-- OAuth flows break
-
-**Causes:**
-- Missing API keys
-- Wrong environment (sandbox vs production)
-- Webhook URL not configured
-
-**Solutions:**
-
-1. **Verify environment configuration:**
+2. **Clean Reset:**
    ```bash
-   # Check environment variables
-   echo $STRIPE_SECRET_KEY
-   echo $STRIPE_WEBHOOK_SECRET
-   
-   # Ensure using correct environment
-   # Development: sk_test_...
-   # Production: sk_live_...
+   rm -f NEXT_ACTION.md
+   rm -rf prompts/outputs/*
    ```
 
-2. **Test webhooks locally:**
-   ```bash
-   # Use Stripe CLI for local testing
-   stripe listen --forward-to localhost:3000/webhooks/stripe
-   
-   # Use ngrok for other services
-   ngrok http 3000
-   ```
+3. **Restart Pipeline:**
+   - Begin from Stage 01
+   - Use preserved project brief
+   - Document reset reason
 
-3. **Add proper error handling:**
-   ```typescript
-   async function handleStripeWebhook(req: Request): Promise<void> {
-     const sig = req.headers['stripe-signature'];
-     
-     try {
-       const event = stripe.webhooks.constructEvent(
-         req.body,
-         sig,
-         process.env.STRIPE_WEBHOOK_SECRET
-       );
-       
-       await processEvent(event);
-     } catch (err) {
-       if (err instanceof stripe.errors.SignatureVerificationError) {
-         console.error('Invalid webhook signature');
-         throw new UnauthorizedError('Invalid signature');
-       }
-       throw err;
-     }
-   }
-   ```
+## Best Practices for Issue Prevention
 
----
+### 1. Proactive Monitoring
+- Regular state file validation
+- Performance metrics tracking
+- Quality gate compliance checking
+- Resource usage monitoring
 
-## Security Issues
+### 2. Comprehensive Documentation
+- Detailed decision documentation
+- Complete traceability records
+- Regular documentation updates
+- Standardized formats
 
-### Issue: Security Template Not Working
+### 3. Robust Error Handling
+- Comprehensive error recovery procedures
+- Graceful failure handling
+- Alternative approach documentation
+- Recovery validation
 
-**Symptoms:**
-- Authentication bypassed
-- Encryption not applied
-- Audit logs missing
-
-**Causes:**
-- Middleware not applied
-- Wrong order of middleware
-- Missing configuration
-
-**Solutions:**
-
-1. **Verify middleware order:**
-   ```typescript
-   // Correct order
-   app.use(corsMiddleware);        // 1. CORS first
-   app.use(rateLimitMiddleware);   // 2. Rate limiting
-   app.use(authMiddleware);        // 3. Authentication
-   app.use(authorizationMiddleware); // 4. Authorization
-   app.use(auditMiddleware);       // 5. Audit logging
-   
-   // Routes come after middleware
-   app.use('/api', apiRoutes);
-   ```
-
-2. **Check encryption configuration:**
-   ```typescript
-   // Verify encryption key is set
-   if (!process.env.ENCRYPTION_KEY) {
-     throw new Error('ENCRYPTION_KEY must be set');
-   }
-   
-   // Verify key length (AES-256 requires 32 bytes)
-   const key = Buffer.from(process.env.ENCRYPTION_KEY, 'base64');
-   if (key.length !== 32) {
-     throw new Error('ENCRYPTION_KEY must be 32 bytes');
-   }
-   ```
-
-3. **Enable audit logging:**
-   ```typescript
-   // Ensure audit service is initialized
-   const auditService = new AuditService({
-     storage: new DatabaseAuditStorage(database),
-     enabled: true,  // Make sure this is true
-     logLevel: 'all' // Log all events
-   });
-   
-   // Verify logs are being written
-   auditService.on('logged', (entry) => {
-     console.log('Audit entry created:', entry.id);
-   });
-   ```
-
----
-
-## Performance Issues
-
-### Issue: Slow Template Operations
-
-**Symptoms:**
-- API responses take too long
-- Database queries timeout
-- High memory usage
-
-**Causes:**
-- Missing indexes
-- No connection pooling
-- Synchronous operations blocking
-
-**Solutions:**
-
-1. **Add database indexes:**
-   ```sql
-   -- For user lookups
-   CREATE INDEX idx_users_email ON users(email);
-   
-   -- For order queries
-   CREATE INDEX idx_orders_user_date ON orders(user_id, created_at);
-   
-   -- For product search
-   CREATE INDEX idx_products_name_gin ON products 
-     USING gin(to_tsvector('english', name));
-   ```
-
-2. **Configure connection pooling:**
-   ```typescript
-   // Database connection pool
-   const pool = new Pool({
-     max: 20,           // Maximum connections
-     min: 5,            // Minimum connections
-     idleTimeoutMillis: 30000,
-     connectionTimeoutMillis: 2000
-   });
-   
-   // Redis connection pool
-   const redis = new Redis({
-     maxRetriesPerRequest: 3,
-     enableReadyCheck: true,
-     lazyConnect: true
-   });
-   ```
-
-3. **Use async operations:**
-   ```typescript
-   // ❌ Blocking
-   const result1 = await service1.getData();
-   const result2 = await service2.getData();
-   const result3 = await service3.getData();
-   
-   // ✅ Parallel
-   const [result1, result2, result3] = await Promise.all([
-     service1.getData(),
-     service2.getData(),
-     service3.getData()
-   ]);
-   ```
-
----
-
-## Testing Issues
-
-### Issue: Template Tests Fail
-
-**Symptoms:**
-- Unit tests fail unexpectedly
-- Integration tests timeout
-- Mocks don't work correctly
-
-**Causes:**
-- Missing test setup
-- Incorrect mocking
-- Test isolation issues
-
-**Solutions:**
-
-1. **Proper test setup:**
-   ```typescript
-   // test/setup.ts
-   import { beforeAll, afterAll, beforeEach } from 'vitest';
-   
-   beforeAll(async () => {
-     // Initialize test database
-     await testDatabase.connect();
-     await testDatabase.migrate();
-   });
-   
-   afterAll(async () => {
-     await testDatabase.disconnect();
-   });
-   
-   beforeEach(async () => {
-     // Clean database between tests
-     await testDatabase.truncateAll();
-   });
-   ```
-
-2. **Correct mocking:**
-   ```typescript
-   // Mock external services
-   vi.mock('./stripe', () => ({
-     stripe: {
-       paymentIntents: {
-         create: vi.fn().mockResolvedValue({
-           id: 'pi_test',
-           status: 'succeeded'
-         })
-       }
-     }
-   }));
-   
-   // Reset mocks between tests
-   beforeEach(() => {
-     vi.clearAllMocks();
-   });
-   ```
-
-3. **Isolate tests:**
-   ```typescript
-   describe('OrderService', () => {
-     let orderService: OrderService;
-     let mockPaymentService: MockPaymentService;
-     
-     beforeEach(() => {
-       // Create fresh instances for each test
-       mockPaymentService = new MockPaymentService();
-       orderService = new OrderService(mockPaymentService);
-     });
-     
-     it('should process order', async () => {
-       // Test with isolated instance
-     });
-   });
-   ```
-
----
-
-## Deployment Issues
-
-### Issue: Template Works Locally But Not in Production
-
-**Symptoms:**
-- Features work in development
-- Errors in production environment
-- Missing functionality in deployed app
-
-**Causes:**
-- Environment variable differences
-- Missing production dependencies
-- Different infrastructure
-
-**Solutions:**
-
-1. **Verify environment variables:**
-   ```bash
-   # Create .env.example with all required variables
-   DATABASE_URL=
-   REDIS_URL=
-   STRIPE_SECRET_KEY=
-   ENCRYPTION_KEY=
-   
-   # Validate on startup
-   const requiredEnvVars = [
-     'DATABASE_URL',
-     'REDIS_URL',
-     'STRIPE_SECRET_KEY'
-   ];
-   
-   for (const envVar of requiredEnvVars) {
-     if (!process.env[envVar]) {
-       throw new Error(`Missing required env var: ${envVar}`);
-     }
-   }
-   ```
-
-2. **Check production dependencies:**
-   ```json
-   // package.json - ensure dependencies are not in devDependencies
-   {
-     "dependencies": {
-       "stripe": "^12.0.0",  // ✅ In dependencies
-       "@prisma/client": "^5.0.0"
-     },
-     "devDependencies": {
-       "typescript": "^5.0.0",  // ✅ Dev only
-       "vitest": "^1.0.0"
-     }
-   }
-   ```
-
-3. **Match infrastructure:**
-   ```yaml
-   # docker-compose.yml for local development
-   services:
-     app:
-       environment:
-         - NODE_ENV=development
-         - DATABASE_URL=postgres://localhost:5432/dev
-     
-     db:
-       image: postgres:15
-   
-   # Ensure production has equivalent services
-   # - Same Postgres version
-   # - Same Redis version
-   # - Same Node.js version
-   ```
-
----
+### 4. Regular Maintenance
+- Template library updates
+- Performance optimization
+- Security validation
+- Compliance reviews
 
 ## Getting Help
 
-### When to Escalate
+### Internal Resources
+1. **Documentation System**: Use DocumentationTraceabilitySystem for project-specific help
+2. **Error Recovery**: Consult ErrorRecoverySystem for automated solutions
+3. **Quality Gates**: Use QualityGateSystem for validation guidance
 
-Escalate if:
-- Issue persists after trying solutions
-- Security vulnerability discovered
-- Template has incorrect information
-- Missing critical functionality
+### External Support
+1. **Community Forums**: Share common issues and solutions
+2. **Documentation**: Refer to comprehensive system documentation
+3. **Issue Tracking**: Report bugs and feature requests
 
-### How to Report Issues
+### Emergency Contacts
+- **System Administrator**: For critical system failures
+- **Technical Lead**: For architectural decisions
+- **Compliance Officer**: For regulatory issues
 
-Include in your report:
-1. Template name and version
-2. Steps to reproduce
-3. Expected vs actual behavior
-4. Environment details (Node version, OS, etc.)
-5. Relevant code snippets
-6. Error messages and stack traces
+## Conclusion
 
-### Resources
+This troubleshooting guide provides comprehensive solutions for common issues in the AI Prompt Library system. Regular reference to this guide and proactive issue prevention will ensure smooth pipeline execution and high-quality outputs.
 
-- [Template Reference](./template-reference.md) - Complete template catalog
-- [Best Practices](./best-practices.md) - Composition guidelines
-- [Quick Start Guides](./quick-start-guides.md) - Getting started
-- [Domain Guides](./commerce-app-guide.md) - Domain-specific help
+For issues not covered in this guide, use the diagnostic tools provided and follow the emergency recovery procedures. Always document new issues and solutions to improve this guide for future users.
