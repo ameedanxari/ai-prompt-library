@@ -12,6 +12,8 @@ Static authentication policies cannot address the dynamic nature of modern secur
 
 ### Risk Assessment Engine
 
+## Examples
+
 ```typescript
 interface RiskAssessmentEngine {
   calculateRisk(context: AuthenticationContext): Promise<RiskAssessment>;

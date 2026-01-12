@@ -12,6 +12,8 @@ Enterprise applications require comprehensive audit trails for security monitori
 
 ### Audit Event Management
 
+## Examples
+
 ```typescript
 interface AuditEventManager {
   logEvent(event: AuditEvent): Promise<void>;

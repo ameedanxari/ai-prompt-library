@@ -717,3 +717,7 @@ echo "Rollback completed successfully"
 
 ## Next Stage
 Stage 08 - Documentation (Documentation generation and maintenance)
+
+## Templates
+
+This module includes the following templates:

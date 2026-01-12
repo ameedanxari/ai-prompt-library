@@ -12,6 +12,8 @@ Industrial IoT requires specialized approaches for connecting to industrial equi
 
 ### Industrial Protocol Service
 
+## Examples
+
 ```typescript
 interface IndustrialProtocolService {
   connect(config: ProtocolConfig): Promise<IndustrialConnection>;

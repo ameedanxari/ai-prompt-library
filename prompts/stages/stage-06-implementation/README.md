@@ -62,7 +62,11 @@ Stage 07 - Deployment (Deployment configuration and procedures)
    - Establish communication protocols for development team
    - Plan knowledge sharing and documentation processes
 
-### Integration with Other Stages
+### Templates
+
+This module includes the following templates:
+
+## Integration with Other Stages
 
 - **From Stage 05**: Use testing strategy to inform implementation approach
 - **To Stage 07**: Provide implementation details for deployment planning

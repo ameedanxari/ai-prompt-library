@@ -16,76 +16,85 @@ Provide comprehensive instructions for AI agents working with the AI Prompt Libr
 
 ### Quick Start for New AI Agents
 
-1. **Orient Yourself**: Read PROJECT_STATUS.md and DEVELOPMENT_LOG.md
-2. **Check Current Stage**: Identify where the project currently stands
-3. **Load Context**: Review all previous stage outputs and decisions
-4. **Validate Prerequisites**: Ensure all dependencies are met
-5. **Execute Next Stage**: Follow the stage-specific instructions
-6. **Update State**: Maintain all project documentation
+1. **Read NEXT_ACTION.md** - This file tells you exactly what to do next
+2. **If NEXT_ACTION.md doesn't exist**, read MY_PROJECT.md and start Stage 01
+3. **Execute the action** described in NEXT_ACTION.md
+4. **Update state files** after completing the action
+5. **Set up the next action** for the following stage
+
+### The "Continue" Protocol
+
+When a user says **"Continue"** or **"Resume"**:
+
+1. **Read NEXT_ACTION.md** in the project root
+2. **Follow the instructions** in "What Happens Next"
+3. **Execute the next stage** using templates from `.ai-prompts/prompts/stages/`
+4. **Generate outputs** to `prompts/outputs/`
+5. **Update NEXT_ACTION.md** with the next stage
+6. **Update PROJECT_STATE.md** with progress
+
+This protocol ensures seamless continuation across different chats, IDEs, and AI agents.
+
+### State Files (Critical for Flow)
+
+These files must be maintained for the pipeline to work across sessions:
+
+| File | Location | Purpose |
+|------|----------|---------|
+| **NEXT_ACTION.md** | Project root | What to do next (primary control file) |
+| **PROJECT_STATE.md** | `prompts/outputs/` | Pipeline progress and decisions |
+| **MY_PROJECT.md** | Project root | Original project brief |
+
+See `templates/project-state-files.md` for exact formats.
 
 ### Stage Execution Workflow
 
-1. **Pre-Stage**: Validate prerequisites, load context, check assets
-2. **During Stage**: Generate platform files, maintain context, log decisions
-3. **Post-Stage**: Update project state, generate next steps, validate dependencies
+1. **Pre-Stage**: Read NEXT_ACTION.md, load context from previous outputs
+2. **During Stage**: Generate outputs using stage templates, log decisions
+3. **Post-Stage**: Update NEXT_ACTION.md and PROJECT_STATE.md
 
 ## Examples
 
 ### Example 1: Starting a New Project
 
-```bash
-# 1. Agent receives user input
+```markdown
+# User provides their idea in the setup prompt
 Brief: "A task management app for remote teams with real-time collaboration"
-Platforms: web, mobile
-Token Level: medium
 
-# 2. Agent processes through stages
-Stage 01 - Intake:
-- Process user input template
-- Organize assets in working_copy/
-- Generate initial project configuration
-- Output: requirements specification, asset mapping
+# AI executes Stage 01 - Intake
+1. Process user input from MY_PROJECT.md
+2. Generate requirements to prompts/outputs/specifications/requirements.md
+3. Update NEXT_ACTION.md:
+   - Current Stage: Stage 01 - Intake ✅ COMPLETE
+   - Next Stage: Stage 02 - Charter
+4. Update PROJECT_STATE.md with progress
 
-Stage 02 - Charter:
-- Define project scope and goals
-- Create stakeholder alignment
-- Output: project charter, success criteria
-
-# 3. Agent maintains state throughout
-PROJECT_STATUS.md: "Stage 02 complete, moving to Stage 03"
-DEVELOPMENT_LOG.md: "Chose React Native for mobile, Next.js for web"
-NEXT_STEPS.md: "Begin architecture design in Stage 03"
+# User says "Continue"
+# AI reads NEXT_ACTION.md and executes Stage 02
 ```
 
 ### Example 2: Agent Handoff Mid-Project
 
 ```markdown
 # New agent joins project at Stage 05
-1. Read PROJECT_STATUS.md:
-   - Project: TaskFlow collaboration platform
-   - Current: Stage 05 - Testing Strategy
-   - Completion: 40%
-   - Technology: React Native + Next.js + Node.js
+# User says "Continue"
 
-2. Review DEVELOPMENT_LOG.md:
-   - Architecture decisions made in Stage 03
-   - Feature specifications completed in Stage 04
-   - Key technical choices and rationale
+1. Read NEXT_ACTION.md:
+   - Current Stage: Stage 04 - Features ✅ COMPLETE
+   - Next Stage: Stage 05 - Testing
 
-3. Check NEXT_STEPS.md:
-   - Generate comprehensive testing strategy
-   - Include unit tests, integration tests, property-based tests
-   - Focus on real-time collaboration features
+2. Read context files listed in NEXT_ACTION.md:
+   - prompts/outputs/specifications/features.md
+   - prompts/outputs/specifications/architecture.md
 
-4. Execute Stage 05:
-   - Generate testing-web.md, testing-mobile.md, testing-platform-agnostic.md
-   - Include accessibility and i18n testing requirements
-   - Create property-based test specifications
+3. Execute Stage 05:
+   - Load templates from .ai-prompts/prompts/stages/stage-05-testing/
+   - Generate testing strategy
+   - Output to prompts/outputs/specifications/testing.md
 
-5. Update state documents:
-   - Mark Stage 05 complete in PROJECT_STATUS.md
-   - Log testing decisions in DEVELOPMENT_LOG.md
-   - Set Stage 06 next steps in NEXT_STEPS.md
+4. Update state files:
+   - NEXT_ACTION.md: Stage 05 ✅ COMPLETE, Next: Stage 06
+   - PROJECT_STATE.md: Update pipeline progress table
 ```
 
 ### Example 3: Error Recovery
@@ -682,3 +691,378 @@ If changes negatively impact library functionality:
 - Cross-platform consistency validated
 
 Remember: The goal is to transform minimal user input into comprehensive, production-ready specifications that any AI agent can execute successfully without requiring previous conversation context.
+
+---
+
+## AI Prompt Library v2 Capabilities
+
+### Overview
+
+Version 2 of the AI Prompt Library dramatically expands template coverage to support building any type of modern application. The library now includes 150+ templates across 20 domains, enabling comprehensive specification generation for e-commerce, social media, fintech, healthcare, and many other application types.
+
+### Domain Coverage
+
+The v2 library provides complete template coverage for these application domains:
+
+| Domain | Templates | Key Capabilities |
+|--------|-----------|------------------|
+| **Commerce** | 12 templates | Payment processing, product catalogs, shopping carts, marketplaces |
+| **Social** | 13 templates | User profiles, messaging, content feeds, moderation |
+| **Location Services** | 8 templates | GPS tracking, geofencing, service matching, fleet management |
+| **Media Streaming** | 8 templates | CDN integration, playlists, recommendations, offline sync |
+| **Fintech** | 8 templates | Account management, transactions, fraud detection, compliance |
+| **Healthcare** | 8 templates | Patient data, HIPAA compliance, telemedicine, prescriptions |
+| **Enterprise SaaS** | 8 templates | Multi-tenancy, RBAC, SSO, billing, workflows |
+| **Real-Time Communication** | 8 templates | WebSockets, presence, live streaming, video conferencing |
+| **Search & Discovery** | 8 templates | Full-text search, recommendations, semantic search, voice search |
+| **Content Management** | 8 templates | Content creation, versioning, moderation, compliance |
+| **Analytics** | 8 templates | User analytics, A/B testing, predictive analytics, reporting |
+| **Gamification** | 8 templates | Points, achievements, leaderboards, rewards |
+| **Security** | 8 templates | MFA, encryption, privacy controls, threat detection |
+| **IoT** | 8 templates | Device connectivity, edge computing, automation, analytics |
+| **Blockchain** | 8 templates | Wallets, smart contracts, NFTs, DeFi, governance |
+| **Notifications** | 8 templates | Multi-channel, personalization, compliance, automation |
+| **Data Processing** | 8 templates | ETL, data quality, governance, big data pipelines |
+| **Testing** | 8 templates | Automation, performance, security, quality metrics |
+| **Deployment** | 8 templates | Containers, Kubernetes, CI/CD, disaster recovery |
+| **Integration** | 8 templates | API management, webhooks, event-driven, enterprise integration |
+
+### Template Selection Guidelines
+
+When selecting templates for a project, follow this process:
+
+#### Step 1: Identify Primary Domain
+
+Based on the user's brief, identify the primary application domain:
+
+```markdown
+# Domain Identification Examples
+
+"Build an online store" → Commerce
+"Create a chat app" → Social + Real-Time Communication
+"Build a banking app" → Fintech
+"Create a patient portal" → Healthcare
+"Build a SaaS platform" → Enterprise SaaS
+```
+
+#### Step 2: Select Core Templates
+
+Choose the essential templates for the primary domain:
+
+```markdown
+# E-Commerce Core Templates
+commerce/product-catalog.md
+commerce/shopping-cart.md
+commerce/checkout-workflow.md
+commerce/payment-processing.md
+commerce/order-management.md
+
+# Social App Core Templates
+social/user-profiles.md
+social/social-graphs.md
+social/content-feeds.md
+social/real-time-messaging.md
+
+# Fintech Core Templates
+fintech/account-management.md
+fintech/transaction-processing.md
+fintech/fraud-detection.md
+fintech/financial-reporting.md
+```
+
+#### Step 3: Add Cross-Cutting Templates
+
+Include security, analytics, and other cross-cutting concerns:
+
+```markdown
+# Always Include (All Applications)
+security/multi-factor-auth.md OR feature-patterns/auth-oauth.md
+enterprise-saas/audit-trails.md (for compliance)
+analytics/user-analytics.md (for insights)
+
+# Include Based on Requirements
+security/data-encryption.md (sensitive data)
+notifications/notification-channels.md (user engagement)
+testing/test-automation.md (quality assurance)
+deployment/containerization.md (production deployment)
+```
+
+#### Step 4: Add Compliance Templates
+
+Include compliance templates based on industry requirements:
+
+```markdown
+# Financial Services
+fintech/financial-reporting.md
+security/data-encryption.md
+enterprise-saas/audit-trails.md
+
+# Healthcare
+healthcare/hipaa-compliance.md
+healthcare/healthcare-security.md
+security/data-encryption.md
+
+# E-Commerce (PCI)
+commerce/payment-security.md
+security/data-encryption.md
+```
+
+### Template Composition Patterns
+
+#### Pattern: Multi-Domain Application
+
+When building applications that span multiple domains:
+
+```markdown
+# Example: Marketplace with Social Features
+
+Primary Domain: Commerce
+- commerce/product-catalog.md
+- commerce/marketplace-features.md
+- commerce/payment-processing.md
+
+Secondary Domain: Social
+- social/user-profiles.md
+- social/real-time-messaging.md
+- social/content-moderation.md
+
+Cross-Cutting:
+- enterprise-saas/multi-tenancy.md (seller isolation)
+- analytics/user-analytics.md
+- notifications/notification-channels.md
+```
+
+#### Pattern: Compliance-Heavy Application
+
+For applications with strict compliance requirements:
+
+```markdown
+# Example: Healthcare Fintech App
+
+Compliance First:
+- healthcare/hipaa-compliance.md
+- fintech/financial-reporting.md
+- security/data-encryption.md
+- enterprise-saas/audit-trails.md
+
+Then Core Features:
+- fintech/account-management.md
+- healthcare/patient-data-management.md
+- fintech/transaction-processing.md
+```
+
+#### Pattern: Real-Time Application
+
+For applications requiring real-time features:
+
+```markdown
+# Example: Live Streaming Platform
+
+Real-Time Core:
+- real-time-communication/live-streaming.md
+- real-time-communication/websocket-management.md
+- real-time-communication/presence-systems.md
+
+Supporting:
+- media-streaming/cdn-integration.md
+- social/engagement-features.md
+- analytics/real-time-analytics.md
+```
+
+### Complex Multi-Domain Examples
+
+#### Example 1: Uber-like Ride Sharing App
+
+```markdown
+# Template Selection
+
+Location Services (Primary):
+- location-services/gps-tracking.md
+- location-services/service-matching.md
+- location-services/dynamic-pricing.md
+- location-services/fleet-management.md
+
+Payments:
+- commerce/payment-processing.md
+- commerce/payment-methods.md
+
+Real-Time:
+- real-time-communication/websocket-management.md
+- real-time-communication/presence-systems.md
+
+Social:
+- social/user-profiles.md
+- social/real-time-messaging.md
+
+Analytics:
+- analytics/real-time-analytics.md
+- analytics/business-metrics.md
+
+Security:
+- security/multi-factor-auth.md
+- security/privacy-controls.md
+```
+
+#### Example 2: Spotify-like Music Streaming App
+
+```markdown
+# Template Selection
+
+Media Streaming (Primary):
+- media-streaming/cdn-integration.md
+- media-streaming/playlist-management.md
+- media-streaming/recommendation-engine.md
+- media-streaming/offline-sync.md
+- media-streaming/streaming-quality.md
+
+Social:
+- social/user-profiles.md
+- social/social-graphs.md
+- social/engagement-features.md
+
+Commerce:
+- commerce/payment-subscriptions.md
+- enterprise-saas/enterprise-billing.md
+
+Search:
+- search-discovery/full-text-search.md
+- search-discovery/recommendation-systems.md
+
+Analytics:
+- analytics/user-analytics.md
+- analytics/real-time-analytics.md
+```
+
+#### Example 3: Enterprise Healthcare SaaS
+
+```markdown
+# Template Selection
+
+Healthcare (Primary):
+- healthcare/patient-data-management.md
+- healthcare/hipaa-compliance.md
+- healthcare/telemedicine.md
+- healthcare/appointment-scheduling.md
+- healthcare/prescription-management.md
+
+Enterprise:
+- enterprise-saas/multi-tenancy.md
+- enterprise-saas/rbac-enterprise.md
+- enterprise-saas/sso-integration.md
+- enterprise-saas/audit-trails.md
+
+Security:
+- security/data-encryption.md
+- security/multi-factor-auth.md
+- security/zero-trust-architecture.md
+
+Integration:
+- integration/api-management.md
+- integration/enterprise-integration.md
+```
+
+### v2 Documentation Resources
+
+For detailed guidance on using v2 templates, refer to these documentation resources:
+
+| Resource | Location | Purpose |
+|----------|----------|---------|
+| Template Reference | `docs/guides/template-reference.md` | Complete catalog of all templates |
+| Quick Start Guides | `docs/guides/quick-start-guides.md` | Fast-track implementation guides |
+| Best Practices | `docs/guides/best-practices.md` | Template composition guidelines |
+| Troubleshooting | `docs/guides/troubleshooting-guide.md` | Common issues and solutions |
+| Commerce Guide | `docs/guides/commerce-app-guide.md` | E-commerce implementation patterns |
+| Social Guide | `docs/guides/social-app-guide.md` | Social app implementation patterns |
+| Fintech Guide | `docs/guides/fintech-app-guide.md` | Financial services patterns |
+| Healthcare Guide | `docs/guides/healthcare-app-guide.md` | HIPAA-compliant healthcare patterns |
+
+### Template Quality Standards
+
+All v2 templates follow these quality standards:
+
+1. **Consistent Structure**: Purpose, Context, Instructions, Examples, Variables, Expected Output
+2. **Production-Ready Code**: TypeScript interfaces, implementation patterns, configuration examples
+3. **Security Considerations**: Built-in security guidance for each domain
+4. **Compliance Guidelines**: Regulatory requirements where applicable
+5. **Integration Points**: Clear interfaces for combining with other templates
+6. **Testing Patterns**: Unit test and property-based test examples
+
+### Workflow Updates for v2
+
+When working with v2 templates, update your workflow:
+
+#### Stage 03 - Architecture
+
+Include template selection in architecture decisions:
+
+```markdown
+# Architecture Decision: Template Selection
+
+## Selected Templates
+- Primary: [List primary domain templates]
+- Secondary: [List supporting templates]
+- Cross-Cutting: [List security, analytics, etc.]
+
+## Rationale
+- [Why these templates were chosen]
+- [How they work together]
+- [Compliance considerations]
+
+## Integration Points
+- [How templates will be composed]
+- [Shared data models]
+- [Service boundaries]
+```
+
+#### Stage 04 - Features
+
+Map features to specific templates:
+
+```markdown
+# Feature: User Authentication
+
+## Template: security/multi-factor-auth.md
+
+### Implementation Scope
+- Email/password authentication
+- MFA with TOTP
+- Biometric authentication (mobile)
+
+### Customizations
+- [Any deviations from template]
+- [Additional requirements]
+```
+
+#### Stage 05 - Testing
+
+Include template-specific testing:
+
+```markdown
+# Testing Strategy
+
+## Template Coverage Tests
+- Verify all selected templates are implemented
+- Test template integration points
+- Validate cross-cutting concerns
+
+## Property-Based Tests
+- [From template correctness properties]
+- [Domain-specific invariants]
+```
+
+### Version Compatibility
+
+v2 templates are backward compatible with v1 workflows:
+
+- Existing stage pipeline unchanged
+- State management unchanged
+- Quality gates unchanged
+- New templates can be incrementally adopted
+
+To upgrade a v1 project to use v2 templates:
+
+1. Review current template usage
+2. Identify v2 templates that provide better coverage
+3. Update architecture decisions
+4. Migrate incrementally, one domain at a time
+5. Update tests to cover new functionality

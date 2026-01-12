@@ -3,6 +3,23 @@
 ## Purpose
 This module provides comprehensive responsive design patterns that ensure optimal user experience across all devices and screen sizes. It implements mobile-first design principles, accessibility compliance, and performance optimization while supporting internationalization and offline scenarios. The module ensures consistent functionality and visual hierarchy from mobile phones to large desktop displays, with special attention to touch interfaces, keyboard navigation, and assistive technologies.
 
+## Integration Points
+
+This template integrates with the following v2 templates:
+- **Accessibility** (`accessibility/accessibility-compliance.md`): WCAG compliance patterns
+- **Performance** (`performance/resource-optimization.md`): Image and asset optimization
+- **Analytics** (`analytics/user-analytics.md`): Device and viewport analytics
+- **Internationalization** (`accessibility/internationalization.md`): RTL and multi-language support
+
+### Cross-Domain Composition Support
+
+This template supports composition with domain-specific templates:
+- **Commerce** (`commerce/product-catalog.md`): Responsive product displays
+- **Media Streaming** (`media-streaming/streaming-quality.md`): Adaptive media delivery
+- **Social** (`social/content-feeds.md`): Responsive feed layouts
+- **Content Management** (`content-management/content-creation.md`): Responsive editors
+- **Healthcare** (`healthcare/telemedicine.md`): Responsive video consultations
+
 ## Instructions
 Use this module to implement responsive layouts in your application. Start with mobile-first design, then progressively enhance for larger screens using the provided breakpoint system. Implement flexible grid systems using CSS Grid and Flexbox, ensure all interactive elements meet minimum touch target requirements (44px), and support text scaling up to 200%. Use the responsive image components for optimal loading performance, implement RTL support for international users, and ensure all layouts work in high contrast mode. Test across all breakpoints and validate accessibility compliance.
 
@@ -432,3 +449,501 @@ const createResponsiveStyles = () => {
 - Image optimization guidelines
 - RTL layout implementation guide
 - Accessibility compliance checklist
+
+## Advanced Responsive Design Patterns
+
+### Container Queries for Component-Level Responsiveness
+
+```css
+/* Modern container query patterns */
+.card-container {
+  container-type: inline-size;
+  container-name: card;
+}
+
+@container card (min-width: 400px) {
+  .card {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 1rem;
+  }
+  
+  .card__image {
+    aspect-ratio: 1;
+  }
+}
+
+@container card (min-width: 600px) {
+  .card {
+    grid-template-columns: 250px 1fr;
+  }
+  
+  .card__actions {
+    flex-direction: row;
+  }
+}
+
+/* Container query with style queries */
+@container style(--theme: dark) {
+  .card {
+    background: var(--dark-surface);
+    color: var(--dark-text);
+  }
+}
+```
+
+### Responsive Design Tokens System
+
+```typescript
+// Design token system for responsive theming
+interface ResponsiveDesignTokens {
+  breakpoints: BreakpointTokens;
+  spacing: ResponsiveSpacing;
+  typography: ResponsiveTypography;
+  colors: ThemeColors;
+}
+
+const designTokens: ResponsiveDesignTokens = {
+  breakpoints: {
+    mobile: '320px',
+    tablet: '768px',
+    desktop: '1024px',
+    wide: '1440px',
+    ultrawide: '1920px'
+  },
+  spacing: {
+    base: 'clamp(0.5rem, 2vw, 1rem)',
+    section: 'clamp(2rem, 5vw, 4rem)',
+    container: 'clamp(1rem, 5vw, 3rem)'
+  },
+  typography: {
+    base: 'clamp(1rem, 2.5vw, 1.125rem)',
+    h1: 'clamp(2rem, 5vw, 3.5rem)',
+    h2: 'clamp(1.5rem, 4vw, 2.5rem)',
+    h3: 'clamp(1.25rem, 3vw, 1.75rem)'
+  },
+  colors: {
+    light: {
+      background: '#ffffff',
+      surface: '#f5f5f5',
+      text: '#1a1a1a'
+    },
+    dark: {
+      background: '#1a1a1a',
+      surface: '#2d2d2d',
+      text: '#ffffff'
+    }
+  }
+};
+
+// CSS custom properties generation
+function generateCSSVariables(tokens: ResponsiveDesignTokens): string {
+  return `
+    :root {
+      /* Breakpoints */
+      --breakpoint-mobile: ${tokens.breakpoints.mobile};
+      --breakpoint-tablet: ${tokens.breakpoints.tablet};
+      --breakpoint-desktop: ${tokens.breakpoints.desktop};
+      
+      /* Responsive spacing */
+      --spacing-base: ${tokens.spacing.base};
+      --spacing-section: ${tokens.spacing.section};
+      --spacing-container: ${tokens.spacing.container};
+      
+      /* Responsive typography */
+      --font-size-base: ${tokens.typography.base};
+      --font-size-h1: ${tokens.typography.h1};
+      --font-size-h2: ${tokens.typography.h2};
+      --font-size-h3: ${tokens.typography.h3};
+    }
+  `;
+}
+```
+
+### Responsive Component Architecture
+
+```typescript
+// React responsive component with analytics integration
+interface ResponsiveComponentProps {
+  children: React.ReactNode;
+  mobileLayout?: 'stack' | 'carousel' | 'accordion';
+  tabletLayout?: 'grid' | 'masonry' | 'list';
+  desktopLayout?: 'grid' | 'sidebar' | 'full-width';
+  trackViewport?: boolean;
+}
+
+const ResponsiveComponent: React.FC<ResponsiveComponentProps> = ({
+  children,
+  mobileLayout = 'stack',
+  tabletLayout = 'grid',
+  desktopLayout = 'grid',
+  trackViewport = true
+}) => {
+  const { breakpoint, width, height, orientation } = useResponsive();
+  const analytics = useAnalytics();
+
+  // Track viewport changes for analytics
+  useEffect(() => {
+    if (trackViewport) {
+      analytics.track('viewport_change', {
+        breakpoint,
+        width,
+        height,
+        orientation,
+        devicePixelRatio: window.devicePixelRatio
+      });
+    }
+  }, [breakpoint, trackViewport]);
+
+  const layout = useMemo(() => {
+    switch (breakpoint) {
+      case 'mobile': return mobileLayout;
+      case 'tablet': return tabletLayout;
+      default: return desktopLayout;
+    }
+  }, [breakpoint, mobileLayout, tabletLayout, desktopLayout]);
+
+  return (
+    <div 
+      className={`responsive-component responsive-component--${layout}`}
+      data-breakpoint={breakpoint}
+      data-orientation={orientation}
+    >
+      {children}
+    </div>
+  );
+};
+
+// Custom hook for responsive state
+function useResponsive() {
+  const [state, setState] = useState({
+    breakpoint: 'mobile',
+    width: 0,
+    height: 0,
+    orientation: 'portrait'
+  });
+
+  useEffect(() => {
+    const updateState = () => {
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      
+      setState({
+        breakpoint: getBreakpoint(width),
+        width,
+        height,
+        orientation: width > height ? 'landscape' : 'portrait'
+      });
+    };
+
+    updateState();
+    
+    const resizeObserver = new ResizeObserver(updateState);
+    resizeObserver.observe(document.body);
+    
+    return () => resizeObserver.disconnect();
+  }, []);
+
+  return state;
+}
+```
+
+### Responsive Image System with Performance Optimization
+
+```typescript
+// Advanced responsive image component
+interface ResponsiveImageProps {
+  src: string;
+  alt: string;
+  aspectRatio?: string;
+  priority?: boolean;
+  quality?: number;
+  placeholder?: 'blur' | 'empty' | 'shimmer';
+  onLoad?: () => void;
+}
+
+const ResponsiveImage: React.FC<ResponsiveImageProps> = ({
+  src,
+  alt,
+  aspectRatio = '16/9',
+  priority = false,
+  quality = 80,
+  placeholder = 'shimmer',
+  onLoad
+}) => {
+  const [loaded, setLoaded] = useState(false);
+  const [error, setError] = useState(false);
+  const imgRef = useRef<HTMLImageElement>(null);
+
+  // Generate responsive srcset
+  const srcSet = useMemo(() => {
+    const widths = [320, 640, 768, 1024, 1280, 1920];
+    return widths
+      .map(w => `${generateImageUrl(src, w, quality)} ${w}w`)
+      .join(', ');
+  }, [src, quality]);
+
+  // Generate sizes attribute
+  const sizes = useMemo(() => {
+    return `
+      (max-width: 320px) 320px,
+      (max-width: 768px) 768px,
+      (max-width: 1024px) 1024px,
+      (max-width: 1280px) 1280px,
+      1920px
+    `.trim();
+  }, []);
+
+  // Intersection observer for lazy loading
+  useEffect(() => {
+    if (priority || !imgRef.current) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          imgRef.current!.src = src;
+          observer.disconnect();
+        }
+      },
+      { rootMargin: '200px' }
+    );
+
+    observer.observe(imgRef.current);
+    return () => observer.disconnect();
+  }, [src, priority]);
+
+  return (
+    <div 
+      className={`responsive-image ${loaded ? 'loaded' : ''}`}
+      style={{ aspectRatio }}
+    >
+      {placeholder === 'shimmer' && !loaded && (
+        <div className="responsive-image__shimmer" aria-hidden="true" />
+      )}
+      
+      <picture>
+        {/* WebP for modern browsers */}
+        <source
+          type="image/webp"
+          srcSet={srcSet.replace(/\.(jpg|png)/g, '.webp')}
+          sizes={sizes}
+        />
+        
+        {/* AVIF for cutting-edge browsers */}
+        <source
+          type="image/avif"
+          srcSet={srcSet.replace(/\.(jpg|png)/g, '.avif')}
+          sizes={sizes}
+        />
+        
+        {/* Fallback */}
+        <img
+          ref={imgRef}
+          src={priority ? src : undefined}
+          srcSet={priority ? srcSet : undefined}
+          sizes={sizes}
+          alt={alt}
+          loading={priority ? 'eager' : 'lazy'}
+          decoding="async"
+          onLoad={() => {
+            setLoaded(true);
+            onLoad?.();
+          }}
+          onError={() => setError(true)}
+          className="responsive-image__img"
+        />
+      </picture>
+      
+      {error && (
+        <div className="responsive-image__error" role="img" aria-label={alt}>
+          <span>Image failed to load</span>
+        </div>
+      )}
+    </div>
+  );
+};
+```
+
+### Responsive Navigation Patterns
+
+```typescript
+// Adaptive navigation component
+interface ResponsiveNavProps {
+  items: NavItem[];
+  logo: React.ReactNode;
+  actions?: React.ReactNode;
+}
+
+const ResponsiveNav: React.FC<ResponsiveNavProps> = ({ items, logo, actions }) => {
+  const { breakpoint } = useResponsive();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const navRef = useRef<HTMLElement>(null);
+
+  // Close menu on escape
+  useEffect(() => {
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape' && mobileMenuOpen) {
+        setMobileMenuOpen(false);
+      }
+    };
+
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [mobileMenuOpen]);
+
+  // Trap focus in mobile menu
+  useEffect(() => {
+    if (mobileMenuOpen && navRef.current) {
+      trapFocus(navRef.current);
+    }
+  }, [mobileMenuOpen]);
+
+  if (breakpoint === 'mobile') {
+    return (
+      <nav ref={navRef} className="nav nav--mobile" aria-label="Main navigation">
+        <div className="nav__header">
+          {logo}
+          <button
+            className="nav__toggle"
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            aria-expanded={mobileMenuOpen}
+            aria-controls="mobile-menu"
+            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+          >
+            <span className="nav__toggle-icon" aria-hidden="true">
+              {mobileMenuOpen ? '✕' : '☰'}
+            </span>
+          </button>
+        </div>
+        
+        <div
+          id="mobile-menu"
+          className={`nav__menu ${mobileMenuOpen ? 'nav__menu--open' : ''}`}
+          aria-hidden={!mobileMenuOpen}
+        >
+          <ul className="nav__list" role="menubar">
+            {items.map((item, index) => (
+              <li key={item.id} role="none">
+                <a
+                  href={item.href}
+                  className="nav__link"
+                  role="menuitem"
+                  tabIndex={mobileMenuOpen ? 0 : -1}
+                >
+                  {item.label}
+                </a>
+              </li>
+            ))}
+          </ul>
+          {actions}
+        </div>
+      </nav>
+    );
+  }
+
+  return (
+    <nav className="nav nav--desktop" aria-label="Main navigation">
+      {logo}
+      <ul className="nav__list" role="menubar">
+        {items.map(item => (
+          <li key={item.id} role="none">
+            <a href={item.href} className="nav__link" role="menuitem">
+              {item.label}
+            </a>
+          </li>
+        ))}
+      </ul>
+      {actions}
+    </nav>
+  );
+};
+```
+
+## Domain-Specific Responsive Patterns
+
+### E-Commerce Responsive Product Grid
+
+```typescript
+// Responsive product grid with commerce integration
+const ResponsiveProductGrid: React.FC<{ products: Product[] }> = ({ products }) => {
+  const { breakpoint } = useResponsive();
+  
+  const gridConfig = useMemo(() => {
+    switch (breakpoint) {
+      case 'mobile': return { columns: 2, gap: '0.5rem', cardSize: 'compact' };
+      case 'tablet': return { columns: 3, gap: '1rem', cardSize: 'medium' };
+      default: return { columns: 4, gap: '1.5rem', cardSize: 'full' };
+    }
+  }, [breakpoint]);
+
+  return (
+    <div
+      className="product-grid"
+      style={{
+        display: 'grid',
+        gridTemplateColumns: `repeat(${gridConfig.columns}, 1fr)`,
+        gap: gridConfig.gap
+      }}
+    >
+      {products.map(product => (
+        <ProductCard
+          key={product.id}
+          product={product}
+          size={gridConfig.cardSize}
+        />
+      ))}
+    </div>
+  );
+};
+```
+
+### Healthcare Responsive Dashboard
+
+```typescript
+// Responsive healthcare dashboard layout
+const HealthcareDashboard: React.FC = () => {
+  const { breakpoint, orientation } = useResponsive();
+
+  const layout = useMemo(() => {
+    if (breakpoint === 'mobile') {
+      return 'single-column';
+    }
+    if (breakpoint === 'tablet' && orientation === 'portrait') {
+      return 'stacked';
+    }
+    return 'sidebar';
+  }, [breakpoint, orientation]);
+
+  return (
+    <div className={`dashboard dashboard--${layout}`}>
+      <aside className="dashboard__sidebar">
+        <PatientList compact={breakpoint === 'mobile'} />
+      </aside>
+      
+      <main className="dashboard__main">
+        <VitalsChart responsive />
+        <AppointmentList />
+      </main>
+      
+      {breakpoint !== 'mobile' && (
+        <aside className="dashboard__alerts">
+          <AlertPanel />
+        </aside>
+      )}
+    </div>
+  );
+};
+```
+
+## Template Composition Rules
+
+### Compatible Templates
+- `accessibility/accessibility-compliance.md` - Always compatible
+- `performance/caching-strategies.md` - Image caching integration
+- `analytics/user-analytics.md` - Viewport tracking
+- `accessibility/internationalization.md` - RTL support
+
+### Conflict Resolution
+- When composing with `media-streaming/streaming-quality.md`, adaptive bitrate takes precedence
+- When composing with `accessibility/accessibility-compliance.md`, minimum touch targets are enforced
+- When composing with `performance/resource-optimization.md`, image optimization settings are merged

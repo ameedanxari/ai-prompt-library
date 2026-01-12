@@ -12,6 +12,8 @@ Modern security requirements demand authentication beyond simple passwords. This
 
 ### MFA Manager Interface
 
+## Examples
+
 ```typescript
 interface MFAManager {
   enrollFactor(userId: string, factorType: MFAFactorType, config: FactorConfig): Promise<EnrollmentResult>;

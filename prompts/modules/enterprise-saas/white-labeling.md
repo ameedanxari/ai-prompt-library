@@ -12,6 +12,8 @@ Enterprise customers often require the ability to customize the appearance, bran
 
 ### Brand Management System
 
+## Examples
+
 ```typescript
 interface BrandManager {
   createBrand(brandData: BrandCreationRequest): Promise<Brand>;

@@ -12,6 +12,8 @@ WebSocket management is critical for real-time applications requiring bidirectio
 
 ### WebSocket Connection Manager
 
+## Examples
+
 ```typescript
 interface WebSocketConnectionManager {
   // Connection lifecycle

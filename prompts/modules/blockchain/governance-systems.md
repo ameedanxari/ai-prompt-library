@@ -12,6 +12,8 @@ Decentralized governance enables token holders to participate in protocol decisi
 
 ### Governance Service
 
+## Examples
+
 ```typescript
 interface GovernanceService {
   createProposal(proposal: ProposalParams): Promise<ProposalResult>;

@@ -1,34 +1,47 @@
 # Search and Discovery Templates
 
-This module provides comprehensive templates for implementing advanced search and discovery capabilities across all application types. It covers search infrastructure, AI-powered search, personalization, and analytics.
+## Purpose
+
+Comprehensive templates for implementing search and discovery features that help users find relevant content efficiently, including full-text search, AI-powered search, and recommendations.
+
+## Instructions
+
+1. **Select Templates**: Choose appropriate templates for your use case
+2. **Review Implementation Patterns**: Study the code examples and patterns
+3. **Customize for Your Domain**: Adapt templates to your specific requirements
+4. **Integrate with Other Modules**: Combine with related templates from other modules
+5. **Test Thoroughly**: Validate that implementations meet your requirements
+6. **Monitor and Iterate**: Track performance and refine based on results
+
+## Examples
+
+### Example: Search and Discovery Templates Implementation
+```typescript
+interface SearchAndConfig {
+  // Configuration properties
+}
+
+const config: SearchAndConfig = {
+  // Initialize configuration
+};
+```
 
 ## Templates
 
-### Search Infrastructure
-- **full-text-search.md** - Search indexing, query processing, and relevance scoring
-- **faceted-search.md** - Filtering systems, advanced search forms, and dynamic facets
-- **search-analytics.md** - Query analysis, search optimization, and performance metrics
-- **search-personalization.md** - User profiling, personalized results, and preference learning
-
-### AI-Powered Search
+- **full-text-search.md** - Search indexing and query processing
+- **faceted-search.md** - Filtering systems and advanced search forms
+- **search-analytics.md** - Query analysis and search optimization
+- **search-personalization.md** - User profiling and personalized results
 - **semantic-search.md** - Natural language queries and AI understanding
 - **recommendation-systems.md** - Collaborative and content-based filtering
-- **visual-search.md** - Image recognition and visual similarity matching
+- **visual-search.md** - Image recognition and visual similarity
 - **voice-search.md** - Speech recognition and voice query processing
 
-## Usage
+## Integration
 
-These templates can be composed with domain-specific templates to add search capabilities to any application type:
-
-- E-commerce: Product search, faceted filtering, recommendation engines
-- Media streaming: Content discovery, semantic search, personalized recommendations
-- Social platforms: User search, content discovery, trending topics
-- Enterprise: Document search, knowledge discovery, semantic matching
-
-## Key Features
-
-- **Scalable Architecture**: Designed for high-volume search workloads
-- **Multi-Modal Search**: Text, voice, visual, and semantic search capabilities
-- **Real-Time Indexing**: Support for real-time content updates
-- **Personalization**: User-specific search results and recommendations
-- **Analytics**: Comprehensive search performance tracking and optimization
+These templates integrate well with:
+- Other domain-specific templates
+- Cross-platform templates for multi-platform support
+- Security templates for compliance requirements
+- Analytics templates for tracking and insights
+- Testing templates for quality assurance

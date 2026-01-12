@@ -12,6 +12,8 @@ Understanding notification performance is critical for optimizing engagement and
 
 ### Delivery Tracking Service
 
+## Examples
+
 ```typescript
 interface DeliveryTrackingService {
   // Delivery tracking

@@ -12,6 +12,8 @@ Modern applications require authorization beyond simple role-based access contro
 
 ### Authorization Engine Interface
 
+## Examples
+
 ```typescript
 interface AuthorizationEngine {
   evaluate(request: AuthorizationRequest): Promise<AuthorizationDecision>;

@@ -12,6 +12,8 @@ Token management is fundamental to blockchain applications, enabling value trans
 
 ### Token Service
 
+## Examples
+
 ```typescript
 interface TokenService {
   getBalance(tokenAddress: string, account: string): Promise<bigint>;

@@ -12,6 +12,8 @@ Enterprise billing systems require sophisticated features beyond simple subscrip
 
 ### Subscription Management System
 
+## Examples
+
 ```typescript
 interface SubscriptionManager {
   createSubscription(subscriptionData: SubscriptionCreationRequest): Promise<Subscription>;

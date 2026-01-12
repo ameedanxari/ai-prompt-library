@@ -3,6 +3,27 @@
 ## Purpose
 Generate comprehensive API contracts, data models, and interface specifications that ensure consistency and interoperability across all platforms in a cross-platform application.
 
+## Integration Points
+
+This template integrates with the following v2 templates for comprehensive domain coverage:
+
+### Domain-Specific Contract Support
+- **Commerce** (`commerce/*.md`): Product, cart, order, and payment contracts
+- **Social** (`social/*.md`): User profile, messaging, and content feed contracts
+- **Healthcare** (`healthcare/*.md`): HIPAA-compliant patient data contracts
+- **Fintech** (`fintech/*.md`): Transaction and account management contracts
+- **Media Streaming** (`media-streaming/*.md`): Content delivery and playlist contracts
+- **Enterprise SaaS** (`enterprise-saas/*.md`): Multi-tenant and billing contracts
+- **IoT** (`iot/*.md`): Device connectivity and sensor data contracts
+- **Blockchain** (`blockchain/*.md`): Wallet and smart contract interfaces
+
+### Cross-Cutting Contract Support
+- **Security** (`security/*.md`): Authentication and authorization contracts
+- **Analytics** (`analytics/*.md`): Event tracking and metrics contracts
+- **Notifications** (`notifications/*.md`): Multi-channel notification contracts
+- **Search** (`search-discovery/*.md`): Search query and result contracts
+- **Real-Time** (`real-time-communication/*.md`): WebSocket and streaming contracts
+
 ## Instructions
 Use this template to create comprehensive shared contract specifications that ensure consistent data exchange and behavior across all platforms in your cross-platform application.
 
@@ -744,3 +765,412 @@ This contract specification integrates with the centralized mock data module:
 - Maintenance process is established and followed
 - Mock data accurately reflects all contract specifications
 - All platforms reference centralized mock data (no platform-specific duplicates)
+
+## Domain-Specific Contract Templates
+
+### Commerce Domain Contracts
+
+```typescript
+// Product Contract
+interface ProductContract {
+  id: string;
+  sku: string;
+  name: string;
+  description: string;
+  price: MoneyContract;
+  currency: string;
+  inventory: InventoryContract;
+  variants: ProductVariant[];
+  images: MediaContract[];
+  categories: string[];
+  attributes: Record<string, any>;
+  created_at: string;
+  updated_at: string;
+}
+
+interface CartContract {
+  id: string;
+  user_id: string;
+  items: CartItemContract[];
+  subtotal: MoneyContract;
+  tax: MoneyContract;
+  total: MoneyContract;
+  currency: string;
+  expires_at: string;
+  platform_data?: PlatformSpecificData;
+}
+
+interface OrderContract {
+  id: string;
+  order_number: string;
+  user_id: string;
+  status: OrderStatus;
+  items: OrderItemContract[];
+  shipping_address: AddressContract;
+  billing_address: AddressContract;
+  payment: PaymentContract;
+  totals: OrderTotalsContract;
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### Healthcare Domain Contracts (HIPAA Compliant)
+
+```typescript
+// Patient Contract with PHI handling
+interface PatientContract {
+  id: string;
+  mrn: string; // Medical Record Number
+  demographics: PatientDemographics;
+  contact: ContactContract;
+  emergency_contact: EmergencyContactContract;
+  insurance: InsuranceContract[];
+  consent: ConsentContract;
+  created_at: string;
+  updated_at: string;
+  
+  // Platform-specific PHI handling
+  platform_data?: {
+    web?: { encryption_key_id: string };
+    ios?: { keychain_identifier: string };
+    android?: { encrypted_prefs_key: string };
+  };
+}
+
+interface AppointmentContract {
+  id: string;
+  patient_id: string;
+  provider_id: string;
+  type: AppointmentType;
+  status: AppointmentStatus;
+  scheduled_at: string;
+  duration_minutes: number;
+  location: LocationContract | VirtualLocationContract;
+  notes: EncryptedNoteContract;
+  reminders: ReminderContract[];
+}
+
+// HIPAA Audit Trail Contract
+interface AuditTrailContract {
+  id: string;
+  event_type: AuditEventType;
+  user_id: string;
+  patient_id: string;
+  resource_type: string;
+  resource_id: string;
+  action: string;
+  timestamp: string;
+  ip_address: string;
+  user_agent: string;
+  details: Record<string, any>;
+}
+```
+
+### Fintech Domain Contracts
+
+```typescript
+// Account Contract with compliance fields
+interface AccountContract {
+  id: string;
+  account_number: string;
+  user_id: string;
+  type: AccountType;
+  status: AccountStatus;
+  balance: MoneyContract;
+  available_balance: MoneyContract;
+  currency: string;
+  kyc_status: KYCStatus;
+  aml_status: AMLStatus;
+  created_at: string;
+  updated_at: string;
+}
+
+interface TransactionContract {
+  id: string;
+  reference_id: string;
+  account_id: string;
+  type: TransactionType;
+  status: TransactionStatus;
+  amount: MoneyContract;
+  fee: MoneyContract;
+  currency: string;
+  counterparty: CounterpartyContract;
+  metadata: TransactionMetadata;
+  created_at: string;
+  settled_at: string | null;
+  
+  // Compliance fields
+  risk_score: number;
+  fraud_check_status: FraudCheckStatus;
+  compliance_flags: string[];
+}
+```
+
+### Social Domain Contracts
+
+```typescript
+// User Profile Contract
+interface UserProfileContract {
+  id: string;
+  username: string;
+  display_name: string;
+  bio: string;
+  avatar: MediaContract;
+  cover_image: MediaContract | null;
+  verified: boolean;
+  privacy_settings: PrivacySettingsContract;
+  social_stats: SocialStatsContract;
+  created_at: string;
+  updated_at: string;
+}
+
+interface MessageContract {
+  id: string;
+  conversation_id: string;
+  sender_id: string;
+  type: MessageType;
+  content: MessageContentContract;
+  attachments: AttachmentContract[];
+  reactions: ReactionContract[];
+  read_by: ReadReceiptContract[];
+  created_at: string;
+  edited_at: string | null;
+  deleted_at: string | null;
+  
+  // End-to-end encryption support
+  encryption?: {
+    algorithm: string;
+    key_id: string;
+    iv: string;
+  };
+}
+
+interface ContentFeedContract {
+  id: string;
+  author_id: string;
+  type: ContentType;
+  content: ContentBodyContract;
+  media: MediaContract[];
+  engagement: EngagementStatsContract;
+  visibility: VisibilityLevel;
+  tags: string[];
+  mentions: MentionContract[];
+  created_at: string;
+  updated_at: string;
+}
+```
+
+### IoT Domain Contracts
+
+```typescript
+// Device Contract
+interface DeviceContract {
+  id: string;
+  device_id: string;
+  name: string;
+  type: DeviceType;
+  manufacturer: string;
+  model: string;
+  firmware_version: string;
+  status: DeviceStatus;
+  connectivity: ConnectivityContract;
+  capabilities: DeviceCapability[];
+  last_seen_at: string;
+  registered_at: string;
+}
+
+interface SensorDataContract {
+  device_id: string;
+  sensor_type: SensorType;
+  value: number;
+  unit: string;
+  timestamp: string;
+  quality: DataQuality;
+  metadata: SensorMetadata;
+}
+
+interface DeviceCommandContract {
+  id: string;
+  device_id: string;
+  command_type: CommandType;
+  parameters: Record<string, any>;
+  status: CommandStatus;
+  issued_at: string;
+  executed_at: string | null;
+  result: CommandResult | null;
+}
+```
+
+### Blockchain Domain Contracts
+
+```typescript
+// Wallet Contract
+interface WalletContract {
+  id: string;
+  address: string;
+  chain: BlockchainNetwork;
+  type: WalletType;
+  name: string;
+  balance: TokenBalanceContract[];
+  nfts: NFTContract[];
+  created_at: string;
+}
+
+interface TransactionContract {
+  hash: string;
+  chain: BlockchainNetwork;
+  from: string;
+  to: string;
+  value: string;
+  gas_price: string;
+  gas_used: string;
+  status: TransactionStatus;
+  block_number: number;
+  timestamp: string;
+  contract_interaction?: ContractInteractionContract;
+}
+
+interface SmartContractContract {
+  address: string;
+  chain: BlockchainNetwork;
+  name: string;
+  abi: ContractABI;
+  verified: boolean;
+  deployment_tx: string;
+  created_at: string;
+}
+```
+
+## Platform-Specific Adaptations for New Domains
+
+### Healthcare Platform Adaptations
+
+```typescript
+// Platform-specific PHI handling
+interface HealthcarePlatformAdaptations {
+  web: {
+    // Use Web Crypto API for encryption
+    encryptPHI: (data: any) => Promise<EncryptedData>;
+    decryptPHI: (encrypted: EncryptedData) => Promise<any>;
+    // Session timeout for HIPAA compliance
+    sessionTimeout: 900; // 15 minutes
+  };
+  
+  ios: {
+    // Use Keychain for PHI storage
+    storePHI: (key: string, data: any) => Promise<void>;
+    retrievePHI: (key: string) => Promise<any>;
+    // Face ID/Touch ID for PHI access
+    biometricAuth: () => Promise<boolean>;
+  };
+  
+  android: {
+    // Use EncryptedSharedPreferences
+    storePHI: (key: string, data: any) => Promise<void>;
+    retrievePHI: (key: string) => Promise<any>;
+    // Biometric authentication
+    biometricAuth: () => Promise<boolean>;
+  };
+}
+```
+
+### Fintech Platform Adaptations
+
+```typescript
+// Platform-specific security for financial data
+interface FintechPlatformAdaptations {
+  web: {
+    // Secure session management
+    sessionConfig: {
+      httpOnly: true;
+      secure: true;
+      sameSite: 'strict';
+      maxAge: 1800; // 30 minutes
+    };
+    // Certificate pinning for API calls
+    certificatePinning: boolean;
+  };
+  
+  ios: {
+    // Jailbreak detection
+    jailbreakDetection: boolean;
+    // Secure enclave for key storage
+    useSecureEnclave: boolean;
+    // App Transport Security
+    atsEnabled: boolean;
+  };
+  
+  android: {
+    // Root detection
+    rootDetection: boolean;
+    // Hardware-backed keystore
+    useHardwareKeystore: boolean;
+    // Network security config
+    networkSecurityConfig: boolean;
+  };
+}
+```
+
+### Real-Time Communication Platform Adaptations
+
+```typescript
+// Platform-specific WebSocket handling
+interface RealTimePlatformAdaptations {
+  web: {
+    // WebSocket with fallback to long-polling
+    transport: 'websocket' | 'long-polling';
+    // Service Worker for background sync
+    backgroundSync: boolean;
+  };
+  
+  ios: {
+    // URLSessionWebSocketTask
+    useNativeWebSocket: boolean;
+    // Background app refresh
+    backgroundRefresh: boolean;
+    // Push notification for offline messages
+    pushNotifications: boolean;
+  };
+  
+  android: {
+    // OkHttp WebSocket
+    useOkHttpWebSocket: boolean;
+    // Firebase Cloud Messaging
+    fcmEnabled: boolean;
+    // WorkManager for background sync
+    workManagerSync: boolean;
+  };
+}
+```
+
+## Template Composition Rules
+
+### Compatible Domain Combinations
+- Commerce + Analytics: Track purchase funnels
+- Healthcare + Security: HIPAA-compliant authentication
+- Fintech + Blockchain: Crypto payment integration
+- Social + Real-Time: Live messaging and feeds
+- IoT + Analytics: Device telemetry dashboards
+
+### Contract Inheritance Patterns
+```typescript
+// Base contract that all domain contracts extend
+interface BaseContract {
+  id: string;
+  created_at: string;
+  updated_at: string;
+  version: number;
+}
+
+// Domain contracts extend base
+interface DomainContract extends BaseContract {
+  tenant_id?: string; // For multi-tenant support
+  platform_data?: PlatformSpecificData;
+}
+```
+
+### Conflict Resolution for Multi-Domain Apps
+- When combining Healthcare + Commerce: Healthcare compliance takes precedence
+- When combining Fintech + Social: Financial data isolation is enforced
+- When combining IoT + Healthcare: Medical device regulations apply

@@ -1,40 +1,47 @@
 # IoT and Device Integration Templates
 
-This module provides comprehensive templates for building IoT applications, device management systems, and edge computing solutions. The templates cover device connectivity, data processing, automation, and industrial IoT scenarios.
+## Purpose
+
+Comprehensive templates for connecting and managing IoT devices and sensors, including device connectivity, edge computing, automation, and analytics.
+
+## Instructions
+
+1. **Select Templates**: Choose appropriate templates for your use case
+2. **Review Implementation Patterns**: Study the code examples and patterns
+3. **Customize for Your Domain**: Adapt templates to your specific requirements
+4. **Integrate with Other Modules**: Combine with related templates from other modules
+5. **Test Thoroughly**: Validate that implementations meet your requirements
+6. **Monitor and Iterate**: Track performance and refine based on results
+
+## Examples
+
+### Example: IoT and Device Integration Templates Implementation
+```typescript
+interface IotAndConfig {
+  // Configuration properties
+}
+
+const config: IotAndConfig = {
+  // Initialize configuration
+};
+```
 
 ## Templates
 
-### Device Connectivity and Management
+- **device-connectivity.md** - Device discovery, pairing, and authentication
+- **device-management.md** - Monitoring, firmware updates, and remote control
+- **sensor-data-processing.md** - Data ingestion and real-time processing
+- **iot-automation.md** - Rule engines and trigger systems
+- **edge-computing.md** - Local processing and edge-to-cloud sync
+- **iot-security.md** - Device certificates and secure communication
+- **industrial-iot.md** - Industrial protocols and safety systems
+- **iot-analytics.md** - Device performance and predictive maintenance
 
-- **device-connectivity.md** - Device discovery, pairing, authentication, and connection management
-- **device-management.md** - Device monitoring, firmware updates, configuration, and remote control
-- **iot-security.md** - Device certificates, secure communication, and IoT-specific security patterns
-- **edge-computing.md** - Local processing, edge-to-cloud synchronization, and offline operation
+## Integration
 
-### Data Processing and Automation
-
-- **sensor-data-processing.md** - Data ingestion, validation, real-time processing, and storage
-- **iot-automation.md** - Rule engines, trigger systems, scene management, and scheduling
-- **industrial-iot.md** - Industrial protocols, safety systems, and predictive maintenance
-- **iot-analytics.md** - Device performance metrics, predictive maintenance, and fleet analytics
-
-## Usage
-
-These templates can be composed with other domain modules to build:
-
-- Smart home applications
-- Industrial monitoring systems
-- Fleet management solutions
-- Healthcare device integration
-- Agricultural IoT systems
-- Smart city infrastructure
-
-## Requirements Coverage
-
-- **Requirement 14.1**: Device discovery, pairing, connection management, authentication
-- **Requirement 14.2**: Sensor data ingestion, validation, real-time processing, storage
-- **Requirement 14.3**: Device monitoring, firmware updates, configuration, remote control
-- **Requirement 14.4**: Rule engines, trigger systems, scene management, scheduling
-- **Requirement 14.6**: Edge processing, local storage, offline operation, edge-to-cloud sync
-- **Requirement 14.7**: Device certificates, secure communication, access controls, monitoring
-- **Requirement 14.10**: Industrial protocols, safety systems, predictive maintenance, compliance
+These templates integrate well with:
+- Other domain-specific templates
+- Cross-platform templates for multi-platform support
+- Security templates for compliance requirements
+- Analytics templates for tracking and insights
+- Testing templates for quality assurance

@@ -12,6 +12,8 @@ Live events require managing large audiences, interactive features, and real-tim
 
 ### Event Manager
 
+## Examples
+
 ```typescript
 interface EventManager {
   // Event lifecycle

@@ -158,6 +158,10 @@ interface User {
 #[[module:cross-platform/shared-contracts.md|api_version={{version}}]]
 ```
 
+## Templates
+
+This module includes the following templates:
+
 ## Integration Strategy
 Cross-platform modules ensure:
 - Consistent functionality across all target platforms

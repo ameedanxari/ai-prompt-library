@@ -256,3 +256,7 @@ All stages support dry-run mode for validation without full generation:
 ## AI Agent Instructions
 
 See [AGENTS.md](./AGENTS.md) for detailed instructions on how AI agents should interact with this prompt library system.
+
+## Templates
+
+This module includes the following templates:

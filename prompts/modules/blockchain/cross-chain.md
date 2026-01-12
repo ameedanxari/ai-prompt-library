@@ -12,6 +12,8 @@ Cross-chain interoperability enables assets and data to move between different b
 
 ### Bridge Service
 
+## Examples
+
 ```typescript
 interface BridgeService {
   bridge(params: BridgeParams): Promise<BridgeResult>;

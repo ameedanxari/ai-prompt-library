@@ -12,21 +12,25 @@ Stage-specific prompt collections that guide the sequential workflow from initia
 ## Examples
 ```markdown
 ## Example: Running the Stage Pipeline
-# Start with intake
-./run-stage.sh stage-01-intake
 
-# Validate with dry-run before proceeding
-./run-stage.sh stage-02-charter --dry-run
+Tell your AI assistant:
+"Process my project through Stage 01 - Intake using the templates in 
+.ai-prompts/prompts/stages/stage-01-intake/"
 
-# Continue through remaining stages
-./run-stage.sh stage-02-charter
-./run-stage.sh stage-03-architecture
-# ... continue through stage-10-handoff
+After each stage completes, continue with:
+"Continue to Stage 02 - Charter"
+"Continue to Stage 03 - Architecture"
+# ... and so on through Stage 10
 
-## Example: Platform-Specific Stage Execution
-# For mobile projects, use platform-specific variants
-./run-stage.sh stage-05-testing --platform=mobile
-./run-stage.sh stage-06-implementation --platform=react-native
+## Example: Platform-Specific Processing
+
+For mobile-focused projects:
+"Process Stage 05 - Testing with focus on mobile platform using 
+.ai-prompts/prompts/stages/stage-05-testing/mobile.md"
+
+For web-focused projects:
+"Process Stage 06 - Implementation for web platform using
+.ai-prompts/prompts/stages/stage-06-implementation/web.md"
 ```
 
 ## Stage Pipeline
@@ -94,14 +98,25 @@ The stages are designed to be executed sequentially, with each stage building up
 - Maintenance guidelines
 
 ## Usage
-Stages are executed sequentially using the stage pipeline:
-```bash
-./run-stage.sh stage-01-intake
-./run-stage.sh stage-02-charter
-# ... continue through all stages
+
+Tell your AI assistant to process stages sequentially:
+
+```
+Process my project through Stage 01 - Intake, then continue through all stages.
 ```
 
-Each stage supports dry-run mode for validation:
-```bash
-./run-stage.sh stage-01-intake --dry-run
+For individual stage processing:
 ```
+Process Stage 03 - Architecture using the templates in 
+.ai-prompts/prompts/stages/stage-03-architecture/
+```
+
+For dry-run validation before full generation:
+```
+Do a dry-run of Stage 04 - Features to validate the approach before full generation.
+```
+
+
+## Templates
+
+This module includes the following templates:

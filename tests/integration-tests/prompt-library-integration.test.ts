@@ -478,13 +478,50 @@ class PromptLibraryIntegrationTest {
   private validateTemplateQuality(template: PromptTemplate): string[] {
     const issues: string[] = [];
     const content = template.content;
+    const fileName = template.path.split('/').pop() || '';
     
-    // Check for required sections
-    const requiredSections = ['Purpose', 'Instructions', 'Examples'];
-    for (const section of requiredSections) {
-      if (!content.includes(`## ${section}`) && !content.includes(`### ${section}`)) {
-        issues.push(`Missing ${section} section`);
+    // Skip steering files - they are instructions for AI tools, not templates
+    if (template.path.includes('/steering/')) {
+      return issues;
+    }
+    
+    // README files (module index files) have different requirements
+    if (fileName === 'README.md') {
+      // README files must have Purpose, Instructions, Examples, and Templates sections
+      if (!content.includes('## Purpose')) {
+        issues.push('Missing Purpose section');
       }
+      if (!content.includes('## Instructions') && !content.includes('## Usage')) {
+        issues.push('Missing Instructions or Usage section');
+      }
+      if (!content.includes('## Examples')) {
+        issues.push('Missing Examples section');
+      }
+      if (!content.includes('## Templates') && !content.includes('## Module')) {
+        issues.push('Missing Templates section');
+      }
+      if (!content.includes('```')) {
+        issues.push('No code examples found');
+      }
+      return issues;
+    }
+    
+    // All other templates must have Purpose, Instructions/Implementation Patterns, and Examples
+    if (!content.includes('## Purpose') && !content.includes('### Purpose')) {
+      issues.push('Missing Purpose section');
+    }
+    
+    // Check for either Instructions OR Implementation Patterns
+    const hasInstructions = content.includes('## Instructions') || content.includes('### Instructions');
+    const hasImplementationPatterns = content.includes('## Implementation Patterns') || content.includes('### Implementation Patterns');
+    
+    if (!hasInstructions && !hasImplementationPatterns) {
+      issues.push('Missing Instructions or Implementation Patterns section');
+    }
+    
+    // Check for Examples section
+    if (!content.includes('## Examples') && !content.includes('### Examples')) {
+      issues.push('Missing Examples section');
     }
     
     // Check for code blocks
@@ -637,5 +674,77 @@ describe('Prompt Library Error Handling', () => {
     
     // This should identify any broken references
     await expect(testSuite.testCrossStageConsistency()).resolves.toBeDefined();
+  });
+});
+
+
+describe('Template Architecture Guard', () => {
+  it('should validate template architecture consistency', async () => {
+    // Import the architectural guard
+    const { TemplateArchitectureGuard } = await import('../../src/template-architecture-guard');
+    
+    const guard = new TemplateArchitectureGuard();
+    const result = await guard.validateTemplateLibrary(path.resolve('prompts'));
+    
+    // Log the report for visibility
+    const report = guard.generateReport(result);
+    console.log('\n' + report);
+    
+    // Verify no critical violations (errors)
+    const criticalViolations = result.violations.filter(v => v.severity === 'error');
+    expect(criticalViolations).toHaveLength(0);
+    
+    // Log any warnings for review
+    if (result.warnings.length > 0) {
+      console.log('\n⚠️  Architecture Warnings:');
+      result.warnings.forEach(w => console.log(`  - ${w}`));
+    }
+    
+    // Log any regressions detected
+    if (result.regressions.length > 0) {
+      console.log('\n🔄 Regressions Detected:');
+      result.regressions.forEach(r => {
+        console.log(`  - ${r.file} (${r.impact} impact): ${r.description}`);
+      });
+    }
+  });
+
+  it('should detect template structure violations', async () => {
+    const { TemplateArchitectureGuard } = await import('../../src/template-architecture-guard');
+    
+    const guard = new TemplateArchitectureGuard();
+    const result = await guard.validateTemplateLibrary(path.resolve('prompts'));
+    
+    // Check that we have proper violation tracking
+    expect(result.violations).toBeDefined();
+    expect(Array.isArray(result.violations)).toBe(true);
+    
+    // All violations should have required fields
+    result.violations.forEach(violation => {
+      expect(violation.file).toBeDefined();
+      expect(violation.type).toBeDefined();
+      expect(violation.message).toBeDefined();
+      expect(violation.severity).toMatch(/error|warning/);
+    });
+  });
+
+  it('should track template state for regression detection', async () => {
+    const { TemplateArchitectureGuard } = await import('../../src/template-architecture-guard');
+    
+    const guard = new TemplateArchitectureGuard();
+    
+    // First validation - establishes baseline
+    const result1 = await guard.validateTemplateLibrary(path.resolve('prompts'));
+    const criticalErrors1 = result1.violations.filter(v => v.severity === 'error');
+    expect(criticalErrors1).toHaveLength(0);
+    
+    // Second validation - should detect any regressions
+    const result2 = await guard.validateTemplateLibrary(path.resolve('prompts'));
+    const criticalErrors2 = result2.violations.filter(v => v.severity === 'error');
+    expect(criticalErrors2).toHaveLength(0);
+    
+    // Regressions should be tracked (even if empty)
+    expect(result2.regressions).toBeDefined();
+    expect(Array.isArray(result2.regressions)).toBe(true);
   });
 });

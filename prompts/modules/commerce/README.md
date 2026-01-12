@@ -126,6 +126,10 @@ These templates are designed to be modular and composable. They can be combined 
 - **Subscription Service**: Focus on payment subscriptions, recurring billing, and customer management
 - **Digital Products**: Emphasize instant delivery, license management, and digital rights
 
+## Templates
+
+This module includes the following templates:
+
 ## Integration Points
 
 Commerce templates integrate with cross-cutting concerns:

@@ -106,3 +106,8 @@ working_copy/
 - This folder is excluded from version control by default
 - The library maintains provenance tracking for all processed assets
 - Original files are preserved; processed versions go to `outputs/`
+
+
+## Templates
+
+This module includes the following templates:

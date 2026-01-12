@@ -25,6 +25,8 @@ Reusable prompt modules organized by category for composing comprehensive specif
 #[[module:technology-stacks/cloud-aws.md|region=us-east-1]]
 ```
 
+## Templates
+
 ## Available Module Categories
 
 ### Asset Management

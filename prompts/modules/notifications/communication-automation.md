@@ -12,6 +12,8 @@ Effective communication automation requires intelligent systems that can respond
 
 ### Trigger Management Service
 
+## Examples
+
 ```typescript
 interface TriggerManagementService {
   // Trigger operations

@@ -12,6 +12,8 @@ Smart contracts are self-executing programs on blockchain networks that enable t
 
 ### Contract Deployment Service
 
+## Examples
+
 ```typescript
 interface ContractDeploymentService {
   deploy(artifact: ContractArtifact, args: unknown[], options?: DeployOptions): Promise<DeployedContract>;

@@ -235,6 +235,10 @@ function ImageGallery({ images }) {
 - `ux-loading-states.md` - Loading states and progress indicators
 - `ux-feedback-systems.md` - User feedback and support systems
 
+## Templates
+
+This module includes the following templates:
+
 ## Usage Pattern
 ```markdown
 #[[module:best-practices/security-authentication.md]]

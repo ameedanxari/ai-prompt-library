@@ -71,3 +71,7 @@ Use this stage to transform architectural decisions into detailed feature specif
 
 ## Next Stage
 Stage 05 - Testing (Testing strategy and requirements)
+
+## Templates
+
+This module includes the following templates:

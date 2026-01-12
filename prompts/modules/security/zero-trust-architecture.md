@@ -12,6 +12,8 @@ Traditional perimeter-based security models are insufficient for modern distribu
 
 ### Zero Trust Policy Engine Interface
 
+## Examples
+
 ```typescript
 interface ZeroTrustPolicyEngine {
   evaluateAccess(request: AccessRequest): Promise<AccessDecision>;

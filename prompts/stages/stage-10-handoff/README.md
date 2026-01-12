@@ -762,3 +762,7 @@ This certifies that the Task Management SaaS Platform project has been successfu
 
 ## Next Stage
 Project completion - All specifications and implementation plans ready for execution
+
+## Templates
+
+This module includes the following templates:

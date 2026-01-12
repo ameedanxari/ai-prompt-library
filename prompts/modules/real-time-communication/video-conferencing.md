@@ -12,6 +12,8 @@ Video conferencing is essential for remote collaboration, requiring real-time au
 
 ### Conference Manager
 
+## Examples
+
 ```typescript
 interface ConferenceManager {
   // Conference lifecycle

@@ -12,6 +12,8 @@ NFTs (Non-Fungible Tokens) enable unique digital asset ownership and have applic
 
 ### NFT Minting Service
 
+## Examples
+
 ```typescript
 interface NFTMintingService {
   mint(collection: string, to: string, metadata: NFTMetadata): Promise<MintResult>;

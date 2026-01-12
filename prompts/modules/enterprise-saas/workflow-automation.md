@@ -12,6 +12,8 @@ Enterprise organizations require sophisticated workflow automation to manage com
 
 ### Workflow Engine
 
+## Examples
+
 ```typescript
 interface WorkflowEngine {
   createWorkflow(workflowDefinition: WorkflowDefinition): Promise<Workflow>;

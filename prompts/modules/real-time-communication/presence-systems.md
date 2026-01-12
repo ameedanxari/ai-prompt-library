@@ -12,6 +12,8 @@ Presence systems are crucial for real-time applications to show user availabilit
 
 ### Presence Manager
 
+## Examples
+
 ```typescript
 interface PresenceManager {
   // Presence tracking

@@ -12,6 +12,8 @@ Enterprise applications require sophisticated API management to handle internal 
 
 ### API Gateway System
 
+## Examples
+
 ```typescript
 interface APIGateway {
   registerAPI(apiDefinition: APIDefinition): Promise<RegisteredAPI>;

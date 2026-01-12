@@ -12,6 +12,8 @@ Streaming analytics are crucial for understanding audience behavior, optimizing 
 
 ### Analytics Engine
 
+## Examples
+
 ```typescript
 interface StreamingAnalyticsEngine {
   // Real-time metrics

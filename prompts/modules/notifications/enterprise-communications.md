@@ -12,6 +12,8 @@ Enterprise communication systems require sophisticated governance, approval proc
 
 ### Approval Workflow Service
 
+## Examples
+
 ```typescript
 interface ApprovalWorkflowService {
   // Workflow management

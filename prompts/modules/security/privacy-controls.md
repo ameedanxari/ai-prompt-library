@@ -12,6 +12,8 @@ Privacy regulations require applications to provide users with control over thei
 
 ### Consent Management Interface
 
+## Examples
+
 ```typescript
 interface ConsentManager {
   recordConsent(userId: string, consent: ConsentRecord): Promise<void>;

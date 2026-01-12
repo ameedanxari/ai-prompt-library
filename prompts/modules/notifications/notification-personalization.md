@@ -12,6 +12,8 @@ Effective notification systems must deliver the right message to the right user 
 
 ### Personalization Engine
 
+## Examples
+
 ```typescript
 interface PersonalizationEngine {
   // Content personalization

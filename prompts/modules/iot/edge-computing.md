@@ -12,6 +12,8 @@ Edge computing brings computation and data storage closer to IoT devices, reduci
 
 ### Edge Runtime Service
 
+## Examples
+
 ```typescript
 interface EdgeRuntimeService {
   deployModule(module: EdgeModule): Promise<DeploymentResult>;

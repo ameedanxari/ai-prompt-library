@@ -12,6 +12,8 @@ Modern notification systems must go beyond simple text messages to deliver rich,
 
 ### Rich Notification Service
 
+## Examples
+
 ```typescript
 interface RichNotificationService {
   // Rich notification creation

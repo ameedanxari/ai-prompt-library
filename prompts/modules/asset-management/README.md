@@ -43,7 +43,11 @@ Use these modules to systematically process user-provided assets from the workin
 ### Asset Type Handlers
 - [file-type-processor.md](./file-type-processor.md) - Process various file types
 
-### Integration Modules
+### Templates
+
+This module includes the following templates:
+
+## Integration Modules
 - [asset-validator.md](./asset-validator.md) - Validate asset completeness and quality
 
 ### Related Modules

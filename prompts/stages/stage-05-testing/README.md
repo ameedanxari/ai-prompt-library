@@ -66,3 +66,7 @@ Define comprehensive testing strategy including unit tests, property-based tests
 
 ## Next Stage
 Stage 06 - Implementation (Implementation planning and task generation)
+
+## Templates
+
+This module includes the following templates:

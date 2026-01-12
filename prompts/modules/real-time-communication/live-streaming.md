@@ -12,6 +12,8 @@ Live streaming is essential for applications requiring real-time content broadca
 
 ### Stream Manager
 
+## Examples
+
 ```typescript
 interface StreamManager {
   // Stream lifecycle

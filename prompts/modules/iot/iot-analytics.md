@@ -12,6 +12,8 @@ IoT analytics transforms raw device data into actionable insights for operationa
 
 ### Device Performance Analytics Service
 
+## Examples
+
 ```typescript
 interface DevicePerformanceAnalyticsService {
   getDevicePerformance(deviceId: string, timeRange: TimeRange): Promise<DevicePerformance>;

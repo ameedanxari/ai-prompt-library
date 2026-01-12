@@ -1,6 +1,53 @@
-# Enterprise SaaS Templates
+# Enterprise SaaS Module
 
-This module contains comprehensive templates for building enterprise Software-as-a-Service (SaaS) and B2B platforms. These templates focus on multi-tenancy, advanced access control, enterprise billing, workflow automation, and other features critical for scalable B2B applications.
+## Purpose
+
+This module provides comprehensive templates for building enterprise Software-as-a-Service (SaaS) and B2B platforms. These templates focus on multi-tenancy, advanced access control, enterprise billing, workflow automation, and other features critical for scalable B2B applications.
+
+## Instructions
+
+1. **Design Multi-Tenant Architecture**: Choose tenant isolation strategy (database-per-tenant, schema-per-tenant, or row-level isolation)
+2. **Implement Access Control**: Set up advanced RBAC with custom permissions and role hierarchies
+3. **Configure Enterprise Authentication**: Integrate SSO with SAML, OIDC, or enterprise identity providers
+4. **Set Up Billing System**: Implement subscription management and usage-based billing
+5. **Establish Audit Trails**: Configure comprehensive logging for compliance and security
+6. **Automate Workflows**: Design approval processes and task management systems
+7. **Enable API Management**: Set up API gateways and webhook systems
+8. **Support White-Labeling**: Implement custom branding and configuration options
+
+## Examples
+
+### Example 1: Multi-Tenant Architecture
+```typescript
+interface TenantContext {
+  tenantId: string;
+  userId: string;
+  roles: string[];
+  permissions: string[];
+}
+
+const getTenantData = async (tenantId: string, resource: string) => {
+  // Query with tenant isolation
+  return db.query(resource).where({ tenantId });
+};
+```
+
+### Example 2: Enterprise RBAC
+```typescript
+interface Role {
+  id: string;
+  tenantId: string;
+  name: string;
+  permissions: Permission[];
+  hierarchy: number;
+}
+
+const checkPermission = async (userId: string, action: string) => {
+  const user = await getUser(userId);
+  const roles = await getUserRoles(userId);
+  return roles.some(role => role.permissions.includes(action));
+};
+```
 
 ## Templates
 
@@ -15,16 +62,6 @@ This module contains comprehensive templates for building enterprise Software-as
 - **workflow-automation.md** - Approval processes and task management
 - **api-management.md** - API gateways and webhook systems
 - **white-labeling.md** - Custom branding and configuration options
-
-## Usage
-
-These templates are designed for enterprise-grade applications that require:
-- Multi-tenant architecture with strict data isolation
-- Advanced security and compliance features
-- Sophisticated billing and subscription management
-- Workflow automation and approval processes
-- API management and integration capabilities
-- White-labeling and customization options
 
 ## Integration
 

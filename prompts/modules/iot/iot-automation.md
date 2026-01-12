@@ -12,6 +12,8 @@ IoT automation enables devices to respond intelligently to events, conditions, a
 
 ### Rule Engine Service
 
+## Examples
+
 ```typescript
 interface RuleEngineService {
   createRule(rule: AutomationRule): Promise<AutomationRule>;

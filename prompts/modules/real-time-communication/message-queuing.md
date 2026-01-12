@@ -12,6 +12,8 @@ Message queuing is essential for real-time applications that need to ensure mess
 
 ### Message Queue Manager
 
+## Examples
+
 ```typescript
 interface MessageQueueManager {
   // Queue operations

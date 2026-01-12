@@ -12,6 +12,8 @@ IoT device connectivity requires robust mechanisms for discovering devices on ne
 
 ### Device Discovery Service
 
+## Examples
+
 ```typescript
 interface DeviceDiscoveryService {
   startDiscovery(options: DiscoveryOptions): Promise<DiscoverySession>;

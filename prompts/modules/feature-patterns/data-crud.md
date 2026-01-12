@@ -3,6 +3,24 @@
 ## Overview
 This module provides comprehensive Create, Read, Update, Delete operations with validation, security, accessibility, and offline capabilities for robust data management across all application entities.
 
+## Integration Points
+
+This template integrates with the following v2 templates:
+- **Analytics** (`analytics/user-analytics.md`): Track CRUD operation metrics
+- **Performance** (`performance/caching-strategies.md`): Optimize read operations
+- **Security** (`security/data-encryption.md`): Encrypt sensitive data
+- **Search** (`search-discovery/full-text-search.md`): Index data for search
+- **Data Processing** (`data-processing/data-quality.md`): Validate data integrity
+
+### Cross-Domain Composition Support
+
+This template supports composition with domain-specific templates:
+- **Commerce** (`commerce/product-catalog.md`): Product CRUD operations
+- **Healthcare** (`healthcare/patient-data-management.md`): HIPAA-compliant data handling
+- **Fintech** (`fintech/transaction-processing.md`): Financial data operations
+- **Content Management** (`content-management/content-creation.md`): Content CRUD workflows
+- **Social** (`social/user-profiles.md`): Profile data management
+
 ## Purpose
 Implement comprehensive Create, Read, Update, Delete operations with validation, security, accessibility, and offline capabilities for robust data management across all application entities.
 
@@ -610,3 +628,426 @@ class OfflineCRUDService<T> {
 - Validation rules documentation
 - Offline sync behavior documentation
 - Conflict resolution procedures
+
+## Advanced Data Management Patterns
+
+### Event-Driven CRUD with Event Sourcing
+
+```typescript
+// Integration with event-driven architecture
+interface EventSourcedCRUDConfig {
+  eventStore: EventStore;
+  snapshotInterval: number;
+  projections: Projection[];
+}
+
+class EventSourcedCRUDService<T extends CRUDEntity> {
+  private eventStore: EventStore;
+  private projectionService: ProjectionService;
+
+  async create(data: Omit<T, keyof CRUDEntity>, userId: string): Promise<T> {
+    const entityId = generateId();
+    
+    // Create event
+    const event: DomainEvent = {
+      id: generateEventId(),
+      aggregateId: entityId,
+      type: `${this.entityType}.created`,
+      data,
+      metadata: {
+        userId,
+        timestamp: new Date(),
+        correlationId: getCorrelationId()
+      }
+    };
+
+    // Store event
+    await this.eventStore.append(entityId, event);
+
+    // Update projections
+    await this.projectionService.apply(event);
+
+    // Return current state
+    return await this.getById(entityId);
+  }
+
+  async update(id: string, data: Partial<T>, userId: string): Promise<T> {
+    // Get current state
+    const currentState = await this.getById(id);
+    
+    // Calculate diff
+    const changes = this.calculateChanges(currentState, data);
+
+    // Create update event
+    const event: DomainEvent = {
+      id: generateEventId(),
+      aggregateId: id,
+      type: `${this.entityType}.updated`,
+      data: changes,
+      metadata: {
+        userId,
+        timestamp: new Date(),
+        previousVersion: currentState.version
+      }
+    };
+
+    // Store event with optimistic concurrency
+    await this.eventStore.append(id, event, currentState.version);
+
+    // Update projections
+    await this.projectionService.apply(event);
+
+    return await this.getById(id);
+  }
+
+  async getHistory(id: string): Promise<EntityHistory<T>> {
+    const events = await this.eventStore.getEvents(id);
+    
+    return {
+      entityId: id,
+      events: events.map(e => ({
+        type: e.type,
+        timestamp: e.metadata.timestamp,
+        userId: e.metadata.userId,
+        changes: e.data
+      })),
+      currentState: await this.getById(id)
+    };
+  }
+}
+```
+
+### Real-Time CRUD with WebSocket Sync
+
+```typescript
+// Real-time data synchronization
+interface RealTimeCRUDConfig {
+  websocketEnabled: boolean;
+  broadcastChanges: boolean;
+  conflictResolution: 'last_write_wins' | 'merge' | 'manual';
+}
+
+class RealTimeCRUDService<T extends CRUDEntity> extends CRUDService<T> {
+  private websocketService: WebSocketService;
+  private subscriptions: Map<string, Set<string>> = new Map();
+
+  async create(data: Omit<T, keyof CRUDEntity>, userId: string): Promise<T> {
+    const entity = await super.create(data, userId);
+
+    // Broadcast to subscribers
+    await this.broadcastChange({
+      type: 'created',
+      entityType: this.entityType,
+      entity,
+      userId
+    });
+
+    return entity;
+  }
+
+  async update(id: string, data: Partial<T>, userId: string): Promise<T> {
+    const entity = await super.update(id, data, userId);
+
+    // Broadcast to subscribers
+    await this.broadcastChange({
+      type: 'updated',
+      entityType: this.entityType,
+      entity,
+      changes: data,
+      userId
+    });
+
+    return entity;
+  }
+
+  async subscribeToChanges(
+    entityType: string,
+    filter: SubscriptionFilter,
+    callback: ChangeCallback
+  ): Promise<Subscription> {
+    const subscriptionId = generateId();
+    
+    await this.websocketService.subscribe({
+      channel: `${entityType}:changes`,
+      filter,
+      callback: (change) => {
+        if (this.matchesFilter(change, filter)) {
+          callback(change);
+        }
+      }
+    });
+
+    return {
+      id: subscriptionId,
+      unsubscribe: () => this.unsubscribe(subscriptionId)
+    };
+  }
+
+  private async broadcastChange(change: DataChange): Promise<void> {
+    await this.websocketService.broadcast({
+      channel: `${change.entityType}:changes`,
+      data: change
+    });
+  }
+}
+```
+
+### Multi-Tenant CRUD
+
+```typescript
+// Multi-tenant data isolation
+interface MultiTenantCRUDConfig {
+  tenantIsolation: 'database' | 'schema' | 'row';
+  crossTenantAccess: boolean;
+  tenantIdField: string;
+}
+
+class MultiTenantCRUDService<T extends CRUDEntity & TenantEntity> extends CRUDService<T> {
+  async create(
+    data: Omit<T, keyof CRUDEntity>,
+    userId: string,
+    tenantId: string
+  ): Promise<T> {
+    // Inject tenant ID
+    const tenantData = {
+      ...data,
+      tenantId
+    } as Omit<T, keyof CRUDEntity>;
+
+    return await super.create(tenantData, userId);
+  }
+
+  async findMany(
+    filters: Partial<T>,
+    pagination: PaginationParams,
+    userId: string,
+    tenantId: string
+  ): Promise<PaginatedResult<T>> {
+    // Enforce tenant isolation
+    const tenantFilters = {
+      ...filters,
+      tenantId
+    } as Partial<T>;
+
+    return await super.findMany(tenantFilters, pagination, userId);
+  }
+
+  async update(
+    id: string,
+    data: Partial<T>,
+    userId: string,
+    tenantId: string
+  ): Promise<T> {
+    // Verify entity belongs to tenant
+    const entity = await this.repository.findById(id);
+    
+    if (entity.tenantId !== tenantId) {
+      throw new TenantAccessError('Entity does not belong to tenant');
+    }
+
+    // Prevent tenant ID modification
+    const { tenantId: _, ...safeData } = data as any;
+    
+    return await super.update(id, safeData, userId);
+  }
+}
+```
+
+### Bulk Operations with Streaming
+
+```typescript
+// Efficient bulk CRUD operations
+interface BulkOperationConfig {
+  batchSize: number;
+  parallelism: number;
+  errorHandling: 'stop_on_error' | 'continue' | 'rollback';
+}
+
+class BulkCRUDService<T extends CRUDEntity> {
+  async bulkCreate(
+    items: Omit<T, keyof CRUDEntity>[],
+    userId: string,
+    options: BulkOperationConfig
+  ): Promise<BulkOperationResult<T>> {
+    const results: BulkItemResult<T>[] = [];
+    const batches = this.chunk(items, options.batchSize);
+
+    for (const batch of batches) {
+      const batchResults = await Promise.allSettled(
+        batch.map(item => this.crudService.create(item, userId))
+      );
+
+      for (let i = 0; i < batchResults.length; i++) {
+        const result = batchResults[i];
+        if (result.status === 'fulfilled') {
+          results.push({ success: true, entity: result.value });
+        } else {
+          results.push({ success: false, error: result.reason, input: batch[i] });
+          
+          if (options.errorHandling === 'stop_on_error') {
+            return this.buildResult(results, 'stopped');
+          }
+        }
+      }
+    }
+
+    return this.buildResult(results, 'completed');
+  }
+
+  async bulkUpdate(
+    updates: Array<{ id: string; data: Partial<T> }>,
+    userId: string,
+    options: BulkOperationConfig
+  ): Promise<BulkOperationResult<T>> {
+    // Use streaming for large updates
+    if (updates.length > 1000) {
+      return await this.streamingBulkUpdate(updates, userId, options);
+    }
+
+    const results: BulkItemResult<T>[] = [];
+    
+    for (const { id, data } of updates) {
+      try {
+        const entity = await this.crudService.update(id, data, userId);
+        results.push({ success: true, entity });
+      } catch (error) {
+        results.push({ success: false, error, id });
+        
+        if (options.errorHandling === 'stop_on_error') {
+          return this.buildResult(results, 'stopped');
+        }
+      }
+    }
+
+    return this.buildResult(results, 'completed');
+  }
+
+  private async streamingBulkUpdate(
+    updates: Array<{ id: string; data: Partial<T> }>,
+    userId: string,
+    options: BulkOperationConfig
+  ): Promise<BulkOperationResult<T>> {
+    const stream = this.createUpdateStream(updates);
+    const results: BulkItemResult<T>[] = [];
+
+    for await (const batch of stream) {
+      const batchResults = await this.processBatch(batch, userId);
+      results.push(...batchResults);
+    }
+
+    return this.buildResult(results, 'completed');
+  }
+}
+```
+
+## Domain-Specific CRUD Patterns
+
+### Healthcare CRUD (HIPAA Compliant)
+
+```typescript
+// HIPAA-compliant data operations
+class HealthcareCRUDService<T extends PHIEntity> extends CRUDService<T> {
+  async create(data: Omit<T, keyof CRUDEntity>, userId: string): Promise<T> {
+    // Encrypt PHI fields
+    const encryptedData = await this.encryptPHI(data);
+    
+    const entity = await super.create(encryptedData, userId);
+
+    // Log PHI access for HIPAA
+    await this.auditService.logPHIAccess({
+      action: 'create',
+      entityType: this.entityType,
+      entityId: entity.id,
+      userId,
+      timestamp: new Date()
+    });
+
+    return entity;
+  }
+
+  async findById(id: string, userId: string): Promise<T> {
+    const entity = await super.findById(id, userId);
+
+    // Decrypt PHI for authorized access
+    const decryptedEntity = await this.decryptPHI(entity);
+
+    // Log PHI access
+    await this.auditService.logPHIAccess({
+      action: 'read',
+      entityType: this.entityType,
+      entityId: id,
+      userId,
+      timestamp: new Date()
+    });
+
+    return decryptedEntity;
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    // PHI requires retention, use soft delete with archival
+    await this.archiveForRetention(id, userId);
+    await super.delete(id, userId);
+  }
+}
+```
+
+### Fintech CRUD (Audit Trail)
+
+```typescript
+// Financial data with complete audit trail
+class FintechCRUDService<T extends FinancialEntity> extends CRUDService<T> {
+  async update(id: string, data: Partial<T>, userId: string): Promise<T> {
+    const previousState = await this.findById(id, userId);
+    
+    const entity = await super.update(id, data, userId);
+
+    // Create immutable audit record
+    await this.auditService.createAuditRecord({
+      entityType: this.entityType,
+      entityId: id,
+      action: 'update',
+      previousState,
+      newState: entity,
+      userId,
+      timestamp: new Date(),
+      ipAddress: getClientIP(),
+      signature: await this.signAuditRecord(previousState, entity)
+    });
+
+    return entity;
+  }
+
+  async delete(id: string, userId: string): Promise<void> {
+    // Financial records cannot be deleted, only archived
+    throw new OperationNotAllowedError(
+      'Financial records cannot be deleted. Use archive instead.'
+    );
+  }
+
+  async archive(id: string, userId: string, reason: string): Promise<void> {
+    const entity = await this.findById(id, userId);
+    
+    await this.archiveService.archive(entity, {
+      reason,
+      archivedBy: userId,
+      retentionPeriod: this.getRetentionPeriod(entity)
+    });
+
+    await super.update(id, { status: 'archived' } as Partial<T>, userId);
+  }
+}
+```
+
+## Template Composition Rules
+
+### Compatible Templates
+- `analytics/user-analytics.md` - Track CRUD metrics
+- `performance/caching-strategies.md` - Cache read operations
+- `search-discovery/full-text-search.md` - Index for search
+- `data-processing/data-pipelines.md` - ETL integration
+- `integration/webhook-systems.md` - Trigger webhooks on changes
+
+### Conflict Resolution
+- When composing with `healthcare/patient-data-management.md`, encryption is mandatory
+- When composing with `fintech/transaction-processing.md`, audit trails are required
+- When composing with `content-management/content-versioning.md`, version history is maintained

@@ -12,6 +12,8 @@ Data protection requires robust encryption strategies across all layers of an ap
 
 ### Encryption Service Interface
 
+## Examples
+
 ```typescript
 interface EncryptionService {
   encrypt(data: string | Buffer, options: EncryptionOptions): Promise<EncryptedData>;

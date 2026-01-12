@@ -12,6 +12,8 @@ Modern applications face sophisticated threats including account takeover, fraud
 
 ### Threat Detection Engine Interface
 
+## Examples
+
 ```typescript
 interface ThreatDetectionEngine {
   analyzeRequest(request: SecurityRequest): Promise<ThreatAnalysis>;

@@ -12,6 +12,8 @@ Enterprise customers require seamless integration with their existing identity i
 
 ### SSO Provider Management
 
+## Examples
+
 ```typescript
 interface SSOProviderManager {
   createProvider(tenantId: string, providerConfig: SSOProviderConfig): Promise<SSOProvider>;

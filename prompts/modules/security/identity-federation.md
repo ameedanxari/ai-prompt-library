@@ -12,6 +12,8 @@ Organizations increasingly need to manage identities across multiple domains, pa
 
 ### Federation Manager Interface
 
+## Examples
+
 ```typescript
 interface FederationManager {
   createTrustRelationship(config: TrustConfig): Promise<TrustRelationship>;

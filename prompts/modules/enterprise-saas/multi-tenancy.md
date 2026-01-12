@@ -12,6 +12,8 @@ Multi-tenancy is essential for SaaS applications serving multiple organizations 
 
 ### Tenant Management System
 
+## Examples
+
 ```typescript
 interface TenantManager {
   createTenant(tenantData: TenantCreationRequest): Promise<Tenant>;

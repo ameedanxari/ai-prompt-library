@@ -12,6 +12,8 @@ Enterprise applications require sophisticated access control mechanisms that go 
 
 ### Role Management System
 
+## Examples
+
 ```typescript
 interface RoleManager {
   createRole(tenantId: string, roleData: RoleCreationRequest): Promise<Role>;

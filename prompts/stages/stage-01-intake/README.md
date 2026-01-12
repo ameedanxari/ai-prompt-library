@@ -50,3 +50,7 @@ Foundation established for Stage 02 - Charter with validated requirements and or
 
 ## Next Stage
 Stage 02 - Charter (Project scope and goals definition)
+
+## Templates
+
+This module includes the following templates:

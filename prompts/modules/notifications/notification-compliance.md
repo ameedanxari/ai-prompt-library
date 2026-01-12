@@ -12,6 +12,8 @@ Notification systems must comply with various regulations including GDPR, CAN-SP
 
 ### Consent Management Service
 
+## Examples
+
 ```typescript
 interface ConsentManagementService {
   // Consent operations

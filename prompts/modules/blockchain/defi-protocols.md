@@ -12,6 +12,8 @@ DeFi protocols enable permissionless financial services on blockchain networks, 
 
 ### Liquidity Pool Service
 
+## Examples
+
 ```typescript
 interface LiquidityPoolService {
   addLiquidity(pool: string, amounts: TokenAmount[], options?: LiquidityOptions): Promise<AddLiquidityResult>;

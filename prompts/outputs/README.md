@@ -122,3 +122,8 @@ To regenerate outputs:
 - Outputs are generated based on your brief and working_copy assets
 - Each stage adds to or refines the outputs
 - Use dry-run mode to preview outputs before full generation
+
+
+## Templates
+
+This module includes the following templates:

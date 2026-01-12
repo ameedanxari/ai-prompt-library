@@ -3,6 +3,23 @@
 ## Overview
 This module provides comprehensive role-based access control with fine-grained permissions, audit logging, and production-ready security features for secure user authorization across all application features.
 
+## Integration Points
+
+This template integrates with the following v2 security templates:
+- **Advanced Authorization** (`security/advanced-authorization.md`): ABAC policies and dynamic authorization
+- **Multi-Factor Authentication** (`security/multi-factor-auth.md`): Step-up authentication for sensitive operations
+- **Threat Detection** (`security/threat-detection.md`): Anomaly detection for access patterns
+- **Privacy Controls** (`security/privacy-controls.md`): Consent-based access management
+- **Audit Trails** (`enterprise-saas/audit-trails.md`): Comprehensive access logging
+
+### Cross-Domain Composition Support
+
+This template supports composition with domain-specific templates:
+- **Enterprise SaaS** (`enterprise-saas/rbac-enterprise.md`): Multi-tenant RBAC
+- **Healthcare** (`healthcare/healthcare-security.md`): HIPAA role requirements
+- **Fintech** (`fintech/account-management.md`): Financial access controls
+- **Content Management** (`content-management/content-security.md`): Content-level permissions
+
 ## Purpose
 Implement comprehensive role-based access control with fine-grained permissions, audit logging, and production-ready security features for secure user authorization across all application features.
 
@@ -401,3 +418,439 @@ class MobileRBACService {
 - Role hierarchy documentation
 - Security audit procedures
 - API documentation for permission endpoints
+
+## Advanced Enterprise RBAC Patterns
+
+### Attribute-Based Access Control (ABAC) Integration
+
+```typescript
+// Combining RBAC with ABAC for fine-grained control
+interface HybridAccessControlConfig {
+  rbacEnabled: boolean;
+  abacEnabled: boolean;
+  policyEngine: 'opa' | 'cedar' | 'custom';
+  evaluationOrder: 'rbac_first' | 'abac_first' | 'parallel';
+}
+
+class HybridAccessControlService {
+  private rbacService: RBACService;
+  private abacEngine: ABACEngine;
+
+  async checkAccess(
+    subject: Subject,
+    action: string,
+    resource: Resource,
+    context: AccessContext
+  ): Promise<AccessDecision> {
+    // Check RBAC first for performance
+    const rbacDecision = await this.rbacService.checkPermission(
+      subject.id,
+      resource.type,
+      action
+    );
+
+    // If RBAC denies, check ABAC for potential override
+    if (!rbacDecision.allowed) {
+      const abacDecision = await this.abacEngine.evaluate({
+        subject,
+        action,
+        resource,
+        context
+      });
+
+      // ABAC can grant access based on attributes
+      if (abacDecision.allowed) {
+        return {
+          allowed: true,
+          reason: 'abac_policy_permit',
+          evaluatedPolicies: abacDecision.evaluatedPolicies
+        };
+      }
+    }
+
+    // If RBAC allows, check ABAC for potential restrictions
+    if (rbacDecision.allowed) {
+      const abacDecision = await this.abacEngine.evaluate({
+        subject,
+        action,
+        resource,
+        context
+      });
+
+      // ABAC can deny based on contextual attributes
+      if (!abacDecision.allowed && abacDecision.reason === 'explicit_deny') {
+        return {
+          allowed: false,
+          reason: 'abac_policy_deny',
+          evaluatedPolicies: abacDecision.evaluatedPolicies
+        };
+      }
+    }
+
+    return rbacDecision;
+  }
+}
+```
+
+### Dynamic Role Assignment
+
+```typescript
+// Context-aware dynamic role assignment
+interface DynamicRoleConfig {
+  contextualRoles: ContextualRole[];
+  temporaryRoles: TemporaryRoleConfig;
+  delegatedRoles: DelegationConfig;
+}
+
+class DynamicRoleService {
+  async getEffectiveRoles(
+    userId: string,
+    context: RoleContext
+  ): Promise<EffectiveRole[]> {
+    const roles: EffectiveRole[] = [];
+
+    // Get static assigned roles
+    const staticRoles = await this.roleStore.getUserRoles(userId);
+    roles.push(...staticRoles.map(r => ({ ...r, source: 'static' })));
+
+    // Get contextual roles based on current context
+    const contextualRoles = await this.evaluateContextualRoles(userId, context);
+    roles.push(...contextualRoles.map(r => ({ ...r, source: 'contextual' })));
+
+    // Get temporary roles (time-limited)
+    const tempRoles = await this.getActiveTemporaryRoles(userId);
+    roles.push(...tempRoles.map(r => ({ ...r, source: 'temporary' })));
+
+    // Get delegated roles
+    const delegatedRoles = await this.getActiveDelegations(userId);
+    roles.push(...delegatedRoles.map(r => ({ ...r, source: 'delegated' })));
+
+    return this.deduplicateAndPrioritize(roles);
+  }
+
+  private async evaluateContextualRoles(
+    userId: string,
+    context: RoleContext
+  ): Promise<Role[]> {
+    const contextualRoles: Role[] = [];
+
+    // Location-based roles
+    if (context.location && this.config.locationBasedRoles) {
+      const locationRole = await this.getLocationRole(userId, context.location);
+      if (locationRole) contextualRoles.push(locationRole);
+    }
+
+    // Time-based roles
+    if (this.config.timeBasedRoles) {
+      const timeRole = await this.getTimeBasedRole(userId, context.timestamp);
+      if (timeRole) contextualRoles.push(timeRole);
+    }
+
+    // Project/team-based roles
+    if (context.projectId) {
+      const projectRole = await this.getProjectRole(userId, context.projectId);
+      if (projectRole) contextualRoles.push(projectRole);
+    }
+
+    return contextualRoles;
+  }
+}
+```
+
+### Multi-Tenant RBAC
+
+```typescript
+// Enterprise multi-tenant RBAC implementation
+interface MultiTenantRBACConfig {
+  tenantIsolation: 'strict' | 'shared_roles' | 'hierarchical';
+  crossTenantAccess: boolean;
+  tenantAdminRoles: string[];
+}
+
+class MultiTenantRBACService {
+  async checkTenantPermission(
+    userId: string,
+    tenantId: string,
+    resource: string,
+    action: string
+  ): Promise<TenantAccessDecision> {
+    // Verify user belongs to tenant
+    const userTenants = await this.getUserTenants(userId);
+    if (!userTenants.includes(tenantId)) {
+      return {
+        allowed: false,
+        reason: 'user_not_in_tenant'
+      };
+    }
+
+    // Get tenant-specific roles
+    const tenantRoles = await this.getTenantRoles(userId, tenantId);
+
+    // Check permission within tenant context
+    const hasPermission = await this.checkPermissionWithRoles(
+      tenantRoles,
+      resource,
+      action
+    );
+
+    // Log tenant access attempt
+    await this.auditService.logTenantAccess({
+      userId,
+      tenantId,
+      resource,
+      action,
+      allowed: hasPermission,
+      timestamp: new Date()
+    });
+
+    return {
+      allowed: hasPermission,
+      tenantId,
+      effectiveRoles: tenantRoles
+    };
+  }
+
+  async assignTenantRole(
+    userId: string,
+    tenantId: string,
+    roleId: string,
+    assignedBy: string
+  ): Promise<void> {
+    // Verify assigner has tenant admin permission
+    const canAssign = await this.checkTenantPermission(
+      assignedBy,
+      tenantId,
+      'roles',
+      'assign'
+    );
+
+    if (!canAssign.allowed) {
+      throw new UnauthorizedError('Cannot assign roles in this tenant');
+    }
+
+    // Assign role within tenant scope
+    await this.roleStore.assignTenantRole(userId, tenantId, roleId);
+
+    // Audit the assignment
+    await this.auditService.logRoleAssignment({
+      userId,
+      tenantId,
+      roleId,
+      assignedBy,
+      timestamp: new Date()
+    });
+  }
+}
+```
+
+### Permission Inheritance and Hierarchy
+
+```typescript
+// Hierarchical permission system with inheritance
+interface PermissionHierarchy {
+  resourceHierarchy: ResourceNode[];
+  roleHierarchy: RoleNode[];
+  inheritanceRules: InheritanceRule[];
+}
+
+class HierarchicalPermissionService {
+  async resolveEffectivePermissions(
+    userId: string,
+    resourcePath: string[]
+  ): Promise<ResolvedPermission[]> {
+    const permissions: ResolvedPermission[] = [];
+
+    // Get user's roles with hierarchy
+    const roles = await this.getRolesWithHierarchy(userId);
+
+    // For each level in resource path, collect permissions
+    for (let i = 0; i < resourcePath.length; i++) {
+      const currentPath = resourcePath.slice(0, i + 1);
+      const resourceId = currentPath.join('/');
+
+      for (const role of roles) {
+        const rolePermissions = await this.getRolePermissions(role.id, resourceId);
+        
+        permissions.push(...rolePermissions.map(p => ({
+          ...p,
+          inheritedFrom: i < resourcePath.length - 1 ? resourceId : null,
+          role: role.id,
+          priority: role.priority
+        })));
+      }
+    }
+
+    // Resolve conflicts (explicit > inherited, deny > allow)
+    return this.resolvePermissionConflicts(permissions);
+  }
+
+  private resolvePermissionConflicts(
+    permissions: ResolvedPermission[]
+  ): ResolvedPermission[] {
+    const permissionMap = new Map<string, ResolvedPermission>();
+
+    // Sort by priority: explicit > inherited, higher role priority wins
+    const sorted = permissions.sort((a, b) => {
+      // Explicit permissions take precedence
+      if (a.inheritedFrom === null && b.inheritedFrom !== null) return -1;
+      if (a.inheritedFrom !== null && b.inheritedFrom === null) return 1;
+      
+      // Higher priority role wins
+      return b.priority - a.priority;
+    });
+
+    for (const permission of sorted) {
+      const key = `${permission.resource}:${permission.action}`;
+      
+      if (!permissionMap.has(key)) {
+        permissionMap.set(key, permission);
+      } else {
+        const existing = permissionMap.get(key)!;
+        // Deny always wins at same level
+        if (permission.effect === 'deny' && existing.effect === 'allow') {
+          permissionMap.set(key, permission);
+        }
+      }
+    }
+
+    return Array.from(permissionMap.values());
+  }
+}
+```
+
+## Cross-Domain RBAC Patterns
+
+### Healthcare RBAC (HIPAA Compliant)
+
+```typescript
+// Healthcare-specific RBAC with break-glass access
+class HealthcareRBACService extends RBACService {
+  async checkPHIAccess(
+    userId: string,
+    patientId: string,
+    action: string
+  ): Promise<PHIAccessDecision> {
+    // Check standard RBAC permission
+    const rbacResult = await super.checkPermission(userId, 'phi', action);
+
+    // Check patient-provider relationship
+    const hasRelationship = await this.checkPatientRelationship(userId, patientId);
+
+    // Log all PHI access attempts for HIPAA
+    await this.auditService.logPHIAccess({
+      userId,
+      patientId,
+      action,
+      allowed: rbacResult && hasRelationship,
+      timestamp: new Date()
+    });
+
+    return {
+      allowed: rbacResult && hasRelationship,
+      requiresBreakGlass: !hasRelationship && rbacResult
+    };
+  }
+
+  async breakGlassAccess(
+    userId: string,
+    patientId: string,
+    reason: string
+  ): Promise<BreakGlassResult> {
+    // Verify user has break-glass capability
+    const canBreakGlass = await this.checkPermission(userId, 'phi', 'break_glass');
+    
+    if (!canBreakGlass) {
+      throw new UnauthorizedError('User cannot perform break-glass access');
+    }
+
+    // Create time-limited access
+    const accessGrant = await this.createTemporaryAccess(userId, patientId, {
+      duration: 3600, // 1 hour
+      reason,
+      requiresReview: true
+    });
+
+    // Alert supervisors
+    await this.alertService.notifyBreakGlass(userId, patientId, reason);
+
+    return accessGrant;
+  }
+}
+```
+
+### Fintech RBAC (Segregation of Duties)
+
+```typescript
+// Financial services RBAC with segregation of duties
+class FintechRBACService extends RBACService {
+  private sodRules: SegregationOfDutiesRule[];
+
+  async checkPermissionWithSOD(
+    userId: string,
+    resource: string,
+    action: string
+  ): Promise<SODAccessDecision> {
+    // Check standard permission
+    const hasPermission = await super.checkPermission(userId, resource, action);
+
+    if (!hasPermission) {
+      return { allowed: false, reason: 'no_permission' };
+    }
+
+    // Check segregation of duties
+    const sodViolation = await this.checkSODViolation(userId, resource, action);
+
+    if (sodViolation) {
+      return {
+        allowed: false,
+        reason: 'sod_violation',
+        conflictingRole: sodViolation.conflictingRole,
+        conflictingAction: sodViolation.conflictingAction
+      };
+    }
+
+    return { allowed: true };
+  }
+
+  private async checkSODViolation(
+    userId: string,
+    resource: string,
+    action: string
+  ): Promise<SODViolation | null> {
+    const userRoles = await this.getUserRoles(userId);
+
+    for (const rule of this.sodRules) {
+      if (rule.resource === resource && rule.action === action) {
+        // Check if user has conflicting role
+        const hasConflict = userRoles.some(role => 
+          rule.conflictingRoles.includes(role.id)
+        );
+
+        if (hasConflict) {
+          return {
+            rule: rule.id,
+            conflictingRole: userRoles.find(r => rule.conflictingRoles.includes(r.id))!.id,
+            conflictingAction: rule.conflictingAction
+          };
+        }
+      }
+    }
+
+    return null;
+  }
+}
+```
+
+## Template Composition Rules
+
+### Compatible Templates
+- `security/advanced-authorization.md` - Always compatible, extends RBAC with ABAC
+- `security/multi-factor-auth.md` - Compatible for step-up authentication
+- `enterprise-saas/multi-tenancy.md` - Requires tenant-aware RBAC
+- `healthcare/hipaa-compliance.md` - Requires audit logging and break-glass
+- `fintech/fraud-detection.md` - Requires segregation of duties
+
+### Conflict Resolution
+- When composing with `security/advanced-authorization.md`, ABAC policies can override RBAC decisions
+- When composing with `enterprise-saas/multi-tenancy.md`, tenant isolation takes precedence
+- When composing with `healthcare/hipaa-compliance.md`, minimum necessary access principle applies

@@ -12,6 +12,8 @@ Real-time synchronization is critical for collaborative applications where multi
 
 ### Synchronization Manager
 
+## Examples
+
 ```typescript
 interface SynchronizationManager {
   // Document synchronization

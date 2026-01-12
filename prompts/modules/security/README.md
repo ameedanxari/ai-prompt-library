@@ -1,43 +1,47 @@
-# Security Module
+# Security and Privacy Templates
 
-This module provides comprehensive security and privacy templates for building secure applications with modern authentication, authorization, and data protection capabilities.
+## Purpose
+
+Comprehensive templates for implementing security and privacy features that protect user data and maintain compliance with regulations.
+
+## Instructions
+
+1. **Select Templates**: Choose appropriate templates for your use case
+2. **Review Implementation Patterns**: Study the code examples and patterns
+3. **Customize for Your Domain**: Adapt templates to your specific requirements
+4. **Integrate with Other Modules**: Combine with related templates from other modules
+5. **Test Thoroughly**: Validate that implementations meet your requirements
+6. **Monitor and Iterate**: Track performance and refine based on results
+
+## Examples
+
+### Example: Security and Privacy Templates Implementation
+```typescript
+interface SecurityAndConfig {
+  // Configuration properties
+}
+
+const config: SecurityAndConfig = {
+  // Initialize configuration
+};
+```
 
 ## Templates
 
-### Authentication Templates
+- **multi-factor-auth.md** - MFA, biometric, and passwordless authentication
+- **advanced-authorization.md** - Attribute-based and dynamic access control
+- **adaptive-authentication.md** - Risk-based authentication decisions
+- **identity-federation.md** - Cross-domain identity management
+- **data-encryption.md** - End-to-end encryption and key management
+- **privacy-controls.md** - Consent management and data portability
+- **threat-detection.md** - Anomaly detection and security monitoring
+- **zero-trust-architecture.md** - Continuous verification and network segmentation
 
-- **multi-factor-auth.md** - Multi-factor authentication (MFA), biometric authentication, and passwordless login patterns including TOTP, WebAuthn/FIDO2, SMS, email verification, and hardware tokens.
+## Integration
 
-- **adaptive-authentication.md** - Risk-based authentication, contextual authentication decisions, behavioral analysis, device fingerprinting, and dynamic authentication requirements.
-
-- **identity-federation.md** - Cross-domain identity management, federated authentication, identity brokering, SAML/OIDC federation, and enterprise identity integration.
-
-### Authorization Templates
-
-- **advanced-authorization.md** - Attribute-based access control (ABAC), policy-based access control, dynamic authorization, fine-grained permissions, and policy languages.
-
-### Data Protection Templates
-
-- **data-encryption.md** - End-to-end encryption, key management, field-level encryption, and cryptographic best practices.
-
-- **privacy-controls.md** - Consent management, data portability, right to deletion, and privacy dashboards.
-
-- **threat-detection.md** - Anomaly detection, fraud prevention, security monitoring, and incident response.
-
-- **zero-trust-architecture.md** - Continuous verification, network segmentation, identity-centric security, and micro-segmentation.
-
-## Usage
-
-These templates can be composed with other domain modules to add security capabilities to any application type. Common compositions include:
-
-- Commerce + Security: PCI-compliant payment processing with MFA
-- Healthcare + Security: HIPAA-compliant data protection with encryption
-- Enterprise SaaS + Security: Multi-tenant authorization with SSO federation
-- Fintech + Security: Fraud detection with adaptive authentication
-
-## Key Features
-
-- Production-ready security patterns
-- Compliance-focused implementations (GDPR, HIPAA, PCI DSS, SOC 2)
-- Platform-agnostic designs (web, mobile, API)
-- Property-based testing examples for security validation
+These templates integrate well with:
+- Other domain-specific templates
+- Cross-platform templates for multi-platform support
+- Security templates for compliance requirements
+- Analytics templates for tracking and insights
+- Testing templates for quality assurance

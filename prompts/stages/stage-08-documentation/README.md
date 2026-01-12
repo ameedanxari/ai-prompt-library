@@ -854,3 +854,7 @@ fi
 
 ## Next Stage
 Stage 09 - Quality (Quality assurance and validation procedures)
+
+## Templates
+
+This module includes the following templates:

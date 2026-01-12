@@ -12,6 +12,8 @@ Modern applications require sophisticated notification systems that can reach us
 
 ### Notification Channel Service
 
+## Examples
+
 ```typescript
 interface NotificationChannelService {
   // Channel management

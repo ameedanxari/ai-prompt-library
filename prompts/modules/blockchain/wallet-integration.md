@@ -12,6 +12,8 @@ Wallet integration is the foundation of Web3 applications, enabling users to aut
 
 ### Wallet Connection Service
 
+## Examples
+
 ```typescript
 interface WalletConnectionService {
   connect(provider: WalletProvider, options?: ConnectionOptions): Promise<WalletConnection>;

@@ -12,6 +12,8 @@ Effective IoT device management requires robust mechanisms for monitoring device
 
 ### Device Registry Service
 
+## Examples
+
 ```typescript
 interface DeviceRegistryService {
   registerDevice(device: DeviceRegistration): Promise<RegisteredDevice>;

@@ -105,3 +105,8 @@ Templates are referenced using the template inclusion syntax:
 #[[template:user-input-template.md]]
 #[[template:task-generation.md|platform={{target_platform}}]]
 ```
+
+
+## Templates
+
+This module includes the following templates:

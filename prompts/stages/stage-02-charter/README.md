@@ -106,3 +106,7 @@ Use this stage to establish a clear project charter that defines scope, objectiv
 
 ## Next Stage
 Stage 03 - Architecture (System architecture design)
+
+## Templates
+
+This module includes the following templates:

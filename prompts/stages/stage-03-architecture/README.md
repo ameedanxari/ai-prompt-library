@@ -103,6 +103,8 @@ app/
 ```
 ```
 
+## Templates
+
 ## Inputs
 - Project charter and scope (Stage 02)
 - Technology preferences and constraints

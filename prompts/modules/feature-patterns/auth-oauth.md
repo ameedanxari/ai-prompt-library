@@ -3,6 +3,23 @@
 ## Purpose
 Implement secure OAuth 2.0 / OpenID Connect authentication with production-ready security, accessibility, and internationalization features. This module provides comprehensive authentication capabilities that work across web and mobile platforms while maintaining the highest security standards.
 
+## Integration Points
+
+This template integrates with the following v2 security templates:
+- **Multi-Factor Authentication** (`security/multi-factor-auth.md`): Combine OAuth with MFA for enhanced security
+- **Advanced Authorization** (`security/advanced-authorization.md`): Use OAuth tokens with ABAC policies
+- **Adaptive Authentication** (`security/adaptive-authentication.md`): Risk-based authentication decisions
+- **Identity Federation** (`security/identity-federation.md`): Cross-domain identity management
+- **Zero Trust Architecture** (`security/zero-trust-architecture.md`): Continuous verification patterns
+
+### Cross-Domain Composition Support
+
+This template supports composition with domain-specific templates:
+- **Enterprise SaaS** (`enterprise-saas/sso-integration.md`): Enterprise SSO with SAML/OIDC
+- **Healthcare** (`healthcare/healthcare-security.md`): HIPAA-compliant authentication
+- **Fintech** (`fintech/account-management.md`): KYC/AML verification integration
+- **Commerce** (`commerce/payment-security.md`): PCI-compliant payment authentication
+
 ## Instructions
 
 ### How to Use This Module
@@ -467,8 +484,396 @@ const mobileTokenStorage = {
 - Accessibility testing tools
 - Internationalization framework
 
+## Advanced Authentication Patterns
+
+### Passwordless Authentication Integration
+
+```typescript
+// Integration with WebAuthn for passwordless OAuth
+interface PasswordlessOAuthConfig {
+  enableWebAuthn: boolean;
+  enableMagicLink: boolean;
+  enableBiometric: boolean;
+  fallbackToPassword: boolean;
+}
+
+class PasswordlessOAuthService {
+  private webAuthnService: WebAuthnService;
+  private magicLinkService: MagicLinkService;
+  private oauthService: OAuthService;
+
+  async initiatePasswordlessAuth(
+    userId: string,
+    method: 'webauthn' | 'magic_link' | 'biometric'
+  ): Promise<AuthInitResult> {
+    switch (method) {
+      case 'webauthn':
+        return await this.webAuthnService.generateAuthenticationOptions(userId);
+      case 'magic_link':
+        return await this.magicLinkService.sendMagicLink(userId);
+      case 'biometric':
+        return await this.initiateBiometricAuth(userId);
+    }
+  }
+
+  async completePasswordlessAuth(
+    userId: string,
+    method: string,
+    response: AuthResponse
+  ): Promise<OAuthTokens> {
+    // Verify passwordless authentication
+    const verified = await this.verifyPasswordlessAuth(userId, method, response);
+    
+    if (!verified) {
+      throw new AuthenticationError('Passwordless authentication failed');
+    }
+
+    // Issue OAuth tokens after successful passwordless auth
+    return await this.oauthService.issueTokens(userId, {
+      authMethod: method,
+      authTime: new Date(),
+      amr: [method] // Authentication Methods References
+    });
+  }
+}
+```
+
+### Adaptive Authentication with Risk Scoring
+
+```typescript
+// Integration with adaptive authentication for risk-based OAuth
+interface RiskBasedAuthConfig {
+  lowRiskThreshold: number;
+  highRiskThreshold: number;
+  enableStepUp: boolean;
+  mfaFactors: MFAFactorType[];
+}
+
+class AdaptiveOAuthService {
+  private riskEngine: RiskEngine;
+  private mfaService: MFAService;
+  private oauthService: OAuthService;
+
+  async authenticateWithRiskAssessment(
+    credentials: AuthCredentials,
+    context: AuthContext
+  ): Promise<AuthResult> {
+    // Calculate risk score
+    const riskScore = await this.riskEngine.calculateRisk({
+      userId: credentials.userId,
+      ipAddress: context.ipAddress,
+      deviceFingerprint: context.deviceFingerprint,
+      location: context.location,
+      timestamp: new Date()
+    });
+
+    // Low risk - proceed with standard OAuth
+    if (riskScore < this.config.lowRiskThreshold) {
+      return await this.oauthService.authenticate(credentials);
+    }
+
+    // Medium risk - require MFA
+    if (riskScore < this.config.highRiskThreshold) {
+      const mfaChallenge = await this.mfaService.createChallenge(
+        credentials.userId,
+        this.selectMFAFactor(riskScore)
+      );
+      
+      return {
+        status: 'mfa_required',
+        challengeId: mfaChallenge.id,
+        availableFactors: mfaChallenge.factors
+      };
+    }
+
+    // High risk - block and notify
+    await this.securityService.flagSuspiciousActivity(credentials.userId, context);
+    throw new HighRiskAuthenticationError('Authentication blocked due to high risk');
+  }
+
+  private selectMFAFactor(riskScore: number): MFAFactorType {
+    // Higher risk requires stronger factors
+    if (riskScore > 70) {
+      return MFAFactorType.HARDWARE_TOKEN;
+    } else if (riskScore > 50) {
+      return MFAFactorType.TOTP;
+    }
+    return MFAFactorType.PUSH_NOTIFICATION;
+  }
+}
+```
+
+### Enterprise SSO Integration
+
+```typescript
+// Integration with enterprise identity providers
+interface EnterpriseSSOConfig {
+  samlEnabled: boolean;
+  oidcEnabled: boolean;
+  scimEnabled: boolean;
+  jitProvisioning: boolean;
+}
+
+class EnterpriseSSOService {
+  private samlService: SAMLService;
+  private oidcService: OIDCService;
+  private scimService: SCIMService;
+
+  async initiateSSOLogin(
+    tenantId: string,
+    protocol: 'saml' | 'oidc'
+  ): Promise<SSOInitResult> {
+    const tenantConfig = await this.getTenantSSOConfig(tenantId);
+
+    if (protocol === 'saml') {
+      return await this.samlService.createAuthnRequest(tenantConfig.saml);
+    }
+
+    return await this.oidcService.createAuthorizationRequest(tenantConfig.oidc);
+  }
+
+  async handleSSOCallback(
+    tenantId: string,
+    protocol: string,
+    response: SSOResponse
+  ): Promise<AuthResult> {
+    let userInfo: UserInfo;
+
+    if (protocol === 'saml') {
+      userInfo = await this.samlService.validateAssertion(response);
+    } else {
+      userInfo = await this.oidcService.exchangeCodeForTokens(response);
+    }
+
+    // Just-in-time provisioning
+    if (this.config.jitProvisioning) {
+      await this.provisionUser(tenantId, userInfo);
+    }
+
+    // Issue application tokens
+    return await this.issueApplicationTokens(userInfo);
+  }
+
+  async syncUsersViaSCIM(tenantId: string): Promise<SCIMSyncResult> {
+    const tenantConfig = await this.getTenantSSOConfig(tenantId);
+    return await this.scimService.syncUsers(tenantConfig.scim);
+  }
+}
+```
+
+### Token Binding and DPoP
+
+```typescript
+// Demonstrating Proof of Possession (DPoP) for enhanced token security
+interface DPoPConfig {
+  enabled: boolean;
+  algorithm: 'ES256' | 'RS256';
+  nonceRequired: boolean;
+}
+
+class DPoPTokenService {
+  async createDPoPProof(
+    httpMethod: string,
+    httpUri: string,
+    accessToken?: string
+  ): Promise<string> {
+    const header = {
+      typ: 'dpop+jwt',
+      alg: this.config.algorithm,
+      jwk: await this.getPublicKey()
+    };
+
+    const payload = {
+      jti: crypto.randomUUID(),
+      htm: httpMethod,
+      htu: httpUri,
+      iat: Math.floor(Date.now() / 1000),
+      ...(accessToken && { ath: await this.hashAccessToken(accessToken) })
+    };
+
+    return await this.signJWT(header, payload);
+  }
+
+  async validateDPoPProof(
+    proof: string,
+    expectedMethod: string,
+    expectedUri: string,
+    accessToken?: string
+  ): Promise<DPoPValidationResult> {
+    const decoded = await this.verifyJWT(proof);
+
+    // Validate claims
+    if (decoded.htm !== expectedMethod) {
+      return { valid: false, error: 'HTTP method mismatch' };
+    }
+
+    if (decoded.htu !== expectedUri) {
+      return { valid: false, error: 'HTTP URI mismatch' };
+    }
+
+    // Check token binding if access token provided
+    if (accessToken) {
+      const expectedAth = await this.hashAccessToken(accessToken);
+      if (decoded.ath !== expectedAth) {
+        return { valid: false, error: 'Access token hash mismatch' };
+      }
+    }
+
+    return { valid: true };
+  }
+}
+```
+
+## Cross-Domain Authentication Patterns
+
+### Healthcare Authentication (HIPAA Compliant)
+
+```typescript
+// Integration with healthcare security requirements
+class HIPAACompliantOAuthService extends OAuthService {
+  async authenticate(credentials: AuthCredentials): Promise<AuthResult> {
+    // Enforce strong authentication for PHI access
+    const result = await super.authenticate(credentials);
+
+    // Log authentication event for HIPAA audit trail
+    await this.auditService.logAuthEvent({
+      eventType: 'authentication',
+      userId: credentials.userId,
+      timestamp: new Date(),
+      ipAddress: credentials.context.ipAddress,
+      success: result.success,
+      accessedResource: 'phi_system'
+    });
+
+    // Enforce session timeout for HIPAA compliance
+    if (result.success) {
+      result.tokens.expiresIn = Math.min(result.tokens.expiresIn, 900); // 15 min max
+    }
+
+    return result;
+  }
+}
+```
+
+### Fintech Authentication (PCI-DSS Compliant)
+
+```typescript
+// Integration with fintech security requirements
+class PCICompliantOAuthService extends OAuthService {
+  async authenticateForPayment(
+    credentials: AuthCredentials,
+    transactionContext: TransactionContext
+  ): Promise<AuthResult> {
+    // Require MFA for payment operations
+    const mfaResult = await this.mfaService.verifyFactor(
+      credentials.userId,
+      credentials.mfaToken
+    );
+
+    if (!mfaResult.verified) {
+      throw new MFARequiredError('MFA verification required for payment');
+    }
+
+    // Authenticate with transaction binding
+    const result = await super.authenticate(credentials);
+
+    // Bind token to transaction
+    result.tokens.transactionId = transactionContext.transactionId;
+    result.tokens.scope = 'payment:execute';
+
+    return result;
+  }
+}
+```
+
 ## Documentation Requirements
 - API documentation for authentication endpoints
 - Security documentation for token handling
 - User guide for authentication flows
 - Troubleshooting guide for common auth issues
+
+
+## Multi-Domain Composition Examples
+
+### E-Commerce Platform Authentication
+
+```typescript
+// Composing OAuth with commerce domain templates
+const ecommerceAuthConfig = {
+  oauth: {
+    providers: ['google', 'apple', 'facebook'],
+    scopes: ['openid', 'profile', 'email']
+  },
+  mfa: {
+    requiredForCheckout: true,
+    factors: ['totp', 'sms']
+  },
+  session: {
+    cartPersistence: true,
+    guestCheckout: true
+  }
+};
+```
+
+### Healthcare Platform Authentication
+
+```typescript
+// Composing OAuth with healthcare domain templates
+const healthcareAuthConfig = {
+  oauth: {
+    providers: ['enterprise_sso'],
+    scopes: ['openid', 'profile', 'phi_access']
+  },
+  compliance: {
+    hipaaAuditLogging: true,
+    sessionTimeout: 900, // 15 minutes
+    mfaRequired: true
+  },
+  accessControl: {
+    roleBasedPHIAccess: true,
+    breakGlassEnabled: true
+  }
+};
+```
+
+### Enterprise SaaS Authentication
+
+```typescript
+// Composing OAuth with enterprise SaaS domain templates
+const enterpriseAuthConfig = {
+  oauth: {
+    providers: ['okta', 'azure_ad', 'ping_identity'],
+    scopes: ['openid', 'profile', 'groups']
+  },
+  sso: {
+    samlEnabled: true,
+    scimProvisioning: true,
+    jitProvisioning: true
+  },
+  multiTenancy: {
+    tenantIsolation: true,
+    customDomains: true
+  }
+};
+```
+
+## Template Composition Rules
+
+### Compatible Templates
+- `security/multi-factor-auth.md` - Always compatible
+- `security/advanced-authorization.md` - Always compatible
+- `enterprise-saas/sso-integration.md` - Requires enterprise OAuth providers
+- `healthcare/hipaa-compliance.md` - Requires audit logging enabled
+- `fintech/fraud-detection.md` - Requires risk scoring enabled
+
+### Conflict Resolution
+- When composing with `security/zero-trust-architecture.md`, continuous verification takes precedence
+- When composing with `healthcare/hipaa-compliance.md`, session timeouts are enforced at the stricter level
+- When composing with `fintech/account-management.md`, KYC verification is required before full access
+
+## Documentation Requirements
+- API documentation for authentication endpoints
+- Security documentation for token handling
+- User guide for authentication flows
+- Troubleshooting guide for common auth issues
+- Integration guide for composing with other domain templates

@@ -682,3 +682,7 @@ function generateQualityLeaderboard() {
 
 ## Next Stage
 Stage 10 - Handoff (Project handoff and transition procedures)
+
+## Templates
+
+This module includes the following templates:

@@ -49,32 +49,96 @@ New to AI-assisted development? We've curated a list of **free AI tools, IDEs, a
 
 ## Quick Start: One-Prompt Setup
 
-Copy and paste this prompt into your AI coding assistant (Cursor, Windsurf, Kiro, Claude, ChatGPT, etc.) to set up the library in your project:
+Copy this prompt into your AI assistant (Cursor, Windsurf, Kiro, Claude, etc.):
 
 ```
-I want to integrate the AI Prompt Library into my project for spec-driven development.
+I want to use the AI Prompt Library to build my project idea.
 
-Please do the following:
+**My Project Idea**: [Describe your idea here - even 2-3 sentences is enough!]
 
-1. Check if my project is a git repository:
-   - If YES (git repo exists): Add the library as a git submodule:
-     git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
-   - If NO (not a git repo): Ask me if I want to initialize git. If yes, run `git init` first then add submodule. If no, clone instead and add `.ai-prompts/` to .gitignore.
+Please set up the library and start the specification pipeline:
 
-2. Set up the library as a prompt pre-processor:
-   - If AGENTS.md exists in my project root, append a reference to `.ai-prompts/prompts/AGENTS.md`
-   - If AGENTS.md doesn't exist, create one that includes the AI Prompt Library instructions
-   - The goal: any chat/prompt I send should be enhanced by the library's templates
+1. Add the AI Prompt Library to my project:
+   - If git repo: `git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts`
+   - If not git: Clone to `.ai-prompts/` and add to .gitignore
 
-3. Create a quick-start file at `.ai-prompts/MY_PROJECT.md` with:
-   - A placeholder for my project brief
-   - Instructions for how to use the library with my specific project
+2. Read the library instructions at `.ai-prompts/prompts/AGENTS.md`
 
-4. After setup, show me:
-   - How to update the library when new versions are released
-   - A simple example of using the library
+3. Set up steering files from `.ai-prompts/prompts/steering/` for my AI tool
 
-Note: If using submodule (recommended), do NOT add .ai-prompts to .gitignore — submodules are tracked by reference, not content.
+4. Create MY_PROJECT.md using `.ai-prompts/prompts/templates/user-input-template.md` with my idea filled in
+
+5. Create the state files for pipeline tracking:
+   - Create `NEXT_ACTION.md` in project root (controls what happens next)
+   - Create `prompts/outputs/PROJECT_STATE.md` (tracks pipeline progress)
+   - Use the templates from `.ai-prompts/prompts/templates/project-state-files.md`
+
+6. Start Stage 01 - Intake:
+   - Process my brief using `.ai-prompts/prompts/stages/stage-01-intake/`
+   - Generate requirements to `prompts/outputs/specifications/requirements.md`
+   - Update NEXT_ACTION.md to point to Stage 02
+
+After this, I can just say "Continue" to progress through each stage.
+```
+
+### How It Works
+
+After running the setup prompt:
+
+1. **Your project is configured** with the library and state tracking files
+2. **Stage 01 completes** and generates your requirements specification
+3. **NEXT_ACTION.md is updated** to show Stage 02 is next
+
+From then on, you just say **"Continue"** or **"Resume"** and the AI:
+- Reads NEXT_ACTION.md to know exactly what to do
+- Executes the next stage
+- Updates the state files
+- Sets up the next action
+
+This works across different chats, IDEs, and AI agents - the state files are the "wiring" that keeps everything connected.
+
+### The 10-Stage Pipeline
+
+| Stage | What It Generates |
+|-------|-------------------|
+| 01 - Intake | Requirements specification |
+| 02 - Charter | Project scope and success criteria |
+| 03 - Architecture | System design and tech stack |
+| 04 - Features | Detailed feature specifications |
+| 05 - Testing | Test strategy and test cases |
+| 06 - Implementation | Task lists (bite-sized, context-agnostic prompts) |
+| 07 - Deployment | CI/CD and infrastructure configs |
+| 08 - Documentation | API docs and user guides |
+| 09 - Quality | QA checklists and validation |
+| 10 - Handoff | Release notes and maintenance guides |
+
+### The Output
+
+After completing all stages, you'll have:
+
+```
+prompts/outputs/
+├── specifications/
+│   ├── requirements.md      # User stories with acceptance criteria
+│   ├── charter.md           # Project scope and goals
+│   ├── architecture.md      # System design and tech stack
+│   └── features.md          # Detailed feature specs
+├── task-lists/
+│   ├── frontend-tasks.md    # Implementation prompts for frontend
+│   ├── backend-tasks.md     # Implementation prompts for backend
+│   └── deployment-tasks.md  # Infrastructure setup prompts
+└── documentation/
+    ├── api-docs.md          # API specifications
+    └── user-guides.md       # End-user documentation
+```
+
+Each task in the task lists is a **self-contained prompt** that any AI can execute without prior context.
+
+### Updating the Library
+
+```bash
+git submodule update --remote .ai-prompts
+git add .ai-prompts && git commit -m "Update AI Prompt Library"
 ```
 
 ---
@@ -365,6 +429,7 @@ prompts/
 │   ├── technology-stacks/  # React, AWS, etc.
 │   ├── testing/            # Mock data, fake backends
 │   └── cross-platform/     # Platform parity
+├── steering/           # AI tool steering files (IDE-agnostic)
 ├── working_copy/       # Your assets go here
 └── outputs/            # Generated specifications
 ```
@@ -378,6 +443,33 @@ prompts/
 | **Low** | Generate specs, delegate testing to you | Personal projects, prototypes |
 | **Medium** | Verify at key checkpoints | Most projects, balanced cost/quality |
 | **High** | Comprehensive verification + full test suites | Enterprise, compliance-heavy projects |
+
+---
+
+## AI Tool Integration (Steering Files)
+
+The library includes steering files that guide AI agents to maintain consistency and prevent breaking changes when working on your project.
+
+### What Are Steering Files?
+
+Steering files are instructions that tell AI tools how to work with your project properly. They ensure AI agents:
+- Review what's already built before making changes
+- Follow the patterns already established in your code
+- Don't accidentally break existing features when fixing issues
+
+### Available Steering Files
+
+| File | What It Does |
+|------|--------------|
+| `architecture-guard.md` | Prevents AI from breaking existing functionality |
+| `library-context.md` | Helps AI understand the library structure |
+| `change-review.md` | Guides AI through reviewing changes safely |
+
+### How to Set Up
+
+Your AI assistant will set these up automatically when you use the **Quick Start: One-Prompt Setup** above. The AI will copy or link these files to the right location for your specific tool (Cursor, Kiro, Windsurf, etc.).
+
+If you need to set them up manually, see `prompts/steering/README.md` for tool-specific instructions.
 
 ---
 

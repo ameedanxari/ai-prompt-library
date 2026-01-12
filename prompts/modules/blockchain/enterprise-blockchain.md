@@ -12,6 +12,8 @@ Enterprise blockchain enables organizations to leverage distributed ledger techn
 
 ### Private Network Service
 
+## Examples
+
 ```typescript
 interface PrivateNetworkService {
   createNetwork(config: NetworkConfig): Promise<NetworkResult>;

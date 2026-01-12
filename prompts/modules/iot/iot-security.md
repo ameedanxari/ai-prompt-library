@@ -12,6 +12,8 @@ IoT security requires specialized approaches due to resource-constrained devices
 
 ### Device Certificate Service
 
+## Examples
+
 ```typescript
 interface DeviceCertificateService {
   generateCertificate(request: CertificateRequest): Promise<DeviceCertificate>;

@@ -12,6 +12,8 @@ IoT sensor data processing requires handling high-velocity data streams from div
 
 ### Sensor Data Ingestion Service
 
+## Examples
+
 ```typescript
 interface SensorDataIngestionService {
   ingestData(data: SensorReading[]): Promise<IngestionResult>;

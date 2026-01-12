@@ -12,6 +12,8 @@ Modern applications require instant notification delivery to provide responsive 
 
 ### Real-Time Delivery Service
 
+## Examples
+
 ```typescript
 interface RealTimeDeliveryService {
   // Instant delivery
