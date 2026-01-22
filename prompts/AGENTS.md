@@ -18,7 +18,7 @@ Provide comprehensive instructions for AI agents working with the AI Prompt Libr
 ### Quick Start for New AI Agents
 
 1. **Read NEXT_ACTION.md** - This file tells you exactly what to do next
-2. **If NEXT_ACTION.md doesn't exist**, run the **Task Router** (see `prompts/templates/task-router.md`) to decide between atomic task and library pipeline.
+2. **If NEXT_ACTION.md doesn't exist**, run the **Task Router** (see `templates/task-router.md`) to decide between atomic task and library pipeline.
 3. If using the pipeline, read MY_PROJECT.md and start Stage 01 (Intake)
 4. **Execute the action** described in NEXT_ACTION.md or the Task Router decision
 5. **Validate prerequisites** before proceeding to next stage
@@ -451,6 +451,21 @@ package.json             # ACTUAL dependencies
 2. **Generate Next Steps**: Clear instructions for the next stage
 3. **Validate Dependencies**: Ensure downstream stages can proceed
 4. **Store Artifacts**: Save all generated files in appropriate locations
+
+## Large Repetitive Changes Protocol (Coverage, Refactors, Bulk Fixes)
+
+Use this when the request involves broad, repetitive edits (coverage backfill, lint/refactor sweeps, bulk test failures, mass renames/upgrades, legacy rewrites).
+
+1. **Load the playbook**: `templates/large-repetitive-changes.md`. Follow it unless explicitly overridden.  
+2. **Start with a checklist**: Inventory all impacted files/tests first; track `todo | in-progress | done | needs-followup`. This becomes the work queue.  
+3. **Small batches only**: Default batch size is 3-5 files. Finish a batch before starting another; stop expanding scope if batch checks fail.  
+4. **File-by-file loop**: Apply the smallest viable change, sweep references after renames, then run the cheapest useful check (file-scoped lint/test/type-check). Update the checklist.  
+5. **Minimal verification**: Prefer targeted commands over full suites; run a broader guardrail (e.g., type-check or scoped test suite) after each batch.  
+6. **Preserve behavior**: Do not introduce new logic unless a real bug is proven. Fix with minimal, evidence-based changes.  
+7. **Logging for tests**: Make failures emit actionable context; gate sensitive logs behind a debug flag.  
+8. **PR hygiene**: Keep commits/PRs small and scoped to the batch; remove debug artifacts; summarize checklist progress and commands used.  
+9. **State and handoff**: Record progress and resume point in `EXECUTION_PROGRESS.md` (or relevant state file) after each batch.  
+10. **Ask if unclear**: If the pattern or goal is ambiguous, pause and ask targeted questions before proceeding.
 
 ## Template Usage Guidelines
 

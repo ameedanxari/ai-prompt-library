@@ -53,6 +53,7 @@ Core template files for prompt generation, validation, and project management th
 - [implementation-prompt-generation.md](./implementation-prompt-generation.md) - Implementation prompt creation
 - [feature-implementation-prompt.md](./feature-implementation-prompt.md) - Feature-specific implementation prompts
 - [implementation-dry-run.md](./implementation-dry-run.md) - Dry-run implementation validation
+- [large-repetitive-changes.md](./large-repetitive-changes.md) - Safe protocol for large, repetitive refactors and coverage sweeps
 
 ### Stage Management
 - [stage-orchestration.md](./stage-orchestration.md) - Stage pipeline orchestration
