@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing quality metrics including code coverage, test coverage, quality gates, and quality dashboards. It covers metrics collection, analysis, reporting, and integration with CI/CD pipelines for continuous quality monitoring.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Quality metrics provide objective measurements of software quality and help teams make data-driven decisions about releases. This template addresses the implementation of quality measurement systems that track code health, test effectiveness, and overall software quality across the development lifecycle.

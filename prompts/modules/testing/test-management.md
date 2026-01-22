@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing test management including test planning, test execution tracking, defect tracking, and test reporting. It covers test case organization, test run management, and integration with project management tools.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Effective test management ensures systematic testing coverage and provides visibility into testing progress and quality. This template addresses the implementation of test management systems that organize test cases, track execution, manage defects, and generate comprehensive reports.

@@ -461,7 +461,7 @@ mocks/
 - Maintain backward compatibility when possible
 ```
 
-## Core Functionality
+## Implementation Patterns
 
 ### Mock Data Organization Prompt
 ```

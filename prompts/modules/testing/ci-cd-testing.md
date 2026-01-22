@@ -8,6 +8,15 @@ This template provides comprehensive patterns for implementing automated testing
 
 Automated testing in CI/CD pipelines ensures code quality at every stage of the development lifecycle. This template addresses the implementation of testing strategies that balance thoroughness with speed, enabling fast feedback while maintaining quality gates.
 
+## Instructions
+
+1. **Design Test Pipeline**: Define stages, triggers, and environments for automated testing
+2. **Configure Parallelization**: Set up test splitting and parallel execution
+3. **Implement Quality Gates**: Define blocking criteria based on coverage and pass rates
+4. **Setup Reporting**: Configure test result publishing and notifications
+5. **Secure Execution**: Implement security controls for pipeline execution
+6. **Integrate with Deployment**: Link testing stages to deployment workflows
+
 ## Core Components
 
 ### CI/CD Test Orchestrator Interface

@@ -105,7 +105,7 @@ This template will produce:
 ## Context
 Use this template when building healthcare applications that need to integrate with wearable devices, fitness trackers, medical sensors, and IoT health monitoring equipment while ensuring data accuracy, privacy, and clinical relevance.
 
-## Wearable Device Integration Architecture
+## Implementation Patterns
 
 ### Core Integration Components
 

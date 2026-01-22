@@ -119,7 +119,7 @@ This template will produce:
 ## Context
 Use this template when building healthcare appointment scheduling systems that need to manage complex provider schedules, patient preferences, appointment types, and integration with electronic health records and billing systems.
 
-## Appointment Scheduling Architecture
+## Implementation Patterns
 
 ### Core Scheduling Components
 

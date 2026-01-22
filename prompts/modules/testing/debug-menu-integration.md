@@ -1162,7 +1162,7 @@ val okHttpClient = OkHttpClient.Builder()
 ```
 ```
 
-## Core Functionality
+## Implementation Patterns
 
 ### Debug Menu Generation Prompt
 ```

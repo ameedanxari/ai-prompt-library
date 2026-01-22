@@ -367,7 +367,7 @@ rm -rf desktop/tests/mocks/
 4. Update .gitignore if needed
 ```
 
-## Core Functionality
+## Implementation Patterns
 
 ### Platform Mock Scanner Prompt
 ```

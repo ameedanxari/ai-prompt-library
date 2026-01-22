@@ -8,6 +8,14 @@ This template provides comprehensive patterns for defining template compatibilit
 
 When composing multiple templates, conflicts can arise from incompatible configurations, overlapping functionality, or contradictory requirements. This template establishes rules and mechanisms for detecting and resolving such conflicts.
 
+## Instructions
+
+1. **Define Composition Rules**: Establish rules for template compatibility and conflicts
+2. **Configure Rule Engine**: Initialize the rule evaluation pipeline
+3. **Set Resolution Strategies**: Define how conflicts should be resolved
+4. **Implement Validation**: continuously validate template compositions
+5. **Monitor Rule Effectiveness**: Track rule matches and update as needed
+
 ## Core Components
 
 ### Composition Rule Schema

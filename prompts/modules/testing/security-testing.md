@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing security testing including vulnerability scanning, penetration testing, compliance testing, and threat modeling. It covers automated security checks, manual testing procedures, and integration with security tools for both web and mobile applications.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Security testing is essential for identifying vulnerabilities before they can be exploited. This template addresses the implementation of security test suites that cover OWASP Top 10, authentication/authorization testing, input validation, and security compliance requirements.

@@ -58,6 +58,8 @@ interface OptimizationMetrics {
 }
 ```
 
+## Implementation Patterns
+
 ### Composition Optimizer Service
 
 ```typescript

@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing automated testing frameworks including unit testing, integration testing, and end-to-end testing. It covers test organization, assertion patterns, test runners, and continuous integration strategies for both web and mobile platforms.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Modern software development requires robust automated testing to ensure code quality, prevent regressions, and enable confident deployments. This template addresses the implementation of multi-layered testing strategies that balance coverage, speed, and maintainability across different application types.

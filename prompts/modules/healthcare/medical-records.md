@@ -217,7 +217,7 @@ class ClinicalTerminologyManager {
 }
 ```
 
-## EHR Integration Architecture
+## Implementation Patterns
 
 ### FHIR API Integration
 

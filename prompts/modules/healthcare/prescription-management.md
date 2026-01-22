@@ -118,7 +118,7 @@ This template will produce:
 ## Context
 Use this template when building prescription management systems that need to handle electronic prescribing, pharmacy integration, medication tracking, clinical decision support, and compliance with DEA, FDA, and state pharmacy regulations.
 
-## E-Prescribing Architecture
+## Implementation Patterns
 
 ### Core Prescription Management Components
 

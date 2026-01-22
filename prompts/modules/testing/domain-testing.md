@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing domain-specific and compliance testing including specialized testing for healthcare, fintech, e-commerce, and other regulated industries. It covers regulatory validation, compliance verification, and industry-specific testing requirements.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Different application domains have unique testing requirements driven by regulations, industry standards, and domain-specific functionality. This template addresses the implementation of specialized testing strategies that ensure compliance with industry regulations while validating domain-specific business logic.

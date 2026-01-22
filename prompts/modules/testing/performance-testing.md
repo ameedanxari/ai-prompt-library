@@ -4,6 +4,13 @@
 
 This template provides comprehensive patterns for implementing performance testing including load testing, stress testing, scalability testing, and performance monitoring. It covers test design, execution strategies, metrics collection, and analysis for both web and mobile applications.
 
+
+## Instructions
+
+1. Review the requirements and context.
+2. Apply the specified patterns and configurations.
+3. Validate the implementation against expected outputs.
+
 ## Context
 
 Performance testing ensures applications meet response time, throughput, and resource utilization requirements under various load conditions. This template addresses the implementation of performance test suites that identify bottlenecks, validate scalability, and establish performance baselines.

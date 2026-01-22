@@ -558,7 +558,7 @@ This document maps each mock data file to its corresponding API endpoint specifi
 4. Schedule regular compliance audits
 ```
 
-## Core Functionality
+## Implementation Patterns
 
 ### Schema Generation Prompt
 ```

@@ -641,7 +641,7 @@ docker-compose -f docker-compose.fake-backend.yml up --build
 ```
 ```
 
-## Core Functionality
+## Implementation Patterns
 
 ### Server Specification Generation Prompt
 ```

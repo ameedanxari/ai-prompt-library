@@ -21,11 +21,8 @@ import { ProjectState } from '../../src/state-manager.js';
  */
 
 describe('Property-Based Tests: Documentation and Traceability System', () => {
-  let system: DocumentationTraceabilitySystem;
+  // System instance should be created inside each property check to ensure isolation
 
-  beforeEach(() => {
-    system = new DocumentationTraceabilitySystem();
-  });
 
   // Arbitrary generators
   const stageIdArb = fc.constantFrom(...Object.values(StageId));
@@ -79,6 +76,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           stageIdArb,
           fc.string({ minLength: 5, maxLength: 20 }),
           (sourceType, sourceId, targetType, targetId, relationship, stage, projectId) => {
+            const system = new DocumentationTraceabilitySystem();
             const link = system.createTraceabilityLink(
               sourceType,
               sourceId,
@@ -124,6 +122,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           stageIdArb,
           fc.string({ minLength: 5, maxLength: 20 }),
           (requirementId, description, stage, projectId) => {
+            const system = new DocumentationTraceabilitySystem();
             const trace = system.trackRequirement(requirementId, description, stage, projectId);
 
             // Trace should have all required fields
@@ -165,6 +164,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           fc.array(fc.string({ minLength: 5, maxLength: 50 }), { minLength: 1, maxLength: 5 }),
           fc.string({ minLength: 5, maxLength: 20 }),
           (decision, context, consequences, projectId) => {
+            const system = new DocumentationTraceabilitySystem();
             const doc = system.documentDecision(
               decision as ArchitecturalDecision,
               context,
@@ -213,6 +213,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           fc.array(fc.string({ minLength: 3, maxLength: 20 }), { minLength: 0, maxLength: 3 }),
           fc.string({ minLength: 5, maxLength: 20 }),
           (taskId, title, stage, requirements, decisions, projectId) => {
+            const system = new DocumentationTraceabilitySystem();
             const taskRef = system.addTaskReference(
               taskId,
               title,
@@ -244,7 +245,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
 
             // Traceability links should be created
             const matrix = system.getTraceabilityMatrix(projectId);
-            const taskLinks = matrix.filter(link => 
+            const taskLinks = matrix.filter(link =>
               link.sourceType === 'task' && link.sourceId === taskId
             );
             expect(taskLinks.length).toBe(requirements.length + decisions.length);
@@ -264,6 +265,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           projectStateArb,
           fc.boolean(),
           (projectState, includeTraceability) => {
+            const system = new DocumentationTraceabilitySystem();
             const documentation = system.generateProjectDocumentation(
               projectState as ProjectState,
               includeTraceability
@@ -321,6 +323,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
             { minLength: 0, maxLength: 5 }
           ),
           (projectId, linkData) => {
+            const system = new DocumentationTraceabilitySystem();
             // Create traceability links
             for (const [sourceType, sourceId, targetType, targetId, relationship, stage] of linkData) {
               system.createTraceabilityLink(
@@ -366,6 +369,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           fc.array(fc.string({ minLength: 3, maxLength: 20 }), { minLength: 1, maxLength: 3 }),
           stageIdArb,
           (projectId, requirementId, taskIds, stage) => {
+            const system = new DocumentationTraceabilitySystem();
             // Add tasks that implement the requirement
             for (const taskId of taskIds) {
               system.addTaskReference(
@@ -407,6 +411,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
           fc.array(fc.string({ minLength: 3, maxLength: 20 }), { minLength: 0, maxLength: 3 }),
           stageIdArb,
           (projectId, requirementIds, implementedRequirementIds, stage) => {
+            const system = new DocumentationTraceabilitySystem();
             // Track requirements
             for (const reqId of requirementIds) {
               system.trackRequirement(reqId, `Requirement ${reqId}`, stage, projectId);
@@ -456,6 +461,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
         fc.property(
           fc.string({ minLength: 5, maxLength: 20 }),
           (projectId) => {
+            const system = new DocumentationTraceabilitySystem();
             const validation = system.validateDocumentationCompleteness(projectId);
 
             // Validation should have required fields
@@ -481,6 +487,7 @@ describe('Property-Based Tests: Documentation and Traceability System', () => {
         fc.property(
           projectStateArb,
           (projectState) => {
+            const system = new DocumentationTraceabilitySystem();
             const documentation = system.generateProjectDocumentation(
               projectState as ProjectState
             );
