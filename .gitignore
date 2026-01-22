@@ -45,10 +45,6 @@ prompts/outputs/*
 prompts/working_copy/*
 !prompts/working_copy/README.md
 
-# Development artifacts
-chat-transcript.md
-raw_chat.txt
-
 # Internal development artifacts
 .kiro/
 .kiro-*

@@ -166,6 +166,28 @@ git add .ai-prompts && git commit -m "Update AI Prompt Library"
 
 ---
 
+## 🔁 Developing the Next Feature
+
+Once you've completed a feature or development cycle, you can start the next one with a single prompt. The library includes an **Agentic Orchestrator** that handles state verification, archiving, and task assessment automatically.
+
+### Start Next Feature
+Copy this prompt to your AI assistant:
+
+```markdown
+I have a new request for my project. Please use the **Next Feature Orchestrator** at `.ai-prompts/prompts/templates/next-feature-orchestrator.md`:
+
+1.  **Assess current state** (check for pending tasks).
+2.  **Request my consent** before archiving previous results.
+3.  **Route the request** using the Task Router once cleared.
+
+**My New Request**: [Describe your next feature or change here]
+```
+
+> [!TIP]
+> **Safety First**: The orchestrator will warn you if it detects unfinished work. If you definitely want to start over, you can add "FORCE RESET" to your request.
+
+---
+
 ## Manual Setup
 
 ### Choosing Your Integration Approach

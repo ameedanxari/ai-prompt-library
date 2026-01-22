@@ -8,7 +8,8 @@
     "test:watch": "vitest",
     "test:pbt": "vitest --run --reporter=verbose tests/property-tests",
     "prepare": "husky install",
-    "lint-staged": "lint-staged"
+    "lint-staged": "lint-staged",
+    "archive": "vite-node src/archive.ts"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

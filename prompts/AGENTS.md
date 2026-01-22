@@ -18,20 +18,22 @@ Provide comprehensive instructions for AI agents working with the AI Prompt Libr
 ### Quick Start for New AI Agents
 
 1. **Read NEXT_ACTION.md** - This file tells you exactly what to do next
-2. **If NEXT_ACTION.md doesn't exist**, read MY_PROJECT.md and start Stage 01 (Intake)
-3. **Execute the action** described in NEXT_ACTION.md using appropriate templates
-4. **Validate prerequisites** before proceeding to next stage
-5. **Update state files** after completing the action with full traceability
-6. **Set up the next action** for the following stage
+2. **If NEXT_ACTION.md doesn't exist**, run the **Task Router** (see `prompts/templates/task-router.md`) to decide between atomic task and library pipeline.
+3. If using the pipeline, read MY_PROJECT.md and start Stage 01 (Intake)
+4. **Execute the action** described in NEXT_ACTION.md or the Task Router decision
+5. **Validate prerequisites** before proceeding to next stage
+6. **Update state files** after completing the action with full traceability
+7. **Set up the next action** for the following stage
 
 ### The "Continue" Protocol (Enhanced)
 
 When a user says **"Continue"** or **"Resume"**:
 
-1. **Read NEXT_ACTION.md** in the project root for current status
-2. **Determine Current Phase**:
-   - If `Current Phase: Specification` → Go to Step 3
-   - If `Current Phase: Execution` → Go to Step 7
+1. **Check for Task Routing**: If this is a new request, follow the **Task Router** protocol to determine if the pipeline should be engaged.
+2. **Read NEXT_ACTION.md** in the project root for current status
+3. **Determine Current Phase**:
+   - If `Current Phase: Specification` → Go to Step 4
+   - If `Current Phase: Execution` → Go to Step 8
    
 **For Specification Phase (Stages 01-10):**
 
@@ -75,7 +77,12 @@ These files must be maintained for the pipeline to work across sessions:
 
 **Note**: EXECUTION_PROGRESS.md is created after Stage 10 completion when transitioning to Execution Phase.
 
-See `templates/project-state-files.md` and `templates/execution-phase.md` for exact formats.
+### Archiving & Reset (New Feature Path)
+
+When starting a new feature development cycle after completing a previous one:
+1. **Archive Previous Results**: Run `npm run archive [project-name]` to move current outputs to `prompts/archive/`.
+2. **Reset Pipeline**: Ensure `prompts/outputs/` is cleared (except for structure).
+3. **Engage Task Router**: Use the Task Router to decide the path for the new feature.
 
 ### The Updated Workflow: Planning → Building → Finishing
 
