@@ -31,6 +31,91 @@ Create secure user authentication endpoints with JWT token management
 - **Agent Handoff Ready**: Any AI agent can pick up and execute tasks
 - **Self-Validating**: Built-in checks for task completeness and correctness
 
+---
+
+## LLM Resilience Framework
+
+### Purpose
+Ensure tasks can be executed reliably across:
+- Different AI models (GPT, Claude, Gemini, local models)
+- Different context window sizes (8K to 1M tokens)
+- Session interruptions and handoffs
+- IDE/tool switches mid-project
+
+### Mandatory Context Summary
+
+Every task MUST begin with a Context Summary block:
+
+```markdown
+## Context Summary
+
+**Project**: [Name] - [One sentence description]
+**Current Phase**: [Specification | Execution | Finishing]
+**This Task**: [Task ID] - [Task title]
+**Previous Task**: [Last completed task] ✅
+**State Files**: 
+- NEXT_ACTION.md: [Key info]
+- EXECUTION_PROGRESS.md: [Current status]
+
+### Quick Start for New Session
+1. Read this Context Summary
+2. Check EXECUTION_PROGRESS.md for detailed state
+3. Continue from "Implementation Steps" below
+```
+
+### State File Update Triggers
+
+Update state files (NEXT_ACTION.md, EXECUTION_PROGRESS.md) when:
+- ✅ A task or sub-task is completed
+- 📁 Files are created or significantly modified  
+- 🔀 Switching between major implementation phases
+- ⚠️ An issue or blocker is encountered
+- 🔚 Ending a session (even if task incomplete)
+
+### Graceful Continuation Protocol
+
+When an AI agent starts work on a task:
+
+```markdown
+## Continuation Check
+
+1. **Read State Files**
+   - NEXT_ACTION.md → Current status and next action
+   - EXECUTION_PROGRESS.md → Detailed progress
+
+2. **Verify Context**
+   - Check "Previous Task" is marked complete
+   - Verify prerequisite files exist
+   - Confirm dependencies are met
+
+3. **Resume from Checkpoint**
+   - Find last checked item in Implementation Steps
+   - Continue from next unchecked item
+   - Do NOT restart completed work
+```
+
+### Chunk Boundary Markers
+
+For long tasks, include progress markers:
+
+```markdown
+### Implementation Steps
+
+1. [x] Set up project structure
+   **CHECKPOINT**: Project skeleton complete
+   
+2. [x] Create database models
+   **CHECKPOINT**: Data layer ready
+
+3. [ ] Implement API endpoints  ← RESUME HERE
+   **CHECKPOINT**: API layer complete
+
+4. [ ] Add frontend components
+   **CHECKPOINT**: UI complete
+```
+
+Markers help any AI agent quickly locate the resume point.
+
 ## Task Independence Framework
 
 ### Self-Contained Task Structure

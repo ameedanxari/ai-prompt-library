@@ -81,58 +81,81 @@ Please set up the library and start the specification pipeline:
 After this, I can just say "Continue" to progress through each stage.
 ```
 
-### How It Works
+### How It Works (Simplified)
 
-After running the setup prompt:
+We've broken down software development into three simple phases:
 
-1. **Your project is configured** with the library and state tracking files
-2. **Stage 01 completes** and generates your requirements specification
-3. **NEXT_ACTION.md is updated** to show Stage 02 is next
+#### 1. Planning Phase (Stages 01-06)
+**Goal**: Define exactly what to build so there's no guesswork.
 
-From then on, you just say **"Continue"** or **"Resume"** and the AI:
-- Reads NEXT_ACTION.md to know exactly what to do
-- Executes the next stage
-- Updates the state files
-- Sets up the next action
+- **You say**: "Continue"
+- **AI does**: Asks questions, designs the system, and creates a step-by-step build plan.
+- **You get**: A complete blueprint (requirements, design, task list) in `prompts/outputs/`.
 
-This works across different chats, IDEs, and AI agents - the state files are the "wiring" that keeps everything connected.
+#### 🚀 OPTIMAL BUILD POINT (After Stage 06)
+**Goal**: Start coding while the plan is fresh.
 
-### The 10-Stage Pipeline
+- **You see**: A "Ready to Build" message in `NEXT_ACTION.md`.
+- **You say**: "Execute the development plan"
+- **AI does**: Switches from planning to coding.
 
-| Stage | What It Generates |
-|-------|-------------------|
-| 01 - Intake | Requirements specification |
-| 02 - Charter | Project scope and success criteria |
-| 03 - Architecture | System design and tech stack |
-| 04 - Features | Detailed feature specifications |
-| 05 - Testing | Test strategy and test cases |
-| 06 - Implementation | Task lists (bite-sized, context-agnostic prompts) |
-| 07 - Deployment | CI/CD and infrastructure configs |
-| 08 - Documentation | API docs and user guides |
-| 09 - Quality | QA checklists and validation |
-| 10 - Handoff | Release notes and maintenance guides |
+#### 2. Building Phase (The Work Loop)
+**Goal**: Turn the plan into working software.
 
-### The Output
+- **You say**: "Continue" (repeatedly)
+- **AI does**:
+  1. Picks the next task from the plan
+  2. Writes the actual code files
+  3. Tests the code to make sure it works
+  4. Updates the progress tracker
+- **You get**: Real source code in `src/`, working tests, and a functional app!
 
-After completing all stages, you'll have:
+> **💡 Try Dry-Run Mode**: Want to see what the AI *would* build without using up all your tokens? Enable **Dry-Run Mode** in `NEXT_ACTION.md`. The AI will show you a preview of the files and code logic instead of writing everything out.
 
+#### 3. Finishing Phase (Stages 07-10)
+**Goal**: Polish, document, and prepare for launch.
+
+- **You say**: "Continue"
+- **AI does**: Sets up deployment, writes user manuals, and runs final quality checks.
+- **You get**: Deployment scripts, API docs, and a release-ready project.
+
+---
+
+### Key Concepts
+
+| Term | What it means for you |
+|------|-----------------------|
+| **Stage** | A specific step in the process (e.g., "Architecture", "Testing"). |
+| **Task List** | A detailed checklist of small coding jobs the AI will do. |
+| **State File** | Files like `NEXT_ACTION.md` that remember where you left off. |
+| **Dry-Run** | A "preview mode" that saves cost by skipping code generation. |
+
+### The Two Modes: Specification vs Execution
+
+> ⚠️ **Important**: The Planning Phase (Stages 01-06) creates **PLANS**. The Building Phase creates **CODE**.
+
+**Phase 1: Planning (Specifying)**
+- **Output**: Markdown files in `prompts/outputs/`
+- **Cost**: Low/Medium token usage
+- **Outcome**: A solid plan
+
+**Phase 2: Building (Executing)**
+- **Output**: Code files in `src/`, `tests/`, etc.
+- **Cost**: Higher token usage (writing code takes more effort)
+- **Outcome**: A working product
+5. Build the working product
+
+**Output after Execution:**
 ```
-prompts/outputs/
-├── specifications/
-│   ├── requirements.md      # User stories with acceptance criteria
-│   ├── charter.md           # Project scope and goals
-│   ├── architecture.md      # System design and tech stack
-│   └── features.md          # Detailed feature specs
-├── task-lists/
-│   ├── frontend-tasks.md    # Implementation prompts for frontend
-│   ├── backend-tasks.md     # Implementation prompts for backend
-│   └── deployment-tasks.md  # Infrastructure setup prompts
-└── documentation/
-    ├── api-docs.md          # API specifications
-    └── user-guides.md       # End-user documentation
+src/                      # ACTUAL code files
+├── components/
+├── services/
+└── ...
+tests/                    # ACTUAL test files
+package.json              # ACTUAL project config
 ```
 
-Each task in the task lists is a **self-contained prompt** that any AI can execute without prior context.
+Each task in the task lists is a **self-contained prompt** that guides the AI to write actual code.
 
 ### Updating the Library
 

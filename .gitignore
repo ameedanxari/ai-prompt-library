@@ -49,6 +49,7 @@ prompts/working_copy/*
 chat-transcript.md
 raw_chat.txt
 
-# Kiro specs and development artifacts (internal development only)
+# Internal development artifacts
 .kiro/
 .kiro-*
+test-perf-outputs/

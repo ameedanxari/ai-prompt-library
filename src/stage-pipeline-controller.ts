@@ -72,6 +72,7 @@ export interface ProjectBrief {
   platforms: string[];
   domain: string;
   requirements: string[];
+  features?: string[];
 }
 
 export interface ProjectContext {
@@ -122,7 +123,7 @@ export class StagePipelineController {
    */
   async executeStage(stageId: StageId, context: ProjectContext): Promise<StageResult> {
     const startTime = Date.now();
-    
+
     // Validate prerequisites before execution
     const validation = this.validatePrerequisites(stageId);
     if (!validation.isValid) {
@@ -137,10 +138,10 @@ export class StagePipelineController {
       // Generate stage outputs
       const outputs = this.generateStageOutputs(stageId, context);
       const decisions = this.extractDecisions(stageId, context);
-      
+
       // Determine next stage
       const nextStage = this.getNextStageId(stageId);
-      
+
       const result: StageResult = {
         stageId,
         status: StageStatus.COMPLETED,
@@ -202,13 +203,13 @@ export class StagePipelineController {
    */
   async transitionToNextStage(currentStage: StageId): Promise<StageId | null> {
     const currentStatus = this.stageStatuses.get(currentStage);
-    
+
     if (currentStatus !== StageStatus.COMPLETED) {
       throw new Error(`Cannot transition from stage ${currentStage}: stage is not completed (status: ${currentStatus})`);
     }
 
     const nextStage = this.getNextStageId(currentStage);
-    
+
     if (nextStage) {
       // Validate next stage can be started
       const validation = this.validatePrerequisites(nextStage);
@@ -259,7 +260,7 @@ export class StagePipelineController {
    * Check if all stages are completed
    */
   isPipelineComplete(): boolean {
-    return STAGE_ORDER.every(stageId => 
+    return STAGE_ORDER.every(stageId =>
       this.stageStatuses.get(stageId) === StageStatus.COMPLETED
     );
   }

@@ -41,23 +41,157 @@ The AI will:
 
 This is the **single file** any AI agent reads to know what to do. It must be self-contained and actionable.
 
+**Note**: After Stage 10 completion, this file MUST transition to indicate Execution Phase, NOT mark the project as complete.
+
 ```markdown
 # NEXT ACTION
 
 **Status**: [Ready to continue | Waiting for user input | Blocked | Complete]
+**Current Phase**: [Planning | Building | Finishing]
+**Mode**: [Standard | Dry-Run]
 **Current Stage**: [Stage name] [✅ COMPLETE | 🚧 IN PROGRESS | ⏳ PENDING]
-**Next Stage**: [Next stage name]
+**Next Action**: [Clear one-line instruction]
 **Last Updated**: [Timestamp]
+
+## Context Checkpoint
+**Last Completed**: [Brief summary of last action]
+**Current Goal**: [What we are trying to achieve right now]
+**Context State**: [OK | High Usage - Checkpoint Soon]
 
 ## To Continue
 Tell your AI: "Continue" or "Resume"
 
 ## What Happens Next
+
+### If in Specification Phase (Stages 01-10):
 The AI will:
-1. [Specific action 1]
-2. [Specific action 2]
-3. [Specific action 3]
-4. Update this file with the next action
+1. [Specific stage action]
+2. Generate specifications to prompts/outputs/
+3. Update this file with the next stage
+
+### If in Execution Phase (Post Stage 10):
+The AI will:
+1. Read current task from EXECUTION_PROGRESS.md
+2. Write actual source code files
+3. Create tests and validate
+4. Update execution progress
+5. Continue to next task
+
+## If Starting Fresh
+If this is a new chat/session, the AI should:
+1. Read `.ai-prompts/prompts/AGENTS.md` for library instructions
+2. Read `MY_PROJECT.md` for project brief
+3. Read `prompts/outputs/PROJECT_STATE.md` for current state
+4. If in Execution Phase, read `EXECUTION_PROGRESS.md`
+5. Execute the next action above
+
+## Context Files (Read These First)
+- Project Brief: `MY_PROJECT.md`
+- Current State: `prompts/outputs/PROJECT_STATE.md`
+- Execution Progress: `EXECUTION_PROGRESS.md` (if in Execution Phase)
+- Stage Templates: `.ai-prompts/prompts/stages/[stage-name]/`
+- Execution Guide: `.ai-prompts/prompts/templates/execution-phase.md`
+
+## Blocking Issues
+[None | List any issues that must be resolved before continuing]
+```
+
+### 2. EXECUTION_PROGRESS.md (Execution Phase Tracking)
+
+Located at project root. **Created after Stage 10 completion** to track actual code implementation.
+
+```markdown
+# Execution Progress
+
+**Phase**: Execution (Building from Specifications)
+**Started**: [Timestamp]
+**Last Updated**: [Timestamp]
+
+## Overall Progress
+
+| Category | Total Tasks | Completed | In Progress | Remaining |
+|----------|-------------|-----------|-------------|-----------|
+| Project Setup | X | X | X | X |
+| Frontend | X | X | X | X |
+| Backend | X | X | X | X |
+| Database | X | X | X | X |
+| Testing | X | X | X | X |
+| Deployment | X | X | X | X |
+
+## Current Focus
+
+**Active Task**: [Task ID and Title from task-lists]
+**Task Source**: prompts/outputs/task-lists/[file].md#task-X
+**Status**: [In Progress / Blocked / Complete]
+**Expected Deliverable**: [Actual files to be created]
+
+### Completed Steps for Current Task
+- [x] Step 1: Description - DONE
+- [x] Step 2: Description - DONE
+- [ ] Step 3: Description (current)
+- [ ] Step 4: Description
+
+### Files Being Created/Modified
+| File Path | Status | Action |
+|-----------|--------|--------|
+| src/components/Example.tsx | Created | New component |
+| src/services/api.ts | Modified | Added endpoint |
+| tests/Example.test.tsx | Pending | Unit tests |
+
+## Completed Tasks Log
+
+### [Date] - Task 1.1: Initialize Project
+- **Duration**: 30 minutes
+- **Files Created**: package.json, tsconfig.json, .gitignore
+- **Tests**: N/A (setup task)
+- **Notes**: Used Next.js with TypeScript
+
+### [Date] - Task 1.2: Set Up Database Connection
+- **Duration**: 45 minutes
+- **Files Created**: src/db/connection.ts, prisma/schema.prisma
+- **Tests**: src/db/__tests__/connection.test.ts
+- **Notes**: Using PostgreSQL with Prisma ORM
+
+## Blocking Issues
+
+[None | List issues and required resolution]
+
+## Code Artifacts Summary
+
+```
+Project Root/
+├── src/
+│   ├── components/     [X files created]
+│   ├── services/       [X files created]
+│   ├── utils/          [X files created]
+│   └── pages/          [X files created]
+├── tests/              [X test files, X% coverage]
+├── config/             [X config files]
+└── docs/               [X documentation files]
+```
+
+## Validation Checkpoints
+
+- [ ] All unit tests passing
+- [ ] Integration tests passing
+- [ ] Application builds without errors
+- [ ] Core user flows working
+- [ ] Deployment validated locally
+- [ ] Performance benchmarks met
+
+## For Continuing Agents
+
+**CRITICAL**: You are in EXECUTION PHASE - write ACTUAL CODE, not more specifications.
+
+1. Read "Current Focus" for active task
+2. Check "Completed Steps" to see where we are
+3. Continue from the first unchecked step
+4. Write actual code files (not just descriptions)
+5. Run tests to validate
+6. Update this file after each significant action
+7. Mark task complete when all acceptance criteria met
+8. Move to next task from task-lists
+```
 
 ## If Starting Fresh
 If this is a new chat/session, the AI should:

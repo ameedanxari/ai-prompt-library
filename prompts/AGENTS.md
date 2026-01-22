@@ -29,13 +29,33 @@ Provide comprehensive instructions for AI agents working with the AI Prompt Libr
 When a user says **"Continue"** or **"Resume"**:
 
 1. **Read NEXT_ACTION.md** in the project root for current status
-2. **Validate prerequisites** for the next stage using quality gates
-3. **Load context** from previous stage outputs and decisions
-4. **Execute the next stage** using templates from appropriate domain and stage
-5. **Generate context-agnostic outputs** to `prompts/outputs/` with proper organization
-6. **Update NEXT_ACTION.md** with the next stage and required context
-7. **Update PROJECT_STATE.md** with progress and decisions
-8. **Document traceability** links between requirements and implementations
+2. **Determine Current Phase**:
+   - If `Current Phase: Specification` → Go to Step 3
+   - If `Current Phase: Execution` → Go to Step 7
+   
+**For Specification Phase (Stages 01-10):**
+
+3. **Validate prerequisites** for the next stage using quality gates
+4. **Load context** from previous stage outputs and decisions
+5. **Execute the next stage** using templates from appropriate domain and stage
+6. **Generate context-agnostic outputs** to `prompts/outputs/` with proper organization
+7. **Update NEXT_ACTION.md** with the next stage and required context
+8. **Update PROJECT_STATE.md** with progress and decisions
+9. **After Stage 10**: Transition NEXT_ACTION.md to Execution Phase
+
+**For Execution Phase (Post Stage 10):**
+
+7. **Read EXECUTION_PROGRESS.md** for current task and progress
+8. **Load the current task** from task-lists files
+9. **Write actual source code files** (NOT specifications)
+10. **Create tests** and validate the implementation
+11. **Update EXECUTION_PROGRESS.md** with completed work
+12. **Move to next task** from task-lists
+13. **Repeat** until all tasks are complete and product is functional
+
+⚠️ **Critical Distinction**:
+- Specification Phase → Generate documentation to `prompts/outputs/`
+- Execution Phase → Write code to `src/`, `tests/`, etc.
 
 This protocol ensures seamless continuation across different chats, IDEs, and AI agents with full state preservation.
 
@@ -43,77 +63,83 @@ This protocol ensures seamless continuation across different chats, IDEs, and AI
 
 These files must be maintained for the pipeline to work across sessions:
 
-| File | Location | Purpose | Updated By |
-|------|----------|---------|------------|
-| **NEXT_ACTION.md** | Project root | What to do next (primary control file) | State Manager |
-| **PROJECT_STATE.md** | `prompts/outputs/` | Pipeline progress and decisions | State Manager |
-| **DEVELOPMENT_LOG.md** | `prompts/outputs/` | Detailed execution log | State Manager |
-| **ARCHITECTURE_DECISIONS.md** | `prompts/outputs/` | Architectural decision records | Documentation System |
-| **COMPLETED_FEATURES.md** | `prompts/outputs/` | Feature completion tracking | State Manager |
-| **MY_PROJECT.md** | Project root | Original project brief | User/Initial Setup |
+| File | Location | Purpose | Phase | Updated By |
+|------|----------|---------|-------|------------|
+| **NEXT_ACTION.md** | Project root | What to do next (primary control file) | Both | State Manager |
+| **PROJECT_STATE.md** | `prompts/outputs/` | Pipeline progress and decisions | Specification | State Manager |
+| **EXECUTION_PROGRESS.md** | Project root | Code implementation tracking | Execution | State Manager |
+| **DEVELOPMENT_LOG.md** | `prompts/outputs/` | Detailed execution log | Both | State Manager |
+| **ARCHITECTURE_DECISIONS.md** | `prompts/outputs/` | Architectural decision records | Specification | Documentation System |
+| **COMPLETED_FEATURES.md** | `prompts/outputs/` | Feature completion tracking | Both | State Manager |
+| **MY_PROJECT.md** | Project root | Original project brief | Setup | User/Initial Setup |
 
-See `templates/project-state-files.md` for exact formats.
+**Note**: EXECUTION_PROGRESS.md is created after Stage 10 completion when transitioning to Execution Phase.
 
-### 10-Stage Pipeline Execution
+See `templates/project-state-files.md` and `templates/execution-phase.md` for exact formats.
 
-The corrected pipeline follows these stages with proper validation:
+### The Updated Workflow: Planning → Building → Finishing
 
-| Stage | ID | Purpose | Key Outputs | Prerequisites |
-|-------|----|---------|-----------|--------------| 
-| **01** | INTAKE | Project validation and setup | Requirements, constraints | Project brief |
-| **02** | ANALYSIS | Domain analysis and planning | Analysis report, scope | Valid requirements |
-| **03** | ARCHITECTURE | System architecture design | Architecture docs, decisions | Completed analysis |
-| **04** | DESIGN | Detailed design specifications | Design specs, wireframes | Architecture approval |
-| **05** | SECURITY | Security implementation | Security plan, compliance | Design completion |
-| **06** | IMPLEMENTATION | Code generation and tasks | Implementation tasks, code | Security validation |
-| **07** | TESTING | Testing strategy and validation | Test plans, quality gates | Implementation ready |
-| **08** | OPTIMIZATION | Performance and optimization | Optimization plan, metrics | Testing complete |
-| **09** | DEPLOYMENT | Deployment and infrastructure | Deployment guides, configs | Optimization done |
-| **10** | HANDOFF | Project handoff and documentation | Final docs, handoff guide | Deployment ready |
+The library operates in three simple phases:
 
-### Stage Execution Workflow (Enhanced)
+| Phase | Stages | Purpose |
+|-------|--------|---------|
+| **1. Planning Phase** | **Stages 01-06** | The AI generates detailed plans and task lists. |
+| **🚀 OPTIMAL BUILD POINT** | **Post-Stage 06** | **Start building here!** Don't wait for Stages 07-10. |
+| **2. Building Phase** | **Work Loop** | You and the AI implement the code from the plans. |
+| **3. Finishing Phase** | **Stages 07-10** | Polish, deploy, and document the finished code. |
 
-1. **Pre-Stage Validation**: 
-   - Check prerequisites using Quality Gate System
-   - Validate previous stage outputs
-   - Load required context and dependencies
+### The "Continue" Protocol (Simplified)
 
-2. **Template Selection**:
-   - Select domain-appropriate core templates
-   - Include cross-cutting concern templates
-   - Compose templates based on project features
+When a user says **"Continue"** or **"Resume"**, check `NEXT_ACTION.md` and follow this logic:
 
-3. **Task Generation**:
-   - Generate context-agnostic tasks
-   - Ensure proper task sizing (< 2000 tokens each)
-   - Include all necessary context references
+1. **If in Planning Phase (Stages 01-06)**:
+   - Validate prerequisites
+   - Execute the next stage
+   - Generate plans to `prompts/outputs/`
+   
+2. **If at Optimal Build Point (After Stage 06)**:
+   - **STOP**. Do not proceed to Stage 07 automatically.
+   - Suggest starting the **Building Phase** now.
+   
+3. **If in Building Phase**:
+   - Check **Dry-Run Mode** status:
+     - **Dry-Run ON**: Show task PREVIEWS only (no code).
+     - **Dry-Run OFF**: Write ACTUAL CODE files.
+   - Execute the next task from the task lists.
 
-4. **Context Optimization**:
-   - Optimize content for token efficiency
-   - Chunk large content appropriately
-   - Preserve essential information and relationships
+4. **If in Finishing Phase (Stages 07-10)**:
+   - Complete final documentation and deployment tasks.
 
-5. **Stage Execution**:
-   - Execute stage using selected templates
-   - Generate outputs with proper organization
-   - Document all decisions and rationale
+### Dry-Run Mode
 
-6. **Post-Stage Updates**:
-   - Update all state files with new information
-   - Create traceability links
-   - Set up next stage prerequisites
-   - Validate stage completion
+If `Mode: Dry-Run` is set in `NEXT_ACTION.md`:
+- **Planning Phase**: Generates abbreviated plans to save tokens.
+- **Building Phase**: Shows **Task Previews** (files to be created, approach, estimates) but **DOES NOT write code**.
+- **Savings**: Reduces token usage by ~90%.
 
-### Error Recovery Protocol
+### 10-Stage Breakdown
 
-When errors occur during execution:
+| Stage | ID | Phase | Purpose |
+|-------|----|-------|---------|
+| **01** | INTAKE | Planning | Define what to build |
+| **02** | CHARTER | Planning | Set scope and success metrics |
+| **03** | ARCHITECTURE | Planning | Choose tech stack and design |
+| **04** | FEATURES | Planning | Detail the features |
+| **05** | TESTING | Planning | Plan how to test |
+| **06** | TASKS | Planning | Create step-by-step build list |
+| **--** | **BUILD** | **Build** | **Execute Stage 06 Tasks (Start Here)** |
+| **07** | DEPLOYMENT | Finishing | Set up deployment |
+| **08** | DOCS | Finishing | Write user manuals |
+| **09** | QUALITY | Finishing | Final QA check |
+| **10** | HANDOFF | Finishing | Prepare for launch |
 
-1. **Error Detection**: Identify error type and stage
-2. **Error Analysis**: Use Error Recovery System to analyze
-3. **Recovery Options**: Present available recovery strategies
-4. **Context Reconstruction**: Rebuild lost or corrupted state
-5. **Alternative Approaches**: Suggest alternative implementation paths
-6. **Validation**: Ensure recovery maintains system integrity
+### Stage Execution Workflow
+
+1. **Pre-Stage**: Check what was done before.
+2. **Execute**: Generate the content for the current stage.
+   - *Auto-Context*: AI will automatically split large tasks (~2k tokens) to fit context window.
+3. **State Update**: Update `NEXT_ACTION.md` and `PROJECT_STATE.md`.
+4. **Handoff**: Ensure the next agent can pick up where you left off.
 
 ## Examples
 
@@ -337,17 +363,66 @@ This document provides comprehensive instructions for AI agents working with the
 
 ## Stage Pipeline Execution
 
-### Stage Execution Order
+### ⚠️ CRITICAL: Two Distinct Phases
+
+The AI Prompt Library operates in **TWO PHASES**:
+
+| Phase | Stages | Produces | Action |
+|-------|--------|----------|--------|
+| **Specification Phase** | Stages 01-10 | Plans, specs, task lists | Generate documentation |
+| **Execution Phase** | Post Stage 10 | Actual code, tests, deployments | Build the product |
+
+**IMPORTANT**: Completing all 10 stages does NOT mean the product is built. The 10-stage pipeline produces SPECIFICATIONS and PLANS. The Execution Phase is where you actually WRITE CODE and BUILD the product.
+
+### Stage Execution Order (Specification Phase)
 1. **Stage 01 - Intake**: Process user input and assets
 2. **Stage 02 - Charter**: Define project scope and goals
 3. **Stage 03 - Architecture**: Design system architecture
 4. **Stage 04 - Features**: Specify detailed features
 5. **Stage 05 - Testing**: Define testing strategy
-6. **Stage 06 - Implementation**: Create implementation plan
-7. **Stage 07 - Deployment**: Configure deployment
-8. **Stage 08 - Documentation**: Generate documentation
-9. **Stage 09 - Quality**: Quality assurance checks
+6. **Stage 06 - Implementation**: Create implementation plan (task lists, NOT actual code)
+7. **Stage 07 - Deployment**: Configure deployment templates
+8. **Stage 08 - Documentation**: Generate documentation outlines
+9. **Stage 09 - Quality**: Quality assurance checklists
 10. **Stage 10 - Handoff**: Project handoff preparation
+
+### Execution Phase (Post Stage 10)
+
+After Stage 10 is complete, you MUST transition to the Execution Phase:
+
+```markdown
+## Execution Phase Transition
+
+When Stage 10 completes:
+1. Update NEXT_ACTION.md to indicate "Execution Phase - Ready to Build"
+2. Create EXECUTION_PROGRESS.md in project root
+3. Read task lists from prompts/outputs/task-lists/
+4. Execute tasks one by one, writing ACTUAL CODE FILES
+5. Validate each implementation with tests
+6. Continue until the product is functional
+```
+
+**See**: `templates/execution-phase.md` for complete Execution Phase guidance.
+
+### What Each Phase Produces
+
+**Specification Phase Output:**
+```
+prompts/outputs/
+├── specifications/      # WHAT to build (requirements, architecture, features)
+├── task-lists/          # HOW to build (implementation prompts)
+└── documentation/       # Support docs
+```
+
+**Execution Phase Output:**
+```
+src/                     # ACTUAL source code files
+tests/                   # ACTUAL test files
+config/                  # ACTUAL configuration
+package.json             # ACTUAL dependencies
+```
+
+**The job is NOT done until both phases are complete.**
 
 ### Stage Execution Rules
 

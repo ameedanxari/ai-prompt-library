@@ -176,6 +176,46 @@ export class TemplateCompositionEngine {
   }
 
   /**
+   * Select templates based on domain, stage, and features (Legacy/Test Support)
+   */
+  selectTemplates(domain: ApplicationDomain | string, stage: string, features: string[] = []) {
+    // Map string to ApplicationDomain if needed
+    const appDomain = Object.values(ApplicationDomain).includes(domain as ApplicationDomain)
+      ? domain as ApplicationDomain
+      : ApplicationDomain.GENERAL;
+
+    const coreTemplates = this.selectCoreTemplates(appDomain);
+
+    // Map features array to Requirements object
+    const requirements: Requirements = {
+      functional: features,
+      nonFunctional: [], // Default to empty
+      compliance: [],
+      security: []
+    };
+
+    const crossCuttingTemplates = this.addCrossCuttingTemplates(requirements);
+
+    // Combine unique templates
+    const allTemplates = [...coreTemplates, ...crossCuttingTemplates];
+    const uniqueTemplates = Array.from(new Map(allTemplates.map(t => [t.id, t])).values());
+
+    return {
+      coreTemplates,
+      crossCuttingTemplates,
+      selectedTemplates: uniqueTemplates
+    };
+  }
+
+  /**
+   * Compose templates based on domain, features, and stage (Legacy/Test Support)
+   */
+  composeTemplates(domain: ApplicationDomain | string, features: string[] = [], stage: string) {
+    // Reuse selectTemplates logic but handle different argument order
+    return this.selectTemplates(domain, stage, features);
+  }
+
+  /**
    * Select core templates for a domain
    */
   selectCoreTemplates(domain: ApplicationDomain): Template[] {
@@ -213,32 +253,32 @@ export class TemplateCompositionEngine {
     ].join(' ').toLowerCase();
 
     // Check for security requirements
-    if (allRequirements.includes('security') || allRequirements.includes('auth') || 
-        allRequirements.includes('encrypt') || requirements.security?.length) {
+    if (allRequirements.includes('security') || allRequirements.includes('auth') ||
+      allRequirements.includes('encrypt') || requirements.security?.length) {
       templates.push(...this.getTemplatesByCategory('security'));
     }
 
     // Check for analytics requirements
     if (allRequirements.includes('analytics') || allRequirements.includes('tracking') ||
-        allRequirements.includes('metrics')) {
+      allRequirements.includes('metrics')) {
       templates.push(...this.getTemplatesByCategory('analytics'));
     }
 
     // Check for accessibility requirements
     if (allRequirements.includes('accessibility') || allRequirements.includes('wcag') ||
-        allRequirements.includes('a11y')) {
+      allRequirements.includes('a11y')) {
       templates.push(...this.getTemplatesByCategory('accessibility'));
     }
 
     // Check for performance requirements
     if (allRequirements.includes('performance') || allRequirements.includes('scalab') ||
-        allRequirements.includes('optimi')) {
+      allRequirements.includes('optimi')) {
       templates.push(...this.getTemplatesByCategory('performance'));
     }
 
     // Check for compliance requirements
     if (requirements.compliance?.length || allRequirements.includes('compliance') ||
-        allRequirements.includes('gdpr') || allRequirements.includes('hipaa')) {
+      allRequirements.includes('gdpr') || allRequirements.includes('hipaa')) {
       templates.push(...this.getTemplatesByCategory('compliance'));
     }
 
@@ -343,7 +383,7 @@ export class TemplateCompositionEngine {
   private loadAvailableTemplates(): void {
     // Load templates from the modules directory
     const modulesPath = join(process.cwd(), this.templatesPath);
-    
+
     if (!existsSync(modulesPath)) {
       // Create default templates if path doesn't exist
       this.createDefaultTemplates();
@@ -376,7 +416,7 @@ export class TemplateCompositionEngine {
   private parseTemplate(categoryPath: string, filename: string, category: string): Template | null {
     const id = `${category}/${filename.replace('.md', '')}`;
     const name = filename.replace('.md', '').replace(/-/g, ' ');
-    
+
     // Determine domain from category
     let domain: ApplicationDomain | 'cross-cutting' = 'cross-cutting';
     if (CROSS_CUTTING_CATEGORIES.includes(category)) {
@@ -399,7 +439,7 @@ export class TemplateCompositionEngine {
   private createDefaultTemplates(): void {
     // Create default templates for each domain and cross-cutting concern
     const domains = Object.values(ApplicationDomain);
-    
+
     for (const domain of domains) {
       this.availableTemplates.set(`${domain}/core`, {
         id: `${domain}/core`,

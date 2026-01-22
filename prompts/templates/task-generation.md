@@ -45,6 +45,75 @@ Use this template to break down complex features into manageable, independent ta
 - **Session Boundaries**: Structure tasks for completion across multiple sessions
 - **Validation Gates**: Include checkpoints and validation steps
 
+---
+
+## Context-Aware Task Chunking
+
+### Automatic Task Sizing
+
+When generating tasks, apply these guidelines to ensure tasks work across different LLM context windows:
+
+| Guideline | Limit | Reason |
+|-----------|-------|--------|
+| **Task description** | ~2000 tokens max | Fits in smallest context windows |
+| **Implementation steps** | 5-8 steps per task | Manageable in single session |
+| **Files per task** | 3-5 files max | Focused scope |
+| **Dependencies** | 0-2 prerequisites | Reduces context loading |
+
+### When to Split into Sub-Tasks
+
+Split a task if:
+- Description exceeds 2000 tokens
+- More than 8 implementation steps needed
+- More than 5 files would be created/modified
+- Multiple unrelated features are combined
+- Testing would require separate setup
+
+### Sub-Task Structure
+
+```markdown
+## Task 3: User Authentication
+
+### Sub-Task 3.1: Auth Service Backend
+**Scope**: Server-side auth logic
+**Files**: src/services/auth.ts, src/middleware/auth.ts
+**Depends on**: Task 2 (Database setup)
+
+### Sub-Task 3.2: Auth API Endpoints  
+**Scope**: REST endpoints for login/register
+**Files**: src/routes/auth.ts
+**Depends on**: Sub-Task 3.1
+
+### Sub-Task 3.3: Auth Frontend Components
+**Scope**: Login/register UI
+**Files**: src/components/Auth/*
+**Depends on**: Sub-Task 3.2
+```
+
+### Context Summary Requirement
+
+Every task MUST include a Context Summary section for session resilience:
+
+```markdown
+## Context Summary
+
+**Project**: [Project name]
+**Phase**: [Current pipeline phase]  
+**This Task**: [Brief description]
+**State Before**: [What exists before this task]
+**State After**: [What will exist after this task]
+
+Use this summary if starting a new chat session.
+```
+
+### Session Handoff Protocol
+
+At the end of each task:
+1. Update EXECUTION_PROGRESS.md with completed work
+2. Include Context Summary in the update
+3. Mark clear "Next Task" for continuation
+4. Any agent can pick up using only state files
+
 ## Task Structure Template
 
 ### Task: [Clear, Action-Oriented Title]
