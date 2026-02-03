@@ -52,7 +52,33 @@ Reusable modules for managing test data, mock services, and testing infrastructu
 const mockData = await loadMock('api/v1/users/GET/200-success.json');
 ```
 
-### Example 3: Fake Backend Integration
+### Example 4: Property-Based Testing
+```typescript
+// Automatically generate test cases
+import fc from 'fast-check';
+
+fc.assert(fc.property(
+  fc.emailAddress(),
+  (email) => {
+    const result = validateEmail(email);
+    expect(result.isValid).toBe(true);
+  }
+));
+
+// Test business logic properties
+fc.assert(fc.property(
+  fc.array(fc.record({ price: fc.float({ min: 0.01, max: 1000 }) })),
+  (products) => {
+    const cart = new ShoppingCart();
+    products.forEach(p => cart.addItem(p));
+    
+    const expectedTotal = products.reduce((sum, p) => sum + p.price, 0);
+    const actualTotal = cart.getTotal();
+    
+    expect(Math.abs(actualTotal - expectedTotal)).toBeLessThan(0.01);
+  }
+));
+```
 ```typescript
 // Start fake backend server
 const server = await startFakeBackend({
@@ -67,6 +93,8 @@ const data = await response.json();
 ```
 
 ## Templates
+
+### Example 3: Fake Backend Integration
 
 ### Core Mock Data Management
 - **centralized-mock-data.md** - Organize mock data by API endpoint and status codes
@@ -88,6 +116,7 @@ const data = await response.json();
 - **test-runner-integration.md** - CI/CD and test runner setup
 - **test-coverage-tracking.md** - Coverage metrics and reporting
 - **test-performance-monitoring.md** - Test execution performance
+- **property-based-testing.md** - Automated test case generation and property verification
 
 ## Integration
 

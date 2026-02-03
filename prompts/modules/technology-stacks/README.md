@@ -35,7 +35,33 @@ const cached = await redis.get(cacheKey);
 if (cached) return JSON.parse(cached);
 ```
 
-### Example 2: Mobile-First Application
+### Example 2: Python API with Data Science
+```python
+# Backend: FastAPI with async support
+from fastapi import FastAPI
+import pandas as pd
+import numpy as np
+
+app = FastAPI()
+
+@app.get("/api/analytics")
+async def get_analytics():
+    # Data processing with pandas
+    df = pd.read_sql("SELECT * FROM events", connection)
+    return {"insights": df.describe().to_dict()}
+
+# Data Science: Streamlit dashboard
+import streamlit as st
+st.title("Analytics Dashboard")
+chart_data = pd.DataFrame(np.random.randn(20, 3), columns=['a', 'b', 'c'])
+st.line_chart(chart_data)
+
+# Database: PostgreSQL with SQLAlchemy
+from sqlalchemy import create_engine
+engine = create_engine("postgresql://user:pass@localhost/db")
+```
+
+### Example 3: Mobile-First Application
 ```typescript
 // Mobile: React Native with Expo
 import { useEffect, useState } from 'react';
@@ -55,7 +81,7 @@ async def get_data():
 // - Cloud Storage for media
 ```
 
-### Example 3: Enterprise SaaS Platform
+### Example 4: Enterprise SaaS Platform
 ```typescript
 // Frontend: Next.js with Server-Side Rendering
 export default function Dashboard() {
@@ -87,7 +113,7 @@ export default function Dashboard() {
 
 ### Backend Development
 - **backend-nodejs.md** - Node.js and Express setup
-- **backend-python.md** - Python and FastAPI setup
+- **python-ecosystem.md** - Python (Django, FastAPI, Flask) comprehensive setup
 - **backend-java.md** - Java and Spring Boot setup
 
 ### Cloud Platforms
