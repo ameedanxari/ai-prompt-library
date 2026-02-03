@@ -1,0 +1,80 @@
+name: Pre-Commit Review Enforcement
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  review-enforcement:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Check for debugging artifacts
+      run: |
+        echo "🔍 Checking for debugging artifacts..."
+        
+        # Check for common debugging patterns
+        if grep -r "TODO\|FIXME\|DEBUG\|TEMP\|XXX" --include="*.md" --exclude-dir=".git" .; then
+          echo "❌ Found debugging artifacts in commit"
+          echo "Please clean up before committing to production"
+          exit 1
+        fi
+        
+        # Check for empty files
+        if find . -name "*.md" -empty -not -path "./.git/*"; then
+          echo "❌ Found empty markdown files"
+          echo "Please remove empty files before committing"
+          exit 1
+        fi
+        
+        # Check for duplicate content
+        if find . -name "*.md" -not -path "./.git/*" -exec basename {} \; | sort | uniq -d | grep -q .; then
+          echo "⚠️ Warning: Found potential duplicate files"
+        fi
+        
+        echo "✅ No debugging artifacts found"
+    
+    - name: Validate file structure
+      run: |
+        echo "🔍 Validating file structure..."
+        
+        # Check for proper organization
+        if [ -d "prompts/orchestrators" ]; then
+          echo "✅ Orchestrators directory exists"
+        fi
+        
+        # Check for required documentation
+        if [ ! -f "README.md" ]; then
+          echo "❌ Missing README.md"
+          exit 1
+        fi
+        
+        if [ ! -f "PREVENTION_CHECKLIST.md" ]; then
+          echo "❌ Missing PREVENTION_CHECKLIST.md"
+          exit 1
+        fi
+        
+        echo "✅ File structure validated"
+    
+    - name: Check commit message quality
+      run: |
+        echo "🔍 Checking commit message quality..."
+        
+        # Get the commit message
+        COMMIT_MSG=$(git log -1 --pretty=%B)
+        
+        # Check for proper format
+        if ! echo "$COMMIT_MSG" | grep -E "^(feat|fix|docs|style|refactor|test|chore):" > /dev/null; then
+          echo "⚠️ Warning: Commit message doesn't follow conventional format"
+        fi
+        
+        # Check for meaningful description
+        if [ ${#COMMIT_MSG} -lt 20 ]; then
+          echo "⚠️ Warning: Commit message is very short"
+        fi
+        
+        echo "✅ Commit message checked"

@@ -67,12 +67,40 @@ fix(commerce): correct payment processing template validation
 
 Before committing, ensure:
 
-1. **Tests pass**: `npm test` runs successfully
-2. **No .kiro files**: Internal specs are not staged
-3. **No temporary files**: Clean working directory
-4. **Meaningful commit message**: Follows conventional format
-5. **Focused changes**: Each commit addresses one logical change
-6. **Documentation updated**: If adding features, update relevant docs
+1. **Review all changes**: Use `git status` and `git diff --cached` to examine each file
+2. **Clean up artifacts**: Remove debugging markers (TODO, FIXME, DEBUG, TEMP, XXX)
+3. **Remove empty files**: No files with zero content should be committed
+4. **Tests pass**: `npm test` runs successfully (100% pass rate required)
+5. **No .kiro files**: Internal specs are not staged
+6. **No temporary files**: Clean working directory (.tmp, .bak, etc.)
+7. **Meaningful commit message**: Follows conventional format
+8. **Focused changes**: Each commit addresses one logical change
+9. **Documentation updated**: If adding features, update relevant docs
+10. **Production ready**: All content suitable for end users
+
+### Critical Blockers - STOP and Fix
+- ❌ **Empty files** in the commit
+- ❌ **Debugging markers** (TODO, FIXME, DEBUG, TEMP, XXX)
+- ❌ **Temporary files** (.tmp, .bak, etc.)
+- ❌ **Broken references** or links
+- ❌ **Massive commits** with unrelated changes
+
+### Proper Review Workflow
+```bash
+# 1. Review what's changed
+git status
+git diff --cached
+
+# 2. Check for artifacts (should return nothing)
+grep -r "TODO\|FIXME\|DEBUG\|TEMP\|XXX" --include="*.md" .
+find . -name "*.md" -empty
+
+# 3. Stage files individually after review
+git add path/to/reviewed-file.md
+
+# 4. Commit with proper message
+git commit -m "feat: descriptive message following conventions"
+```
 
 ## Automated Checks
 
@@ -116,14 +144,15 @@ development-log.md
 
 ## Troubleshooting
 
-### Accidentally committed .kiro files
+### Recovery from Bad Commits
 ```bash
-# Remove from staging
-git reset HEAD .kiro/
+# If committed locally but not pushed
+git reset --soft HEAD~1  # Undo commit, keep changes staged
+# Review, clean up, then recommit properly
 
-# Remove from history (if already committed)
-git rm -r --cached .kiro/
-git commit -m "chore: remove accidentally committed .kiro files"
+# If already pushed (use carefully)
+git commit -m "fix: Remove debugging artifacts from previous commit"
+# Or force push if safe: git push --force-with-lease origin main
 ```
 
 ### Large file warnings
@@ -147,13 +176,18 @@ git commit --no-verify -m "emergency fix"
 
 ## Best Practices Summary
 
-1. **Keep commits atomic**: One logical change per commit
-2. **Write clear messages**: Explain what and why, not just what
-3. **Test before committing**: Ensure all tests pass
-4. **Review changes**: Use `git diff --cached` before committing
-5. **Clean working directory**: No untracked files or temporary artifacts
-6. **Follow conventions**: Use established patterns and formats
-7. **Document breaking changes**: Clearly mark any breaking changes
-8. **Separate concerns**: Don't mix feature additions with refactoring
+1. **Review before staging**: Use `git diff` to examine all changes
+2. **Clean up artifacts**: Remove debugging markers and temporary files
+3. **Keep commits atomic**: One logical change per commit
+4. **Write clear messages**: Explain what and why, not just what
+5. **Test before committing**: Ensure all tests pass (100% success rate required)
+6. **Stage selectively**: Use `git add file` instead of `git add .`
+7. **Follow conventions**: Use established patterns and formats
+8. **Document breaking changes**: Clearly mark any breaking changes
+9. **Separate concerns**: Don't mix feature additions with refactoring
+10. **Validate production readiness**: All content suitable for end users
+
+### Learning from Incidents
+This enhanced checklist incorporates lessons learned from production incidents where debugging artifacts and empty files were accidentally committed. The key is to **always review before staging** and **never use `git add .` without examination**.
 
 This ensures that every commit is production-ready and maintains the high quality standards of the AI Prompt Library project.

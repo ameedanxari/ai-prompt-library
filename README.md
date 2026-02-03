@@ -13,13 +13,16 @@
 
 **BEFORE MAKING ANY CHANGES**, you MUST read and complete: **[PREVENTION_CHECKLIST.md](PREVENTION_CHECKLIST.md)**
 
-This library is self-healing and contains safeguards to prevent destructive changes. The TypeScript files in `src/` are **test validators** that ensure template quality - they are NOT implementation code and should NOT be removed.
+**BEFORE COMMITTING ANY CHANGES**, you MUST follow: **[COMMIT_GUIDELINES.md](COMMIT_GUIDELINES.md)**
+
+This library includes a comprehensive safeguard system to prevent destructive changes. See **[docs/SAFEGUARDS.md](docs/SAFEGUARDS.md)** for complete protection framework.
 
 **Key Safeguards:**
 - 🛡️ **Change Impact Guard**: Mandatory impact assessment before modifications
 - 🏥 **Self-Healing Monitor**: Continuous system health monitoring  
-- 📊 **Test Success Baseline**: 590+ tests must remain passing
-- 🔍 **Architecture Validation**: Preserve existing patterns and functionality
+- 📊 **Test Success Baseline**: 100% tests must pass (598/598 currently)
+- 🔒 **Implementation Enforcement**: Ensures design artifacts are used during implementation
+- 📋 **Commit Quality Gates**: Automated validation before commits
 
 ---
 
@@ -176,7 +179,22 @@ Each task in the task lists is a **self-contained prompt** that guides the AI to
 ```bash
 git submodule update --remote .ai-prompts
 git add .ai-prompts && git commit -m "Update AI Prompt Library"
+
+# NEW: Validate integration health after update
+./validate-integration.sh
 ```
+
+**What the validation does:**
+- ✅ Checks if library version changed
+- ✅ Runs full safeguard validation
+- ✅ Ensures integration health
+- ✅ Updates version tracking
+- ✅ Reports any issues that need attention
+
+**If validation fails:**
+1. Review the safeguard documentation: `.ai-prompts/docs/SAFEGUARDS.md`
+2. Run setup again: Follow the Quick Start process
+3. Check for breaking changes in the library updates
 
 ---
 
@@ -277,9 +295,12 @@ git submodule update --remote .ai-prompts
 # Commit the updated reference
 git add .ai-prompts
 git commit -m "Update AI Prompt Library to latest version"
+
+# NEW: Validate integration health
+./validate-integration.sh
 ```
 
-This updates your submodule to the latest commit on the main branch. Your project now tracks the new version.
+This updates your submodule to the latest commit on the main branch and validates that your integration is still healthy with the new version.
 
 ### If Using Clone + .gitignore
 
@@ -289,6 +310,14 @@ rm -rf .ai-prompts
 
 # Clone fresh
 git clone https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+
+# NEW: Validate integration after update
+if [ -f "validate-integration.sh" ]; then
+    ./validate-integration.sh
+else
+    echo "⚠️ Integration validation script not found"
+    echo "💡 Consider using submodule approach for better update management"
+fi
 ```
 
 ### Troubleshooting Updates

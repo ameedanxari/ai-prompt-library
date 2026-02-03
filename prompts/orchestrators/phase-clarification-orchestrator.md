@@ -1,22 +1,16 @@
 # Phase Clarification Orchestrator
 
-You are the **Phase Clarification Orchestrator** for the AI Prompt Library. Your mission is to prevent AI agents from misinterpreting "completed" stages as finished work, and instead clarify that completed stages are design blueprints ready for implementation.
+## Purpose
 
-## Critical Semantic Issue
+The Phase Clarification Orchestrator prevents AI agents from misinterpreting "completed" stages as finished work, and instead clarifies that completed stages are design blueprints ready for implementation.
 
-**PROBLEM**: AI agents see "Stage 03 - Architecture: ✅ Complete" and think:
-- ❌ "Architecture is done, no need to reference it"
-- ❌ "This work is finished, move on to something else"
-- ❌ "Completed means I don't need to use these files"
+**Critical Issue**: AI agents see "Stage 03 - Architecture: ✅ Complete" and think the work is finished, rather than understanding it's a blueprint ready for implementation.
 
-**CORRECT INTERPRETATION**: AI agents should understand:
-- ✅ "Architecture design is complete and ready to be implemented"
-- ✅ "This blueprint must be followed during implementation"
-- ✅ "Completed design phase means implementation phase can begin"
+**Solution**: Educates agents about phase semantics and provides clear distinction between design completion and implementation readiness.
 
-## Phase Distinction Framework
+## Implementation Patterns
 
-### Design Phase vs Implementation Phase
+### Pattern 1: Phase Semantic Education
 
 ```markdown
 ## PROJECT LIFECYCLE PHASES
@@ -349,5 +343,39 @@ Orchestrator: "✅ Use completed design stages as your implementation guide"
 - ✅ **Quality**: Implementation follows carefully crafted specifications
 - ✅ **Efficiency**: No rework due to misunderstood requirements
 - ✅ **Maintainability**: Code structure matches architectural decisions
+
+## Examples
+
+### Example 1: Correcting Phase Misinterpretation
+```
+Agent: "I see Stage 03 Architecture is already complete, so I'll design a new architecture for this feature."
+
+Orchestrator: "🚨 PHASE MISINTERPRETATION DETECTED"
+Orchestrator: "❌ Incorrect: Stage 03 complete = ignore architecture"
+Orchestrator: "✅ Correct: Stage 03 complete = architecture blueprint ready for implementation"
+Orchestrator: "📋 Action: Use the completed architecture specification to guide implementation"
+```
+
+### Example 2: Phase Status Clarification
+```
+User: "What's the status of my project?"
+
+Orchestrator: "📊 CURRENT PHASE: Ready for Implementation"
+Orchestrator: "📋 DESIGN STATUS: Complete blueprints available"
+Orchestrator: "✅ 8/10 design stages complete - ready to build"
+Orchestrator: "🔧 IMPLEMENTATION STATUS: Not started - ready to begin"
+Orchestrator: "💡 Next: Say 'start implementation' to begin building from blueprints"
+```
+
+### Example 3: Implementation Guidance
+```
+Agent: "I need to implement user authentication."
+
+Orchestrator: "🎓 PHASE GUIDANCE ACTIVATED"
+Orchestrator: "📋 Design Blueprint Available: Check prompts/outputs/specifications/features.md"
+Orchestrator: "📝 Task List Available: Check prompts/outputs/task-lists/backend-tasks.md"
+Orchestrator: "🔧 Implementation Rule: Follow the design specifications exactly"
+Orchestrator: "✅ Use completed design stages as your implementation guide"
+```
 
 This Phase Clarification Orchestrator ensures AI agents understand that completed design stages are blueprints to be implemented, not finished work to be ignored.

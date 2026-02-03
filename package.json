@@ -9,7 +9,9 @@
     "test:pbt": "vitest --run --reporter=verbose tests/property-tests",
     "prepare": "husky install",
     "lint-staged": "lint-staged",
-    "archive": "vite-node src/archive.ts"
+    "archive": "vite-node src/archive.ts",
+    "safeguard-status": "bash scripts/validate-safeguards.sh",
+    "safeguard-recovery": "git restore PREVENTION_CHECKLIST.md COMMIT_GUIDELINES.md docs/SAFEGUARDS.md prompts/orchestrators/ && npm run safeguard-status"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

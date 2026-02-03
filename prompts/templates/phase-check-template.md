@@ -3,7 +3,9 @@
 ## Purpose
 Quick template for AI agents to verify they understand project phases correctly and are not misinterpreting "completed" stages.
 
-## Quick Phase Check
+## Implementation Patterns
+
+### Pattern 1: Phase Understanding Verification
 
 ### Before Implementation, Ask Yourself:
 
@@ -101,5 +103,34 @@ Before starting implementation, verify:
 - **Use with**: Phase Clarification Orchestrator  
 - **Use before**: Any implementation work
 - **Use when**: Agent shows signs of phase misinterpretation
+
+## Examples
+
+### Example 1: Correct Phase Understanding
+```
+Agent Self-Check: "I see completed design stages"
+Agent Response: "✅ These are blueprints ready for implementation"
+Agent Action: "I will use specifications to guide my implementation"
+```
+
+### Example 2: Incorrect Phase Understanding (Corrected)
+```
+Agent Initial Thought: "Architecture is complete, so I'll ignore it"
+Agent Self-Check: "Wait, let me verify my phase understanding"
+Agent Correction: "✅ Architecture complete = blueprint ready for implementation"
+Agent Action: "I will follow the architecture specification exactly"
+```
+
+### Example 3: Implementation Readiness Check
+```
+Agent Checklist:
+- [ ] ✅ I understand completed stages are design blueprints
+- [ ] ✅ I will use specifications as implementation guides  
+- [ ] ✅ I will follow task lists exactly as written
+- [ ] ✅ I will not start fresh with my own understanding
+- [ ] ✅ I will reference design artifacts continuously
+
+Result: "Ready for implementation following design blueprints"
+```
 
 This template helps ensure AI agents correctly understand that completed design stages are blueprints for implementation, not finished deliverables to be ignored.
