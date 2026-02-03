@@ -80,7 +80,6 @@ Core template files for prompt generation, validation, and project management th
 - [project-state-files.md](./project-state-files.md) - State file templates (NEXT_ACTION, PROJECT_STATE, etc.)
 - [project-state-tracking.md](./project-state-tracking.md) - Project state management
 - [project-status-maintenance.md](./project-status-maintenance.md) - Status tracking
-- [state-management-orchestration.md](./state-management-orchestration.md) - State orchestration
 - [execution-phase.md](./execution-phase.md) - **Execution Phase: Build code from specifications**
 
 ### Preservation & Optimization

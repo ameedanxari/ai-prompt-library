@@ -17,13 +17,25 @@ Provide comprehensive instructions for AI agents working with the AI Prompt Libr
 
 ### Quick Start for New AI Agents
 
-1. **Read NEXT_ACTION.md** - This file tells you exactly what to do next
-2. **If NEXT_ACTION.md doesn't exist**, run the **Task Router** (see `templates/task-router.md`) to decide between atomic task and library pipeline.
-3. If using the pipeline, read MY_PROJECT.md and start Stage 01 (Intake)
-4. **Execute the action** described in NEXT_ACTION.md or the Task Router decision
-5. **Validate prerequisites** before proceeding to next stage
-6. **Update state files** after completing the action with full traceability
-7. **Set up the next action** for the following stage
+**CRITICAL**: For ANY user request, first invoke the **AI Agent Entry Point**:
+
+```
+I'll analyze your request and route it optimally using the AI Prompt Library system.
+
+*Invoking AI Agent Entry Point from prompts/orchestrators/ai-agent-entry-point.md...*
+```
+
+This automatically handles:
+- Setup detection and initialization
+- Request routing (atomic vs pipeline)
+- State management and updates
+- Seamless agent handoffs
+
+**Legacy workflow (now automated):**
+1. ~~Read NEXT_ACTION.md~~ → **Entry Point reads it automatically**
+2. ~~Run Task Router~~ → **Entry Point includes routing**
+3. ~~Manual setup~~ → **Entry Point handles setup**
+4. ~~Manual state updates~~ → **Entry Point updates state**
 
 ### The "Continue" Protocol (Enhanced)
 

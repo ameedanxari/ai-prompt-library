@@ -9,6 +9,20 @@
 
 ---
 
+## 🛡️ CRITICAL: For AI Agents Working on This Codebase
+
+**BEFORE MAKING ANY CHANGES**, you MUST read and complete: **[PREVENTION_CHECKLIST.md](PREVENTION_CHECKLIST.md)**
+
+This library is self-healing and contains safeguards to prevent destructive changes. The TypeScript files in `src/` are **test validators** that ensure template quality - they are NOT implementation code and should NOT be removed.
+
+**Key Safeguards:**
+- 🛡️ **Change Impact Guard**: Mandatory impact assessment before modifications
+- 🏥 **Self-Healing Monitor**: Continuous system health monitoring  
+- 📊 **Test Success Baseline**: 590+ tests must remain passing
+- 🔍 **Architecture Validation**: Preserve existing patterns and functionality
+
+---
+
 ## What is this?
 
 A **modular, agentic prompt library** that transforms minimal user input into comprehensive, production-ready software specifications. Write a brief, get a complete development roadmap — including architecture, features, testing strategy, deployment configs, and implementation tasks.
@@ -47,43 +61,43 @@ New to AI-assisted development? We've curated a list of **free AI tools, IDEs, a
 
 ---
 
-## Quick Start: One-Prompt Setup
+## Quick Start: One-Command Setup
 
-Copy this prompt into your AI assistant (Cursor, Windsurf, Kiro, Claude, etc.):
+**NEW**: The AI Prompt Library now sets up automatically! Simply paste this into your AI assistant:
 
 ```
-I want to use the AI Prompt Library to build my project idea.
+I want to use the AI Prompt Library to build my project.
 
-**My Project Idea**: [Describe your idea here - even 2-3 sentences is enough!]
+My project idea: [Describe your idea here - even 2-3 sentences is enough!]
 
-Please set up the library and start the specification pipeline:
-
-1. Add the AI Prompt Library to my project:
-   - If git repo: `git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts`
-   - If not git: Clone to `.ai-prompts/` and add to .gitignore
-
-2. Read the library instructions at `.ai-prompts/prompts/AGENTS.md`
-
-3. Set up steering files from `.ai-prompts/prompts/steering/` for my AI tool
-
-4. Create MY_PROJECT.md using `.ai-prompts/prompts/templates/user-input-template.md` with my idea filled in
-
-5. Create the state files for pipeline tracking:
-   - Create `NEXT_ACTION.md` in project root (controls what happens next)
-   - Create `prompts/outputs/PROJECT_STATE.md` (tracks pipeline progress)
-   - Use the templates from `.ai-prompts/prompts/templates/project-state-files.md`
-
-6. Start Stage 01 - Intake:
-   - Process my brief using `.ai-prompts/prompts/stages/stage-01-intake/`
-   - Generate requirements to `prompts/outputs/specifications/requirements.md`
-   - Update NEXT_ACTION.md to point to Stage 02
-
-After this, I can just say "Continue" to progress through each stage.
+Please set up everything automatically and start the specification pipeline.
 ```
 
-### How It Works (Simplified)
+**That's it!** The AI will automatically:
+1. ✅ Initialize the library (submodule or clone)
+2. ✅ Configure steering files for your AI tool (Kiro, Cursor, Windsurf, etc.)
+3. ✅ Create all required state files
+4. ✅ Set up project structure
+5. ✅ Start the specification pipeline
 
-We've broken down software development into three simple phases:
+### How It Works (Fully Automated)
+
+The AI Prompt Library now includes **automatic routing and setup**:
+
+#### 1. Automatic Setup (First Time)
+- **You say**: "I want to use the AI Prompt Library"
+- **AI does**: Detects setup needed → Auto-initializes everything → Creates templates
+- **You get**: Ready-to-use library with MY_PROJECT.md template
+
+#### 2. Automatic Request Routing
+- **You say**: Any request (feature, fix, continue, etc.)
+- **AI does**: Analyzes request → Routes optimally (atomic vs pipeline) → Executes
+- **You get**: Right-sized approach for each request type
+
+#### 3. Seamless Continuation
+- **You say**: "Continue"
+- **AI does**: Reads NEXT_ACTION.md → Executes next stage → Updates state
+- **You get**: Seamless progression through all 10 stages
 
 #### 1. Planning Phase (Stages 01-06)
 **Goal**: Define exactly what to build so there's no guesswork.
@@ -526,12 +540,27 @@ We're actively looking for feedback and contributions! Here's how you can help:
 - 💡 **Suggest features**: [Start a discussion](https://github.com/ameedanxari/ai-prompt-library/discussions)
 - 🔧 **Submit PRs**: Fork, improve, and submit a pull request
 - ⭐ **Star the repo**: Help others discover this project
+- 🚀 **Shape the future**: Check out our [Future Roadmap](FUTURE_ROADMAP.md) for expansion opportunities
 
 ### Areas we'd love help with:
 - Additional technology stack modules (Vue, Angular, Django, Rails, etc.)
 - More feature pattern templates (payments, notifications, search, etc.)
 - Translations and i18n improvements
 - Testing and validation of generated outputs
+
+### 🌟 Future Expansion Opportunities
+
+**Want to help shape the next generation of AI-assisted development?** 
+
+👉 **[View the Future Roadmap](FUTURE_ROADMAP.md)** to see exciting areas for contribution:
+
+- **🔬 Emerging Technologies**: Quantum computing, AR/VR, WebAssembly
+- **🌍 New Domains**: Climate tech, space technology, bioinformatics
+- **🎨 Creative Paradigms**: AI-native development, artistic code generation
+- **🤖 Advanced AI**: Multi-modal interfaces, self-modifying systems
+- **🌱 Sustainability**: Carbon-aware computing, green software patterns
+
+**From quantum-classical hybrid systems to consciousness simulation** — there's a place for every interest and expertise level. Join us in building the future of software development!
 
 ---
 
