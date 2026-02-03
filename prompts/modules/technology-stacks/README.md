@@ -61,7 +61,31 @@ from sqlalchemy import create_engine
 engine = create_engine("postgresql://user:pass@localhost/db")
 ```
 
-### Example 3: Go Microservices
+### Example 4: Progressive Web App
+```javascript
+// Service worker with comprehensive caching
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js')
+    .then(registration => console.log('SW registered'))
+    .catch(error => console.log('SW registration failed'));
+}
+
+// Push notifications and offline functionality
+const cacheFirst = async (request) => {
+  const cache = await caches.open(CACHE_NAME);
+  const cached = await cache.match(request);
+  return cached || fetch(request);
+};
+
+// App installation and native-like features
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+  deferredPrompt = e;
+  showInstallButton();
+});
+```
+
+### Example 5: Go Microservices
 ```go
 // High-performance gRPC microservice
 type UserService struct {
@@ -83,7 +107,7 @@ func (h *OrderHandler) HandleOrderCreated(ctx context.Context, event OrderCreate
 }
 ```
 
-### Example 4: Mobile-First Application
+### Example 6: Mobile-First Application
 ```typescript
 // Mobile: React Native with Expo
 import { useEffect, useState } from 'react';
@@ -103,7 +127,7 @@ async def get_data():
 // - Cloud Storage for media
 ```
 
-### Example 5: Enterprise SaaS Platform
+### Example 7: Enterprise SaaS Platform
 ```typescript
 // Frontend: Next.js with Server-Side Rendering
 export default function Dashboard() {
@@ -130,6 +154,7 @@ export default function Dashboard() {
 
 ### Web Development
 - **web-react.md** - React.js application setup
+- **progressive-web-apps.md** - PWA with offline functionality, push notifications, and native-like features
 - **web-nextjs.md** - Next.js full-stack setup
 - **web-vue.md** - Vue.js application setup
 
@@ -137,7 +162,7 @@ export default function Dashboard() {
 - **backend-nodejs.md** - Node.js and Express setup
 - **python-ecosystem.md** - Python (Django, FastAPI, Flask) comprehensive setup
 - **go-microservices.md** - Go microservices with gRPC, NATS, and cloud-native patterns
-- **backend-java.md** - Java and Spring Boot setup
+- **java-spring-boot.md** - Java Spring Boot enterprise applications with security, JPA, and microservices
 
 ### Cloud Platforms
 - **cloud-aws.md** - AWS services and deployment
