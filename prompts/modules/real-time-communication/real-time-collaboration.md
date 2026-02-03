@@ -1167,6 +1167,64 @@ class OfflineCollaborationManager {
 }
 ```
 
+## Implementation Patterns
+
+### 1. Operational Transform Pattern
+Implement conflict resolution for concurrent editing:
+- Transform operations based on document state
+- Handle insertion, deletion, and retention operations
+- Maintain operation ordering with vector clocks
+- Resolve conflicts deterministically
+
+### 2. Event-Driven Architecture Pattern
+Use events for real-time communication:
+- WebSocket events for operation broadcasting
+- Custom event system for client-side handling
+- Event queuing for offline operation storage
+- Event replay for synchronization
+
+### 3. State Management Pattern
+Centralized state management for collaboration:
+- Document state synchronization across clients
+- User presence and cursor tracking
+- Operation history and version control
+- Conflict-free replicated data types (CRDTs)
+
+### 4. Observer Pattern
+Implement reactive updates for collaboration features:
+- Document change observers for real-time updates
+- Presence change observers for user awareness
+- Connection state observers for offline handling
+- Operation observers for conflict resolution
+
+### 5. Command Pattern
+Encapsulate operations for undo/redo functionality:
+- Operation objects with execute/undo methods
+- Command history for version control
+- Batch operations for performance optimization
+- Operation validation and sanitization
+
+### 6. Adapter Pattern
+Abstract different collaboration backends:
+- WebSocket adapter for real-time communication
+- IndexedDB adapter for offline storage
+- CRDT adapter for conflict-free operations
+- REST adapter for initial synchronization
+
+### 7. Strategy Pattern
+Pluggable algorithms for different collaboration needs:
+- Conflict resolution strategies (OT vs CRDT)
+- Synchronization strategies (real-time vs batch)
+- Presence strategies (cursor vs selection)
+- Offline strategies (queue vs merge)
+
+### 8. Proxy Pattern
+Manage network communication and caching:
+- Connection proxy for WebSocket management
+- Operation proxy for batching and optimization
+- Presence proxy for efficient updates
+- Cache proxy for offline data access
+
 ## Expected Output
 
 This template will produce:

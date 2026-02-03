@@ -1137,6 +1137,64 @@ class UserIntegrationTest {
 }
 ```
 
+## Implementation Patterns
+
+### 1. Layered Architecture Pattern
+Implement clean separation of concerns with distinct layers:
+- **Presentation Layer**: REST controllers handling HTTP requests/responses
+- **Service Layer**: Business logic and transaction management
+- **Repository Layer**: Data access and persistence operations
+- **Domain Layer**: Entity models and business rules
+
+### 2. Dependency Injection Pattern
+Leverage Spring's IoC container for loose coupling:
+- Constructor injection for required dependencies
+- Field injection for optional dependencies
+- Configuration classes for bean definitions
+- Profile-based configuration for environment-specific beans
+
+### 3. Repository Pattern with Specifications
+Implement flexible data access with Spring Data JPA:
+- Custom repository interfaces extending JpaRepository
+- Specification pattern for dynamic query building
+- Criteria API for complex queries
+- Pagination and sorting support
+
+### 4. Event-Driven Architecture Pattern
+Use application events for decoupled communication:
+- Domain events for business logic notifications
+- Event listeners for cross-cutting concerns
+- Async event processing for performance
+- Event sourcing for audit trails
+
+### 5. Circuit Breaker Pattern
+Implement resilience with Spring Cloud Circuit Breaker:
+- Hystrix or Resilience4j integration
+- Fallback methods for graceful degradation
+- Timeout and retry configurations
+- Health indicators for monitoring
+
+### 6. Security Pattern Implementation
+Comprehensive security with Spring Security:
+- JWT token-based authentication
+- Method-level authorization with @PreAuthorize
+- Role-based access control (RBAC)
+- CORS configuration for cross-origin requests
+
+### 7. Testing Patterns
+Multi-layered testing approach:
+- Unit tests with Mockito for isolated testing
+- Integration tests with @SpringBootTest
+- Test containers for database testing
+- MockMvc for web layer testing
+
+### 8. Configuration Management Pattern
+Externalized configuration with Spring Boot:
+- application.yml for hierarchical configuration
+- Profile-specific configurations
+- Environment variable overrides
+- @ConfigurationProperties for type-safe configuration
+
 ## Expected Output
 
 This template will produce:
@@ -1159,6 +1217,9 @@ This template will produce:
 - Works with security modules for enterprise authentication and authorization
 - Supports analytics modules for application monitoring and metrics
 - Compatible with testing frameworks for comprehensive validation
+- Integrates with Docker for containerization and deployment
+- Supports Kubernetes for container orchestration and scaling
+- Works with monitoring and observability platforms like Prometheus and Grafana
 
 ## Security Considerations
 
