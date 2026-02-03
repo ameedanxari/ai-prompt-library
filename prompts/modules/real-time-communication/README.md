@@ -28,6 +28,7 @@ const config: Real-timeCommunicationConfig = {
 
 ## Templates
 
+- **real-time-collaboration.md** - Multi-user collaboration with operational transforms, CRDTs, and conflict resolution
 - **websocket-management.md** - Connection handling and scaling
 - **message-queuing.md** - Reliable message delivery and persistence
 - **presence-systems.md** - Online status and activity indicators
