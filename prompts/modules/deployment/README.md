@@ -15,15 +15,43 @@ Comprehensive templates for deploying applications reliably across different env
 
 ## Examples
 
-### Example: Deployment and Infrastructure Templates Implementation
-```typescript
-interface DeploymentAndConfig {
-  // Configuration properties
-}
+### Example 1: Blue-Green Deployment
+```yaml
+# Zero-downtime deployment with instant rollback
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+spec:
+  strategy:
+    blueGreen:
+      activeService: app-active
+      previewService: app-preview
+      autoPromotionEnabled: false
+```
 
-const config: DeploymentAndConfig = {
-  // Initialize configuration
-};
+### Example 2: Canary Release
+```yaml
+# Gradual traffic shift with monitoring
+spec:
+  strategy:
+    canary:
+      steps:
+      - setWeight: 10
+      - pause: {duration: 5m}
+      - setWeight: 50
+      - pause: {duration: 10m}
+```
+
+### Example 3: Feature Flag Integration
+```typescript
+// Runtime feature toggling
+const featureFlag = await featureFlags.evaluate('new-feature', {
+  userId: user.id,
+  environment: process.env.NODE_ENV
+});
+
+if (featureFlag.enabled) {
+  return renderNewFeature();
+}
 ```
 
 ## Templates
@@ -32,6 +60,7 @@ const config: DeploymentAndConfig = {
 - **kubernetes-deployment.md** - Container orchestration and service mesh
 - **cloud-deployment.md** - Multi-cloud support and infrastructure as code
 - **ci-cd-pipelines.md** - Automated builds and deployment automation
+- **modern-deployment-patterns.md** - Blue-green, canary, feature flags, and serverless patterns
 - **environment-management.md** - Provisioning and configuration management
 - **disaster-recovery.md** - Backup systems and failover mechanisms
 - **monitoring-observability.md** - Application and infrastructure monitoring
