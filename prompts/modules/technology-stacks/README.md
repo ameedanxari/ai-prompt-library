@@ -61,7 +61,29 @@ from sqlalchemy import create_engine
 engine = create_engine("postgresql://user:pass@localhost/db")
 ```
 
-### Example 3: Mobile-First Application
+### Example 3: Go Microservices
+```go
+// High-performance gRPC microservice
+type UserService struct {
+    pb.UnimplementedUserServiceServer
+    repo repository.UserRepository
+}
+
+func (s *UserService) GetUser(ctx context.Context, req *pb.GetUserRequest) (*pb.User, error) {
+    user, err := s.repo.GetByID(ctx, req.Id)
+    if err != nil {
+        return nil, status.Errorf(codes.NotFound, "user not found: %v", err)
+    }
+    return user.ToProto(), nil
+}
+
+// Event-driven architecture with NATS
+func (h *OrderHandler) HandleOrderCreated(ctx context.Context, event OrderCreatedEvent) error {
+    return h.orderService.ProcessOrder(ctx, event.OrderID)
+}
+```
+
+### Example 4: Mobile-First Application
 ```typescript
 // Mobile: React Native with Expo
 import { useEffect, useState } from 'react';
@@ -81,7 +103,7 @@ async def get_data():
 // - Cloud Storage for media
 ```
 
-### Example 4: Enterprise SaaS Platform
+### Example 5: Enterprise SaaS Platform
 ```typescript
 // Frontend: Next.js with Server-Side Rendering
 export default function Dashboard() {
@@ -114,6 +136,7 @@ export default function Dashboard() {
 ### Backend Development
 - **backend-nodejs.md** - Node.js and Express setup
 - **python-ecosystem.md** - Python (Django, FastAPI, Flask) comprehensive setup
+- **go-microservices.md** - Go microservices with gRPC, NATS, and cloud-native patterns
 - **backend-java.md** - Java and Spring Boot setup
 
 ### Cloud Platforms
