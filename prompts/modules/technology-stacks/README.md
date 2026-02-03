@@ -163,6 +163,7 @@ export default function Dashboard() {
 - **python-ecosystem.md** - Python (Django, FastAPI, Flask) comprehensive setup
 - **go-microservices.md** - Go microservices with gRPC, NATS, and cloud-native patterns
 - **java-spring-boot.md** - Java Spring Boot enterprise applications with security, JPA, and microservices
+- **dotnet-ecosystem.md** - .NET Core/ASP.NET Core with Entity Framework, authentication, and enterprise patterns
 
 ### Cloud Platforms
 - **cloud-aws.md** - AWS services and deployment
