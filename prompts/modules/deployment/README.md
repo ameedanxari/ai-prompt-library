@@ -56,6 +56,7 @@ if (featureFlag.enabled) {
 
 ## Templates
 
+- **kubernetes-orchestration.md** - Complete Kubernetes deployment with Helm, service mesh, auto-scaling, and GitOps
 - **containerization.md** - Docker configurations and best practices
 - **kubernetes-deployment.md** - Container orchestration and service mesh
 - **cloud-deployment.md** - Multi-cloud support and infrastructure as code
