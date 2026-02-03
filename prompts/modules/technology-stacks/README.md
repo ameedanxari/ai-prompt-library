@@ -165,6 +165,7 @@ export default function Dashboard() {
 - **java-spring-boot.md** - Java Spring Boot enterprise applications with security, JPA, and microservices
 - **dotnet-ecosystem.md** - .NET Core/ASP.NET Core with Entity Framework, authentication, and enterprise patterns
 - **ruby-on-rails.md** - Ruby on Rails with Hotwire, Action Cable, background jobs, and comprehensive testing
+- **php-ecosystem.md** - PHP (Laravel, Symfony) with Eloquent ORM, authentication, and modern development practices
 
 ### Cloud Platforms
 - **cloud-aws.md** - AWS services and deployment
