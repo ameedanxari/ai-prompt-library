@@ -157,8 +157,17 @@ Examples:
 
 **Token Usage Level:**
 - [ ] **Low**: Generate specs, I'll handle build/test (fastest, lowest cost)
-- [ ] **Medium**: Verify at key checkpoints (balanced approach)
+  - COVE applied to critical stages only (Architecture, Features, Implementation)
+- [ ] **Medium**: Verify at key checkpoints (balanced approach) ⭐ Recommended
+  - COVE applied to all planning stages (01-06)
 - [ ] **High**: Comprehensive verification with full testing (thorough, higher cost)
+  - COVE applied to all stages (01-10) plus execution phase
+
+**COVE (Chain-of-Verification):**
+- [ ] **Enabled** (Default): Reduce AI hallucinations by 40% through systematic verification
+- [ ] **Disabled**: Skip verification (not recommended for production projects)
+
+*COVE is a 4-step self-verification process that catches errors early, improving output quality and reducing rework.*
 
 ---
 

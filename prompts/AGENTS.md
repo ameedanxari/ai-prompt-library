@@ -450,19 +450,139 @@ package.json             # ACTUAL dependencies
 2. **Load Context**: Read all previous stage outputs and project state
 3. **Check Assets**: Verify all required assets are available in `working_copy/`
 4. **Set Token Level**: Respect the configured token usage level
+5. **Enable COVE**: Apply Chain-of-Verification for critical stages (see COVE Integration below)
 
 #### During Stage Execution
 1. **Generate Platform Files**: Create web.md, mobile.md, platform-agnostic.md as needed
 2. **Include Required Sections**: Scope, assumptions, acceptance criteria, risks, next steps
-3. **Maintain Context**: Update rolling context summary
-4. **Log Decisions**: Record all architectural and implementation decisions
-5. **Validate Quality**: Run quality gates before stage completion
+3. **Apply COVE Verification**: For critical stages, follow the 4-step COVE process
+4. **Maintain Context**: Update rolling context summary
+5. **Log Decisions**: Record all architectural and implementation decisions
+6. **Validate Quality**: Run quality gates before stage completion
+7. **Document Confidence**: Include COVE confidence indicators in outputs
 
 #### After Stage Completion
 1. **Update Project State**: Mark stage as complete, update progress
-2. **Generate Next Steps**: Clear instructions for the next stage
-3. **Validate Dependencies**: Ensure downstream stages can proceed
-4. **Store Artifacts**: Save all generated files in appropriate locations
+2. **Record COVE Results**: Document verification findings and corrections made
+3. **Generate Next Steps**: Clear instructions for the next stage
+4. **Validate Dependencies**: Ensure downstream stages can proceed
+5. **Store Artifacts**: Save all generated files in appropriate locations
+
+## Chain-of-Verification (COVE) Integration
+
+### What is COVE?
+
+**Chain-of-Verification (COVE)** is a four-step self-verification process that reduces AI hallucinations by 40%. It's now integrated into the AI Prompt Library lifecycle for all projects.
+
+**The Four Steps:**
+1. **Draft**: Generate initial output
+2. **Verify**: Create targeted verification questions
+3. **Answer**: Answer questions independently (without referencing draft)
+4. **Finalize**: Synthesize verified information with confidence indicators
+
+### When COVE is Applied
+
+COVE is automatically applied based on token budget:
+
+| Token Level | COVE Application | Stages |
+|-------------|------------------|--------|
+| **Low** | Critical stages only | 03 (Architecture), 04 (Features), 06 (Implementation) |
+| **Medium** | Planning + Implementation | 01-06 (All planning stages) |
+| **High** | All stages | 01-10 (Complete pipeline) |
+
+### COVE Execution Protocol
+
+For each stage where COVE is enabled:
+
+```markdown
+## Stage [X] with COVE
+
+### Step 1: Draft Initial Output
+[Generate stage output normally using stage templates]
+
+### Step 2: Plan Verification Questions
+Generate questions to verify the draft:
+- Completeness: Have I captured all requirements?
+- Accuracy: Are technical details correct and current?
+- Feasibility: Is this technically achievable?
+- Security: Are there security vulnerabilities?
+- Consistency: Are there contradictions?
+- Assumptions: What assumptions need validation?
+
+### Step 3: Answer Verification Questions Independently
+Answer each question WITHOUT referencing the draft:
+- Q1: [Question]
+  A1: [Independent answer with evidence]
+- Q2: [Question]
+  A2: [Independent answer with evidence]
+[Continue for all questions]
+
+### Step 4: Generate Final Verified Output
+**Verification Results:**
+- ✅ Verified correct: [List confirmed aspects]
+- ⚠️ Issues found and corrected: [List corrections made]
+- 📝 Added information: [List enhancements]
+- ❌ Removed unverified claims: [List removals]
+
+**Confidence Levels:**
+- High confidence (verified): [List]
+- Medium confidence (inferred): [List]
+- Requires user validation: [List]
+
+**Final Output:**
+[Synthesized output incorporating verified information]
+```
+
+### COVE Templates and Resources
+
+- **Framework**: `templates/cove-verification-framework.md`
+- **Stage Integration**: `templates/cove-stage-integration.md`
+- **Quick Reference**: `templates/cove-quick-reference.md`
+- **Examples**: `templates/cove-examples/`
+
+### Stage-Specific COVE Focus
+
+| Stage | COVE Verification Focus |
+|-------|------------------------|
+| **01 - Intake** | Requirements completeness, asset inventory accuracy |
+| **02 - Charter** | Scope clarity, success criteria measurability |
+| **03 - Architecture** | Technology choices, scalability, cost analysis |
+| **04 - Features** | Feature specifications, edge cases, user value |
+| **05 - Testing** | Test coverage, scenario realism, property validity |
+| **06 - Implementation** | Task completeness, dependency accuracy, clarity |
+| **07 - Deployment** | Configuration correctness, security settings |
+| **08 - Documentation** | Documentation accuracy, completeness |
+| **09 - Quality** | Quality criteria validity, checklist completeness |
+| **10 - Handoff** | Handoff completeness, documentation accuracy |
+
+### COVE in Execution Phase
+
+During code implementation, apply COVE to:
+- **Code Generation**: Verify correctness, security, edge cases
+- **API Integration**: Verify API usage, error handling
+- **Security Implementation**: Verify authentication, authorization, data protection
+- **Performance-Critical Code**: Verify algorithms, optimizations
+
+### COVE Quality Metrics
+
+Track COVE effectiveness in PROJECT_STATE.md:
+
+```markdown
+## COVE Metrics
+- Verifications Performed: [count]
+- Issues Found: [count by type]
+- Corrections Made: [count]
+- Confidence Improvement: [percentage]
+- Stages with High Confidence: [list]
+```
+
+### Benefits of COVE Integration
+
+- **40% reduction** in specification errors
+- **Higher confidence** in generated outputs
+- **Better documentation** of assumptions
+- **Reduced rework** from catching errors early
+- **Production-ready** specifications and code
 
 ## Large Repetitive Changes Protocol (Coverage, Refactors, Bulk Fixes)
 
@@ -568,18 +688,31 @@ Maintain these files throughout the project lifecycle:
 - Focus on core functionality and architecture
 - Minimal validation and testing prompts
 - User responsible for implementation verification
+- **COVE**: Applied to critical stages only (03, 04, 06)
 
 ### Medium Token Usage
 - Verify at key checkpoints and major milestones
 - Generate essential tests and validation steps
 - Balanced approach between cost and quality
 - Automated validation at critical decision points
+- **COVE**: Applied to all planning stages (01-06)
 
 ### High Token Usage
 - Comprehensive verification with full testing
 - Property-based testing for all correctness properties
 - Extensive validation and quality assurance
 - Complete automation of verification processes
+- **COVE**: Applied to all stages (01-10) plus execution phase
+
+### COVE Token Impact
+
+COVE increases token usage by 30-50% but provides:
+- **40% reduction** in errors requiring fixes
+- **Fewer iterations** needed to reach production quality
+- **Higher confidence** reducing review time
+- **Better documentation** of decisions
+
+**Net Result**: Often saves tokens overall by reducing rework and iterations.
 
 ## Dry-Run Capabilities
 

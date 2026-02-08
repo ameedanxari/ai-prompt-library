@@ -182,9 +182,15 @@ For each task in the task lists:
    - Check architecture patterns to follow
    - Identify dependencies on other tasks
 
-3. **Write Actual Code**
-   - Create source code files
-   - Implement the functionality described
+3. **Write Actual Code** (with COVE if enabled)
+   - **Draft**: Create initial source code implementation
+   - **Verify** (if COVE enabled):
+     - Does this code solve the stated problem?
+     - Are there security vulnerabilities?
+     - What edge cases are missing?
+     - Are APIs used correctly?
+   - **Answer**: Verify each aspect independently
+   - **Finalize**: Apply corrections and create final code
    - Follow coding standards from specs
    - Add comments and documentation
 
@@ -197,13 +203,54 @@ For each task in the task lists:
    - Run all tests
    - Verify acceptance criteria from specs
    - Check integration with existing code
+   - **Document COVE Results** (if applied):
+     - Issues found and fixed
+     - Confidence level in implementation
    - Update task as complete
 
 6. **Update State**
    - Mark task complete in EXECUTION_PROGRESS.md
    - Document any decisions made
+   - Record COVE metrics if applied
    - Proceed to next task
 ```
+
+### COVE in Code Generation
+
+When generating code during execution phase, apply COVE for:
+
+**High-Risk Code:**
+- Security-critical functions (auth, authorization, encryption)
+- Payment processing logic
+- Data validation and sanitization
+- API integrations with external services
+- Performance-critical algorithms
+
+**COVE Code Generation Process:**
+
+```markdown
+## Step 1: Draft Code
+[Write initial implementation]
+
+## Step 2: Verification Questions
+1. **Correctness**: Does this solve the problem correctly?
+2. **Security**: Are there XSS, injection, or other vulnerabilities?
+3. **Edge Cases**: What inputs could break this?
+4. **APIs**: Are methods/functions used correctly?
+5. **Performance**: Are there obvious inefficiencies?
+6. **Maintainability**: Is this code clear and maintainable?
+
+## Step 3: Independent Verification
+[Answer each question without looking at code]
+
+## Step 4: Final Verified Code
+✅ Verified aspects
+🔧 Issues fixed
+📝 Improvements made
+Confidence: [High/Medium/Low]
+```
+
+**See**: `templates/cove-examples/code-generation-example.md` for complete example
 
 ### Step 3: Progressive Integration
 
@@ -216,16 +263,19 @@ After implementing individual components:
    - Connect frontend to backend endpoints
    - Verify data flows correctly
    - Test error handling
+   - **Apply COVE** to integration logic
 
 2. **Database Integration**
    - Implement data models
    - Set up migrations
    - Test CRUD operations
+   - **Verify** query correctness and security
 
 3. **Authentication/Authorization**
    - Implement security features
    - Test access controls
    - Verify token handling
+   - **COVE Critical**: Security verification mandatory
 
 4. **End-to-End Testing**
    - Run integration tests

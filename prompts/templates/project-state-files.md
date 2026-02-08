@@ -220,21 +220,48 @@ Located at `prompts/outputs/PROJECT_STATE.md`, this file contains the complete p
 **Created**: [Timestamp]
 **Last Updated**: [Timestamp]
 **Library Version**: [AI Prompt Library version]
+**COVE Enabled**: [Yes/No]
+**Token Level**: [Low/Medium/High]
 
 ## Pipeline Progress
 
-| Stage | Status | Completed | Output Files |
-|-------|--------|-----------|--------------|
-| 01 - Intake | ✅ Complete | [Date] | requirements.md |
-| 02 - Charter | ✅ Complete | [Date] | charter.md |
-| 03 - Architecture | 🚧 In Progress | - | - |
-| 04 - Features | ⏳ Pending | - | - |
-| 05 - Testing | ⏳ Pending | - | - |
-| 06 - Implementation | ⏳ Pending | - | - |
-| 07 - Deployment | ⏳ Pending | - | - |
-| 08 - Documentation | ⏳ Pending | - | - |
-| 09 - Quality | ⏳ Pending | - | - |
-| 10 - Handoff | ⏳ Pending | - | - |
+| Stage | Status | Completed | Output Files | COVE Applied |
+|-------|--------|-----------|--------------|--------------|
+| 01 - Intake | ✅ Complete | [Date] | requirements.md | ✅ |
+| 02 - Charter | ✅ Complete | [Date] | charter.md | ✅ |
+| 03 - Architecture | 🚧 In Progress | - | - | 🚧 |
+| 04 - Features | ⏳ Pending | - | - | ⏳ |
+| 05 - Testing | ⏳ Pending | - | - | ⏳ |
+| 06 - Implementation | ⏳ Pending | - | - | ⏳ |
+| 07 - Deployment | ⏳ Pending | - | - | - |
+| 08 - Documentation | ⏳ Pending | - | - | - |
+| 09 - Quality | ⏳ Pending | - | - | - |
+| 10 - Handoff | ⏳ Pending | - | - | - |
+
+## COVE Metrics
+
+**Overall Verification Quality**: [High/Medium/Low]
+
+| Metric | Count | Notes |
+|--------|-------|-------|
+| Verifications Performed | 0 | Total COVE verifications across all stages |
+| Issues Found | 0 | Problems discovered through verification |
+| Corrections Made | 0 | Changes applied after verification |
+| High Confidence Outputs | 0 | Outputs with 90%+ confidence |
+| Medium Confidence Outputs | 0 | Outputs with 70-89% confidence |
+| Requires User Validation | 0 | Items flagged for user review |
+
+### Issues Found by Type
+- Security: 0
+- Logic/Correctness: 0
+- Completeness: 0
+- Performance: 0
+- Consistency: 0
+
+### Confidence Improvement
+- Average confidence before COVE: N/A
+- Average confidence after COVE: N/A
+- Improvement: N/A
 
 ## Current Stage Details
 
@@ -242,6 +269,7 @@ Located at `prompts/outputs/PROJECT_STATE.md`, this file contains the complete p
 **Status**: [In Progress | Blocked | Waiting]
 **Started**: [Timestamp]
 **Progress**: [Description of what's done within this stage]
+**COVE Status**: [Pending/In Progress/Complete]
 
 ### Completed in This Stage
 - [Completed item 1]
@@ -250,6 +278,12 @@ Located at `prompts/outputs/PROJECT_STATE.md`, this file contains the complete p
 ### Remaining in This Stage
 - [Remaining item 1]
 - [Remaining item 2]
+
+### COVE Verification Results (Current Stage)
+- ✅ Verified correct: [Count]
+- ⚠️ Issues corrected: [Count]
+- 📝 Enhancements added: [Count]
+- Confidence level: [High/Medium/Low]
 
 ## Key Decisions
 

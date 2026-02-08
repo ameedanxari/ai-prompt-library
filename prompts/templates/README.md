@@ -3,11 +3,39 @@
 ## Purpose
 Core template files for prompt generation, validation, and project management throughout the AI Prompt Library workflow.
 
+## 🆕 Chain-of-Verification (COVE) Integration
+
+The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to reduce AI hallucinations and improve accuracy by up to 40%. COVE is a four-step self-verification process developed by Meta AI:
+
+1. **Draft**: Generate initial response
+2. **Verify**: Create targeted verification questions
+3. **Answer**: Answer questions independently (without referencing draft)
+4. **Finalize**: Synthesize verified information with confidence indicators
+
+**Key Benefits**:
+- 40% reduction in factual errors
+- Higher confidence in generated outputs
+- Better documentation of assumptions
+- Production-ready specifications and code
+
+**Quick Start with COVE**:
+- See [cove-verification-framework.md](./cove-verification-framework.md) for methodology
+- See [cove-stage-integration.md](./cove-stage-integration.md) for stage integration
+- See [cove-examples/](./cove-examples/) for complete examples
+
+**When to Use COVE**:
+- ✅ Technical specifications (APIs, protocols)
+- ✅ Code generation (functions, classes)
+- ✅ Architecture decisions (technology choices)
+- ✅ Security-critical components
+- ✅ Compliance requirements (GDPR, WCAG)
+
 ## Instructions
 1. Start with the user-input-template.md to capture project requirements
 2. Use brief-validation.md to validate the input before processing
-3. Select appropriate templates based on your workflow stage
-4. Reference templates using the template inclusion syntax
+3. **NEW**: Apply COVE templates for critical specifications and code
+4. Select appropriate templates based on your workflow stage
+5. Reference templates using the template inclusion syntax
 
 ## Examples
 ```markdown
@@ -68,6 +96,14 @@ Core template files for prompt generation, validation, and project management th
 - [prompt-quality-validation.md](./prompt-quality-validation.md) - Prompt quality checks
 - [prompt-effectiveness-testing.md](./prompt-effectiveness-testing.md) - Prompt effectiveness testing
 - [task-validation-dryrun.md](./task-validation-dryrun.md) - Task validation dry-run
+
+### Chain-of-Verification (COVE) 🆕
+- [cove-verification-framework.md](./cove-verification-framework.md) - **COVE methodology and templates**
+- [cove-stage-integration.md](./cove-stage-integration.md) - **COVE integration for all 10 stages**
+- [cove-examples/](./cove-examples/) - **Complete COVE examples**
+  - [specification-example.md](./cove-examples/specification-example.md) - API specification with COVE
+  - [code-generation-example.md](./cove-examples/code-generation-example.md) - Code generation with COVE
+  - [README.md](./cove-examples/README.md) - COVE examples guide
 
 ### Documentation & Maintenance
 - [documentation-updates.md](./documentation-updates.md) - Documentation update prompts

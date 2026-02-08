@@ -46,10 +46,16 @@ You are managing the sequential execution of development stages for the AI Promp
    - Validate required inputs are available
    - Check dependency requirements are met
    - Confirm context continuity from previous stages
+   - Determine COVE application based on token level
 
 2. **Stage Processing**
    - Execute stage-specific generation logic
    - Apply platform-specific adaptations (web.md, mobile.md, platform-agnostic.md)
+   - **Apply COVE Verification** (if enabled for this stage):
+     - Draft initial stage output
+     - Generate verification questions
+     - Answer questions independently
+     - Synthesize verified output with confidence indicators
    - Incorporate production-ready defaults and best practices
    - Generate comprehensive outputs with required sections
 
@@ -57,12 +63,17 @@ You are managing the sequential execution of development stages for the AI Promp
    - Validate output completeness against stage requirements
    - Ensure all required content sections are present
    - Verify quality gates are met
+   - **Record COVE Results** (if applied):
+     - Document verification findings
+     - Track issues found and corrected
+     - Update confidence metrics
    - Update rolling context summary
 
 4. **Context Handoff**
    - Prepare context package for next stage
    - Update project state documentation
    - Log decisions and assumptions made
+   - **Include COVE Metrics** in state update
    - Generate next-stage preparation summary
 
 **Output Requirements:**
@@ -71,12 +82,36 @@ You are managing the sequential execution of development stages for the AI Promp
 - Decision log entries
 - Next stage preparation notes
 - Quality validation report
+- **COVE Verification Report** (if applied):
+  - Verification questions and answers
+  - Issues found and corrections made
+  - Confidence levels for outputs
+  - Assumptions documented
+
+### COVE Integration
+
+For stages where COVE is enabled (based on token level):
+
+**COVE Application by Token Level:**
+- **Low**: Stages 03, 04, 06 (Architecture, Features, Implementation)
+- **Medium**: Stages 01-06 (All planning stages)
+- **High**: Stages 01-10 (All stages)
+
+**COVE Process:**
+1. Generate draft output using stage templates
+2. Create verification questions specific to stage focus
+3. Answer questions independently without referencing draft
+4. Synthesize final verified output with confidence indicators
+
+**See**: `templates/cove-stage-integration.md` for detailed COVE application per stage.
 
 ### Stage Transition Validation
 
 Before proceeding to the next stage, ensure:
 - [ ] All required outputs are generated and complete
 - [ ] Quality gates are satisfied
+- [ ] **COVE verification completed** (if enabled)
+- [ ] **Confidence levels documented** (if COVE applied)
 - [ ] Context is properly preserved and documented
 - [ ] Dependencies for next stage are identified and available
 - [ ] No blocking issues or unresolved conflicts exist
