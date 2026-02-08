@@ -56,6 +56,7 @@ if (featureFlag.enabled) {
 
 ## Templates
 
+### Core Deployment Patterns
 - **kubernetes-orchestration.md** - Complete Kubernetes deployment with Helm, service mesh, auto-scaling, and GitOps
 - **containerization.md** - Docker configurations and best practices
 - **kubernetes-deployment.md** - Container orchestration and service mesh
@@ -66,6 +67,14 @@ if (featureFlag.enabled) {
 - **disaster-recovery.md** - Backup systems and failover mechanisms
 - **monitoring-observability.md** - Application and infrastructure monitoring
 - **enterprise-deployment.md** - Security, compliance, and governance controls
+
+### Advanced Deployment Patterns
+- **edge-computing-deployment.md** - Intelligent edge orchestration, CDN integration, global coordination, and AI-driven optimization
+- **serverless-orchestration-scale.md** - Function orchestration, multi-cloud serverless, event-driven architecture, and AI-driven optimization
+- **multi-cloud-deployment-strategies.md** - Intelligent cloud provider orchestration, cross-cloud coordination, and AI-driven optimization
+- **gitops-advanced-workflows.md** - Intelligent deployment orchestration, multi-environment promotion, AI-driven rollback strategies
+- **infrastructure-as-code-evolution.md** - AI-driven resource optimization, self-healing infrastructure, and advanced IaC automation
+- **zero-trust-deployment-architectures.md** - Identity-centric security, micro-segmentation, continuous verification, and AI-driven threat detection
 
 ## Integration
 

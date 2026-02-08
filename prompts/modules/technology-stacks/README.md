@@ -167,6 +167,26 @@ export default function Dashboard() {
 - **ruby-on-rails.md** - Ruby on Rails with Hotwire, Action Cable, background jobs, and comprehensive testing
 - **php-ecosystem.md** - PHP (Laravel, Symfony) with Eloquent ORM, authentication, and modern development practices
 
+### Systems Programming & High-Performance
+- **rust-systems-programming.md** - Rust for high-performance systems, WebAssembly, concurrent processing, and memory-safe programming
+- **cpp-high-performance.md** - C++ for high-performance computing, SIMD operations, real-time systems, and GPU acceleration
+
+### Mobile Development
+
+#### iOS Development
+- **swift-ios-development.md** - Swift iOS development with SwiftUI, Combine, Core Data, and iOS-specific features
+- **ios-ui-ux-patterns.md** - iOS UI/UX patterns with Human Interface Guidelines, accessibility, dark mode, and adaptive layouts
+- **ios-testing-comprehensive.md** - Comprehensive iOS testing with XCTest, XCUITest, snapshot testing, and CI/CD integration
+- **ios-deployment-distribution.md** - iOS deployment and distribution with App Store, TestFlight, code signing, and Fastlane
+- **ios-performance-optimization.md** - iOS performance optimization with Instruments, memory management, and battery efficiency
+
+#### Android Development
+- **kotlin-android-development.md** - Kotlin Android development with Jetpack Compose, Coroutines, Room, and Android architecture
+
+### Functional Programming & Distributed Systems
+- **scala-functional-programming.md** - Scala functional programming with Cats Effect, Akka actors, Play Framework, and reactive systems
+- **elixir-phoenix-web.md** - Elixir/Phoenix for fault-tolerant web applications, OTP patterns, LiveView, and distributed computing
+
 ### Cloud Platforms
 - **cloud-aws.md** - AWS services and deployment
 - **cloud-gcp.md** - Google Cloud Platform setup
