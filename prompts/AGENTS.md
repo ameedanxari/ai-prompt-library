@@ -647,7 +647,42 @@ Maintain these files throughout the project lifecycle:
 - **COMPLETED_FEATURES.md**: Implemented and tested functionality
 - **KNOWN_ISSUES.md**: Bugs, limitations, and technical debt
 
-### Related Documentation
+### Advanced Orchestration Patterns
+
+The AI Prompt Library now includes advanced orchestration capabilities for complex workflows:
+
+### Parallel Execution
+- **parallel-stage-execution.md**: Execute independent stages concurrently
+- Use for multi-platform projects or independent feature specifications
+- Reduces total pipeline time by 40-60%
+
+### Conditional Workflows
+- **conditional-workflows.md**: Adapt pipeline based on project characteristics
+- Complexity-based routing, compliance-driven adaptation
+- Budget-conditional quality gates
+
+### Rollback Mechanisms
+- **rollback-mechanisms.md**: Safe rollback for specification changes
+- Specification versioning and checkpoint system
+- Atomic operations with automatic rollback on failure
+
+### A/B Testing
+- **ab-testing-pipelines.md**: Generate and compare multiple specification alternatives
+- Explore different architectural approaches
+- Evaluate tradeoffs across cost, performance, maintainability
+
+### Self-Healing
+- **self-healing-specifications.md**: Automatically detect and fix specification issues
+- Inconsistency detection and automatic error recovery
+- Quality improvement through learned patterns
+
+### Intelligent Caching
+- **intelligent-caching.md**: Optimize through semantic caching and pattern reuse
+- Semantic specification cache with 90%+ similarity matching
+- Pattern library for reusable specification components
+- Incremental generation for faster updates
+
+## Related Documentation
 - [Library Vision Document](./templates/library-vision-document.md) - Core principles and vision alignment
 - [Library Change Assessment](./templates/library-change-assessment.md) - Impact assessment for changes
 - [Library Dependency Map](./templates/library-dependency-map.md) - Component relationships
