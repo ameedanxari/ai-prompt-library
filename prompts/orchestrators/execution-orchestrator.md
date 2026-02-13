@@ -13,12 +13,16 @@ Invoke this orchestrator when:
 - User says "Execute the development plan" or "Build the project"
 - User says "Continue" and NEXT_ACTION.md shows "Phase: Execution"
 - Stage 06 (Implementation Tasks) is complete
+- Stage 06.5 (SwiftUI Architecture Review) is complete
+- Stage 06.6 (Senior-Level Patterns) is complete
 - Task lists exist in `prompts/outputs/task-lists/`
 
 **Do NOT use** when:
 - Still in planning phase (Stages 01-06)
 - Task lists haven't been generated yet
 - User wants to modify specifications (return to appropriate stage)
+- SwiftUI architecture review not complete
+- Senior-level patterns review not complete
 
 ---
 
@@ -28,6 +32,16 @@ Before starting execution, verify:
 
 ```markdown
 ## Pre-Execution Checklist
+
+### Planning Stages Complete
+- [ ] Stage 01 (Intake) - Requirements specification
+- [ ] Stage 02 (Charter) - Project scope and success criteria
+- [ ] Stage 03 (Architecture) - Architecture and data models
+- [ ] Stage 04 (Features) - Feature specifications
+- [ ] Stage 05 (Testing) - Testing strategy
+- [ ] Stage 06 (Implementation Tasks) - Atomic tasks
+- [ ] **Stage 06.5 (SwiftUI Architecture Review)** - SwiftUI patterns ✅ NEW
+- [ ] **Stage 06.6 (Senior-Level Patterns)** - Senior patterns ✅ NEW
 
 ### Specifications Complete
 - [ ] `prompts/outputs/specifications/requirements.md` exists
@@ -479,6 +493,8 @@ Say "Continue" to proceed with next phase, or specify which phase to enter.
 | 04 - Features | ✅ Complete | [Date] |
 | 05 - Testing | ✅ Complete | [Date] |
 | 06 - Implementation | ✅ Complete | [Date] |
+| **06.5 - SwiftUI Architecture** | **✅ Complete** | **[Date]** |
+| **06.6 - Senior Patterns** | **✅ Complete** | **[Date]** |
 | **Execution Phase** | **✅ Complete** | **[Date]** |
 | 07 - Deployment | ⏳ Pending | - |
 | 08 - Documentation | ⏳ Pending | - |

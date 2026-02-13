@@ -1,7 +1,7 @@
 # Execution Phase Improvements
 
 **Date**: 2026-02-08  
-**Version**: 1.0  
+**Version**: 1.1  
 **Status**: Production Ready
 
 ---
@@ -120,6 +120,85 @@ The AI Prompt Library excelled at planning (Stages 01-06) but lacked infrastruct
 - Dry-run mode usage
 - Success metrics
 - Quick reference tables
+
+---
+
+## Version 1.1: New Stages 06.5 & 06.6
+
+### What Was Added
+
+**New Stages**:
+- **Stage 06.5**: SwiftUI Architecture Review
+- **Stage 06.6**: Senior-Level Patterns Review
+
+**Updated Files**:
+- `prompts/orchestrators/execution-orchestrator.md` - Added new stages to prerequisites
+- `prompts/EXECUTION_PHASE_GUIDE.md` - Added new stages documentation
+
+### Stage 06.5: SwiftUI Architecture Review
+
+**Purpose**: Verify SwiftUI-specific architecture patterns before execution
+
+**Checklist**:
+- [ ] Single NavigationStack at root level
+- [ ] State hoisting for shared state (toasts, alerts)
+- [ ] No nested NavigationViews
+- [ ] Proper @State, @StateObject, @ObservedObject usage
+- [ ] View hierarchy diagram created
+- [ ] Data flow diagram (parent → child)
+- [ ] Environment object strategy documented
+
+**Deliverable**: `prompts/outputs/specifications/swiftui-architecture.md`
+
+**Common Issues Caught**:
+- Toast notifications per card (should be hoisted to parent)
+- Multiple nested NavigationViews (should be single at root)
+- State management anti-patterns
+- View hierarchy issues
+
+### Stage 06.6: Senior-Level Patterns Review
+
+**Purpose**: Verify senior-level architectural patterns are in place
+
+**Checklist**:
+- [ ] Coordinator pattern for navigation
+- [ ] Dependency injection container
+- [ ] Protocol-oriented design (protocols for services)
+- [ ] Typed error handling (enum errors)
+- [ ] Loading state management (enum states)
+- [ ] Repository pattern implemented
+- [ ] MVVM pattern implemented
+
+**Deliverable**: `prompts/outputs/specifications/senior-patterns.md`
+
+**Common Issues Caught**:
+- No protocol abstractions (concrete types everywhere)
+- No DI container (singletons used)
+- No coordinator pattern (navigation scattered)
+- Generic errors instead of typed errors
+- Boolean loading states instead of enum
+
+### Updated Pipeline
+
+```
+Stage 01-06: Planning (Existing) ✅
+     ↓
+Stage 06 Complete: Task Lists Generated ✅
+     ↓
+Stage 06.5: SwiftUI Architecture Review ⭐ NEW
+     ↓
+Stage 06.6: Senior-Level Patterns Review ⭐ NEW
+     ↓
+NEW: Execution Orchestrator Invoked ⭐
+     ↓
+NEW: Task Prompts Generated ⭐
+     ↓
+NEW: Code Written Systematically ⭐
+     ↓
+NEW: State Files Updated Automatically ⭐
+     ↓
+Stage 07-10: Finishing (Existing) ✅
+```
 
 ---
 
@@ -456,8 +535,9 @@ These improvements complete the AI Prompt Library's vision of prompt-driven deve
 
 ## Document Control
 
-**Version**: 1.0  
+**Version**: 1.1  
 **Created**: 2026-02-08  
+**Updated**: 2026-02-08 (Added Stages 06.5 & 06.6)  
 **Author**: Kiro AI Assistant  
 **Status**: Complete  
 **Review**: Ready for maintainer review
@@ -468,3 +548,4 @@ These improvements complete the AI Prompt Library's vision of prompt-driven deve
 - prompts/templates/task-prompt-template.md
 - prompts/templates/execution-progress-template.md
 - prompts/EXECUTION_PHASE_GUIDE.md
+

@@ -15,6 +15,7 @@ This guide provides detailed instructions for AI agents executing the implementa
 5. [Quality Gates and Validation](#quality-gates-and-validation)
 6. [Common Pitfalls and Solutions](#common-pitfalls-and-solutions)
 7. [Agent Handoff During Execution](#agent-handoff-during-execution)
+8. [New Stages: 06.5 & 06.6](#new-stages-065--066)
 
 ---
 
@@ -24,6 +25,8 @@ This guide provides detailed instructions for AI agents executing the implementa
 
 Enter execution phase when ALL of these are true:
 - [ ] Stage 06 (Implementation Tasks) is complete
+- [ ] **Stage 06.5 (SwiftUI Architecture Review)** is complete ✅ NEW
+- [ ] **Stage 06.6 (Senior-Level Patterns)** is complete ✅ NEW
 - [ ] `prompts/outputs/task-lists/implementation-tasks.md` exists
 - [ ] All specifications are complete (requirements, architecture, features, testing)
 - [ ] User says "Execute the development plan" or "Build the project"
@@ -666,6 +669,118 @@ Then proceed with actual code generation.
 
 **Version**: 1.0
 **Created**: 2026-02-08
+**Purpose**: Comprehensive execution phase guide
+**Status**: Production Ready
+
+**Related Documents**:
+- orchestrators/execution-orchestrator.md - Main orchestrator
+- templates/execution-phase.md - Execution overview
+- templates/task-prompt-template.md - Task prompt generation
+- templates/execution-progress-template.md - Progress tracking template
+- AGENTS.md - Overall agent instructions
+
+**Usage**: Reference this guide when executing implementation tasks after Stage 06 completion.
+
+---
+
+## New Stages: 06.5 & 06.6
+
+### Stage 06.5: SwiftUI Architecture Review
+
+**Purpose**: Verify SwiftUI-specific architecture patterns before execution
+
+**Checklist**:
+- [ ] Single NavigationStack at root level
+- [ ] State hoisting for shared state (toasts, alerts)
+- [ ] No nested NavigationViews
+- [ ] Proper @State, @StateObject, @ObservedObject usage
+- [ ] View hierarchy diagram created
+- [ ] Data flow diagram (parent → child)
+- [ ] Environment object strategy documented
+
+**Deliverable**: `prompts/outputs/specifications/swiftui-architecture.md`
+
+**Common Issues Caught**:
+- Toast notifications per card (should be hoisted to parent)
+- Multiple nested NavigationViews (should be single at root)
+- State management anti-patterns
+- View hierarchy issues
+
+**When to Run**: After Stage 06, before execution phase
+
+---
+
+### Stage 06.6: Senior-Level Patterns Review
+
+**Purpose**: Verify senior-level architectural patterns are in place
+
+**Checklist**:
+- [ ] Coordinator pattern for navigation
+- [ ] Dependency injection container
+- [ ] Protocol-oriented design (protocols for services)
+- [ ] Typed error handling (enum errors)
+- [ ] Loading state management (enum states)
+- [ ] Repository pattern implemented
+- [ ] MVVM pattern implemented
+
+**Deliverable**: `prompts/outputs/specifications/senior-patterns.md`
+
+**Common Issues Caught**:
+- No protocol abstractions (concrete types everywhere)
+- No DI container (singletons used)
+- No coordinator pattern (navigation scattered)
+- Generic errors instead of typed errors
+- Boolean loading states instead of enum
+
+**When to Run**: After Stage 06, before execution phase
+
+---
+
+### Updated Pipeline
+
+```
+Stage 01-06: Planning (Existing) ✅
+     ↓
+Stage 06 Complete: Task Lists Generated ✅
+     ↓
+Stage 06.5: SwiftUI Architecture Review ⭐ NEW
+     ↓
+Stage 06.6: Senior-Level Patterns Review ⭐ NEW
+     ↓
+NEW: Execution Orchestrator Invoked ⭐
+     ↓
+NEW: Task Prompts Generated ⭐
+     ↓
+NEW: Code Written Systematically ⭐
+     ↓
+NEW: State Files Updated Automatically ⭐
+     ↓
+Stage 07-10: Finishing (Existing) ✅
+```
+
+### Updated State Files
+
+**PROJECT_STATE.md** now includes:
+```
+| 06 - Implementation | ✅ Complete | [Date] |
+| 06.5 - SwiftUI Architecture | ✅ Complete | [Date] |
+| 06.6 - Senior Patterns | ✅ Complete | [Date] |
+| Execution Phase | ✅ Complete | [Date] |
+```
+
+**NEXT_ACTION.md** now includes:
+```
+**Current Phase**: Execution - Building Product
+**Previous Stages**: 01-06, 06.5, 06.6 complete
+```
+
+---
+
+## Document Control
+
+**Version**: 1.1
+**Created**: 2026-02-08
+**Updated**: 2026-02-08 (Added Stages 06.5 & 06.6)
 **Purpose**: Comprehensive execution phase guide
 **Status**: Production Ready
 
