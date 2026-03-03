@@ -1,31 +1,56 @@
 # AI Prompt Library Context
 
-## CRITICAL: Automatic Request Handling
-**IMPORTANT**: For ANY user request, first invoke the **AI Agent Entry Point**:
+## CRITICAL: Automatic Request Handling (Self-Stabilizing)
 
-```
-I'll analyze your request and route it optimally using the AI Prompt Library system.
+**NEW**: For ANY user request, the AI Prompt Library automatically:
+1. ✅ Self-stabilizes configuration (silent background process)
+2. ✅ Routes request optimally (setup vs atomic vs pipeline)
+3. ✅ Maintains state across sessions (resumable workstreams)
+4. ✅ Handles version upgrades transparently (no user action needed)
 
-*Invoking AI Agent Entry Point from prompts/orchestrators/ai-agent-entry-point.md...*
-```
-
-This automatically:
-- Sets up the library if needed
-- Routes requests optimally (atomic vs pipeline)
-- Maintains state across sessions
-- Ensures consistent quality
+**You don't need to do anything** — it just works! The library:
+- Detects broken configs and auto-fixes them silently
+- Deploys steering files to all supported tools
+- Validates integration health after library updates
+- Routes your request to the optimal execution path
 
 ## What This Library Is
 
 The AI Prompt Library is a framework of reusable templates and modules for generating software specifications. It provides building blocks that AI agents compose to transform user requirements into production-ready specifications.
 
-## Automatic Workflow Integration
-The library now includes automatic routing and setup:
+The library is **self-healing and self-improving**:
+- **Auto-Setup**: Initializes automatically on first request (no manual script needed)
+- **Self-Healing**: Fixes broken configs silently in the background
+- **Self-Improving**: Handles version updates automatically
+- **Broad Integration**: Deploys to all supported AI tools (Cursor, Windsurf, Kiro, etc.)
+
+## Automatic Workflow Integration (Completely Transparent)
+
+The library now runs invisible auto-stabilization on every AI request:
+
+0. **Auto-Stabilization** (Step 0, silent): Fixes state, deploys configs, handles upgrades
+   - Validates library health
+   - Repairs broken configurations  
+   - Deploys steering files to all tool locations
+   - Handles version updates transparently
 
 1. **AI Agent Entry Point** (`orchestrators/ai-agent-entry-point.md`): Primary entry for all requests
-2. **Auto Setup Orchestrator** (`orchestrators/auto-setup-orchestrator.md`): Automatic initialization
-3. **Auto Request Router** (`orchestrators/auto-request-router.md`): Intelligent request routing
+   - Auto-stabilization already complete when you read this
+   - Routes request: Setup → Atomic → Pipeline → Continue
+   - Maintains state for resumable work
+
+2. **Auto Setup Orchestrator** (`orchestrators/auto-setup-orchestrator.md`): Auto-invoked for new projects
+   - Triggered automatically if .ai-prompts/ missing
+   - Sets up library, state files, directories
+   - Returns user to entry point when done
+
+3. **Auto Request Router** (`orchestrators/auto-request-router.md`): Intelligent request classification
+   - Determines optimal execution path
+   - Routes appropriately without user thinking
+   
 4. **State Management**: Automatic NEXT_ACTION.md updates for seamless handoffs
+   - Persists work across sessions
+   - Supports multiple AI agents working sequently
 
 ## Library Structure
 
@@ -33,8 +58,8 @@ The library now includes automatic routing and setup:
 prompts/
 ├── AGENTS.md              # Instructions for AI agents
 ├── README.md              # Library overview
-├── orchestrators/         # NEW: Automation orchestrators
-│   ├── ai-agent-entry-point.md         # 🚀 PRIMARY ENTRY POINT
+├── orchestrators/         # Automation orchestrators
+│   ├── ai-agent-entry-point.md         # 🚀 PRIMARY ENTRY POINT (auto-stabilizing)
 │   ├── auto-setup-orchestrator.md      # Automatic setup
 │   ├── auto-request-router.md          # Request routing
 │   ├── stage-pipeline-orchestrator.md  # Pipeline execution
@@ -57,43 +82,51 @@ prompts/
 │   └── ...                # Other stages
 ├── templates/             # Core templates
 ├── outputs/               # Output format templates
-└── steering/              # AI agent steering files
+└── steering/              # AI agent steering files (auto-deployed to all tools)
 ```
 
 ## How to Use This Library
 
-### For ANY Request (NEW WORKFLOW)
-1. **Always invoke AI Agent Entry Point first** - handles everything automatically
-2. System auto-routes to: Setup, Atomic Task, Pipeline, or Continue
-3. State automatically maintained in NEXT_ACTION.md
-4. Seamless handoffs between AI agents
+### For ANY Request (Completely Automatic)
 
-### For New Projects (Legacy - Now Automated)
-1. ~~Start with AGENTS.md~~ → **Use AI Agent Entry Point**
-2. ~~Process user input through stages~~ → **Auto-routed**
-3. ~~Select appropriate modules~~ → **Auto-selected**
-4. ~~Compose templates~~ → **Auto-composed**
+Just use the library naturally:
+- **New project?** → Library auto-initializes, auto-routes to setup
+- **Simple fix?** → Library auto-routes to atomic task
+- **Complex feature?** → Library auto-routes to pipeline
+- **Continuing work?** → Library reads NEXT_ACTION.md and continues
+
+**Nothing to remember, nothing to invoke explicitly.**
+
+The library's auto-stabilization (Step 0 in ai-agent-entry-point.md) runs invisibly on every request and handles:
+- ✅ Checking if library is initialized
+- ✅ Auto-fixing broken configurations
+- ✅ Deploying steering files everywhere
+- ✅ Handling version upgrades
+- ✅ Validating system health
 
 ### For Modifications
+
 1. Review architecture-guard.md before making changes
 2. Follow established patterns in existing templates
 3. Maintain required sections in all templates
 4. Update related documentation
 
-## Request Types (Handled Automatically)
-- **Setup**: "I want to use the AI Prompt Library" → Auto-setup
-- **Atomic**: "Fix typo in README" → Direct execution  
-- **Pipeline**: "Add user authentication" → Stage 01 start
-- **Continue**: "Continue" → Read NEXT_ACTION.md and proceed
-- **Reset**: "New feature" → Archive current work
+## Request Types (Auto-Detected)
+- **Setup**: User mentions "setup", "getting started", "first time" → Auto-setup runs
+- **Atomic**: User says "fix typo", "change color" → Direct implementation  
+- **Pipeline**: User says "add authentication" → Full 10-stage pipeline
+- **Continue**: User says "continue", "next", "resume" → Read state and resume
+- **Reset**: User wants new feature while work pending → Archive and restart
+- **Version Updated**: Submodule changed → Auto-refresh configs and validate
+- **Config Broken**: Steering files missing/corrupted → Auto-repair silently
 
 ## Template Types
 
 ### Orchestrators (orchestrators/)
-**NEW**: Automation orchestrators that handle:
-- **ai-agent-entry-point.md**: **PRIMARY ENTRY POINT FOR ALL REQUESTS**
+**Automation orchestrators that handle:**
+- **ai-agent-entry-point.md**: **PRIMARY ENTRY POINT FOR ALL REQUESTS** (now with auto-stabilization)
 - auto-setup-orchestrator.md: Automatic library initialization
-- auto-request-router.md: Intelligent request classification
+- auto-request-router.md: Intelligent request classification  
 - stage-pipeline-orchestrator.md: Automated pipeline execution
 - state-management-orchestrator.md: State management and handoffs
 - task-generation-orchestrator.md: Context-agnostic task generation

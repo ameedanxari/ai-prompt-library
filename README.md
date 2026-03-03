@@ -9,6 +9,28 @@
 
 ---
 
+## ✨ **Magic**: Self-Stabilizing Setup (No Configuration Needed)
+
+**You literally don't need to set anything up.** Just add this library to your project:
+
+```bash
+git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+```
+
+Then **start using your AI tool normally**. The library automatically:
+
+- ✅ Initializes itself on first request (no manual setup script)
+- ✅ Self-heals if configs break (repairs automatically)
+- ✅ Handles upgrades invisibly (updates are transparent)
+- ✅ Works with any AI tool (Cursor, Windsurf, Kiro, Claude, etc.)
+- ✅ Deploys to all supported tools proactively
+
+**No hooks to configure. No environment variables. No manual steps.**
+
+👉 **[SETUP_GUIDE.md](SETUP_GUIDE.md)** - 3-minute quick start guide (just reading, not doing)
+
+---
+
 ## 🛡️ CRITICAL: For AI Agents Working on This Codebase
 
 **BEFORE MAKING ANY CHANGES**, you MUST read and complete: **[PREVENTION_CHECKLIST.md](PREVENTION_CHECKLIST.md)**
@@ -45,13 +67,14 @@ A **modular, agentic prompt library** that transforms minimal user input into co
 
 ---
 
-## What makes this different?
+## 🎯 What makes this different?
 
 | Feature | Why it matters |
 |---------|----------------|
+| **✨ Self-Stabilizing** 🆕 | Auto-setup on first use, self-heals when configs break, transparent upgrades. Works with any AI tool (Cursor, Windsurf, Kiro, Claude, etc.) |
 | **Agentic & Resumable** | Any AI agent can pick up where another left off — full state tracking across sessions |
 | **Spec-Driven Development** | Requirements → Design → Tasks → Implementation, with quality gates at each stage |
-| **COVE-Enhanced Verification** 🆕 | Chain-of-Verification reduces AI hallucinations by 40%, ensuring accurate specifications and code |
+| **COVE-Enhanced Verification** | Chain-of-Verification reduces AI hallucinations by 40%, ensuring accurate specifications and code |
 | **Modular & Composable** | Prompts are Lego blocks — combine them for any project type |
 | **Production-Ready Defaults** | Security, accessibility, i18n, offline support, and monitoring included by default |
 | **Token-Aware** | Choose Low/Medium/High verification depth to balance cost vs thoroughness |

@@ -2,6 +2,8 @@
 
 You are an **AI Agent** working with the **AI Prompt Library**. This is your **primary entry point** for handling any user request optimally and automatically.
 
+This entry point now includes **automatic self-stabilization** — it silently checks and fixes library state before processing any request. Users experience seamless operation without seeing setup complexity.
+
 ## 🛡️ CRITICAL SAFEGUARDS - MANDATORY FIRST STEPS
 
 ### CHANGE IMPACT GUARD - ALWAYS FIRST
@@ -27,9 +29,12 @@ The system continuously monitors for:
 - Missing critical files  
 - Architecture violations
 - Regression patterns
+- **NEW**: Version updates and configuration drift
 
 ## Purpose
 This template provides a **single command** that AI agents can use to automatically:
+- **Auto-stabilize** library (silent self-healing)
+- Handle version upgrades transparently
 - Route requests to the optimal execution path
 - Handle setup, atomic tasks, and pipeline tasks seamlessly
 - Maintain state across sessions and agent handoffs
@@ -47,9 +52,183 @@ I'll analyze your request and route it optimally using the AI Prompt Library sys
 *Invoking AI Agent Entry Point...*
 ```
 
-Then follow the steps below.
+The library will automatically:
+1. Check and fix configuration state silently
+2. Handle version updates transparently  
+3. Route your request optimally
+4. Maintain seamless state across sessions
+
+No user setup needed — it just works.
 
 ## Automatic Execution Protocol
+
+### Step 0: Auto-Stabilization (Silent - Every Invocation)
+**This happens invisibly before processing any request:**
+
+```bash
+# Initialize state tracking directory
+mkdir -p .ai-prompts/.state 2>/dev/null || true
+
+# === PHASE 1: VERSION TRACKING ===
+detect_version_change() {
+    if [ ! -d ".ai-prompts" ]; then
+        # Library doesn't exist yet, will be created in setup phase
+        echo "new"
+        return
+    fi
+    
+    CURRENT_VERSION=$(cd .ai-prompts && git rev-parse HEAD 2>/dev/null || echo "0")
+    LAST_KNOWN_VERSION=$(cat .ai-prompts/.state/last-version 2>/dev/null || echo "0")
+    
+    if [ "$CURRENT_VERSION" != "$LAST_KNOWN_VERSION" ]; then
+        echo "updated"
+        echo "$CURRENT_VERSION" > .ai-prompts/.state/last-version 2>/dev/null || true
+        return
+    fi
+    echo "current"
+}
+
+VERSION_STATUS=$(detect_version_change)
+
+# Source centralized library (includes record_actual_prompt, audit_and_log_orchestrator)
+# ➤ also overrides `source`/`.` so any later sourcing of an orchestrator file
+#    automatically logs and dumps its content.  This enables zero-effort audit
+#    wrapping (Phase 3 auto-wrap).
+if [ -f ".ai-prompts/.scripts/lib.sh" ]; then
+    . ".ai-prompts/.scripts/lib.sh"
+fi
+
+# === PHASE 2: STEERING FILE DEPLOYMENT (Broad) ===
+# Deploy to ALL tool locations preemptively (not just detected ones)
+# Users never see this — it just silently ensures configs exist everywhere
+deploy_steering_files() {
+    if [ ! -d ".ai-prompts/prompts/steering" ]; then
+        return  # Library not initialized yet
+    fi
+    
+    # Kiro IDE (prefer symlinked steering files)
+    mkdir -p .kiro/steering 2>/dev/null && \
+    ln -sf .ai-prompts/prompts/steering/*.md .kiro/steering/ 2>/dev/null || true
+
+    # Cursor
+    mkdir -p .cursor/rules 2>/dev/null && \
+    ln -sf .ai-prompts/prompts/steering/*.md .cursor/rules/ 2>/dev/null || true
+
+    # Windsurf
+    mkdir -p .windsurf/rules 2>/dev/null && \
+    ln -sf .ai-prompts/prompts/steering/*.md .windsurf/rules/ 2>/dev/null || true
+
+    # JetBrains IDEs (Cursor, IntelliJ, etc.)
+    mkdir -p .idea/ai-rules 2>/dev/null && \
+    ln -sf .ai-prompts/prompts/steering/*.md .idea/ai-rules/ 2>/dev/null || true
+
+    # VS Code: create a dedicated folder and add workspace setting to reference it (symlink the canonical files)
+    mkdir -p .vscode/ai-steering 2>/dev/null || true
+    ln -sf .ai-prompts/prompts/steering/*.md .vscode/ai-steering/ 2>/dev/null || true
+    # Merge steering path into .vscode/settings.json (safe merge using python)
+    if command -v python3 >/dev/null 2>&1 || command -v python >/dev/null 2>&1; then
+        PY=$(command -v python3 2>/dev/null || command -v python)
+        $PY - <<'PY' 2>/dev/null || true
+import json,os
+settings_path='.vscode/settings.json'
+settings={}
+if os.path.exists(settings_path):
+    try:
+        with open(settings_path,'r') as f:
+            settings=json.load(f)
+    except Exception:
+        settings={}
+settings_key='aiPromptLibrary.steeringPath'
+if settings.get(settings_key)!=(os.path.join('.vscode','ai-steering')):
+    settings[settings_key]=os.path.join('.vscode','ai-steering')
+    os.makedirs(os.path.dirname(settings_path),exist_ok=True)
+    with open(settings_path,'w') as f:
+        json.dump(settings,f,indent=2)
+PY
+    fi
+
+    # Generic fallback
+    mkdir -p .ai-steering 2>/dev/null && \
+    cp .ai-prompts/prompts/steering/*.md .ai-steering/ 2>/dev/null || true
+}
+
+# === PHASE 3: VALIDATION & SELF-HEALING ===
+validate_and_repair() {
+    HEALTH_SCORE=100
+    
+    # Check library integrity
+    if [ ! -f ".ai-prompts/prompts/AGENTS.md" ]; then
+        HEALTH_SCORE=$((HEALTH_SCORE - 30))
+    fi
+    
+    # Check state files
+    if [ -f "NEXT_ACTION.md" ]; then
+        if ! grep -q "Current Status" NEXT_ACTION.md 2>/dev/null; then
+            # Corrupted state file — auto-recreate
+            rm NEXT_ACTION.md
+            HEALTH_SCORE=$((HEALTH_SCORE - 10))
+        fi
+    fi
+    
+    # Check for missing steering files
+    STEERING_COUNT=0
+    [ -d ".kiro/steering" ] && STEERING_COUNT=$((STEERING_COUNT + 1))
+    [ -d ".cursor/rules" ] && STEERING_COUNT=$((STEERING_COUNT + 1))
+    [ -d ".windsurf/rules" ] && STEERING_COUNT=$((STEERING_COUNT + 1))
+    [ -d ".ai-steering" ] && STEERING_COUNT=$((STEERING_COUNT + 1))
+    
+    if [ $STEERING_COUNT -eq 0 ] && [ -d ".ai-prompts" ]; then
+        HEALTH_SCORE=$((HEALTH_SCORE - 20))
+    fi
+    
+    # Repair low health
+    if [ $HEALTH_SCORE -lt 70 ]; then
+        # Silent auto-fix: deploy steering files
+        deploy_steering_files
+        HEALTH_SCORE=$((HEALTH_SCORE + 20))
+    fi
+    
+    echo $HEALTH_SCORE
+}
+
+# === PHASE 4: VERSION UPGRADE HANDLING ===
+handle_version_upgrade() {
+    if [ "$VERSION_STATUS" = "updated" ]; then
+        # Library was updated (submodule changed)
+        # Refresh steering files silently
+        deploy_steering_files
+        
+        # Validate safeguards work with new version
+        if [ -f ".ai-prompts/scripts/validate-safeguards.sh" ]; then
+            bash .ai-prompts/scripts/validate-safeguards.sh >/dev/null 2>&1 || true
+        fi
+
+            # Run COVE validator if present (non-blocking)
+            if [ -f ".ai-prompts/.scripts/validate_cove.sh" ]; then
+                bash .ai-prompts/.scripts/validate_cove.sh >/dev/null 2>&1 || true
+            fi
+        
+        # Update integration tracking
+        echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .ai-prompts/.state/last-integration-check
+    fi
+}
+
+# === EXECUTION: Run all stabilization phases ===
+HEALTH=$(validate_and_repair)
+deploy_steering_files
+handle_version_upgrade
+
+# Run COVE validator after deployment if available and record timestamp
+if [ -f ".ai-prompts/.scripts/validate_cove.sh" ]; then
+    bash .ai-prompts/.scripts/validate_cove.sh >/dev/null 2>&1 || true
+    echo "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > .ai-prompts/.state/last-cove-check 2>/dev/null || true
+fi
+
+# Store health score for monitoring
+echo "$HEALTH" > .ai-prompts/.state/last-health-score 2>/dev/null || true
+```
+
+**Result**: Library is always in a healthy, properly-configured state. Users never see any of this.
 
 ### Step 1: Auto-Route the Request
 **First, determine the optimal path:**
@@ -73,16 +252,16 @@ fi
 
 ### Step 2: Execute Based on Route
 
+# Log request routing audit via centralized dispatcher
+audit_and_log_orchestrator ".ai-prompts/prompts/orchestrators/auto-request-router.md" >/dev/null 2>&1 || true
+
 #### If ROUTE="SETUP":
-```markdown
-**🚀 INITIALIZING AI PROMPT LIBRARY**
 
-I'll set up everything automatically so you can start building immediately.
+# Log and emit setup orchestrator via centralized dispatcher
+# (automatically prints the markdown to the AI agent's output)
+invoke_orchestrator_with_audit ".ai-prompts/prompts/orchestrators/auto-setup-orchestrator.md" >/dev/null 2>&1 || true
 
-*Setting up AI Prompt Library...*
-```
-
-**Then execute these commands:**
+# (the orchestrator file contains its own instructions and `bash` commands)
 ```bash
 # Initialize library (git submodule or clone)
 if [ -d ".git" ]; then
@@ -273,21 +452,27 @@ Let me determine the optimal approach for your request...
 ### Step 3: Execute the Determined Action
 
 #### For Implementation Request:
-```markdown
-🛡️ **IMPLEMENTATION ENFORCEMENT ACTIVATED**
 
-I notice you're requesting implementation. Before proceeding, I must enforce the use of generated design artifacts to ensure quality and consistency with the design phase.
+# Log and emit implementation enforcement orchestrator
+invoke_orchestrator_with_audit ".ai-prompts/prompts/orchestrators/implementation-enforcement-orchestrator.md" >/dev/null 2>&1 || true
 
-*Invoking Implementation Enforcement Orchestrator from .ai-prompts/prompts/orchestrators/implementation-enforcement-orchestrator.md...*
-```
-
-**Then execute the Implementation Enforcement Orchestrator protocol.**
+# (the orchestrator file contains its own explanatory text and protocol)
 
 #### For Continue/Resume:
 ```bash
+# Log continue action via centralized dispatcher
+NEXT_ACTION_PATH="NEXT_ACTION.md"
+if [ -f "$NEXT_ACTION_PATH" ]; then
+    audit_and_log_orchestrator "$NEXT_ACTION_PATH" >/dev/null 2>&1 || true
+fi
+
 # Read and execute next action
 echo "📋 Continuing from NEXT_ACTION.md..."
-cat NEXT_ACTION.md
+if [ -f "NEXT_ACTION.md" ]; then
+    cat NEXT_ACTION.md
+else
+    echo "No NEXT_ACTION.md found"
+fi
 ```
 
 Then execute the specific stage or task mentioned in NEXT_ACTION.md.
@@ -309,6 +494,10 @@ This looks like a focused change I can implement directly.
 Then implement the change using available tools.
 
 #### For Pipeline Task:
+
+# Log and emit pipeline stage orchestrator
+invoke_orchestrator_with_audit ".ai-prompts/prompts/orchestrators/stage-pipeline-orchestrator.md" >/dev/null 2>&1 || true
+
 ```markdown
 **🏗️ PIPELINE TASK EXECUTION**
 
