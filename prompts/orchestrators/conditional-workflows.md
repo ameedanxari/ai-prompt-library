@@ -3,6 +3,21 @@
 ## Purpose
 Dynamically adapt the specification pipeline based on project characteristics, requirements, and runtime conditions.
 
+## Implementation Patterns
+
+### Pattern 1: State-Based Workflow Routing
+Route tasks based on application state.
+
+**Implementation**:
+1. Check application state (initialized, authenticated, ready)
+2. Based on state, execute conditional branch
+3. State: NOT_INITIALIZED → run initialization tasks
+4. State: UNAUTHENTICATED → run login flow
+5. State: READY → run main logic
+6. After branch executes, update state
+7. Repeat until final state reached
+8. Log state transitions
+
 ## When to Use
 - Projects with varying complexity requiring different approaches
 - Conditional feature inclusion based on platform or requirements

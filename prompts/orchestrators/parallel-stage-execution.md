@@ -3,6 +3,32 @@
 ## Purpose
 Execute multiple independent specification stages concurrently to reduce total pipeline time while maintaining quality and dependencies.
 
+## Implementation Patterns
+
+### Pattern 1: Parallel Task Execution
+Execute independent tasks concurrently.
+
+**Implementation**:
+1. Identify independent tasks (no shared state dependencies)
+2. Launch each task in parallel (separate threads/processes/agents)
+3. Wait for all to complete (barrier)
+4. Collect results from each task
+5. Proceed to next stage
+6. Log task execution times
+7. Track any failures for retry
+
+### Pattern 2: Stage-Based Parallel Processing
+Divide work into stages, execute each stage in parallel then synchronize.
+
+**Implementation**:
+1. Define stages: Preparation → Execution → Validation → Integration
+2. Within each stage, execute independent tasks in parallel
+3. At stage boundary, synchronize (all tasks complete before next stage)
+4. Share data between stages (output of stage N → input of stage N+1)
+5. If any task in stage fails, halt and escalate
+6. Log stage progression and timing
+7. Update overall progress
+
 ## When to Use
 - Multiple platforms require separate specifications (web, mobile, desktop)
 - Independent features can be specified in parallel

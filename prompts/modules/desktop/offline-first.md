@@ -3,6 +3,49 @@
 ## Purpose
 Patterns for building desktop applications that work seamlessly offline, with local data storage, sync strategies, and conflict resolution.
 
+## Implementation Patterns
+
+### Pattern 1: Local State Persistence
+Store application state locally for offline access.
+
+**Implementation**:
+1. Define data schema for local storage (SQLite, IndexedDB)
+2. On app startup, load state from local storage
+3. Display cached data (instant UI response)
+4. When network available, fetch fresh data
+5. Merge with local state (prefer server version if conflict)
+6. Update local storage with server data
+7. Show update indicator (if data newer than cached)
+8. Cleanup old cached data (retention policy)
+
+### Pattern 2: Sync Queue for Offline Changes
+Queue local changes and sync when network available.
+
+**Implementation**:
+1. User makes change (create, update, delete) offline
+2. Validate change locally (format, constraints)
+3. Write change to sync queue (SQLite table)
+4. Update local state immediately (optimistic)
+5. Show offline indicator
+6. When network available, process sync queue
+7. For each queued change, attempt POST/PUT/DELETE
+8. If conflict, show merge dialog
+9. On success, remove from queue
+10. Log all syncs for audit
+
+### Pattern 3: Offline Availability Indicator
+Communicate app/data availability status to user.
+
+**Implementation**:
+1. Monitor network connectivity (offline/online events)
+2. Check API health endpoint regularly
+3. Display connectivity status (online/offline badge)
+4. When offline: disable sync-only features, enable local-edit features
+5. Show data freshness (e.g., "Last sync 2 hours ago")
+6. Warn before losing unsynced changes (before close)
+7. Provide manual sync button (when online)
+8. Log connectivity changes
+
 ## Core Patterns
 
 ### 1. Local Database
@@ -294,3 +337,14 @@ class ActionQueue {
 - `desktop/native-integrations.md` - Native features
 - `data-processing/data-pipelines.md` - Data sync patterns
 - `performance/caching.md` - Caching strategies
+
+## Examples
+
+### Example 1: Offline Chat Application
+User selects message while offline:
+- Message written to SQLite cache
+- UI updates immediately (optimistic)
+- Offline indicator shown
+- Network restored → sync to server
+- Conflict resolution: Server version preferred, cached version logged
+

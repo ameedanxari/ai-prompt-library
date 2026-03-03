@@ -438,3 +438,50 @@ curl -X POST https://api.example.com/api/tasks \
 - Industry-standard compliance verified
 
 **Improvement**: 95% more complete and accurate specification through systematic verification.
+
+
+## Purpose
+
+Provides a complete walkthrough of a COVE specification file, showing structure, sections, and best practices.
+
+
+## Instructions
+
+To create a COVE specification:
+
+1. Define purpose and scope
+2. Specify inputs (format, constraints)
+3. Specify outputs (format, constraints)
+4. Define execution stages/pipeline
+5. Include acceptance criteria
+6. Add examples for clarification
+7. Document error handling
+8. Include validation rules
+
+
+## Template Structure
+
+\`\`\`markdown
+# [Feature Name] Specification
+
+## Purpose
+[Clear statement of what this feature does]
+
+## Inputs
+[Input format and constraints]
+
+## Outputs
+[Output format and constraints]
+
+## Execution Pipeline
+[Stages and their responsibilities]
+
+## Acceptance Criteria
+[Numbered list of must-haves]
+
+## Examples
+[Real usage examples]
+
+## Error Handling
+[How to handle errors]
+\`\`\`

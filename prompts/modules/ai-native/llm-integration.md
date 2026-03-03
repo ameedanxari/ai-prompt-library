@@ -3,6 +3,44 @@
 ## Purpose
 Comprehensive patterns for integrating Large Language Models into applications, including API management, prompt engineering, context handling, and production deployment strategies.
 
+## Implementation Patterns
+
+### Pattern 1: Prompt Templating with Safety Checks
+Generate prompts from templates with validation.
+
+**Implementation**:
+1. Define prompt template with [placeholders]
+2. Validate all required placeholders provided
+3. Validate placeholder values (no injection risk)
+4. Render template with validated values
+5. Add system prompt + safety constraints
+6. Send to LLM
+7. Validate response format
+
+### Pattern 2: Response Parsing and Validation
+Safely extract structured data from LLM responses.
+
+**Implementation**:
+1. Request response in specific format (JSON, XML, code blocks)
+2. Capture response
+3. Try to parse format
+4. If parse fails, re-request with format example
+5. Validate parsed data against schema
+6. If validation fails, re-request with validation rules
+7. Return validated result or error
+
+### Pattern 3: Cost and Rate Limiting
+Manage API costs and rate limits for LLM calls.
+
+**Implementation**:
+1. Track API cost (tokens * rate)
+2. Implement circuit breaker (abort if cost > budget)
+3. Batch similar requests to reduce calls
+4. Cache responses for identical inputs
+5. Implement exponential backoff on rate limit
+6. Log cost per operation
+7. Alert if cost trending high
+
 ## Context
 Modern applications increasingly leverage LLMs for natural language understanding, generation, and reasoning. This module provides battle-tested patterns for reliable, cost-effective LLM integration.
 

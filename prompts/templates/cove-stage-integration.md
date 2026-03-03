@@ -570,3 +570,50 @@ COVE integrates with existing templates:
 - **Better documentation** of assumptions and decisions
 - **Improved quality gates** with verification evidence
 - **Reduced rework** from catching errors early
+
+
+## Integration Examples
+
+- Stage 01 (Discovery): Initialize COVE context
+- Stage 02 (Analysis): Define orchestration specification
+- Stage 06 (Implementation): Execute tasks via COVE orchestrator
+- Unit tests: Mock COVE executor for testing
+
+
+## Implementation Patterns
+
+### Pattern 1: Stage-Start Integration
+At beginning of each stage, define COVE orchestration requirements and context.
+
+### Pattern 2: Stage-Execution Integration  
+During stage execution, source and invoke COVE orchestrators as needed.
+
+### Pattern 3: Stage-End Integration
+At stage completion, save orchestration results and state for next stage.
+
+
+## Integration Examples
+
+Stage 01: Define COVE spec and create orchestrator.md
+Stage 02: Analyze orchestration paths and execution requirements
+Stage 06: Load and execute orchestrators to implement features
+
+## Examples
+
+```bash
+echo "run generation with COVE"
+```
+
+### Example Usage
+
+A stage integration could look like this in a stage README:
+
+```markdown
+# Stage 06: Implementation
+
+## COVE Integration
+Load the appropriate orchestrator and run verification questions after each task.
+
+[[template:cove-stage-integration.md]]
+```
+

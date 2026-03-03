@@ -3,6 +3,47 @@
 ## Purpose
 Patterns for integrating with native OS features including system APIs, notifications, file associations, protocol handlers, and platform-specific capabilities.
 
+## Implementation Patterns
+
+### Pattern 1: Native API Bridge Implementation
+Bridge from JavaScript/TypeScript to native OS APIs.
+
+**Implementation**:
+1. Identify required native API (file system, clipboard, notifications)
+2. For Tauri: Implement Rust backend with #[tauri::command]
+3. For Electron: Use native modules (node-ffi, native-addons)
+4. Validate permissions before calling (security)
+5. Wrap native call in try-catch with error handling
+6. Return results to JavaScript consistently
+7. Log calls for audit trail
+8. Test on target OS
+
+### Pattern 2: Multi-Platform Compatibility
+Support Windows, macOS, Linux with unified interface.
+
+**Implementation**:
+1. Define abstract interface (trait in Rust, interface in TS)
+2. Implement platform-specific backends
+3. Detect platform at runtime or build time
+4. Route calls to platform backend
+5. Handle platform-specific errors
+6. Test on all target platforms
+7. Document platform-specific constraints
+8. Provide graceful degradation for unsupported features
+
+### Pattern 3: System Integration with Auto-Updates
+Integrate with native system features like auto-update.
+
+**Implementation**:
+1. Check for updates on app startup (non-blocking)
+2. Compare local version vs remote version
+3. If update available, prompt user
+4. Download update in background
+5. On next app restart, apply update
+6. Validate update integrity (signature check)
+7. Rollback if update fails
+8. Log update process
+
 ## Core Integration Patterns
 
 ### 1. System Notifications
@@ -424,6 +465,20 @@ class WindowManager {
 
 ## Related Modules
 
-- `desktop/offline-first.md` - Offline capabilities
-- `desktop/performance-optimization.md` - Performance patterns
-- `security/desktop-security.md` - Security considerations
+- [desktop/offline-first.md](./offline-first.md) - Offline capabilities
+- [desktop/performance-optimization.md](../../desktop/performance-optimization.md) - Performance patterns
+- [desktop/desktop-security.md](../../desktop/desktop-security.md) - Security considerations
+
+## Examples
+
+### Example 1: File Dialog Integration
+Tauri + Rust:
+```rust
+let selected_file = FileDialogBuilder::new()
+    .add_filter("txt", &["txt"])
+    .pick_file()
+    .await;
+```
+
+Frontend calls via IPC, user selects file, path returned safely ✅
+

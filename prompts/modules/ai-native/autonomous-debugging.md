@@ -3,6 +3,39 @@
 ## Purpose
 Systems that automatically detect, diagnose, and fix bugs without human intervention, using AI-powered root cause analysis and automated remediation.
 
+## Implementation Patterns
+
+### Pattern 1: Exception-Triggered Self-Diagnosis
+Automatically analyze and log exceptions as they occur, proposing fixes.
+
+**Implementation**:
+1. Wrap critical code with try-catch
+2. On exception, capture stack trace and context
+3. Feed to LLM: "Exception [type] in [function]. Context: [local vars]. Propose fix."
+4. Log proposal to self-diagnostic log
+5. Optionally apply fix if low-risk (logging changes)
+
+### Pattern 2: Test Failure Root Cause Analysis
+When tests fail, automatically diagnose root cause.
+
+**Implementation**:
+1. Test fails: capture assertion, expected, actual
+2. Feed to LLM: "Test [name] failed. Expected [X], got [Y]. Local state: [vars]. Root cause?"
+3. LLM proposes cause (logic error, data issue, timing)
+4. Log proposal with confidence score
+5. If human-confirmed, add to known issues database
+
+### Pattern 3: Performance Regression Detection and Diagnosis
+Monitor metrics and auto-diagnose when regressions occur.
+
+**Implementation**:
+1. Track metric baseline (response time, memory, throughput)
+2. Detect regression (metric > baseline * threshold)
+3. Capture relevant code state, execution context
+4. Feed to LLM: "Performance regression: [metric] degraded [%]. Changed code: [diff]. Why?"
+5. Log LLM hypothesis
+6. Tag code change with diagnosed issue
+
 ## Core Patterns
 
 ### 1. Automated Root Cause Analysis
@@ -98,3 +131,27 @@ class AnomalyDetector {
 - `ai-native/self-modifying-code.md`
 - `monitoring/observability.md`
 - `testing/chaos-engineering.md`
+
+## Examples
+
+### Example 1: Exception Detection and Diagnosis
+Code throws RuntimeException in payment processing
+
+System:
+1. Catches exception: "NullPointerException in PaymentService.processPayment()"
+2. Logs context: `{ user_id: 123, amount: 99.99, gateway: 'stripe', order_id: 456 }`
+3. Feeds to LLM: "NullPointerException in PaymentService. Context: [above]. Root cause?"
+4. LLM response: "gateway is null - missing fallback initialization"
+5. Proposed fix: "Initialize gateway with default handler in constructor"
+6. Self-diagnoses: Issue added to known issues, fix logged
+
+### Example 2: Test Failure Root Cause
+Unit test fails: `testPaymentRefund() - Expected: $100 refunded, Got: $80 refunded`
+
+System:
+1. Captures failure data
+2. Feeds to LLM: "Test failed. Expected $100, got $80. Local state: [vars]. Root cause?"
+3. LLM hypothesis: "Fee deduction not accounted for in test assertion"
+4. System logs: "Test failure: fee calculation issue identified"
+5. Human confirms via test update
+

@@ -3,6 +3,45 @@
 ## Purpose
 Comprehensive patterns for building cross-platform desktop applications using Electron, covering setup, architecture, native integrations, security, performance optimization, and distribution.
 
+## Implementation Patterns
+
+### Pattern 1: Process Separation
+Maintain clear separation between main and renderer processes.
+
+**Implementation**:
+1. Main process (Node.js): file system access, native APIs, background tasks
+2. Renderer process (Chromium): UI rendering, user interaction
+3. Communicate via IPC messages
+4. Main process validates and authorizes all requests
+5. Renderer never directly accesses file system or native APIs
+6. Log all cross-process communication
+7. Test process isolation
+
+### Pattern 2: Security Best Practices
+Implement security hardening for Electron apps.
+
+**Implementation**:
+1. Enable sandbox in renderer process
+2. Use preload script to expose only necessary APIs
+3. Validate all user input before processing
+4. Disable nodeIntegration in renderer
+5. Use contextIsolation to isolate context
+6. Implement Content Security Policy (CSP)
+7. Sign all application files
+8. Keep framework and dependencies updated
+
+### Pattern 3: Development vs Production Configuration
+Maintain different configs for dev and production.
+
+**Implementation**:
+1. Define dev config (debug tools enabled, verbose logging)
+2. Define production config (debug disabled, error reporting)
+3. Load appropriate config at startup
+4. In dev: enable DevTools, debug logging, hot reload
+5. In production: minimal logging, no debug features
+6. Test both configurations
+7. Document config differences
+
 ## Overview
 
 Electron enables building desktop applications using web technologies (HTML, CSS, JavaScript/TypeScript). It combines Chromium and Node.js, allowing developers to create cross-platform apps for Windows, macOS, and Linux from a single codebase.
@@ -1032,3 +1071,23 @@ export function registerProtocols() {
 - `web-react.md` - React patterns for renderer process
 - `progressive-web-apps.md` - PWA as alternative to desktop
 - `deployment/desktop-distribution.md` - Desktop app distribution
+
+## Examples
+
+### Example 1: IPC with Security
+Main Process:
+```javascript
+ipcMain.handle('save-file', async (event, content) => {
+    const path = dialog.showSaveDialog(mainWindow);
+    await fs.writeFile(path, content);
+    return { success: true, path };
+});
+```
+
+Renderer:
+```javascript
+const result = await ipcRenderer.invoke('save-file', content);
+```
+
+Security: File system access controlled by main, validation performed
+

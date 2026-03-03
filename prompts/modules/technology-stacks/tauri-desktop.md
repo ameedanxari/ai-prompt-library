@@ -3,6 +3,44 @@
 ## Purpose
 Comprehensive patterns for building lightweight, secure cross-platform desktop applications using Tauri, covering setup, architecture, native integrations, security, performance, and distribution.
 
+## Implementation Patterns
+
+### Pattern 1: Tauri IPC Command Pattern
+Implement Rust backend commands callable from frontend.
+
+**Implementation**:
+1. Define Tauri command in Rust: `#[tauri::command]`
+2. Implement function: receive frontend args, return result
+3. Handle errors gracefully
+4. Register command in main.rs: `tauri::Builder::new().invoke_handler()`
+5. Call from frontend: `await invoke('command_name', { args })`
+6. Handle frontend response (success or error)
+7. Update UI based on result
+
+### Pattern 2: File System Access with Permissions
+Access file system safely with Tauri's permission system.
+
+**Implementation**:
+1. Define required paths in tauri.conf.json (allowlist.fs)
+2. Only grant minimal required permissions (read vs write)
+3. Validate user selections before accessing (file picker)
+4. Use Tauri fs commands: read_text_file, write_text_file
+5. Handle permission errors gracefully
+6. Log file operations for audit
+7. Validate file content before processing
+
+### Pattern 3: Rust-Frontend Communication Patterns
+Maintain consistent messaging between Rust and JavaScript.
+
+**Implementation**:
+1. Define message types/schemas (TypeScript interfaces + Rust structs)
+2. Use serde for serialization consistency
+3. Implement request-response pairs (command + result)
+4. Use events for notifications (Rust → Frontend, async)
+5. Validate all inputs before processing
+6. Provide clear error messages with error codes
+7. Log all cross-boundary communications for debugging
+
 ## Overview
 
 Tauri is a modern framework for building desktop applications using web technologies for the frontend and Rust for the backend. It produces smaller, faster, and more secure applications compared to Electron.
@@ -937,10 +975,10 @@ app.global_shortcut_manager()
 
 ## Related Modules
 
-- `technology-stacks/electron-desktop.md` - Alternative desktop framework
-- `security/desktop-security.md` - Desktop security patterns
-- `deployment/desktop-distribution.md` - Distribution strategies
-- `testing/desktop-testing.md` - Desktop testing approaches
+- [technology-stacks/electron-desktop.md](./electron-desktop.md) - Alternative desktop framework
+- [desktop/desktop-security.md](../../desktop/desktop-security.md) - Desktop security patterns
+- [deployment/desktop-distribution.md](../../deployment/desktop-distribution.md) - Distribution strategies
+- [testing/desktop-testing.md](../../testing/desktop-testing.md) - Desktop testing approaches
 
 ## Examples
 

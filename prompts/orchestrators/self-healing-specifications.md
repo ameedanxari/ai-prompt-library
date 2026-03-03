@@ -3,6 +3,41 @@
 ## Purpose
 Automatically detect and fix inconsistencies, errors, and quality issues in generated specifications.
 
+## Implementation Patterns
+
+### Pattern 1: Automatic Error Detection and Recovery
+Detect errors and attempt automatic recovery.
+
+**Implementation**:
+1. Wrap critical code in try-catch
+2. On exception, log error with context
+3. Attempt recovery: retries, fallback paths, state reset
+4. If recovery succeeds, log recovery success and continue
+5. If recovery fails, escalate with full context
+6. Track recovery success rate
+7. Alert if success rate drops below threshold
+
+### Pattern 2: Health Check and Self-Repair
+Periodically check system health and repair issues.
+
+**Implementation**:
+1. Define health checks (can system reach API? are migrations current?)
+2. Run health checks on startup and periodically
+3. If health check fails, attempt repair (reconnect, run migrations)
+4. Validate repair succeeded
+5. Log all health checks and repairs
+6. Escalate if health check fails after repair
+
+### Pattern 3: Self-Stabilization
+Detect and fix configuration drift.
+
+**Implementation**:
+1. Define canonical state (configs, steering files, etc.)
+2. Compare current state to canonical
+3. If drift detected, restore canonical state
+4. Log drift detection and fix
+5. Alert if drift occurs frequently
+
 ## Core Self-Healing Patterns
 
 ### 1. Inconsistency Detection
@@ -118,3 +153,13 @@ class QualityImprover {
 
 - `error-recovery-orchestrator.md`
 - `quality-gate-orchestrator.md`
+
+## Examples
+
+### Example 1: Health Check and Repair
+System startup:
+1. Health check: API unreachable
+2. Repair attempt: Reconnect, reset connection pool
+3. Validation: API now reachable ✅
+4. Log: "Health check failed, healed via reconnect"
+

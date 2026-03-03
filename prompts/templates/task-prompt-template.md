@@ -464,3 +464,80 @@ This template can be automated by:
 5. Passing to AI agent for execution
 
 **Future Enhancement**: Create a script to auto-generate task prompts from task lists.
+
+
+Use this template to generate LLM prompts for individual development tasks.
+
+
+## Examples
+
+### Example 1: Task Prompt for Creating User Model
+
+```markdown
+# Task Prompt: 1.1 - Create Data Models
+
+## Context
+Building foundation models from specifications/architecture.md
+
+## Requirements
+- [ ] All models conform to Codable
+- [ ] Product has computed primaryImage property
+
+## Files to Create
+- AppClip/Models/Product.swift
+- AppClip/Models/Price.swift
+- AppClip/Models/Variant.swift
+
+## Acceptance Criteria
+- [ ] All models conform to Codable
+- [ ] Product has primaryImage computed property
+```
+
+### Example 2: Task Prompt for Network Service
+
+```markdown
+# Task Prompt: 1.2 - Create Network Service
+
+## Context
+Building network layer on top of data models completed in Task 1.1
+
+## Requirements
+- [ ] Handles authentication
+- [ ] Implements retry logic
+- [ ] Uses centralized API client
+
+## Files to Create
+- AppClip/Network/APIClient.swift
+- AppClip/Network/Requests.swift
+
+## Acceptance Criteria
+- [ ] Network requests retry on transient errors
+- [ ] Authentication token refresh implemented
+```
+
+
+## Implementation Patterns
+
+### Pattern 1: Context-Aware Prompting
+Include full task context (specifications, requirements, constraints, examples).
+
+### Pattern 2: Acceptance-Criteria-Driven Generation
+Generate code that explicitly satisfies all acceptance criteria from task list.
+
+### Pattern 3: Iterative Refinement
+If generated code fails validation, re-prompt with specific failure details.
+
+
+## Template Usage Example
+
+\`\`\`markdown
+# Task Prompt: 1.1 - Create Data Models
+
+## Context
+Building foundation models from specifications/architecture.md
+
+## Requirements
+- [ ] All models conform to Codable
+- [ ] Product has computed primaryImage property
+[... full template ...]
+\`\`\`

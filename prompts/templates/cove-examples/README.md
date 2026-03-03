@@ -177,7 +177,7 @@ These examples integrate with the AI Prompt Library's stage pipeline:
 - **Stage 09 (Quality)**: Verify quality criteria
 - **Stage 10 (Handoff)**: Verify handoff completeness
 
-See `../cove-stage-integration.md` for detailed integration instructions.
+See [cove-stage-integration.md](../cove-stage-integration.md) for detailed integration instructions.
 
 ## Contributing Examples
 
@@ -198,8 +198,8 @@ Follow the existing example structure:
 
 ## Resources
 
-- **COVE Framework**: `../cove-verification-framework.md`
-- **Stage Integration**: `../cove-stage-integration.md`
+- **COVE Framework**: [cove-verification-framework.md](../cove-verification-framework.md)
+- **Stage Integration**: [cove-stage-integration.md](../cove-stage-integration.md)
 - **Original Paper**: [Chain-of-Verification Reduces Hallucination in Large Language Models](https://arxiv.org/abs/2309.11495)
 - **Meta AI Research**: [Blog post on COVE](https://ai.meta.com/research/)
 
@@ -213,3 +213,60 @@ Follow the existing example structure:
 ---
 
 **Remember**: COVE is about systematic verification, not perfection. The goal is to significantly reduce errors and increase confidence, not to eliminate all uncertainty.
+
+
+## Purpose
+
+This directory contains complete working examples of COVE (Contextualized Orchestrated Variable Execution) implementations. Each example demonstrates real-world patterns, best practices, and common pitfalls with fully runnable code.
+
+
+## Instructions
+
+To use these examples:
+
+1. **Review the specification example** - Understand COVE spec structure
+2. **Review the code generation example** - See LLM integration patterns
+3. **Review the architecture decision example** - Learn multi-stage orchestration
+4. Adapt patterns to your use case
+5. Test thoroughly before production deployment
+
+
+## Templates
+
+Each example includes:
+- Complete specification file (COVE format)
+- Implementation code (JavaScript/TypeScript)
+- Configuration file (if applicable)
+- Test cases (unit and integration)
+- Documentation of design decisions
+
+
+## Examples Included
+
+1. **specification-example.md** - Full COVE specification walkthrough
+2. **code-generation-example.md** - LLM-based code generation with COVE orchestration
+3. **architecture-decision-example.md** - Multi-stage execution with checkpoints
+
+To view examples, see corresponding .md files in this directory.
+
+
+
+## Code Examples
+
+### Running the Specification Example
+
+\`\`\`bash
+cat prompts/templates/cove-examples/specification-example.md
+\`\`\`
+
+### Using Code Generation Example
+
+\`\`\`typescript
+const spec = await loadSpec('cove-examples/code-generation-example.md');
+const generated = await orchestrator.execute(spec);
+console.log('Generated code:', generated.code);
+\`\`\`
+
+```bash
+echo "example code"
+```

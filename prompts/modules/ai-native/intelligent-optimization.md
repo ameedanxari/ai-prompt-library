@@ -3,6 +3,44 @@
 ## Purpose
 AI-driven patterns for optimizing resource allocation, performance tuning, and cost management through machine learning and predictive analytics.
 
+## Implementation Patterns
+
+### Pattern 1: Profiling-Guided Optimization
+Profile code, identify bottlenecks, auto-optimize them.
+
+**Implementation**:
+1. Run profiler on workload (measure time, memory, IO)
+2. Identify top 3 bottlenecks (functions/operations)
+3. For each bottleneck, generate optimization prompt:
+   "Function [name] is [%] of execution time. Current: [code]. Optimize for speed."
+4. LLM generates optimized version
+5. A/B test both versions
+6. If optimized is faster (+ passes tests), merge it
+7. Re-profile and repeat until gains < threshold
+
+### Pattern 2: Metric-Driven Optimization
+Optimize toward target metrics (latency, throughput, memory).
+
+**Implementation**:
+1. Define target metrics: latency < 100ms, throughput > 1000 ops/sec
+2. Measure current metrics
+3. If below target, identify gap
+4. Generate optimization: "Reduce [metric] from [current] to [target]. Action?"
+5. Apply suggested optimizations
+6. Measure again
+7. If gap remains, iterate
+
+### Pattern 3: Resource Constraint Optimization
+Optimize for constrained environments (mobile, edge).
+
+**Implementation**:
+1. Define constraints (memory < 50MB, CPU < 30%, battery impact < 5%)
+2. Profile current resource usage
+3. Identify violators
+4. Generate optimization: "Using [resource] at [%]. Reduce to [target]. Options?"
+5. Implement most feasible option
+6. Re-profile and repeat
+
 ## Context
 Modern applications face complex optimization challenges across compute, memory, network, and cost dimensions. AI can learn optimal configurations and adapt in real-time.
 
@@ -206,3 +244,18 @@ class CostPerformanceOptimizer {
 - `ai-native/predictive-scaling.md` - Predictive auto-scaling
 - `performance/optimization.md` - Traditional optimization
 - `deployment/cost-optimization.md` - Cost management
+
+## Examples
+
+### Example 1: Performance Optimization
+Baseline: API response time 500ms
+Target: < 100ms
+
+Optimization:
+1. Profile: Identify slow query (customer lookup takes 400ms)
+2. Generate optimization: "Replace N+1 query with join, add caching"
+3. Implement: New code with batch query + Redis cache
+4. Test: Response time now 80ms ✅
+5. Verify: Tests pass, no regressions
+6. Deploy: Optimization merged
+

@@ -3,6 +3,48 @@
 ## Purpose
 Patterns for building systems that can analyze, improve, and evolve their own codebase through AI-driven code generation, refactoring, and optimization.
 
+## Implementation Patterns
+
+### Pattern 1: Performance-Based Code Mutation
+Modify code to improve observed performance metrics.
+
+**Implementation**:
+1. Profile code; identify bottleneck function F
+2. Record baseline metric M (latency, throughput)
+3. Generate mutation: "Function [F] baseline [M]. Optimize for [metric]. New code?"
+4. LLM generates optimized code
+5. Replace F with generated version
+6. Measure new metric M'
+7. If M' > M (+ tests pass), keep mutation
+8. If M' < M, revert
+9. Log successful mutations
+
+### Pattern 2: Test-Driven Code Repair
+Detect failing tests and automatically fix code.
+
+**Implementation**:
+1. Run test suite
+2. If test fails, capture failure (assertion, expected, actual)
+3. Load source of failing function
+4. Generate fix prompt: "Function [F] failed test [test_name]. Expected [X], got [Y]. Fix?"
+5. LLM generates fixed code
+6. Replace function with fixed version
+7. Re-run test
+8. If pass, commit fix
+9. If still fail, iterate or escalate
+
+### Pattern 3: Feature Flag-Protected Self-Modification
+Enable safe code mutation with feature flags for rollback.
+
+**Implementation**:
+1. Wrap modified code with feature flag: if (FEATURE_FLAG.enabled) { new_code } else { old_code }
+2. When planning mutation, enable flag for canary (5% of traffic)
+3. Monitor metrics for canary (error rate, performance)
+4. If canary degrades, instantly kill flag (rollback to old_code)
+5. If canary improves, gradually roll out flag (10%, 25%, 50%, 100%)
+6. Once 100%, remove flag and clean up old_code
+7. Log all mutations with rollout progression
+
 ## Context
 Self-modifying code represents the next evolution in software development, where systems can adapt and improve themselves based on runtime behavior, performance metrics, and changing requirements.
 

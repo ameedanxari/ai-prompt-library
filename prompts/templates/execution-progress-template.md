@@ -457,3 +457,18 @@ When completing a task:
 - templates/task-prompt-template.md - Task prompt generation
 
 **Usage**: Created by execution orchestrator at start of execution phase, updated after each task.
+
+
+Update this file after each task or phase completion.
+
+
+## Implementation Patterns
+
+### Pattern 1: Task-Granularity Tracking
+Update progress after each task (mark complete, log duration, record status).
+
+### Pattern 2: Phase-Granularity Tracking
+Update progress after each phase (overall %, current focus, upcoming tasks).
+
+### Pattern 3: Real-Time Progress Reporting
+Show progress to user continuously (current task, estimated time remaining, blocker log).

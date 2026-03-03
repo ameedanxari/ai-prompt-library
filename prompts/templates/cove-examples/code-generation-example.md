@@ -718,3 +718,68 @@ describe('validateTaskInput', () => {
 - Production-ready with tests
 
 **Improvement**: 98% more secure and robust through systematic verification.
+
+
+## Purpose
+
+Demonstrates how to use COVE orchestration with an LLM-based code generation pipeline, including prompt templates, validation, and iterative refinement.
+
+
+## Instructions
+
+Follow this pattern for LLM-integrated code generation:
+
+1. Define specification (inputs, outputs, constraints)
+2. Create code generation prompt template
+3. Call LLM with templated prompt
+4. Validate response against specification
+5. If validation fails, re-prompt with feedback
+6. Iterate until validation passes
+7. Return validated code
+
+
+## Templates
+
+**Code Generation Prompt Template**:
+\`\`\`
+Generate [language] code to [task description]
+
+Specification:
+- Input: [input specification]
+- Output: [output specification]
+- Constraints: [constraints list]
+
+Requirements:
+- [requirement 1]
+- [requirement 2]
+- [requirement 3]
+\`\`\`
+
+
+## Example: Generate TypeScript API Handler
+
+Specification:
+- Input: request with userId, action
+- Output: result object with status, data
+- Constraints: must handle errors, validate input
+
+Generated code:
+\`\`\`typescript
+export async function handleRequest(req: { userId: string; action: string }) {
+    if (!req.userId || !req.action) {
+        throw new Error('Missing required fields');
+    }
+    try {
+        const result = await performAction(req.userId, req.action);
+        return { status: 'success', data: result };
+    } catch (error) {
+        return { status: 'error', data: error.message };
+    }
+}
+\`\`\`
+
+## Examples
+
+```bash
+echo "run generation with COVE"
+```

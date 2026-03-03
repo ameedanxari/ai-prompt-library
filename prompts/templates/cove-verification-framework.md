@@ -382,3 +382,18 @@ See the following for complete COVE examples:
 - `cove-examples/specification-example.md`
 - `cove-examples/code-generation-example.md`
 - `cove-examples/architecture-decision-example.md`
+
+
+Run verification checks after defining orchestration, before execution.
+
+
+## Implementation Patterns
+
+### Pattern 1: Pre-Execution Verification
+Validate orchestration specification before execution (syntax, completeness, constraints).
+
+### Pattern 2: Runtime Validation
+Monitor execution for conformance to specification (stages run in order, outputs valid).
+
+### Pattern 3: Post-Execution Verification
+Validate final state matches specification requirements (all stages completed, results valid).

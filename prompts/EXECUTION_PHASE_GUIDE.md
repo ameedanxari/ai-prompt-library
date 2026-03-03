@@ -6,6 +6,59 @@ This guide provides detailed instructions for AI agents executing the implementa
 **Critical Understanding**: The 10-stage pipeline generates PLANS. The execution phase generates CODE.
 
 ---
+## Implementation Patterns
+
+### Pattern 1: Task-by-Task Sequential Execution
+Execute tasks in dependency order, one at a time, with full validation after each task.
+
+**When to use**: Standard project implementation with clear task dependencies
+**Steps**:
+1. Load next unblocked task from implementation-tasks.md
+2. Generate context-aware task prompt using task-prompt-template.md
+3. Execute prompt to generate code
+4. Run validation (compile, tests, acceptance criteria)
+5. Update all state files (EXECUTION_PROGRESS.md, task list, DEVELOPMENT_LOG.md)
+6. Commit to git with task reference
+7. Repeat until all tasks complete
+
+### Pattern 2: Parallel Execution with State Coordination
+Execute multiple independent tasks in parallel, coordinating state updates carefully.
+
+**When to use**: When tasks have no dependencies and can be developed independently
+**Example**: Multiple isolated features, multiple platform implementations
+**Steps**:
+1. Identify independent task groups (no cross-dependencies)
+2. Generate task prompts for each group
+3. Execute in parallel (separate agent invocations)
+4. Merge state files carefully (avoid conflicts)
+5. Run integration tests to verify no conflicts
+
+### Pattern 3: Validation-Driven Task Execution
+Execute tasks with continuous validation and feedback loops to catch issues early.
+
+**When to use**: Complex features, high-risk implementations, safety-critical code
+**Steps**:
+1. Load task with enhanced validation requirements
+2. Generate task prompt + validation checklist
+3. Execute implementation
+4. Run per-task validation (code, tests, criteria)
+5. If validation fails, provide feedback to generation prompt
+6. Re-execute with corrected requirements
+7. Proceed only after validation passes
+
+### Pattern 4: Checkpoint-Based Execution
+Execute tasks in phases with explicit checkpoints and manual confirmation between phases.
+
+**When to use**: Multi-day implementations, user participation desired, major architectural changes
+**Steps**:
+1. Define phase checkpoints (Foundation, Integration, Testing, Polish)
+2. Group tasks into phases
+3. Execute all tasks in phase
+4. At checkpoint, create comprehensive summary
+5. Wait for user/human confirmation before next phase
+6. Update NEXT_ACTION.md with checkpoint status
+7. Continue to next phase
+
 
 ## Table of Contents
 1. [When to Enter Execution Phase](#when-to-enter-execution-phase)
@@ -792,3 +845,33 @@ Stage 07-10: Finishing (Existing) ✅
 - AGENTS.md - Overall agent instructions
 
 **Usage**: Reference this guide when executing implementation tasks after Stage 06 completion.
+## Examples
+
+### Example 1: Task 1.1 - Complete Execution
+User: "Execute the development plan"
+
+Orchestrator Flow:
+1. Loads task 1.1: "Create Data Models"
+2. Generates task prompt with full context
+3. LLM generates 7 model files (Product, Price, Variant, etc.)
+4. Validates: all files create successfully, tests pass, code compiles
+5. Updates EXECUTION_PROGRESS.md and implementation-tasks.md
+6. Commits: `git commit -m "feat: Create data models (Task 1.1)"`
+7. Moves to task 1.2
+
+### Example 2: Multi-Stage Execution with Checkpoints
+User: "Build the project with checkpoints"
+
+Checkpoint Flow:
+- Foundation Phase: Tasks 1.1-1.3 (data models, network, caching)
+  - Checkpoint A: User reviews model architecture
+  - User: "Looks good, continue"
+- Implementation Phase: Tasks 2.1-2.5 (UI, features)
+  - Checkpoint B: User reviews feature completeness
+  - User: "Add missing validation, then continue"
+- Testing Phase: Tasks 3.1-3.3 (unit tests, integration tests)
+  - Checkpoint C: Test coverage review
+  - User: "Approve, move to polish"
+- Polish Phase: Tasks 4.1-4.2 (documentation, cleanup)
+  - Final: All tasks complete, ready for release
+

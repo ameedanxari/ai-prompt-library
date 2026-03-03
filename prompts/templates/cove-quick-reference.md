@@ -278,7 +278,7 @@ Provide COVE verification summary:
 
 - **Full Framework**: [cove-verification-framework.md](./cove-verification-framework.md)
 - **Stage Integration**: [cove-stage-integration.md](./cove-stage-integration.md)
-- **Examples**: [cove-examples/](./cove-examples/)
+- **Examples**: [COVE Examples](./cove-examples/README.md)
 - **Research Paper**: [arXiv:2309.11495](https://arxiv.org/abs/2309.11495)
 
 ## Remember
@@ -291,3 +291,41 @@ Provide COVE verification summary:
 ---
 
 **Quick Start**: Copy a template above and start verifying your outputs today!
+
+
+Quick reference guide for COVE orchestration, including key concepts, commands, and common patterns.
+
+
+Use this guide to quickly look up COVE syntax, patterns, and best practices.
+
+
+## Quick Examples
+
+**Create an orchestrator**: Define stages in COVE format, execute sequentially
+**Route based on condition**: Use `if` stages with decision logic
+**Run tasks in parallel**: Define independent stages, execute concurrently
+**Save results**: Output to state file or return in response
+
+
+## Purpose
+
+Quick reference guide for COVE (Contextualized Orchestrated Variable Execution) orchestration, providing quick lookup for syntax, common patterns, and best practices.
+
+
+## Implementation Patterns
+
+### Pattern 1: Sequential Stage Execution
+Execute stages in order, passing output of stage N to input of stage N+1.
+
+### Pattern 2: Conditional Routing
+Define decision logic that routes execution to different stages based on conditions.
+
+### Pattern 3: Parallel Processing
+Execute multiple independent stages concurrently within a single orchestration.
+
+
+## Examples
+
+- **Sequential**: validate → process → output
+- **Conditional**: check_permission → if yes: process else: error
+- **Parallel**: [process_a, process_b, process_c] → aggregate_results

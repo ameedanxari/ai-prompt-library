@@ -3,6 +3,47 @@
 ## Purpose
 Comprehensive patterns for building high-performance web applications using WebAssembly, covering compilation, optimization, JavaScript interop, and deployment.
 
+## Implementation Patterns
+
+### Pattern 1: WASM Module Export and Calling
+Export Rust functions to WASM and call from JavaScript.
+
+**Implementation**:
+1. Mark function with `#[wasm_bindgen]`
+2. Implement function in Rust (compile to WASM)
+3. Build WASM module: `wasm-pack build`
+4. Import module in JavaScript: `import init, { function_name }`
+5. Initialize WASM: `await init()`
+6. Call function: `result = function_name(args)`
+7. Handle async operations with Promises
+8. Manage memory carefully (prevent leaks)
+
+### Pattern 2: Performance-Critical Computation in WASM
+Offload compute-intensive tasks to WASM for speed.
+
+**Implementation**:
+1. Identify bottleneck operations (can be CPU-bound)
+2. Implement in Rust (WASM)
+3. Benchmark: JS vs WASM version
+4. If WASM > 2x faster, keep it
+5. For data transfer, minimize serialization overhead
+6. Use bulk operations (arrays in single call vs many small calls)
+7. Monitor WASM memory usage
+8. Profile and optimize hot WASM paths
+
+### Pattern 3: Gradual WASM Adoption
+Incrementally replace JS code with WASM.
+
+**Implementation**:
+1. Start with most CPU-intensive function
+2. Write WASM version, expose via `#[wasm_bindgen]`
+3. Update JavaScript to call WASM version
+4. Test and benchmark
+5. Measure improvement (latency, throughput, CPU)
+6. Document improvement
+7. Move to next function
+8. Repeat until performance target reached or ROI diminishes
+
 ## Overview
 
 WebAssembly is a binary instruction format that enables near-native performance in web browsers. It allows code written in languages like Rust, C++, and Go to run in the browser at near-native speed.

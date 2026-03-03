@@ -6,6 +6,36 @@ Systematically execute implementation tasks from task lists using prompt-driven 
 **Critical Role**: Transforms task lists into working code through structured, repeatable prompts.
 
 ---
+## Implementation Patterns
+
+### Pattern 1: Task Queue Processing
+Process tasks from queue in order with state tracking.
+
+**Implementation**:
+1. Load task list from implementation-tasks.md
+2. Filter unblocked tasks (dependencies satisfied)
+3. For next unblocked task:
+   a. Load task context and specs
+   b. Generate task prompt
+   c. Execute prompt (generate code)
+   d. Validate output (tests, acceptance criteria)
+   e. Update state files (task list, progress, log)
+   f. Commit to git
+4. Repeat until all tasks complete
+5. Log queue processing with timings
+
+### Pattern 2: Dependency-Aware Execution
+Skip tasks with unmet dependencies, come back later.
+
+**Implementation**:
+1. For each task, check dependencies (list of task IDs)
+2. Skip if any dependency not yet completed
+3. Process other tasks first
+4. After task completion, mark in state file
+5. On next loop, check if skipped task's dependencies now met
+6. If yes, process skipped task
+7. Log dependency satisfaction for debugging
+
 
 ## When to Use This Orchestrator
 
@@ -755,3 +785,17 @@ Say "Continue" to proceed, or "Pause" to stop.
 - orchestrators/quality-gate-orchestrator.md - Quality validation
 
 **Usage**: Invoke when transitioning from Stage 06 to actual code implementation.
+
+## Examples
+
+### Example 1: Task Queue Processing
+Tasks: [1.1, 1.2, 2.1, 2.2, 3.1]
+
+Execution:
+1. Process 1.1 (Data Models) → Complete, commit
+2. Process 1.2 (Network Service) - depends on 1.1 ✅ → Complete
+3. Process 2.1 (UI Layer) - depends on 1.2 ✅ → Complete
+4. Process 2.2 (Features) - depends on 2.1 ✅ → Complete
+5. Process 3.1 (Tests) - depends on 2.2 ✅ → Complete
+All tasks complete in dependency order ✅
+

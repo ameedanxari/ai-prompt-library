@@ -21,7 +21,7 @@ The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to
 **Quick Start with COVE**:
 - See [cove-verification-framework.md](./cove-verification-framework.md) for methodology
 - See [cove-stage-integration.md](./cove-stage-integration.md) for stage integration
-- See [cove-examples/](./cove-examples/) for complete examples
+- See [COVE Examples](./cove-examples/README.md) for complete examples
 
 **When to Use COVE**:
 - ✅ Technical specifications (APIs, protocols)
@@ -100,7 +100,7 @@ The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to
 ### Chain-of-Verification (COVE) 🆕
 - [cove-verification-framework.md](./cove-verification-framework.md) - **COVE methodology and templates**
 - [cove-stage-integration.md](./cove-stage-integration.md) - **COVE integration for all 10 stages**
-- [cove-examples/](./cove-examples/) - **Complete COVE examples**
+  - [COVE examples README](./cove-examples/README.md) - **Complete COVE examples**
   - [specification-example.md](./cove-examples/specification-example.md) - API specification with COVE
   - [code-generation-example.md](./cove-examples/code-generation-example.md) - Code generation with COVE
   - [README.md](./cove-examples/README.md) - COVE examples guide
