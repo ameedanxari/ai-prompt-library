@@ -8,6 +8,29 @@ This stage defines the feature architecture, data structures, security requireme
 ## Instructions
 Use this stage to specify the core features, business rules, and data structures that will be implemented consistently across all platforms. Focus on feature requirements, acceptance criteria, and integration points.
 
+## Non-Negotiable Feature Outputs
+Stage 04 must produce these artifacts before moving forward:
+- `prompts/outputs/specifications/features.md`
+- `prompts/outputs/specifications/api-delivery-plan.md`
+- `prompts/outputs/specifications/screen-fidelity-matrix.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 04 entry)
+
+Required behavior:
+1. For every feature family, map API contract endpoints to implementation tasks.
+2. For every major screen/view, map required design tokens/components and mockup references.
+3. Identify missing dependencies (accounts, keys, external services) that block implementation.
+4. Mark mocks as temporary with explicit replacement tasks and sequencing.
+
+Mandatory templates for this stage:
+- `.ai-prompts/prompts/templates/integration-contracts-spec-template.md`
+- `.ai-prompts/prompts/templates/api-delivery-plan-template.md`
+- `.ai-prompts/prompts/templates/screen-fidelity-matrix-template.md`
+
+Hard output requirements:
+1. `api-delivery-plan.md` must include endpoint-level rows (`method`, `path`, `provider milestone`, `client milestone`, `test suite`, `rollback`).
+2. `screen-fidelity-matrix.md` must be screen-by-screen (no grouped flow rows) and include: `Screen ID`, source mockup file, token/component mapping, owner, follow-up task ID.
+3. `integration-contracts.md` must contain concrete endpoint rows with auth scope, schema refs, and error codes before Stage 04 can be marked complete.
+
 ## Examples
 ```markdown
 ## Example Feature Specification

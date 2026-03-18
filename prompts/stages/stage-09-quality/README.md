@@ -5,6 +5,11 @@ Implement quality assurance procedures, validation checklists, and continuous im
 
 ## Instructions
 
+## Non-Negotiable Outputs
+- `prompts/outputs/quality/final-verification-summary.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 09 entry)
+- `prompts/outputs/quality/design-system-verification-report.md` (required for UI scope projects)
+
 ### When to Use This Stage
 - After comprehensive documentation is complete and validated
 - Before final project handoff to ensure quality standards are met
@@ -673,6 +678,8 @@ function generateQualityLeaderboard() {
 - `platform-agnostic.md` - Core quality assurance strategy
 - `web.md` - Web application quality procedures
 - `mobile.md` - Mobile application quality validation
+- `prompts/outputs/quality/final-verification-summary.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 09 entry)
 - Quality checklists, validation procedures, and improvement processes
 - Compliance verification and audit procedures
 

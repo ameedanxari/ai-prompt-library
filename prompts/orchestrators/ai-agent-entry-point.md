@@ -41,6 +41,32 @@ This template provides a **single command** that AI agents can use to automatica
 - Ensure consistent, high-quality outputs
 - **PREVENT DESTRUCTIVE CHANGES** through mandatory safeguards
 
+## Operational Contract (Mandatory)
+For this and all future requests:
+1. Route through `auto-request-router.md` first and log the routing decision.
+2. For pipeline work, scan source materials in `working_copy/` and `prompts/working_copy/` (if present).
+3. Generate design-system foundation + component catalog artifacts before screen-level implementation prompts.
+4. Generate API integration contracts, data architecture, and backend infrastructure plans before implementation task execution.
+5. Maintain stage-by-stage prompt traceability in `prompt-usage-log.md`.
+6. Maintain output-to-prompt mapping in `prompt-composition-index.md`.
+7. Ensure each generated artifact includes `Prompt Blocks Applied`.
+8. Require deployment prerequisites package (environment matrix + access/secrets checklist) before Stage 07 completion.
+9. Do not treat stub-only paths as production completion.
+10. Require concrete traceability: no grouped labels/wildcards in prompt usage or composition artifacts.
+11. Require Stage 06 implementation prompt pack generation (index + one prompt file per task).
+12. Require Stage 04 endpoint-level API matrix and screen-by-screen fidelity matrix.
+13. Require UI tracks to sequence design-system foundation/component-primitives tasks before screen tasks.
+14. Reject Stage 06 completion when per-task prompts contain unresolved placeholders or missing prompt lineage.
+15. For UI scope projects, require dedicated design-system templates and outputs:
+    - `design-system-foundation-template.md`
+    - `design-system-component-catalog-template.md`
+    - `design-system-implementation-sequencing-template.md`
+    - `design-system-verification-report-template.md`
+16. For Stage 06 per-task prompts, require:
+    - at least one semantic module path (`.ai-prompts/prompts/modules/...`) based on task intent
+    - at least one technology-stack module path (`.ai-prompts/prompts/modules/technology-stacks/...`) based on project stack.
+    - for `profile`, `discovery/search`, `analytics/reporting`, and `moderation/review` intents, require dedicated semantic modules (not only `integration/service-integration`).
+
 ## How to Use This Template
 
 ### For AI Agents (Kiro, Cursor, Windsurf, Claude, etc.)
@@ -152,6 +178,32 @@ PY
     cp .ai-prompts/prompts/steering/*.md .ai-steering/ 2>/dev/null || true
 }
 
+ensure_project_agents_steering() {
+    if [ ! -f "AGENTS.md" ]; then
+cat > AGENTS.md << 'EOF'
+# AGENTS
+
+This file provides project-level instructions for AI coding agents.
+EOF
+    fi
+
+    if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
+cat >> AGENTS.md << 'EOF'
+
+## AI Prompt Library Steering (Auto-Managed)
+Always load and follow these files before executing user requests:
+- `.ai-prompts/prompts/steering/library-context.md`
+- `.ai-prompts/prompts/steering/architecture-guard.md`
+- `.ai-prompts/prompts/steering/change-review.md`
+
+Routing requirement:
+- Route every request through `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`
+- Use `.ai-prompts/prompts/orchestrators/auto-request-router.md` before task execution
+<!-- /AI Prompt Library Steering (Auto-Managed) -->
+EOF
+    fi
+}
+
 # === PHASE 3: VALIDATION & SELF-HEALING ===
 validate_and_repair() {
     HEALTH_SCORE=100
@@ -180,11 +232,17 @@ validate_and_repair() {
     if [ $STEERING_COUNT -eq 0 ] && [ -d ".ai-prompts" ]; then
         HEALTH_SCORE=$((HEALTH_SCORE - 20))
     fi
+
+    # Check project-level AGENTS steering references
+    if [ ! -f "AGENTS.md" ] || ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md 2>/dev/null; then
+        HEALTH_SCORE=$((HEALTH_SCORE - 10))
+    fi
     
     # Repair low health
     if [ $HEALTH_SCORE -lt 70 ]; then
         # Silent auto-fix: deploy steering files
         deploy_steering_files
+        ensure_project_agents_steering
         HEALTH_SCORE=$((HEALTH_SCORE + 20))
     fi
     
@@ -203,6 +261,11 @@ handle_version_upgrade() {
             bash .ai-prompts/scripts/validate-safeguards.sh >/dev/null 2>&1 || true
         fi
 
+        # Run project-level integration validation if available (non-blocking)
+        if [ -f ".ai-prompts/scripts/validate-project-integration.sh" ]; then
+            bash .ai-prompts/scripts/validate-project-integration.sh >/dev/null 2>&1 || true
+        fi
+
             # Run COVE validator if present (non-blocking)
             if [ -f ".ai-prompts/.scripts/validate_cove.sh" ]; then
                 bash .ai-prompts/.scripts/validate_cove.sh >/dev/null 2>&1 || true
@@ -216,6 +279,7 @@ handle_version_upgrade() {
 # === EXECUTION: Run all stabilization phases ===
 HEALTH=$(validate_and_repair)
 deploy_steering_files
+ensure_project_agents_steering
 handle_version_upgrade
 
 # Run COVE validator after deployment if available and record timestamp
@@ -300,6 +364,33 @@ mkdir -p prompts/archive
 mkdir -p src tests docs
 
 echo "✅ Directory structure created"
+
+# Ensure project-level AGENTS.md contains steering references
+if [ ! -f "AGENTS.md" ]; then
+cat > AGENTS.md << 'EOF'
+# AGENTS
+
+This file provides project-level instructions for AI coding agents.
+EOF
+fi
+
+if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
+cat >> AGENTS.md << 'EOF'
+
+## AI Prompt Library Steering (Auto-Managed)
+Always load and follow these files before executing user requests:
+- `.ai-prompts/prompts/steering/library-context.md`
+- `.ai-prompts/prompts/steering/architecture-guard.md`
+- `.ai-prompts/prompts/steering/change-review.md`
+
+Routing requirement:
+- Route every request through `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`
+- Use `.ai-prompts/prompts/orchestrators/auto-request-router.md` before task execution
+<!-- /AI Prompt Library Steering (Auto-Managed) -->
+EOF
+fi
+
+echo "✅ AGENTS.md steering references ensured"
 ```
 
 **Create NEXT_ACTION.md:**
@@ -318,12 +409,14 @@ Fill out MY_PROJECT.md with your project idea, then say "Continue" to start Stag
 ## Prerequisites
 - [x] AI Prompt Library initialized
 - [x] Steering files configured
+- [x] AGENTS.md references steering files
 - [x] State files created
 - [ ] Project brief completed in MY_PROJECT.md
 
 ## Context Files
 - MY_PROJECT.md (fill this out next)
 - .ai-prompts/prompts/AGENTS.md
+- AGENTS.md (project root)
 
 ## Instructions
 1. Edit MY_PROJECT.md with your project description
@@ -380,6 +473,7 @@ EOF
 
 ✅ Library initialized (.ai-prompts/)
 ✅ Steering files configured for your AI tool
+✅ AGENTS.md updated with steering references
 ✅ State files created (NEXT_ACTION.md, MY_PROJECT.md)
 ✅ Directory structure ready
 
@@ -438,11 +532,13 @@ Let me determine the optimal approach for your request...
 3. **Atomic Task**: Simple, focused changes
    - Indicators: "fix", "bug", "typo", "color", "style", "update", "change", "small"
    - Affects 1-2 files, no architecture changes
+   - No design-system, cross-platform, or API contract impact
    - Action: Execute directly
    
 4. **Pipeline Task**: Complex features requiring structured approach
-   - Indicators: "feature", "add", "create", "build", "system", "database", "api"
+   - Indicators: "feature", "add", "create", "build", "system", "database", "api", "merge", "consolidate"
    - Multiple components, architectural decisions needed
+   - Any design-system changes, cross-platform merges, or backend integration work
    - Action: Start/continue AI Prompt Library pipeline
    
 5. **Archive & Reset**: New feature while work is pending
@@ -512,6 +608,17 @@ This is a significant feature that will benefit from structured specifications.
 ```
 
 Then load and execute Stage 01 from `.ai-prompts/prompts/stages/stage-01-intake/`.
+
+Before moving to implementation tasks, ensure these outputs exist:
+- `prompts/outputs/specifications/asset-mapping.md`
+- `prompts/outputs/specifications/design-system-foundation.md`
+- `prompts/outputs/specifications/design-system-component-catalog.md`
+- `prompts/outputs/specifications/prompt-selection-manifest.md`
+- `prompts/outputs/specifications/prompt-composition-index.md`
+- `prompts/outputs/specifications/prompt-usage-log.md`
+- `prompts/outputs/specifications/integration-contracts.md`
+- `prompts/outputs/specifications/data-architecture.md`
+- `prompts/outputs/specifications/backend-infrastructure.md`
 
 #### For Archive & Reset:
 ```markdown

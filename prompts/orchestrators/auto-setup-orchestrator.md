@@ -7,14 +7,37 @@ Eliminate setup friction by automatically:
 - Detecting if AI Prompt Library is initialized
 - Setting up submodules or cloning the library
 - Configuring steering files for the current AI tool
+- Creating/updating project-level AGENTS.md steering references
 - Creating required state files
 - Validating setup completion
+- Establishing design-system-first and API-integration-first defaults
+- Enforcing router-first behavior for all future requests
 
 ## When to Use This Template
 - User mentions "setup", "initialize", "getting started", or "first time"
 - NEXT_ACTION.md doesn't exist in project root
 - .ai-prompts/ directory is missing or incomplete
 - User asks to "use the AI Prompt Library" but setup isn't complete
+
+## Setup Contract (Mandatory)
+After setup, the agent must operate with these defaults:
+1. Every new user request routes through `auto-request-router.md` first.
+2. Intake must scan available files under `working_copy/` and `prompts/working_copy/` (if present).
+3. Design-system foundation and component catalog are generated before screen-level implementation prompts.
+4. API integration contracts, data architecture, and backend infrastructure plans are defined before execution tasks.
+5. Stage-by-stage prompt usage is logged in `prompts/outputs/specifications/prompt-usage-log.md`.
+6. Output-to-prompt mappings are maintained in `prompts/outputs/specifications/prompt-composition-index.md`.
+7. Every generated artifact includes a `Prompt Blocks Applied` section.
+8. Deployment prerequisites are documented (`environment-matrix.md` + `access-and-secrets-checklist.md`) before Stage 07 is complete.
+9. Stub-only production paths are disallowed (mocks must be explicit and replaceable).
+10. Prompt usage/composition artifacts use concrete paths only (no grouped labels/wildcards).
+11. Stage 04 outputs are endpoint-level (`api-delivery-plan.md`) and screen-level (`screen-fidelity-matrix.md`).
+12. Stage 06 generates per-task implementation prompt packs (`implementation-prompts/`).
+13. UI task tracks must include design-system foundation/component-primitives tasks before screen tasks.
+14. Per-task prompts must be fully populated (no unresolved placeholders and concrete `Prompt Blocks Applied` paths).
+15. UI scope projects must use dedicated design-system templates for foundation, component catalog, sequencing, and quality verification outputs.
+16. Stage 06 per-task prompts must include semantic module lineage and technology-stack module lineage.
+17. For Stage 06 profile/discovery/analytics/moderation tasks, semantic routing must include intent-specific modules and not default to only `integration/service-integration`.
 
 ## Auto-Detection Protocol
 
@@ -82,6 +105,37 @@ mkdir -p .ai-steering
 cp .ai-prompts/prompts/steering/*.md .ai-steering/
 ```
 
+### Step 3.5: Ensure Project AGENTS.md References Steering Files
+**Create or update `AGENTS.md` in project root so agents always know which steering files to consult:**
+
+```bash
+if [ ! -f "AGENTS.md" ]; then
+cat > AGENTS.md << 'EOF'
+# AGENTS
+
+This file provides project-level instructions for AI coding agents.
+EOF
+fi
+
+if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
+cat >> AGENTS.md << 'EOF'
+
+## AI Prompt Library Steering (Auto-Managed)
+Always load and follow these files before executing user requests:
+- `.ai-prompts/prompts/steering/library-context.md`
+- `.ai-prompts/prompts/steering/architecture-guard.md`
+- `.ai-prompts/prompts/steering/change-review.md`
+
+Routing requirement:
+- Route every request through `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`
+- Use `.ai-prompts/prompts/orchestrators/auto-request-router.md` before task execution
+<!-- /AI Prompt Library Steering (Auto-Managed) -->
+EOF
+fi
+
+echo "✅ AGENTS.md steering references ensured"
+```
+
 ### Step 4: Create State Files
 
 **Create NEXT_ACTION.md:**
@@ -94,22 +148,26 @@ cp .ai-prompts/prompts/steering/*.md .ai-steering/
 - **Mode**: Standard
 
 ## Next Action
-Fill out MY_PROJECT.md with your project idea, then say "Continue" to start Stage 01 - Intake.
+Fill out MY_PROJECT.md with your project idea and source materials, then say "Continue" to start Stage 01 - Intake.
 
 ## Prerequisites
 - [x] AI Prompt Library initialized
 - [x] Steering files configured
+- [x] AGENTS.md references steering files
 - [x] State files created
 - [ ] Project brief completed in MY_PROJECT.md
 
 ## Context Files
 - MY_PROJECT.md (fill this out next)
 - .ai-prompts/prompts/AGENTS.md
+- AGENTS.md (project root)
 
 ## Instructions
 1. Edit MY_PROJECT.md with your project description
-2. Say "Continue" or "Start Stage 01" to begin the specification pipeline
-3. The AI will automatically guide you through all 10 stages
+2. Add design/reference source locations (especially `working_copy/`)
+3. Include database + backend infrastructure preferences and deployment/account prerequisites
+4. Say "Continue" or "Start Stage 01" to begin the specification pipeline
+5. The AI will automatically guide you through all 10 stages
 
 The AI Prompt Library will transform your brief into:
 - Detailed requirements and architecture
@@ -146,6 +204,36 @@ Example: "A task management app for remote teams with real-time collaboration, f
 2. [Second key requirement]
 3. [Third key requirement]
 
+## Design Sources (Required)
+- [ ] `working_copy/` reviewed
+- [ ] `prompts/working_copy/` reviewed (if present)
+- Design links/files to prioritize:
+  - [path or URL]
+  - [path or URL]
+
+## Design System Expectations (Required)
+- Visual system goals: [tokens, typography, spacing, component primitives]
+- Required core components: [buttons, forms, cards, navigation, tables, etc.]
+- Accessibility target: [e.g., WCAG 2.1 AA]
+
+## API & Integration Expectations (Required)
+- Backend/API providers: [Firebase, Supabase, custom API, etc.]
+- Required integrations: [auth, payments, notifications, analytics, admin]
+- Stub policy: [allow only behind explicit toggle + replacement tasks]
+
+## Data Architecture Expectations (Required)
+- Database choice preference: [PostgreSQL, Firestore, Supabase Postgres, etc.]
+- Data ownership boundaries: [app db, third-party systems, analytics store]
+- Migration strategy expectations: [manual, Prisma, Liquibase, Flyway, etc.]
+- Backup/retention expectations: [RPO/RTO, retention days]
+
+## Deployment & Access Prerequisites (Required)
+- Target environments: [dev/staging/prod]
+- Hosting/runtime preference: [Firebase, AWS, GCP, Vercel, etc.]
+- Required accounts/access to request: [cloud account, app stores, email/SMS, payments]
+- Secret/key inventory: [API keys, service accounts, signing keys, OAuth credentials]
+- CI/CD provider: [GitHub Actions, GitLab CI, etc.]
+
 ## Success Criteria
 - [What does success look like?]
 - [How will you measure it?]
@@ -162,6 +250,7 @@ The AI will automatically:
 4. Define features (Stage 04)
 5. Plan testing (Stage 05)
 6. Generate implementation tasks (Stage 06)
+7. Maintain router/audit trail for all future requests
 
 After Stage 06, you'll have a complete development plan ready for implementation.
 
@@ -174,6 +263,10 @@ After Stage 06, you'll have a complete development plan ready for implementation
 mkdir -p prompts/outputs/specifications
 mkdir -p prompts/outputs/task-lists
 mkdir -p prompts/outputs/architecture
+mkdir -p prompts/outputs/deployment
+mkdir -p prompts/outputs/documentation
+mkdir -p prompts/outputs/quality
+mkdir -p prompts/outputs/handoff
 mkdir -p prompts/working_copy
 mkdir -p prompts/archive
 mkdir -p src tests docs
@@ -186,9 +279,13 @@ mkdir -p src tests docs
 This directory contains all generated specifications, task lists, and documentation from the AI Prompt Library pipeline.
 
 ## Structure
-- `specifications/` - Requirements, features, and technical specs
-- `task-lists/` - Implementation task lists for each platform
+- `specifications/` - Requirements, design-system, API/data contracts, traceability
+- `task-lists/` - Implementation master plan + indexed execution tracks
 - `architecture/` - Architecture decisions and technical designs
+- `deployment/` - Deployment plans, environment matrix, access/secrets checklist
+- `documentation/` - Onboarding and integration setup guides
+- `quality/` - Final verification reports
+- `handoff/` - Delivery summary + open-items register
 
 ## Generated Files
 Files in this directory are automatically generated by the AI Prompt Library pipeline. They are safe to edit but may be regenerated if you restart the pipeline.
@@ -228,8 +325,14 @@ test -f MY_PROJECT.md && echo "✅ MY_PROJECT.md created"
 # Verify steering files
 test -d .kiro/steering -o -d .cursor/rules -o -d .windsurf/rules -o -d .ai-steering && echo "✅ Steering files configured"
 
+# Verify project-level AGENTS.md includes steering references
+test -f AGENTS.md && grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md && echo "✅ AGENTS.md steering references configured"
+
 # Verify directory structure
 test -d prompts/outputs && echo "✅ Directory structure created"
+
+# Verify optional source-material directories exist or can be used
+test -d working_copy -o -d prompts/working_copy && echo "✅ Source-material directory detected"
 
 # Verify safeguard integration
 test -f .ai-prompts/PREVENTION_CHECKLIST.md && echo "✅ Prevention checklist available"
@@ -237,54 +340,36 @@ test -f .ai-prompts/COMMIT_GUIDELINES.md && echo "✅ Commit guidelines availabl
 test -f .ai-prompts/docs/SAFEGUARDS.md && echo "✅ Safeguard documentation available"
 ```
 
-### Step 7: Version Update Validation
-**NEW**: Validate integration health when library versions are updated.
+### Step 7: Bootstrap + Strong Integration Validation
+**NEW**: Use canonical setup/validation scripts shipped by the library.
 
 ```bash
-# Create version tracking file
-echo "$(cd .ai-prompts && git rev-parse HEAD)" > .ai-prompts-version
-
-# Create update validation script
-cat > validate-integration.sh << 'EOF'
-#!/bin/bash
-echo "🔄 AI PROMPT LIBRARY INTEGRATION VALIDATION"
-echo "==========================================="
-
-# Check if this is an update
-if [ -f ".ai-prompts-version" ]; then
-    old_version=$(cat .ai-prompts-version)
-    new_version=$(cd .ai-prompts && git rev-parse HEAD)
-    
-    if [ "$old_version" != "$new_version" ]; then
-        echo "📦 Library updated: $old_version -> $new_version"
-        echo "🔍 Validating integration health..."
-        
-        # Run safeguard validation
-        if [ -f ".ai-prompts/scripts/validate-safeguards.sh" ]; then
-            bash .ai-prompts/scripts/validate-safeguards.sh
-            if [ $? -ne 0 ]; then
-                echo "❌ Integration validation failed"
-                echo "🔧 Run setup again or review safeguard documentation"
-                exit 1
-            fi
-        fi
-        
-        # Update version tracking
-        echo "$new_version" > .ai-prompts-version
-        echo "✅ Integration validated for new version"
-    else
-        echo "📦 Library version unchanged"
-    fi
+# Bootstrap project integration defaults (directories, steering, AGENTS block, wrapper script)
+if [ -x ".ai-prompts/scripts/bootstrap-project-integration.sh" ]; then
+  ./.ai-prompts/scripts/bootstrap-project-integration.sh
 else
-    echo "📦 First-time setup detected"
-    echo "$(cd .ai-prompts && git rev-parse HEAD)" > .ai-prompts-version
+  echo "⚠️ bootstrap-project-integration.sh not found; continuing with manual setup artifacts"
 fi
 
-echo "✅ Integration validation complete"
+# Create/update project validation wrapper (always delegates to library script)
+cat > validate-integration.sh << 'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+
+if [ ! -x ".ai-prompts/scripts/validate-project-integration.sh" ]; then
+  echo "❌ Missing .ai-prompts/scripts/validate-project-integration.sh"
+  exit 1
+fi
+
+exec ./.ai-prompts/scripts/validate-project-integration.sh "$@"
 EOF
 
 chmod +x validate-integration.sh
-echo "✅ Integration validation script created"
+
+# Run baseline integration validation now
+./validate-integration.sh || true
+
+echo "✅ Integration validation script installed"
 ```
 
 ## Setup Complete Message
@@ -295,6 +380,7 @@ After successful setup, display:
 
 ✅ Library initialized (.ai-prompts/)
 ✅ Steering files configured for your AI tool
+✅ AGENTS.md updated with steering references
 ✅ State files created (NEXT_ACTION.md, MY_PROJECT.md)
 ✅ Directory structure ready
 ✅ Safeguard system operational
@@ -302,15 +388,19 @@ After successful setup, display:
 
 ## Next Steps:
 1. Edit MY_PROJECT.md with your project idea
-2. Say "Continue" to start the specification pipeline
-3. The AI will guide you through all 10 stages automatically
+2. Add design sources + API + database + deployment prerequisites in MY_PROJECT.md
+3. Run `./validate-integration.sh --strict` to confirm integration health
+4. Say "Continue" to start the specification pipeline
+5. The AI will guide you through all 10 stages automatically
 
 ## What You'll Get:
 - Complete requirements and architecture
+- Design-system foundation + screen fidelity matrix
 - Detailed feature specifications
+- API/data/infrastructure integration contracts
 - Testing strategy and test cases
 - Step-by-step implementation tasks
-- Deployment configurations
+- Deployment configurations + access/secrets checklist
 - Production-ready defaults (auth, i18n, accessibility)
 
 ## Safeguards Active:

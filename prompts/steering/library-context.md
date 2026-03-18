@@ -51,6 +51,9 @@ The library now runs invisible auto-stabilization on every AI request:
 4. **State Management**: Automatic NEXT_ACTION.md updates for seamless handoffs
    - Persists work across sessions
    - Supports multiple AI agents working sequently
+5. **Prompt Traceability**: Maintain `prompts/outputs/specifications/prompt-usage-log.md`
+   - One entry per stage/routing decision
+   - Record selected lego blocks and produced outputs
 
 ## Library Structure
 
@@ -119,6 +122,12 @@ The library's auto-stabilization (Step 0 in ai-agent-entry-point.md) runs invisi
 - **Reset**: User wants new feature while work pending → Archive and restart
 - **Version Updated**: Submodule changed → Auto-refresh configs and validate
 - **Config Broken**: Steering files missing/corrupted → Auto-repair silently
+
+## Non-Negotiable Output Guardrails
+- Design system work must be explicit (`design-system-foundation.md` + component catalog) before screen-level tasks.
+- API integration contracts and data architecture must be explicit before implementation planning.
+- Deployment prerequisites (`environment-matrix.md`, `access-and-secrets-checklist.md`) must be prepared before deployment stage completion.
+- Prompt selection must be traceable (`prompt-selection-manifest.md` + `prompt-usage-log.md`).
 
 ## Template Types
 

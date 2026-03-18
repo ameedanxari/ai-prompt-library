@@ -310,9 +310,9 @@ prompts/outputs/
 │   ├── architecture.md      [⏳ Pending]
 │   └── features.md          [⏳ Pending]
 ├── task-lists/
-│   ├── frontend-tasks.md    [⏳ Pending]
-│   ├── backend-tasks.md     [⏳ Pending]
-│   └── deployment-tasks.md  [⏳ Pending]
+│   ├── implementation-master-plan.md [⏳ Pending]
+│   ├── task-list-index.md            [⏳ Pending]
+│   └── *-tasks.md                    [⏳ Pending]
 └── documentation/
     ├── api-docs.md          [⏳ Pending]
     └── user-guides.md       [⏳ Pending]

@@ -16,6 +16,13 @@ Use this template to create focused implementation prompts that provide AI agent
 3. **List Specific Deliverables**: Enumerate exact files, components, and artifacts to be created
 4. **Establish Success Criteria**: Define clear validation steps and acceptance criteria
 5. **Include Implementation Guidance**: Provide examples, patterns, and best practices
+6. **Require Prompt Traceability**: Reference selected templates from `prompt-selection-manifest.md`
+7. **Require Design + API Contracts**: Link `design-system-foundation.md`, `integration-contracts.md`, and `data-architecture.md`
+8. **Disallow Stub-Only Completion**: Mocks must be explicitly temporary with replacement tasks
+9. **Disallow Placeholder Output**: Generated task prompts must not contain unresolved placeholders (for example `[implementation file paths ...]`, `[project-specific ...]`, `- \`)
+10. **Enforce Semantic Routing**: For every task, select at least one semantic module from `.ai-prompts/prompts/modules/...` based on task intent (auth/profile/booking/payment/notification/design-system/discovery/analytics/moderation/etc.)
+11. **Enforce Stack Routing**: For every task, select at least one technology-stack module from `.ai-prompts/prompts/modules/technology-stacks/...` based on the project's detected stack.
+12. **Disallow Generic-Only Semantic Routing**: If the task intent matches profile/discovery/analytics/moderation, do not use only `.ai-prompts/prompts/modules/integration/service-integration.md`; include at least one intent-specific semantic module.
 
 ## Examples
 
@@ -168,6 +175,12 @@ Create database schema changes to support user preferences with proper indexing,
 - **Dependencies**: [List of prerequisite components/features]
 - **Technology Stack**: {TECH_STACK}
 - **Platform Target**: {PLATFORM}
+- **Prompt Selection Manifest**: `prompts/outputs/specifications/prompt-selection-manifest.md`
+- **Prompt Usage Log**: `prompts/outputs/specifications/prompt-usage-log.md`
+- **Design System Foundation**: `prompts/outputs/specifications/design-system-foundation.md`
+- **Integration Contracts**: `prompts/outputs/specifications/integration-contracts.md`
+- **Data Architecture**: `prompts/outputs/specifications/data-architecture.md`
+- **Backend Infrastructure**: `prompts/outputs/specifications/backend-infrastructure.md`
 
 ## Implementation Objective
 {CLEAR_OBJECTIVE_STATEMENT}
@@ -193,6 +206,7 @@ Create database schema changes to support user preferences with proper indexing,
 - Security: {SECURITY_REQUIREMENTS}
 - Accessibility: {ACCESSIBILITY_STANDARDS}
 - Internationalization: {I18N_REQUIREMENTS}
+- Integration: Must conform to `integration-contracts.md` (no stub-only production path)
 
 ## Completion Criteria
 ### Must Have
@@ -246,6 +260,48 @@ Before full implementation, validate:
 - **Asset References**: Links to design files, schemas, examples
 - **Dependency Mapping**: Clear prerequisite identification
 - **Technology Context**: Stack-specific implementation guidance
+
+### 2.1 Semantic + Stack Routing Matrix (Required)
+- Build a task-level mapping before generating per-task prompts:
+  - `Task ID`
+  - `Semantic intent`
+  - `Semantic module paths`
+  - `Technology-stack module paths`
+- Use the mapping to populate every task prompt `Prompt Blocks Applied` section.
+- Do not generate a task prompt with only generic templates/stage blocks.
+
+### 2.2 Intent-Specific Routing Guardrails (Required)
+For Stage 06 routing, apply these intent-specific semantic modules when keywords match task title/objective/acceptance criteria:
+
+- **Profile / Identity Data** (`profile`, `onboarding`, `verification`, `avatar`, `bio`, `certification`)
+  - `.ai-prompts/prompts/modules/social/user-profiles.md`
+  - `.ai-prompts/prompts/modules/social/user-verification.md`
+
+- **Discovery / Search** (`discover`, `search`, `browse`, `catalog`, `recommend`, `listing`, `feed`)
+  - `.ai-prompts/prompts/modules/search-discovery/full-text-search.md`
+  - `.ai-prompts/prompts/modules/search-discovery/semantic-search.md`
+  - `.ai-prompts/prompts/modules/search-discovery/recommendation-systems.md`
+  - `.ai-prompts/prompts/modules/search-discovery/search-personalization.md`
+  - `.ai-prompts/prompts/modules/search-discovery/faceted-search.md`
+  - `.ai-prompts/prompts/modules/social/social-discovery.md`
+  - `.ai-prompts/prompts/modules/commerce/product-search.md`
+
+- **Analytics / Reporting** (`analytics`, `metrics`, `dashboard`, `report`, `insight`, `kpi`, `cohort`)
+  - `.ai-prompts/prompts/modules/analytics/business-metrics.md`
+  - `.ai-prompts/prompts/modules/analytics/custom-reporting.md`
+  - `.ai-prompts/prompts/modules/analytics/user-analytics.md`
+  - `.ai-prompts/prompts/modules/analytics/cohort-analysis.md`
+  - `.ai-prompts/prompts/modules/analytics/real-time-analytics.md`
+  - `.ai-prompts/prompts/modules/search-discovery/search-analytics.md`
+  - `.ai-prompts/prompts/modules/notifications/notification-analytics.md`
+
+- **Moderation / Review / Audit** (`moderation`, `review`, `approve`, `reject`, `queue`, `audit`, `compliance`)
+  - `.ai-prompts/prompts/modules/content-management/content-moderation.md`
+  - `.ai-prompts/prompts/modules/social/content-moderation.md`
+  - `.ai-prompts/prompts/modules/social/communication-moderation.md`
+  - `.ai-prompts/prompts/modules/enterprise-saas/audit-trails.md`
+
+`.ai-prompts/prompts/modules/integration/service-integration.md` can be added as a supporting module but is not sufficient on its own for these intents.
 
 ### 3. Output Specification Framework
 - **Primary Deliverables**: Core files/components to be created

@@ -845,6 +845,9 @@ fi
 - `platform-agnostic.md` - Core documentation strategy
 - `web.md` - Web application documentation
 - `mobile.md` - Mobile application documentation
+- `prompts/outputs/documentation/developer-onboarding.md`
+- `prompts/outputs/documentation/integration-setup-guide.md`
+- `prompts/outputs/documentation/missing-prerequisites-register.md`
 - User guides, API documentation, and technical manuals
 - Maintenance and support documentation
 

@@ -6,6 +6,11 @@ Define comprehensive project scope, goals, success criteria, and stakeholder req
 ## Instructions
 Use this template to create a comprehensive project charter that establishes clear project boundaries, objectives, and success criteria. This charter will guide all subsequent development stages and ensure alignment across all stakeholders.
 
+## Non-Negotiable Charter Outputs
+Stage 02 must produce:
+- `prompts/outputs/specifications/charter.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 02 entry)
+
 1. **Define Project Vision**: Establish clear vision and mission statements
 2. **Set Project Scope**: Define what is included and excluded from the project
 3. **Identify Stakeholders**: Map all stakeholders and their requirements

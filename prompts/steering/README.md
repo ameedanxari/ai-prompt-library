@@ -58,3 +58,17 @@ Once set up, these steering files will automatically guide AI agents to:
 2. **Follow established patterns** in your codebase
 3. **Preserve functionality** when fixing issues
 4. **Maintain consistency** across the project
+
+## AGENTS.md Integration (Recommended)
+
+To improve reliability across tools, also reference steering files in project root `AGENTS.md`:
+
+```markdown
+## AI Prompt Library Steering (Auto-Managed)
+Always load and follow:
+- `.ai-prompts/prompts/steering/library-context.md`
+- `.ai-prompts/prompts/steering/architecture-guard.md`
+- `.ai-prompts/prompts/steering/change-review.md`
+```
+
+The auto-setup orchestrator now ensures this block exists.

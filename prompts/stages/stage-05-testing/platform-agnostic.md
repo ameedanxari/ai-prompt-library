@@ -6,6 +6,12 @@ Define comprehensive testing strategy that applies across all platforms, establi
 ## Instructions
 Use this template to establish a comprehensive testing strategy that covers unit testing, integration testing, end-to-end testing, and quality assurance. Focus on creating testable requirements and automated validation processes.
 
+## Non-Negotiable Testing Outputs
+Stage 05 must produce these artifacts before moving forward:
+- `prompts/outputs/specifications/testing-strategy.md`
+- `prompts/outputs/specifications/integration-test-plan.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 05 entry)
+
 ## Examples
 ```markdown
 ## Testing Strategy for User Authentication System

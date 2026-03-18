@@ -380,12 +380,9 @@ check_cross_platform_consistency() {
     
     # Check task lists exist for each platform
     if [ -d "prompts/outputs/task-lists" ]; then
-        while IFS= read -r platform; do
-            local platform_lower=$(echo "$platform" | tr '[:upper:]' '[:lower:]')
-            if [ ! -f "prompts/outputs/task-lists/${platform_lower}-tasks.md" ] && [ ! -f "prompts/outputs/task-lists/frontend-tasks.md" ]; then
-                echo "⚠️ No task list found for $platform platform"
-            fi
-        done <<< "$platforms"
+        if [ ! -f "prompts/outputs/task-lists/task-list-index.md" ]; then
+            echo "⚠️ Missing task-list-index.md (recommended source of truth)"
+        fi
     fi
     
     echo "✅ Cross-platform consistency checked"

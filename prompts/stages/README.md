@@ -8,6 +8,8 @@ Stage-specific prompt collections that guide the sequential workflow from initia
 2. Complete each stage before moving to the next
 3. Use dry-run mode to validate outputs before full generation
 4. Review stage outputs and iterate as needed before proceeding
+5. Log prompt composition for every stage in `prompts/outputs/specifications/prompt-usage-log.md`
+6. Do not complete stages with mock-only integration paths unless replacement tasks are recorded
 
 ## Examples
 ```markdown

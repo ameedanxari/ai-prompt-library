@@ -97,6 +97,8 @@ Use this stage to establish a clear project charter that defines scope, objectiv
 - `platform-agnostic.md` - Project charter and scope definition
 - `web.md` - Web platform charter considerations
 - `mobile.md` - Mobile platform charter considerations
+- `prompts/outputs/specifications/charter.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 02 entry)
 - Stakeholder analysis and requirements
 - Success criteria and acceptance metrics
 

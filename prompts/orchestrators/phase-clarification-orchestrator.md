@@ -131,7 +131,7 @@ create_phase_aware_next_action() {
 ## Design Artifacts Status
 $([ -f "prompts/outputs/specifications/requirements.md" ] && echo "✅ Requirements blueprint ready for implementation" || echo "❌ Requirements not yet designed")
 $([ -f "prompts/outputs/specifications/architecture.md" ] && echo "✅ Architecture blueprint ready for implementation" || echo "❌ Architecture not yet designed")
-$([ -f "prompts/outputs/task-lists/frontend-tasks.md" ] && echo "✅ Frontend task list ready for execution" || echo "❌ Frontend tasks not yet generated")
+$([ -f "prompts/outputs/task-lists/task-list-index.md" ] && echo "✅ Task list index ready for execution" || echo "❌ Task list index not yet generated")
 
 ## Phase Transition Rules
 - **Design → Implementation**: All blueprints complete, ready to build
@@ -319,7 +319,7 @@ Agent: "I need to implement user authentication."
 
 Orchestrator: "🎓 PHASE GUIDANCE ACTIVATED"
 Orchestrator: "📋 Design Blueprint Available: Check prompts/outputs/specifications/features.md"
-Orchestrator: "📝 Task List Available: Check prompts/outputs/task-lists/backend-tasks.md"
+Orchestrator: "📝 Task List Available: Check prompts/outputs/task-lists/task-list-index.md"
 Orchestrator: "🔧 Implementation Rule: Follow the design specifications exactly"
 Orchestrator: "✅ Use completed design stages as your implementation guide"
 ```
@@ -373,7 +373,7 @@ Agent: "I need to implement user authentication."
 
 Orchestrator: "🎓 PHASE GUIDANCE ACTIVATED"
 Orchestrator: "📋 Design Blueprint Available: Check prompts/outputs/specifications/features.md"
-Orchestrator: "📝 Task List Available: Check prompts/outputs/task-lists/backend-tasks.md"
+Orchestrator: "📝 Task List Available: Check prompts/outputs/task-lists/task-list-index.md"
 Orchestrator: "🔧 Implementation Rule: Follow the design specifications exactly"
 Orchestrator: "✅ Use completed design stages as your implementation guide"
 ```

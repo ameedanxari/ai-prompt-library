@@ -5,6 +5,15 @@ This stage implements comprehensive quality assurance procedures that apply acro
 
 ## Instructions
 
+## Non-Negotiable Quality Outputs
+Stage 09 must produce:
+- `prompts/outputs/quality/final-verification-summary.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 09 entry)
+- `prompts/outputs/quality/design-system-verification-report.md` (required when UI scope exists)
+
+For UI scope projects, mandatory template:
+- `.ai-prompts/prompts/templates/design-system-verification-report-template.md`
+
 ### When to Use This Stage
 - Implementing quality assurance processes for any software project
 - Establishing quality gates and standards for development teams

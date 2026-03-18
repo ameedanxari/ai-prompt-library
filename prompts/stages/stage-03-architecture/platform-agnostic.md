@@ -8,6 +8,20 @@ This stage establishes the foundational architecture design that ensures data co
 ## Instructions
 Use this stage to establish the foundational architecture that will support all platforms. Define data models, API contracts, security patterns, and integration strategies that ensure consistency and maintainability across the entire system.
 
+## Non-Negotiable Architecture Outputs
+Stage 03 must produce these artifacts before moving forward:
+- `prompts/outputs/architecture/architecture.md`
+- `prompts/outputs/specifications/data-architecture.md`
+- `prompts/outputs/specifications/backend-infrastructure.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 03 entry)
+
+Required behavior:
+1. Pick an explicit primary database + backup strategy (no "TBD" placeholders).
+2. Define migration ownership and rollout approach.
+3. Define backend runtime and deployment topology aligned with scope documents.
+4. Map API contracts to concrete service boundaries and environments.
+5. Record selected prompt lego blocks used in this stage and where they applied.
+
 ## Examples
 ```markdown
 ## Example Architecture Design

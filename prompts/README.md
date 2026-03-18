@@ -50,14 +50,21 @@ A comprehensive collection of modular, composable prompt templates for transform
 outputs/
 ├── specifications/
 │   ├── requirements.md          # Complete requirements specification
-│   ├── architecture.md          # System architecture design
-│   └── features.md             # Detailed feature specifications
+│   ├── design-system-foundation.md # Token + component foundations
+│   ├── integration-contracts.md # API/integration contracts
+│   ├── data-architecture.md     # Database + migration plan
+│   └── features.md              # Detailed feature specifications
 ├── task-lists/
-│   ├── frontend-tasks.md       # React/TypeScript implementation tasks
-│   ├── backend-tasks.md        # Node.js API implementation tasks
-│   └── deployment-tasks.md     # Vercel/Railway deployment tasks
+│   ├── implementation-master-plan.md
+│   ├── task-list-index.md
+│   ├── mobile-app-tasks.md
+│   └── backend-shared-tasks.md
+├── deployment/
+│   ├── deployment-plan.md
+│   ├── environment-matrix.md
+│   └── access-and-secrets-checklist.md
 └── documentation/
-    ├── api-docs.md            # API documentation
+    ├── integration-setup-guide.md # API/deployment setup
     ├── user-guide.md          # End-user documentation
     └── developer-guide.md     # Development setup guide
 ```
@@ -162,6 +169,7 @@ prompts/
 │   └── stage-10-handoff/         # Project handoff
 ├── modules/            # Reusable prompt modules
 │   ├── asset-management/         # Asset processing modules
+│   ├── design-system/            # Token/component/fidelity modules
 │   ├── feature-patterns/         # Common feature templates
 │   ├── technology-stacks/        # Technology-specific modules
 │   ├── best-practices/           # Production-ready defaults

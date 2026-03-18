@@ -5,6 +5,7 @@ Define mobile-specific implementation strategies, development workflows, and dep
 
 ## Instructions
 Use this stage to establish mobile-specific implementation practices including native build processes, device testing, app store requirements, and mobile performance optimization.
+When generating task tracks, include reusable design-system foundation/component-primitives tasks before screen-level mobile feature tasks.
 
 ## Examples
 ```markdown

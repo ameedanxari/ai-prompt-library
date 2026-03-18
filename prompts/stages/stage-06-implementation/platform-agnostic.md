@@ -8,6 +8,35 @@ This stage establishes the core architecture implementation patterns, data layer
 ## Instructions
 Use this stage to establish the core implementation strategy that will guide development across all platforms. Focus on development workflows, code quality standards, and implementation patterns that ensure consistency and maintainability.
 
+## Non-Negotiable Implementation Outputs
+Stage 06 must produce these artifacts before moving forward:
+- `prompts/outputs/task-lists/implementation-master-plan.md`
+- `prompts/outputs/task-lists/task-list-index.md`
+- Platform task files referenced by the index (for example mobile/admin/backend shared task tracks)
+- `prompts/outputs/implementation-prompts/prompt-pack-index.md`
+- One prompt file per task under `prompts/outputs/implementation-prompts/`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 06 entry)
+- `prompts/outputs/specifications/design-system-implementation-sequencing.md` (required when UI scope exists)
+
+Required behavior:
+1. Task list index must list every task file and dependency ordering.
+2. Include explicit API wiring tasks (not just UI/state tasks) for each app surface.
+3. Include database migration and seed/reset tasks where applicable.
+4. Include deployment readiness tasks for environment config and secrets handoff.
+5. Mark all mock tasks as temporary with replacement tasks and owner.
+6. Every task entry must include objective, context references, acceptance criteria, validation commands, and dependency IDs.
+7. Generate per-task implementation prompt files using:
+   - `.ai-prompts/prompts/templates/task-prompt-template.md`
+   - `.ai-prompts/prompts/templates/implementation-prompt-generation.md`
+   - `.ai-prompts/prompts/templates/implementation-prompt-pack-template.md`
+8. For each UI track (mobile/web/admin), add a design-system foundation/component-primitives task before screen-level tasks.
+9. Per-task implementation prompt files must be fully populated (no unresolved placeholder tokens or `- \` lines).
+10. For UI scope projects, generate `design-system-implementation-sequencing.md` using `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md`.
+11. Every per-task prompt must include semantic module lineage (`.ai-prompts/prompts/modules/...`) selected by task intent.
+12. Every per-task prompt must include stack module lineage (`.ai-prompts/prompts/modules/technology-stacks/...`) selected from project stack.
+13. `prompt-pack-index.md` rows must include semantic and stack module mappings per task.
+14. For tasks with `profile`, `discovery/search`, `analytics/reporting`, or `moderation/review` intent, semantic routing must include at least one intent-specific module (for example `social/user-profiles`, `search-discovery/*`, `analytics/*`, `content-moderation`/`audit-trails`) and must not default to only `integration/service-integration`.
+
 ## Examples
 ```markdown
 ## Example Implementation Strategy

@@ -8,6 +8,12 @@ This stage covers data migration procedures, testing documentation, security han
 
 ## Instructions
 
+## Non-Negotiable Handoff Outputs
+Stage 10 must produce:
+- `prompts/outputs/handoff/final-delivery-summary.md`
+- `prompts/outputs/handoff/open-items-and-credentials.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 10 entry)
+
 Use this template to create comprehensive handoff documentation that covers:
 
 1. **Project Summary**: Complete overview of what was built and delivered

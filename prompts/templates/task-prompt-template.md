@@ -19,6 +19,34 @@ Use this template when:
 
 ---
 
+## Hard Requirements (Non-Negotiable)
+
+Generated task prompts MUST satisfy all of the following:
+- Use concrete file paths, contract IDs, and validation commands.
+- Include concrete references to:
+  - `prompts/outputs/specifications/design-system-foundation.md`
+  - `prompts/outputs/specifications/integration-contracts.md`
+  - `prompts/outputs/specifications/data-architecture.md`
+- For UI tasks, explicitly call out reusable design-system components/tokens used by the task.
+- Include concrete `.ai-prompts/prompts/...` entries under `## Prompt Blocks Applied`.
+- Include at least one task-semantic prompt module in `Prompt Blocks Applied`:
+  - `.ai-prompts/prompts/modules/<domain>/<module>.md`
+- Include at least one stack-specific module in `Prompt Blocks Applied`:
+  - `.ai-prompts/prompts/modules/technology-stacks/<module>.md`
+- Select semantic and stack modules from `prompt-selection-manifest.md` and document why they apply to this task.
+- For tasks matching profile/discovery/analytics/moderation intent, include intent-specific semantic modules (for example `social/user-profiles`, `search-discovery/*`, `analytics/*`, `content-moderation`/`audit-trails`) and do not rely only on `integration/service-integration`.
+- File paths in `Files to Create/Modify` must be rooted in real project directories (no synthetic placeholder roots).
+
+Forbidden output patterns in generated task prompt files:
+- `[implementation file paths for ...]`
+- `[test file paths for ...]`
+- `[project-specific lint/test/build commands for ...]`
+- `- \` placeholder bullet lines
+
+If any forbidden pattern remains, the task prompt is invalid and must be regenerated.
+
+---
+
 ## Template Structure
 
 ```markdown
@@ -38,6 +66,20 @@ Use this template when:
 
 ### Project Overview
 [Brief description of the overall project from MY_PROJECT.md]
+
+### Prompt Composition Context
+- **Prompt Selection Manifest**: `prompts/outputs/specifications/prompt-selection-manifest.md`
+- **Prompt Usage Log**: `prompts/outputs/specifications/prompt-usage-log.md`
+- **Selected Lego Blocks for this task**: [List template/orchestrator files used]
+
+### Prompt Routing for This Task
+- **Semantic Intent**: [auth/profile/booking/payment/notification/design-system/discovery/analytics/moderation/etc.]
+- **Semantic Prompt Modules**:
+  - `.ai-prompts/prompts/modules/[domain]/[module].md`
+- **Technology Stack Prompt Modules**:
+  - `.ai-prompts/prompts/modules/technology-stacks/[module].md`
+- **Why These Modules**: [one line per selected module]
+- **Routing Guardrail**: If intent is profile/discovery/analytics/moderation, include at least one intent-specific semantic module beyond `integration/service-integration`.
 
 ### Current Phase
 [Description of current development phase and what's been built so far]
@@ -64,6 +106,13 @@ Use this template when:
 
 **User Story**: [Related user story]
 **Acceptance Criteria**: [High-level criteria from features]
+
+### Design + Integration Context
+- **Design System Foundation**: `prompts/outputs/specifications/design-system-foundation.md`
+- **Integration Contracts**: `prompts/outputs/specifications/integration-contracts.md`
+- **Data Architecture**: `prompts/outputs/specifications/data-architecture.md`
+- **Backend Infrastructure**: `prompts/outputs/specifications/backend-infrastructure.md`
+- **Source Assets**: `working_copy/` and/or `prompts/working_copy/` references used by this task
 
 ---
 
@@ -105,6 +154,8 @@ Use this template when:
 1. [Technical constraint or requirement]
 2. [Performance requirement]
 3. [Security requirement]
+4. [API integration requirement tied to integration-contracts.md]
+5. [Design system usage requirement tied to design-system-foundation.md]
 
 ### Code Quality Requirements
 - Follow [coding standard] from architecture.md
@@ -182,6 +233,7 @@ import AnotherThing from './path';
 ### External Services
 - [Service name]: [How to use it]
 - [API name]: [Endpoint and authentication]
+- [Mock policy]: [Allowed only behind explicit development toggle, never as final production path]
 
 ### Internal Dependencies
 - [Module name]: [What it provides]
@@ -201,6 +253,8 @@ import AnotherThing from './path';
 - [ ] No linting warnings
 - [ ] Follows coding standards from architecture
 - [ ] Proper error handling implemented
+- [ ] Uses design-system tokens/components from design-system-foundation.md
+- [ ] Uses real integration contracts or includes explicit replacement task for temporary mocks
 
 ### Testing Criteria
 - [ ] Unit tests written and passing
@@ -219,9 +273,9 @@ import AnotherThing from './path';
 
 ### Specification Documents
 - **Requirements**: `prompts/outputs/specifications/requirements.md#[section]`
-- **Architecture**: `prompts/outputs/specifications/architecture.md#[section]`
+- **Architecture**: `prompts/outputs/architecture/architecture.md#[section]`
 - **Features**: `prompts/outputs/specifications/features.md#[section]`
-- **Testing**: `prompts/outputs/specifications/testing.md#[section]`
+- **Testing**: `prompts/outputs/specifications/testing-strategy.md#[section]`
 
 ### Related Tasks
 - **Previous Task**: [Task ID] - [Title]
@@ -232,6 +286,15 @@ import AnotherThing from './path';
 - [Documentation link]
 - [API reference]
 - [Tutorial or guide]
+
+---
+
+## Prompt Blocks Applied
+- `.ai-prompts/prompts/templates/task-prompt-template.md`
+- `.ai-prompts/prompts/templates/implementation-prompt-generation.md`
+- `.ai-prompts/prompts/modules/[domain]/[module].md`
+- `.ai-prompts/prompts/modules/technology-stacks/[module].md`
+- `.ai-prompts/prompts/stages/stage-06-implementation/[platform].md`
 
 ---
 

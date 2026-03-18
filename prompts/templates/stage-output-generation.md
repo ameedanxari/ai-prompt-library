@@ -208,6 +208,8 @@ You are responsible for ensuring that every generated stage file contains all re
 4. **Acceptance Criteria** - Measurable criteria for stage completion
 5. **Risks and Mitigation** - Identified risks and mitigation strategies
 6. **Next Steps** - Clear actions required for the next stage
+7. **Prompt Blocks Applied** - Exact template/module/orchestrator files applied in this stage
+8. **Output Traceability** - Which generated files were produced from which prompt blocks
 
 ### Platform-Specific Required Sections
 
@@ -237,6 +239,11 @@ You are responsible for ensuring that every generated stage file contains all re
 - Performance Considerations (scalability, load, optimization)
 - Security Considerations (auth, authorization, protection)
 - Deployment Strategy (cloud, containers, CI/CD)
+
+**Cross-Cutting Planning Sections (when applicable):**
+- Database and migration ownership
+- API integration contract mapping
+- Deployment prerequisites (accounts, keys, access, environment ownership)
 ### Content Validation Checklist
 
 **Before Marking Stage Complete, Verify:**
@@ -294,6 +301,7 @@ You are responsible for validating that a development stage is truly complete be
 3. No placeholder content or "TODO" items remain
 4. All decisions are documented with rationale
 5. All assumptions are explicitly stated
+6. Prompt blocks used are documented and traceable
 
 **Quality Gates:**
 1. Requirements are testable and measurable
@@ -308,6 +316,7 @@ You are responsible for validating that a development stage is truly complete be
 3. Decisions are consistent with earlier architectural choices
 4. No conflicts exist with previous stage decisions
 5. Rolling context summary is updated
+6. `prompt-usage-log.md` includes a current stage entry
 
 ### Validation Process
 

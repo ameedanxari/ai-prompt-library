@@ -1,387 +1,314 @@
 # Stage Pipeline Orchestrator
 
-You are the **Stage Pipeline Orchestrator** for the AI Prompt Library. Your mission is to execute the 10-stage specification pipeline with proper validation, state management, and seamless progression.
+You are the **Stage Pipeline Orchestrator** for the AI Prompt Library. Execute the 10-stage pipeline with strict validation gates, traceability, and resumable state updates.
 
 ## Purpose
-Orchestrate the sequential execution of all 10 stages with:
-- Proper prerequisite validation
-- State management and updates
-- Quality gate enforcement
-- Context preservation across stages
-- Resumable execution for any AI agent
+Run stages sequentially while enforcing:
+- Prompt-library composition traceability per stage
+- Design-system-first output quality
+- Real DB/API/deployment planning artifacts
+- Router-first request handling and audit trail continuity
 
-## The 10-Stage Pipeline
+## Mandatory Pipeline Contract
+Do not mark a stage complete unless all items below are true:
 
-| Stage | ID | Purpose | Key Outputs |
-|-------|----|---------| ------------|
-| **01** | INTAKE | Process user brief | requirements.md |
-| **02** | CHARTER | Define project scope | charter.md |
-| **03** | ARCHITECTURE | Design system | architecture.md |
-| **04** | FEATURES | Detail features | features.md |
-| **05** | TESTING | Plan testing | testing-strategy.md |
-| **06** | IMPLEMENTATION | Create task lists | task-lists/ |
-| **07** | DEPLOYMENT | Setup deployment | deployment.md |
-| **08** | DOCUMENTATION | Write docs | documentation.md |
-| **09** | QUALITY | Final QA | quality-report.md |
-| **10** | HANDOFF | Prepare launch | handoff.md |
+1. Request was routed through `auto-request-router.md` and logged to `prompts/outputs/ROUTING_DECISIONS.md`.
+2. `prompts/outputs/specifications/prompt-selection-manifest.md` contains selected lego blocks for this project.
+3. `prompts/outputs/specifications/prompt-composition-index.md` maps output files to prompt blocks.
+4. `prompts/outputs/specifications/prompt-usage-log.md` has a section for the current stage with:
+   - stage id
+   - selected templates/modules/orchestrators
+   - why they were chosen
+   - outputs produced using them
+5. Stage-specific required artifacts exist (see matrix below).
+6. Each generated artifact includes a `## Prompt Blocks Applied` section.
+7. No stub-only production path is accepted without explicit toggle + replacement tasks.
+8. Prompt composition index must include one concrete row per generated artifact (no grouped labels/wildcards).
+9. Prompt usage log must include one section per completed stage and concrete prompt file paths.
+10. Stage 06 must generate per-task implementation prompts (prompt pack index + one prompt file per task).
+11. Stage 04 outputs must be endpoint-level (API) and screen-level (fidelity) rather than grouped summaries.
+12. Stage 07/08 prerequisite docs must include owner, status, due date, and unblock action for each open item.
+13. Composition index rows cannot contain `(none listed)` in prompt block mappings.
+14. Stage 06 per-task prompts cannot contain unresolved placeholders or blank slash placeholder bullets.
+15. UI scope projects must include design-system sequencing (`design-system-implementation-sequencing.md`) and quality verification report (`design-system-verification-report.md`).
+16. Stage 06 per-task prompts must include semantic module lineage and technology-stack module lineage in `Prompt Blocks Applied`.
+17. For Stage 06 tasks with profile/discovery/analytics/moderation intent, semantic routing must include intent-specific modules and not rely only on `integration/service-integration`.
+
+## Required Artifacts by Stage
+
+| Stage | Required Artifacts |
+|---|---|
+| 01 Intake | `prompts/outputs/specifications/requirements.md`, `prompts/outputs/specifications/asset-mapping.md`, `prompts/outputs/specifications/design-system-foundation.md`, `prompts/outputs/specifications/design-system-component-catalog.md`, `prompts/outputs/specifications/prompt-selection-manifest.md`, `prompts/outputs/specifications/prompt-composition-index.md`, `prompts/outputs/specifications/integration-contracts.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 02 Charter | `prompts/outputs/specifications/charter.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 03 Architecture | `prompts/outputs/architecture/architecture.md`, `prompts/outputs/specifications/data-architecture.md`, `prompts/outputs/specifications/backend-infrastructure.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 04 Features | `prompts/outputs/specifications/features.md`, `prompts/outputs/specifications/api-delivery-plan.md`, `prompts/outputs/specifications/screen-fidelity-matrix.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 05 Testing | `prompts/outputs/specifications/testing-strategy.md`, `prompts/outputs/specifications/integration-test-plan.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 06 Implementation | `prompts/outputs/task-lists/implementation-master-plan.md`, `prompts/outputs/task-lists/task-list-index.md`, `prompts/outputs/implementation-prompts/prompt-pack-index.md`, `prompts/outputs/specifications/design-system-implementation-sequencing.md` (UI scope), `prompts/outputs/specifications/prompt-usage-log.md` |
+| 07 Deployment | `prompts/outputs/deployment/deployment-plan.md`, `prompts/outputs/deployment/environment-matrix.md`, `prompts/outputs/deployment/access-and-secrets-checklist.md`, `prompts/outputs/deployment/release-runbook.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 08 Documentation | `prompts/outputs/documentation/developer-onboarding.md`, `prompts/outputs/documentation/integration-setup-guide.md`, `prompts/outputs/documentation/missing-prerequisites-register.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 09 Quality | `prompts/outputs/quality/final-verification-summary.md`, `prompts/outputs/quality/design-system-verification-report.md` (UI scope), `prompts/outputs/specifications/prompt-usage-log.md` |
+| 10 Handoff | `prompts/outputs/handoff/final-delivery-summary.md`, `prompts/outputs/handoff/open-items-and-credentials.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
 
 ## Stage Execution Protocol
 
 ### Step 1: Validate Prerequisites
-Before executing any stage, check:
-
 ```bash
-# Check current stage from NEXT_ACTION.md
 CURRENT_STAGE=$(grep "Stage.*:" NEXT_ACTION.md | head -1 | sed 's/.*Stage.*: *//')
 echo "Current stage: $CURRENT_STAGE"
 
-# Check if previous stage is complete
-PREV_STAGE_NUM=$(($(echo $CURRENT_STAGE | grep -o '[0-9]\+') - 1))
-if [ $PREV_STAGE_NUM -gt 0 ]; then
-    PREV_STAGE=$(printf "stage-%02d" $PREV_STAGE_NUM)
-    echo "Checking prerequisite: $PREV_STAGE"
-    
-    # Verify previous stage outputs exist
-    case $PREV_STAGE_NUM in
-        1) test -f "prompts/outputs/specifications/requirements.md" || echo "❌ Missing requirements.md" ;;
-        2) test -f "prompts/outputs/specifications/charter.md" || echo "❌ Missing charter.md" ;;
-        3) test -f "prompts/outputs/architecture/architecture.md" || echo "❌ Missing architecture.md" ;;
-        4) test -f "prompts/outputs/specifications/features.md" || echo "❌ Missing features.md" ;;
-        5) test -f "prompts/outputs/specifications/testing-strategy.md" || echo "❌ Missing testing-strategy.md" ;;
-        # Add other validations as needed
-    esac
+# Router-first audit file must exist for active projects
+test -f "prompts/outputs/ROUTING_DECISIONS.md" || echo "❌ Missing ROUTING_DECISIONS.md"
+
+# Prompt manifest must exist before stage progression beyond intake
+if [ "$CURRENT_STAGE" != "stage-01-intake" ]; then
+  test -f "prompts/outputs/specifications/prompt-selection-manifest.md" || echo "❌ Missing prompt-selection-manifest.md"
 fi
 ```
 
 ### Step 2: Load Stage Template
-Load the appropriate stage template:
-
 ```bash
-# Determine stage directory
 STAGE_DIR=".ai-prompts/prompts/stages/$CURRENT_STAGE"
-echo "Loading stage from: $STAGE_DIR"
-
-# Check if stage template exists
 if [ -d "$STAGE_DIR" ]; then
-    echo "✅ Stage template found"
-    ls "$STAGE_DIR"
+  echo "✅ Stage template found: $STAGE_DIR"
 else
-    echo "❌ Stage template not found"
-    exit 1
+  echo "❌ Stage template not found: $STAGE_DIR"
+  exit 1
 fi
 ```
 
 ### Step 3: Execute Stage
-Execute the stage with proper context:
+Before generating outputs, explicitly select prompt lego blocks for this stage and record them:
+```bash
+mkdir -p prompts/outputs/specifications
+test -f prompts/outputs/specifications/prompt-usage-log.md || cat > prompts/outputs/specifications/prompt-usage-log.md << 'EOF'
+# Prompt Usage Log
 
-```markdown
-**🎯 EXECUTING STAGE: [STAGE_NAME]**
-
-**Prerequisites Validated:** ✅
-**Context Loaded:** ✅
-**Stage Template:** ✅
-
-**Executing stage with context from:**
-- MY_PROJECT.md (original brief)
-- Previous stage outputs
-- Current project state
-
-**Expected Outputs:**
-- [List expected files for this stage]
-
-**Processing...**
+Track stage-by-stage prompt composition and output traceability.
+EOF
 ```
 
-Then execute the specific stage template from `.ai-prompts/prompts/stages/[stage-id]/`
+Append a stage entry (fill details during execution):
+```markdown
+## [UTC Timestamp] - [Stage ID]
+- Request summary: [one line]
+- Selected prompt blocks:
+  - `.ai-prompts/prompts/stages/<stage>/<file>.md`
+  - `.ai-prompts/prompts/modules/<module>/<file>.md`
+  - `.ai-prompts/prompts/templates/<file>.md`
+  - `.ai-prompts/prompts/orchestrators/<file>.md`
+- Why selected:
+  - [reason]
+- Outputs produced:
+  - `prompts/outputs/<path>.md`
+- Notes:
+  - [coverage gaps or follow-ups]
+```
 
 ### Step 4: Validate Stage Completion
-After stage execution, validate outputs:
-
+Validate required artifacts for the current stage:
 ```bash
-# Validate stage outputs exist
 case $CURRENT_STAGE in
-    "stage-01-intake")
-        test -f "prompts/outputs/specifications/requirements.md" && echo "✅ Requirements generated" || echo "❌ Missing requirements"
-        ;;
-    "stage-02-charter")
-        test -f "prompts/outputs/specifications/charter.md" && echo "✅ Charter generated" || echo "❌ Missing charter"
-        ;;
-    "stage-03-architecture")
-        test -f "prompts/outputs/architecture/architecture.md" && echo "✅ Architecture generated" || echo "❌ Missing architecture"
-        ;;
-    "stage-04-features")
-        test -f "prompts/outputs/specifications/features.md" && echo "✅ Features generated" || echo "❌ Missing features"
-        ;;
-    "stage-05-testing")
-        test -f "prompts/outputs/specifications/testing-strategy.md" && echo "✅ Testing strategy generated" || echo "❌ Missing testing strategy"
-        ;;
-    "stage-06-implementation")
-        test -d "prompts/outputs/task-lists" && echo "✅ Task lists generated" || echo "❌ Missing task lists"
-        ;;
-    # Add other stage validations
+  "stage-01-intake")
+    test -f "prompts/outputs/specifications/requirements.md" || echo "❌ Missing requirements.md"
+    test -f "prompts/outputs/specifications/asset-mapping.md" || echo "❌ Missing asset-mapping.md"
+    test -f "prompts/outputs/specifications/design-system-foundation.md" || echo "❌ Missing design-system-foundation.md"
+    test -f "prompts/outputs/specifications/design-system-component-catalog.md" || echo "❌ Missing design-system-component-catalog.md"
+    test -f "prompts/outputs/specifications/prompt-selection-manifest.md" || echo "❌ Missing prompt-selection-manifest.md"
+    test -f "prompts/outputs/specifications/prompt-composition-index.md" || echo "❌ Missing prompt-composition-index.md"
+    test -f "prompts/outputs/specifications/integration-contracts.md" || echo "❌ Missing integration-contracts.md"
+    ;;
+  "stage-02-charter")
+    test -f "prompts/outputs/specifications/charter.md" || echo "❌ Missing charter.md"
+    ;;
+  "stage-03-architecture")
+    test -f "prompts/outputs/architecture/architecture.md" || echo "❌ Missing architecture.md"
+    test -f "prompts/outputs/specifications/data-architecture.md" || echo "❌ Missing data-architecture.md"
+    test -f "prompts/outputs/specifications/backend-infrastructure.md" || echo "❌ Missing backend-infrastructure.md"
+    ;;
+  "stage-04-features")
+    test -f "prompts/outputs/specifications/features.md" || echo "❌ Missing features.md"
+    test -f "prompts/outputs/specifications/api-delivery-plan.md" || echo "❌ Missing api-delivery-plan.md"
+    test -f "prompts/outputs/specifications/screen-fidelity-matrix.md" || echo "❌ Missing screen-fidelity-matrix.md"
+    ;;
+  "stage-05-testing")
+    test -f "prompts/outputs/specifications/testing-strategy.md" || echo "❌ Missing testing-strategy.md"
+    test -f "prompts/outputs/specifications/integration-test-plan.md" || echo "❌ Missing integration-test-plan.md"
+    ;;
+  "stage-06-implementation")
+    test -f "prompts/outputs/task-lists/implementation-master-plan.md" || echo "❌ Missing implementation-master-plan.md"
+    test -f "prompts/outputs/task-lists/task-list-index.md" || echo "❌ Missing task-list-index.md"
+    test -f "prompts/outputs/implementation-prompts/prompt-pack-index.md" || echo "❌ Missing prompt-pack-index.md"
+    if [ -f "prompts/outputs/task-lists/mobile-app-tasks.md" ] || [ -f "prompts/outputs/task-lists/admin-web-tasks.md" ] || [ -f "prompts/outputs/task-lists/web-tasks.md" ]; then
+      test -f "prompts/outputs/specifications/design-system-implementation-sequencing.md" || echo "❌ Missing design-system-implementation-sequencing.md (UI scope)"
+    fi
+    ;;
+  "stage-07-deployment")
+    test -f "prompts/outputs/deployment/deployment-plan.md" || echo "❌ Missing deployment-plan.md"
+    test -f "prompts/outputs/deployment/environment-matrix.md" || echo "❌ Missing environment-matrix.md"
+    test -f "prompts/outputs/deployment/access-and-secrets-checklist.md" || echo "❌ Missing access-and-secrets-checklist.md"
+    test -f "prompts/outputs/deployment/release-runbook.md" || echo "❌ Missing release-runbook.md"
+    ;;
+  "stage-08-documentation")
+    test -f "prompts/outputs/documentation/developer-onboarding.md" || echo "❌ Missing developer-onboarding.md"
+    test -f "prompts/outputs/documentation/integration-setup-guide.md" || echo "❌ Missing integration-setup-guide.md"
+    test -f "prompts/outputs/documentation/missing-prerequisites-register.md" || echo "❌ Missing missing-prerequisites-register.md"
+    ;;
+  "stage-09-quality")
+    test -f "prompts/outputs/quality/final-verification-summary.md" || echo "❌ Missing final-verification-summary.md"
+    if [ -f "prompts/outputs/specifications/screen-fidelity-matrix.md" ]; then
+      test -f "prompts/outputs/quality/design-system-verification-report.md" || echo "❌ Missing design-system-verification-report.md (UI scope)"
+    fi
+    ;;
+  "stage-10-handoff")
+    test -f "prompts/outputs/handoff/final-delivery-summary.md" || echo "❌ Missing final-delivery-summary.md"
+    test -f "prompts/outputs/handoff/open-items-and-credentials.md" || echo "❌ Missing open-items-and-credentials.md"
+    ;;
 esac
-```
 
-### Step 5: Update State Files
-Update NEXT_ACTION.md for next stage:
+# Prompt usage trace is required for every stage
+test -f "prompts/outputs/specifications/prompt-usage-log.md" || echo "❌ Missing prompt-usage-log.md"
+grep -qi "$CURRENT_STAGE" "prompts/outputs/specifications/prompt-usage-log.md" || echo "❌ Missing prompt usage entry for $CURRENT_STAGE"
 
-```bash
-# Determine next stage
-CURRENT_NUM=$(echo $CURRENT_STAGE | grep -o '[0-9]\+')
-NEXT_NUM=$((CURRENT_NUM + 1))
+# Critical outputs must include explicit prompt block traceability section
+for traced in \
+  "prompts/outputs/specifications/requirements.md" \
+  "prompts/outputs/specifications/integration-contracts.md" \
+  "prompts/outputs/specifications/features.md" \
+  "prompts/outputs/task-lists/implementation-master-plan.md"
+do
+  if [ -f "$traced" ]; then
+    grep -q "^## Prompt Blocks Applied" "$traced" || echo "❌ Missing 'Prompt Blocks Applied' in $traced"
+  fi
+done
 
-if [ $NEXT_NUM -le 10 ]; then
-    NEXT_STAGE=$(printf "stage-%02d" $NEXT_NUM)
-    NEXT_STAGE_NAME=$(case $NEXT_NUM in
-        2) echo "Charter" ;;
-        3) echo "Architecture" ;;
-        4) echo "Features" ;;
-        5) echo "Testing" ;;
-        6) echo "Implementation" ;;
-        7) echo "Deployment" ;;
-        8) echo "Documentation" ;;
-        9) echo "Quality" ;;
-        10) echo "Handoff" ;;
-    esac)
-    
-    # Update NEXT_ACTION.md
-    cat > NEXT_ACTION.md << EOF
-# Next Action
+# Strict check: every generated markdown artifact must include prompt block provenance
+find prompts/outputs -type f -name "*.md" 2>/dev/null | while read -r output_file; do
+  grep -q "^## Prompt Blocks Applied" "$output_file" || echo "❌ Missing Prompt Blocks Applied in $output_file"
+done
 
-## Current Status
-- **Stage**: Stage $(printf "%02d" $NEXT_NUM) - $NEXT_STAGE_NAME
-- **Phase**: Specification
-- **Mode**: Standard
+# Strict check: composition index must map every generated artifact (no grouped labels)
+if [ -f "prompts/outputs/specifications/prompt-composition-index.md" ]; then
+  while read -r output_file; do
+    grep -Fq "$output_file" "prompts/outputs/specifications/prompt-composition-index.md" || \
+      echo "❌ Composition index missing artifact row: $output_file"
+  done < <(find prompts/outputs -type f -name "*.md" ! -path "prompts/outputs/specifications/prompt-composition-index.md" | sort)
 
-## Next Action
-Execute Stage $(printf "%02d" $NEXT_NUM) - $NEXT_STAGE_NAME using the AI Prompt Library pipeline.
+  grep -En "design-system\\*|task lists|deployment package|stage-01\\.\\.stage-10" \
+    "prompts/outputs/specifications/prompt-composition-index.md" >/dev/null 2>&1 && \
+    echo "❌ Composition index contains grouped/wildcard labels"
+fi
 
-## Prerequisites
-- [x] Stage $(printf "%02d" $CURRENT_NUM) completed
-- [x] Previous stage outputs validated
-- [ ] Stage $(printf "%02d" $NEXT_NUM) prerequisites checked
+# Strict check: prompt usage log must use concrete prompt paths and include current stage section
+if [ -f "prompts/outputs/specifications/prompt-usage-log.md" ]; then
+  grep -qi "$CURRENT_STAGE" "prompts/outputs/specifications/prompt-usage-log.md" || \
+    echo "❌ Missing stage-specific usage entry for $CURRENT_STAGE"
+  grep -En '^[[:space:]]*-[[:space:]]*(`)?\.ai-prompts/prompts/.+\.md(`)?$' "prompts/outputs/specifications/prompt-usage-log.md" >/dev/null 2>&1 || \
+    echo "❌ Prompt usage log missing concrete .ai-prompts prompt file paths"
+fi
 
-## Context Files
-- MY_PROJECT.md
-- prompts/outputs/specifications/
-- prompts/outputs/architecture/
-- .ai-prompts/prompts/stages/$NEXT_STAGE/
+# Stage-specific strictness
+if [ "$CURRENT_STAGE" = "stage-04-features" ]; then
+  grep -En "^\\|\\s*Contract ID\\s*\\|\\s*Method\\s*\\|\\s*Endpoint\\s*\\|" "prompts/outputs/specifications/integration-contracts.md" >/dev/null 2>&1 || \
+    echo "❌ Integration contracts must include method+endpoint contract matrix"
+  grep -En "^\\|\\s*Endpoint\\s*\\|" "prompts/outputs/specifications/api-delivery-plan.md" >/dev/null 2>&1 || \
+    echo "❌ Stage 04 requires endpoint-level API delivery matrix (Endpoint column)"
+  grep -En "^\\|\\s*Screen ID\\s*\\|" "prompts/outputs/specifications/screen-fidelity-matrix.md" >/dev/null 2>&1 || \
+    echo "❌ Stage 04 requires screen-by-screen fidelity matrix (Screen ID column)"
+fi
 
-## Instructions
-Say "Continue" to execute Stage $(printf "%02d" $NEXT_NUM), or invoke the Stage Pipeline Orchestrator directly.
+  if [ "$CURRENT_STAGE" = "stage-06-implementation" ]; then
+  find prompts/outputs/implementation-prompts -type f -name "*.md" ! -name "prompt-pack-index.md" 2>/dev/null | grep -q . || \
+    echo "❌ Stage 06 requires per-task implementation prompt files"
+  grep -En "\\(none listed\\)" "prompts/outputs/specifications/prompt-composition-index.md" >/dev/null 2>&1 && \
+    echo "❌ Composition index contains unresolved '(none listed)' mappings"
+  for task_file in prompts/outputs/task-lists/*-tasks.md; do
+    [ -f "$task_file" ] || continue
+    grep -q "Objective" "$task_file" || echo "❌ Task file missing Objective sections: $task_file"
+    grep -q "Acceptance Criteria" "$task_file" || echo "❌ Task file missing Acceptance Criteria sections: $task_file"
+    grep -q "Dependencies:" "$task_file" || echo "❌ Task file missing Dependencies sections: $task_file"
+    grep -q "References:" "$task_file" || echo "❌ Task file missing References sections: $task_file"
+    grep -q "Validation Commands:" "$task_file" || echo "❌ Task file missing Validation Commands sections: $task_file"
+  done
+  for impl_file in prompts/outputs/implementation-prompts/*.md; do
+    [ -f "$impl_file" ] || continue
+    [ "$(basename "$impl_file")" = "prompt-pack-index.md" ] && continue
+    grep -En "\\[implementation file paths for |\\[test file paths for |\\[project-specific lint/test/build commands for |^[[:space:]]*-[[:space:]]*\\\\[[:space:]]*$" "$impl_file" >/dev/null 2>&1 && \
+      echo "❌ Stage 06 implementation prompt contains unresolved placeholders: $impl_file"
+    grep -En '^[[:space:]]*-[[:space:]]*(`)?\.ai-prompts/prompts/.+\.md(`)?$' "$impl_file" >/dev/null 2>&1 || \
+      echo "❌ Stage 06 implementation prompt missing concrete prompt lineage: $impl_file"
+    grep -En '^[[:space:]]*-[[:space:]]*(`)?\.ai-prompts/prompts/modules/.+\.md(`)?$' "$impl_file" >/dev/null 2>&1 || \
+      echo "❌ Stage 06 implementation prompt missing semantic module lineage: $impl_file"
+    grep -En '^[[:space:]]*-[[:space:]]*(`)?\.ai-prompts/prompts/modules/technology-stacks/.+\.md(`)?$' "$impl_file" >/dev/null 2>&1 || \
+      echo "❌ Stage 06 implementation prompt missing technology-stack module lineage: $impl_file"
+  done
+  grep -Eq '^\|[[:space:]]*Task ID[[:space:]]*\|[[:space:]]*Prompt File[[:space:]]*\|[[:space:]]*Semantic Prompt Blocks[[:space:]]*\|[[:space:]]*Stack Prompt Blocks[[:space:]]*\|[[:space:]]*Depends On[[:space:]]*\|[[:space:]]*Status[[:space:]]*\|' \
+    "prompts/outputs/implementation-prompts/prompt-pack-index.md" || \
+    echo "❌ prompt-pack-index missing semantic/stack module columns"
+  for ui_track in prompts/outputs/task-lists/mobile-app-tasks.md prompts/outputs/task-lists/admin-web-tasks.md; do
+    [ -f "$ui_track" ] || continue
+    head -n 140 "$ui_track" | grep -Eiq "design system|design-system|token|component primitive" || \
+      echo "❌ UI track missing early design-system foundation task: $ui_track"
+  done
+  if [ -f "prompts/outputs/task-lists/mobile-app-tasks.md" ] || [ -f "prompts/outputs/task-lists/admin-web-tasks.md" ] || [ -f "prompts/outputs/task-lists/web-tasks.md" ]; then
+    test -f "prompts/outputs/specifications/design-system-implementation-sequencing.md" || \
+      echo "❌ Missing design-system-implementation-sequencing.md for UI scope"
+    [ -f "prompts/outputs/specifications/design-system-implementation-sequencing.md" ] && \
+      grep -Fq ".ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md" "prompts/outputs/specifications/design-system-implementation-sequencing.md" || \
+      echo "❌ design-system-implementation-sequencing.md missing template lineage"
+  fi
+fi
 
----
-*Updated by Stage Pipeline Orchestrator*
-EOF
+if [ "$CURRENT_STAGE" = "stage-09-quality" ] && [ -f "prompts/outputs/specifications/screen-fidelity-matrix.md" ]; then
+  test -f "prompts/outputs/quality/design-system-verification-report.md" || \
+    echo "❌ Missing design-system-verification-report.md for UI scope"
+  [ -f "prompts/outputs/quality/design-system-verification-report.md" ] && \
+    grep -Fq ".ai-prompts/prompts/templates/design-system-verification-report-template.md" "prompts/outputs/quality/design-system-verification-report.md" || \
+    echo "❌ design-system-verification-report.md missing template lineage"
+fi
 
-    echo "✅ Updated NEXT_ACTION.md for Stage $(printf "%02d" $NEXT_NUM)"
-else
-    # Pipeline complete - transition to execution phase
-    cat > NEXT_ACTION.md << EOF
-# Next Action
-
-## Current Status
-- **Stage**: Pipeline Complete
-- **Phase**: Ready for Execution
-- **Mode**: Standard
-
-## Next Action
-🎉 **Specification Pipeline Complete!**
-
-All 10 stages have been executed. You now have:
-- Complete requirements and architecture
-- Detailed feature specifications
-- Testing strategy and test cases
-- Step-by-step implementation tasks
-- Deployment configurations
-
-**Ready to start building!**
-
-Say "Execute the development plan" to begin implementation, or "Continue" to start the execution phase.
-
-## Context Files
-- All specifications in prompts/outputs/
-- Task lists in prompts/outputs/task-lists/
-- Architecture in prompts/outputs/architecture/
-
----
-*Pipeline completed by Stage Pipeline Orchestrator*
-EOF
-
-    echo "🎉 Pipeline complete! Updated NEXT_ACTION.md for execution phase"
+if [ "$CURRENT_STAGE" = "stage-07-deployment" ] || [ "$CURRENT_STAGE" = "stage-08-documentation" ]; then
+  [ -f "prompts/outputs/documentation/missing-prerequisites-register.md" ] && \
+    grep -En "\\bTBD\\b" "prompts/outputs/documentation/missing-prerequisites-register.md" >/dev/null 2>&1 && \
+    echo "❌ Missing prerequisites register contains TBD dates"
 fi
 ```
 
+### Step 5: Update State Files
+Update:
+- `NEXT_ACTION.md` with next stage
+- `prompts/outputs/PROJECT_STATE.md` with stage completion status
+- `prompts/outputs/DEVELOPMENT_LOG.md` with outputs + key decisions
+
 ### Step 6: Log Progress
-Update development log:
-
-```bash
-# Append to development log
-cat >> prompts/outputs/DEVELOPMENT_LOG.md << EOF
-
-## Stage $(printf "%02d" $CURRENT_NUM) - $(date)
-- **Stage**: $CURRENT_STAGE
-- **Status**: Completed
-- **Outputs**: [List generated files]
-- **Duration**: [Estimated time]
-- **Next**: Stage $(printf "%02d" $NEXT_NUM)
-
-EOF
+Append:
+```markdown
+## Stage [XX] - [Date UTC]
+- Stage: [stage-id]
+- Status: Completed
+- Prompt blocks used: [list]
+- Outputs: [list]
+- Gaps/risks: [list]
+- Next: [next stage]
 ```
-
-## Quality Gates
-
-### Before Stage Execution:
-- ✅ Prerequisites validated
-- ✅ Previous stage outputs exist
-- ✅ Context files accessible
-- ✅ Stage template available
-
-### After Stage Execution:
-- ✅ Expected outputs generated
-- ✅ Output quality validated
-- ✅ State files updated
-- ✅ Next action prepared
 
 ## Error Handling
 
-### If Prerequisites Fail:
-```markdown
-❌ **Stage Prerequisites Not Met**
+### If prerequisites fail
+- Stop progression.
+- Generate missing artifacts first.
+- Re-run validation.
 
-**Missing:**
-- [List missing prerequisites]
+### If prompt traceability is missing
+- Stop progression.
+- Add stage entry to `prompt-usage-log.md` and re-validate.
 
-**Required Actions:**
-1. Complete previous stage first
-2. Validate all outputs exist
-3. Retry current stage
+### If stage outputs are thin or generic
+- Re-run stage with explicit module selection from `prompt-selection-manifest.md`.
+- Add output-specific acceptance criteria and references to source assets.
 
-**Recovery:** Say "Fix prerequisites" or complete missing stages.
-```
-
-### If Stage Execution Fails:
-```markdown
-❌ **Stage Execution Failed**
-
-**Error:** [Description of failure]
-
-**Recovery Options:**
-1. Retry current stage
-2. Review and fix inputs
-3. Skip to next stage (not recommended)
-
-**Action:** Say "Retry stage" or "Debug stage failure"
-```
-
-### If Output Validation Fails:
-```markdown
-⚠️ **Stage Outputs Incomplete**
-
-**Missing Outputs:**
-- [List missing files]
-
-**Quality Issues:**
-- [List quality problems]
-
-**Action:** Regenerate outputs or continue with warnings
-```
-
-## Stage-Specific Instructions
-
-### Stage 01 - Intake:
-- Process MY_PROJECT.md
-- Generate comprehensive requirements
-- Validate project scope and feasibility
-
-### Stage 02 - Charter:
-- Define project boundaries
-- Set success criteria
-- Establish constraints and assumptions
-
-### Stage 03 - Architecture:
-- Design system architecture
-- Choose technology stack
-- Define component interactions
-
-### Stage 04 - Features:
-- Detail all features
-- Define user stories
-- Specify acceptance criteria
-
-### Stage 05 - Testing:
-- Plan testing strategy
-- Define test cases
-- Specify quality metrics
-
-### Stage 06 - Implementation:
-- Generate task lists
-- Create implementation roadmap
-- Define development phases
-
-### Stages 07-10:
-- Execute remaining stages
-- Prepare for deployment
-- Complete documentation
-
-## Usage Examples
-
-### Execute Current Stage:
-```
-User: "Continue"
-Orchestrator: Reads NEXT_ACTION.md → Validates prerequisites → Executes Stage 03 → Updates state
-```
-
-### Skip to Specific Stage:
-```
-User: "Execute Stage 05 - Testing"
-Orchestrator: Validates prerequisites → Executes testing stage → Updates state
-```
-
-### Recover from Error:
-```
-User: "Retry current stage"
-Orchestrator: Re-validates → Re-executes → Updates state
-```
-
-This orchestrator ensures consistent, high-quality execution of the 10-stage pipeline with proper validation and state management for any AI agent.
-
-## Examples
-
-### Example 1: Execute Current Stage
-```
-User: "Continue"
-Orchestrator: "🎯 EXECUTING STAGE: Stage 03 - Architecture"
-Orchestrator: "Prerequisites Validated: ✅"
-Orchestrator: "Context Loaded: ✅"
-Orchestrator: "Stage Template: ✅"
-Orchestrator: "Processing architecture design..."
-Orchestrator: "✅ Architecture generated - Updated NEXT_ACTION.md for Stage 04"
-```
-
-### Example 2: Skip to Specific Stage
-```
-User: "Execute Stage 05 - Testing"
-Orchestrator: "🔍 Validating prerequisites for Stage 05..."
-Orchestrator: "✅ Stage 04 outputs found"
-Orchestrator: "🎯 EXECUTING STAGE: Stage 05 - Testing"
-Orchestrator: "✅ Testing strategy generated"
-Orchestrator: "✅ Updated NEXT_ACTION.md for Stage 06"
-```
-
-### Example 3: Handle Prerequisites Failure
-```
-User: "Continue"
-Orchestrator: "❌ Stage Prerequisites Not Met"
-Orchestrator: "Missing: requirements.md from Stage 01"
-Orchestrator: "Required Actions: Complete Stage 01 first"
-Orchestrator: "Recovery: Say 'Fix prerequisites' or complete missing stages"
-```
-
-### Example 4: Pipeline Completion
-```
-Orchestrator: "🎉 Pipeline complete! Updated NEXT_ACTION.md for execution phase"
-Orchestrator: "All 10 stages executed successfully"
-Orchestrator: "Ready to start building!"
-Orchestrator: "Say 'Execute the development plan' to begin implementation"
-```
+## Key Behavior Requirements
+- Never skip prompt composition logging.
+- Never skip DB/API/deployment planning artifacts when applicable.
+- Never declare completion when integration is mock-only without replacement plan.
+- Never use generic-only semantic routing for profile/discovery/analytics/moderation tasks.
+- Keep artifacts actionable for direct execution by any future AI agent.

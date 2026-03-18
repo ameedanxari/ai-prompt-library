@@ -9,6 +9,7 @@ Eliminate routing confusion by automatically determining whether a request shoul
 - **Pipeline Task**: Use the full 10-stage specification pipeline
 - **Continue Pipeline**: Resume current stage progression
 - **Archive & Reset**: Start new feature after archiving current work
+- **Routing Audit**: Record why this route was selected for traceability
 
 ## When to Use This Template
 - **Always use this first** when receiving any user request
@@ -62,6 +63,8 @@ fi
 - Affects 1-2 files maximum
 - No architectural decisions needed
 - Simple configuration or content changes
+- No cross-platform parity impact
+- No API contract, auth, payment, data model, or design-system changes
 
 **Examples:**
 - "Fix the typo in README.md"
@@ -77,6 +80,8 @@ fi
 - Affects multiple files or components
 - Requires architectural decisions
 - Complex functionality or integrations
+- Cross-platform merge/consolidation requests (for example: merge student+tutor apps)
+- Any request that needs design-system work, API contract updates, or backend integration
 
 **Examples:**
 - "Add user authentication system"
@@ -124,6 +129,7 @@ fi
    - Authentication/security?
    - Multiple platforms?
    - Integration requirements?
+   - Design system/component library impact?
    
    0-1 indicators → ATOMIC TASK
    2+ indicators → PIPELINE TASK
@@ -254,6 +260,38 @@ For Pipeline tasks, update `NEXT_ACTION.md`:
 *Updated by Auto Request Router*
 ```
 
+Append a routing decision record:
+```bash
+mkdir -p prompts/outputs
+cat >> prompts/outputs/ROUTING_DECISIONS.md << 'EOF'
+## [Timestamp UTC]
+- Request Summary: [One line]
+- Route: [SETUP|ATOMIC|PIPELINE|CONTINUE|ARCHIVE]
+- Why: [Key indicators]
+- Planned Orchestrator/Action: [File or direct action]
+EOF
+```
+
+For pipeline and continue routes, also append a prompt usage routing entry:
+```bash
+mkdir -p prompts/outputs/specifications
+if [ ! -f prompts/outputs/specifications/prompt-usage-log.md ]; then
+cat > prompts/outputs/specifications/prompt-usage-log.md << 'EOF'
+# Prompt Usage Log
+
+Track stage-by-stage prompt composition and output traceability.
+EOF
+fi
+
+cat >> prompts/outputs/specifications/prompt-usage-log.md << 'EOF'
+## [Timestamp UTC] - Routing
+- Route selected: [SETUP|ATOMIC|PIPELINE|CONTINUE|ARCHIVE]
+- Trigger request summary: [One line]
+- Selected orchestrator(s): [list]
+- Next stage/action: [value]
+EOF
+```
+
 ## Implementation Notes
 
 ### For AI Agents:
@@ -262,6 +300,7 @@ For Pipeline tasks, update `NEXT_ACTION.md`:
 3. **Follow the decision tree** systematically
 4. **Use the provided templates** for consistent responses
 5. **Update state files** after routing decisions
+6. **Never bypass routing for "new chat" asks**; every new request must be routed and logged first
 
 ### Error Handling:
 - If routing is unclear, ask for clarification

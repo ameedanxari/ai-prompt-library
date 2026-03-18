@@ -42,7 +42,14 @@ Foundation established for Stage 02 - Charter with validated requirements and or
 - `web.md` - Web-specific intake considerations (if applicable)
 - `mobile.md` - Mobile-specific intake considerations (if applicable)
 - Asset mapping documentation
+- Design-system foundation + component catalog
+- Prompt selection manifest + prompt usage log
+- Integration contracts
 - Initial project configuration
+
+For UI scope projects, generate design-system outputs using:
+- `prompts/templates/design-system-foundation-template.md`
+- `prompts/templates/design-system-component-catalog-template.md`
 
 ## Prerequisites
 - User has filled out the input template

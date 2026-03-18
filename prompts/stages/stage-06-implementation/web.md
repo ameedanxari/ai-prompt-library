@@ -7,6 +7,7 @@ This stage focuses on responsive web development, browser compatibility, web per
 
 ## Instructions
 Use this stage to establish web-specific implementation practices including frontend build processes, browser compatibility, SEO optimization, and web performance strategies.
+When generating task tracks, include reusable design-system foundation/component-primitives tasks before screen-level web/admin feature tasks.
 
 ## Examples
 ```markdown

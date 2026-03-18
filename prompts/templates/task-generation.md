@@ -44,6 +44,40 @@ Use this template to break down complex features into manageable, independent ta
 - **Reference Completeness**: Include all necessary links to specifications and assets
 - **Session Boundaries**: Structure tasks for completion across multiple sessions
 - **Validation Gates**: Include checkpoints and validation steps
+- **Prompt Composition Traceability**: Record which library templates were selected for each task family
+- **Production Integration Bias**: Prefer real API/backend integration tasks; isolate mocks behind explicit development toggles
+
+## Non-Negotiable Outputs
+Generate all of the following during Stage 06:
+- `prompts/outputs/task-lists/implementation-master-plan.md`
+- `prompts/outputs/task-lists/task-list-index.md`
+- Platform task tracks with fully fleshed tasks (not high-level bullets)
+- `prompts/outputs/implementation-prompts/prompt-pack-index.md`
+- One prompt file per task under `prompts/outputs/implementation-prompts/`
+
+Mandatory task fields:
+- Task ID
+- Objective
+- Context summary with spec references
+- Dependencies
+- Files to create/modify
+- Acceptance criteria checkboxes
+- Validation commands
+- Design-system and API contract references
+- Semantic prompt module mapping (`.ai-prompts/prompts/modules/...`)
+- Technology-stack module mapping (`.ai-prompts/prompts/modules/technology-stacks/...`)
+
+Mandatory sequencing rules:
+- For each UI surface track (mobile/web/admin), include a foundational design-system task (tokens + reusable component primitives + state variants) before screen-specific feature tasks.
+- All downstream UI tasks must depend (directly or indirectly) on that design-system foundation task.
+- Include explicit API integration tasks and contract validation tasks in each surface track.
+- Generate `prompts/outputs/specifications/design-system-implementation-sequencing.md` using `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md` when UI scope is present.
+
+Forbidden generated output patterns:
+- Placeholder text in per-task prompts (for example `[implementation file paths for ...]`)
+- Blank slash placeholders (for example `- \`)
+- Prompt composition rows with `(none listed)`
+- Per-task prompt files with only generic template/stage lineage and no semantic/stack modules
 
 ---
 
@@ -124,6 +158,11 @@ At the end of each task:
 - Specification References: [Link to relevant section]
 - Asset References: [Links to required files/resources]
 - Dependency Management: [List of prerequisite tasks]
+- Prompt Selection Reference: `prompts/outputs/specifications/prompt-selection-manifest.md`
+- Prompt Usage Log Reference: `prompts/outputs/specifications/prompt-usage-log.md`
+- Design System Reference: `prompts/outputs/specifications/design-system-foundation.md`
+- API Contract Reference: `prompts/outputs/specifications/integration-contracts.md`
+- Data Architecture Reference: `prompts/outputs/specifications/data-architecture.md`
 
 **Prerequisites**: [Required dependencies and setup]
 - [Prerequisite 1]
@@ -133,6 +172,8 @@ At the end of each task:
 1. [Specific, measurable outcome]
 2. [Testable condition]
 3. [Quality gate or validation step]
+4. [Uses approved design-system tokens/components]
+5. [Integrates with defined API contract or documents explicit mock toggle]
 
 **Implementation Steps**:
 1. [Concrete action with expected output]

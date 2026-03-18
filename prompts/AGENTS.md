@@ -31,6 +31,22 @@ This automatically handles:
 - State management and updates
 - Seamless agent handoffs
 
+**Mandatory operating defaults**:
+- Route every new request through the router first (do not bypass in new chats).
+- Ensure project root `AGENTS.md` contains the auto-managed steering reference block.
+- During intake, scan `working_copy/` and `prompts/working_copy/` when available.
+- Generate these early artifacts before implementation:
+  - `prompts/outputs/specifications/asset-mapping.md`
+  - `prompts/outputs/specifications/design-system-foundation.md`
+  - `prompts/outputs/specifications/design-system-component-catalog.md`
+  - `prompts/outputs/specifications/prompt-selection-manifest.md`
+  - `prompts/outputs/specifications/prompt-usage-log.md`
+  - `prompts/outputs/specifications/integration-contracts.md`
+  - `prompts/outputs/specifications/data-architecture.md`
+  - `prompts/outputs/specifications/backend-infrastructure.md`
+  - `prompts/outputs/specifications/screen-fidelity-matrix.md`
+- Do not treat stub-only paths as production-complete unless explicitly approved and tracked for replacement.
+
 **Legacy workflow (now automated):**
 1. ~~Read NEXT_ACTION.md~~ → **Entry Point reads it automatically**
 2. ~~Run Task Router~~ → **Entry Point includes routing**

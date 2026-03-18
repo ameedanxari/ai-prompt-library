@@ -6,6 +6,20 @@ Define comprehensive documentation standards, content creation processes, and ma
 ## Instructions
 Use this stage to establish documentation standards that ensure consistent, comprehensive, and maintainable documentation across all platforms. Focus on user guides, technical documentation, and knowledge management.
 
+## Non-Negotiable Documentation Outputs
+Stage 08 must produce these artifacts before moving forward:
+- `prompts/outputs/documentation/developer-onboarding.md`
+- `prompts/outputs/documentation/integration-setup-guide.md`
+- `prompts/outputs/documentation/missing-prerequisites-register.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 08 entry)
+
+Required behavior:
+1. Provide a comprehensive setup checklist for external dependencies (accounts, keys, provider onboarding).
+2. Document unresolved blockers with owner + next action.
+3. Include exact API/deployment setup steps for continuing development.
+4. `missing-prerequisites-register.md` must include concrete due dates (no `TBD`) and explicit unblock actions.
+5. `integration-setup-guide.md` must include endpoint/domain setup verification for auth, booking, payment, notification, and admin paths.
+
 ## Examples
 ```markdown
 ## Example Documentation Strategy

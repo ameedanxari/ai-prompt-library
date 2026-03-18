@@ -708,6 +708,10 @@ echo "Rollback completed successfully"
 - `platform-agnostic.md` - Core deployment strategy
 - `web.md` - Web application deployment configuration
 - `mobile.md` - Mobile app deployment and distribution
+- `prompts/outputs/deployment/deployment-plan.md` - Environment rollout strategy
+- `prompts/outputs/deployment/environment-matrix.md` - Dev/staging/prod mapping and ownership
+- `prompts/outputs/deployment/access-and-secrets-checklist.md` - Required accounts, keys, and access requests
+- `prompts/outputs/deployment/release-runbook.md` - Release + rollback execution steps
 - CI/CD pipeline configurations and automation scripts
 - Infrastructure as code and environment setup
 

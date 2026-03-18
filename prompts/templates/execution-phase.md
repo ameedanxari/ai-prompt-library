@@ -116,9 +116,9 @@ Before entering Execution Phase, verify:
 - [ ] Task lists exist in prompts/outputs/task-lists/
 
 ### Task Lists Ready for Execution
-- [ ] frontend-tasks.md contains actionable implementation prompts
-- [ ] backend-tasks.md contains actionable implementation prompts  
-- [ ] deployment-tasks.md contains actionable implementation prompts
+- [ ] task-list-index.md exists and lists all execution task files
+- [ ] implementation-master-plan.md contains sequencing and dependencies
+- [ ] At least one app task file + one backend/integration task file exist
 
 ### Development Environment
 - [ ] Project directory structure created
@@ -141,7 +141,7 @@ Before entering Execution Phase, verify:
 **Objective**: Set up the actual code repository based on architecture specs
 
 **Read First**:
-- Architecture: prompts/outputs/specifications/architecture.md
+- Architecture: prompts/outputs/architecture/architecture.md (or prompts/outputs/specifications/architecture.md if legacy)
 - Tech Stack: [From architecture decisions]
 
 **Actions**:
@@ -173,7 +173,7 @@ Before entering Execution Phase, verify:
 For each task in the task lists:
 
 1. **Read the Task**
-   - Load task from prompts/outputs/task-lists/[platform]-tasks.md
+   - Load next pending task from prompts/outputs/task-lists/task-list-index.md
    - Identify the specific task to execute
    - Read all referenced specifications
 
@@ -392,13 +392,13 @@ DO:
 
 ### Specifications (What to Build)
 - Requirements: prompts/outputs/specifications/requirements.md
-- Architecture: prompts/outputs/specifications/architecture.md
+- Architecture: prompts/outputs/architecture/architecture.md
 - Features: prompts/outputs/specifications/features.md
 
 ### Task Lists (How to Build)
-- Frontend Tasks: prompts/outputs/task-lists/frontend-tasks.md
-- Backend Tasks: prompts/outputs/task-lists/backend-tasks.md
-- Deployment Tasks: prompts/outputs/task-lists/deployment-tasks.md
+- Task Index: prompts/outputs/task-lists/task-list-index.md
+- Master Plan: prompts/outputs/task-lists/implementation-master-plan.md
+- Platform Tracks: prompts/outputs/task-lists/*-tasks.md
 
 ### Templates
 - Execution Guide: .ai-prompts/prompts/templates/execution-phase.md
@@ -440,7 +440,7 @@ Creating initial files:
 - tsconfig.json
 
 ### Next Task
-After initialization, I'll execute Task 1.1 from frontend-tasks.md:
+After initialization, I'll execute the first pending item from task-list-index.md:
 "Create base component library with design system tokens"
 ```
 
@@ -554,9 +554,9 @@ For EVERY task from the task lists:
 ## Success Metrics for Execution Phase
 
 ### Implementation Complete When:
-- [ ] All tasks from frontend-tasks.md executed
-- [ ] All tasks from backend-tasks.md executed
-- [ ] All tasks from deployment-tasks.md executed
+- [ ] All tasks listed in task-list-index.md executed
+- [ ] API integration tasks completed for each in-scope app surface
+- [ ] Deployment prerequisites and rollout tasks completed
 - [ ] All tests pass (minimum 80% coverage)
 - [ ] Application runs locally without errors
 - [ ] Core user flows work end-to-end

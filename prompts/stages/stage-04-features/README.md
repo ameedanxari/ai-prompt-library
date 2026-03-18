@@ -62,6 +62,11 @@ Use this stage to transform architectural decisions into detailed feature specif
 - `platform-agnostic.md` - Core feature specifications
 - `web.md` - Web-specific feature implementations
 - `mobile.md` - Mobile-specific feature implementations
+- `prompts/outputs/specifications/api-delivery-plan.md`
+- `prompts/outputs/specifications/screen-fidelity-matrix.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 04 entry)
+- Endpoint-level delivery matrix (method/path/provider+client milestones/test suites)
+- Screen-by-screen fidelity matrix (source mockup/token/component/task mapping)
 - Feature parity matrix and validation requirements
 - User story mapping and acceptance criteria
 
@@ -75,3 +80,6 @@ Stage 05 - Testing (Testing strategy and requirements)
 ## Templates
 
 This module includes the following templates:
+- `prompts/templates/integration-contracts-spec-template.md`
+- `prompts/templates/api-delivery-plan-template.md`
+- `prompts/templates/screen-fidelity-matrix-template.md`

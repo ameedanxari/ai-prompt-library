@@ -93,12 +93,17 @@ cat > prompts/outputs/PROJECT_STATE.md << 'EOF'
 - [x] requirements.md
 - [x] charter.md
 - [ ] architecture.md
+- [ ] design-system-foundation.md
+- [ ] integration-contracts.md
+- [ ] data-architecture.md
+- [ ] backend-infrastructure.md
+- [ ] prompt-usage-log.md
 - [ ] features.md
 
 ### Task Lists
-- [ ] frontend-tasks.md
-- [ ] backend-tasks.md
-- [ ] deployment-tasks.md
+- [ ] implementation-master-plan.md
+- [ ] task-list-index.md
+- [ ] platform/backend task tracks
 
 ## Quality Metrics
 - **Requirements Coverage**: [Percentage]

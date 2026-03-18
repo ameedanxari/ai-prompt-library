@@ -39,18 +39,28 @@ validate_design_artifacts() {
     
     local missing_artifacts=()
     
-    # Check for task lists
-    [ ! -f "prompts/outputs/task-lists/frontend-tasks.md" ] && missing_artifacts+=("Frontend task list")
-    [ ! -f "prompts/outputs/task-lists/backend-tasks.md" ] && missing_artifacts+=("Backend task list")
-    [ ! -f "prompts/outputs/task-lists/deployment-tasks.md" ] && missing_artifacts+=("Deployment task list")
+    # Check for task lists (modern index-first format or legacy files)
+    if [ ! -f "prompts/outputs/task-lists/task-list-index.md" ]; then
+      [ ! -f "prompts/outputs/task-lists/frontend-tasks.md" ] && [ ! -f "prompts/outputs/task-lists/mobile-app-tasks.md" ] && missing_artifacts+=("At least one app task list")
+      [ ! -f "prompts/outputs/task-lists/backend-tasks.md" ] && [ ! -f "prompts/outputs/task-lists/backend-shared-tasks.md" ] && missing_artifacts+=("At least one backend task list")
+      [ ! -f "prompts/outputs/task-lists/deployment-tasks.md" ] && [ ! -f "prompts/outputs/deployment/deployment-plan.md" ] && missing_artifacts+=("Deployment task/plan artifacts")
+    fi
+    [ ! -f "prompts/outputs/task-lists/implementation-master-plan.md" ] && missing_artifacts+=("Implementation master plan")
     
     # Check for specifications
     [ ! -f "prompts/outputs/specifications/requirements.md" ] && missing_artifacts+=("Requirements specification")
-    [ ! -f "prompts/outputs/specifications/architecture.md" ] && missing_artifacts+=("Architecture specification")
+    [ ! -f "prompts/outputs/architecture/architecture.md" ] && [ ! -f "prompts/outputs/specifications/architecture.md" ] && missing_artifacts+=("Architecture specification")
     [ ! -f "prompts/outputs/specifications/features.md" ] && missing_artifacts+=("Feature specifications")
+    [ ! -f "prompts/outputs/specifications/design-system-foundation.md" ] && missing_artifacts+=("Design system foundation")
+    [ ! -f "prompts/outputs/specifications/integration-contracts.md" ] && missing_artifacts+=("Integration contracts")
+    [ ! -f "prompts/outputs/specifications/prompt-selection-manifest.md" ] && missing_artifacts+=("Prompt selection manifest")
+    [ ! -f "prompts/outputs/specifications/prompt-usage-log.md" ] && missing_artifacts+=("Prompt usage log")
+    [ ! -f "prompts/outputs/specifications/data-architecture.md" ] && missing_artifacts+=("Data architecture")
+    [ ! -f "prompts/outputs/specifications/backend-infrastructure.md" ] && missing_artifacts+=("Backend infrastructure plan")
     
     # Check for implementation prompts
     [ ! -d "prompts/outputs/implementation-prompts" ] && missing_artifacts+=("Implementation prompts directory")
+    [ ! -f "prompts/outputs/implementation-prompts/prompt-pack-index.md" ] && missing_artifacts+=("Implementation prompt pack index")
     
     if [ ${#missing_artifacts[@]} -gt 0 ]; then
         echo "❌ Missing critical design artifacts:"
@@ -100,7 +110,7 @@ If design artifacts exist, enforce their use with phase clarity:
 ✅ **DESIGN ARTIFACTS VALIDATED**
 
 I found your generated design artifacts:
-- ✅ Task lists: Frontend, Backend, Deployment
+- ✅ Task lists: Index + platform/backlog tracks
 - ✅ Specifications: Requirements, Architecture, Features  
 - ✅ Implementation prompts: Ready for execution
 
@@ -117,8 +127,9 @@ I will now implement by following the generated task lists and prompts EXACTLY, 
 3. Use only the context and specifications referenced in the task
 4. Validate completion against the task's success criteria
 5. Move to the next task only after validation
+6. Reject "done" state if implementation is still mock-only without planned replacement
 
-**Starting with Task 1.1 from frontend-tasks.md...**
+**Starting with the first pending task from task-list-index.md...**
 ```
 
 ### Step 4: Task-by-Task Execution Enforcement
@@ -128,7 +139,7 @@ For each task, enforce this strict protocol:
 ```markdown
 ## 🎯 EXECUTING TASK: [Task ID and Title]
 
-**Source**: `prompts/outputs/task-lists/[platform]-tasks.md`
+**Source**: `prompts/outputs/task-lists/task-list-index.md` + referenced task file
 **Task Section**: [Specific section reference]
 
 ### Task Context (from design artifacts)
@@ -175,6 +186,7 @@ prevent_context_drift() {
 - Do NOT skip steps outlined in the task
 - Do NOT use different technologies than specified
 - ONLY follow the exact task instructions and referenced specifications
+- Do NOT count mock-only behavior as production completion unless explicitly approved and tracked with a replacement task
 
 If you find yourself thinking "I should also add..." or "It would be better to..." - STOP.
 Follow the task exactly as written.
@@ -256,21 +268,14 @@ cat > IMPLEMENTATION_ENFORCEMENT.md << 'EOF'
 
 ## Task Execution Progress
 
-### Frontend Tasks (from frontend-tasks.md)
-- [ ] Task 1.1: [Title] - Status: [Not Started/In Progress/Complete]
-- [ ] Task 1.2: [Title] - Status: [Not Started/In Progress/Complete]
-- [ ] Task 1.3: [Title] - Status: [Not Started/In Progress/Complete]
-
-### Backend Tasks (from backend-tasks.md)
-- [ ] Task 2.1: [Title] - Status: [Not Started/In Progress/Complete]
-- [ ] Task 2.2: [Title] - Status: [Not Started/In Progress/Complete]
-
-### Deployment Tasks (from deployment-tasks.md)
-- [ ] Task 3.1: [Title] - Status: [Not Started/In Progress/Complete]
+### Task Tracks (from task-list-index.md)
+- [ ] Track A / Task X.Y: [Title] - Status: [Not Started/In Progress/Complete]
+- [ ] Track B / Task X.Y: [Title] - Status: [Not Started/In Progress/Complete]
+- [ ] Track C / Task X.Y: [Title] - Status: [Not Started/In Progress/Complete]
 
 ## Current Task
-**Active Task**: Task 1.1 - [Title]
-**Source File**: prompts/outputs/task-lists/frontend-tasks.md
+**Active Task**: Task X.Y - [Title]
+**Source File**: prompts/outputs/task-lists/task-list-index.md + referenced track
 **Status**: In Progress
 **Started**: [Timestamp]
 
@@ -389,7 +394,7 @@ Orchestrator: "🛡️ Implementation Enforcement Activated"
 Orchestrator: "🔍 Validating design artifacts..."
 Orchestrator: "✅ All design artifacts present"
 Orchestrator: "🔒 Enforcement Mode Activated"
-Orchestrator: "📋 Starting with Task 1.1 from frontend-tasks.md"
+Orchestrator: "📋 Starting with first pending task from task-list-index.md"
 Orchestrator: "🎯 Executing Task 1.1: Setup React Project Structure"
 [Follows exact task specifications]
 ```
@@ -417,7 +422,7 @@ Orchestrator: "🚨 ENFORCEMENT VIOLATION DETECTED"
 Orchestrator: "Violation: Adding unauthorized feature (user dashboard)"
 Orchestrator: "Expected: Follow Task 1.1 specifications exactly"
 Orchestrator: "🔒 ENFORCEMENT ACTION: Reverting to task specifications"
-Orchestrator: "Task Reference: prompts/outputs/task-lists/frontend-tasks.md - Task 1.1"
+Orchestrator: "Task Reference: prompts/outputs/task-lists/task-list-index.md - Task X.Y"
 ```
 
 ## Quality Assurance
@@ -502,7 +507,7 @@ Orchestrator: "🛡️ Implementation Enforcement Activated"
 Orchestrator: "🔍 Validating design artifacts..."
 Orchestrator: "✅ All design artifacts present"
 Orchestrator: "🔒 Enforcement Mode Activated"
-Orchestrator: "📋 Starting with Task 1.1 from frontend-tasks.md"
+Orchestrator: "📋 Starting with first pending task from task-list-index.md"
 Orchestrator: "🎯 Executing Task 1.1: Setup React Project Structure"
 [Follows exact task specifications]
 ```
@@ -528,7 +533,7 @@ Orchestrator: "🚨 ENFORCEMENT VIOLATION DETECTED"
 Orchestrator: "Violation: Adding unauthorized feature (user dashboard)"
 Orchestrator: "Expected: Follow Task 1.1 specifications exactly"
 Orchestrator: "🔒 ENFORCEMENT ACTION: Reverting to task specifications"
-Orchestrator: "Task Reference: prompts/outputs/task-lists/frontend-tasks.md - Task 1.1"
+Orchestrator: "Task Reference: prompts/outputs/task-lists/task-list-index.md - Task X.Y"
 ```
 
 This Implementation Enforcement Orchestrator ensures that the valuable work done in the design phase is properly utilized during implementation, preventing the waste of effort and ensuring consistent, high-quality results.

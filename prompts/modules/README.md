@@ -20,6 +20,11 @@ Reusable prompt modules organized by category for composing comprehensive specif
 #[[module:testing/centralized-mock-data.md]]
 #[[module:cross-platform/shared-contracts.md]]
 
+## Example: Design System First
+#[[module:design-system/token-architecture.md]]
+#[[module:design-system/component-system.md]]
+#[[module:design-system/screen-fidelity-audit.md]]
+
 ## Example: Technology Stack Selection
 #[[module:technology-stacks/web-react.md|version=18]]
 #[[module:technology-stacks/cloud-aws.md|region=us-east-1]]
@@ -46,6 +51,12 @@ Reusable prompt modules organized by category for composing comprehensive specif
 - Platform parity management
 - Shared contracts and APIs
 - Cross-platform validation
+
+### Design System
+[design-system/README.md](./design-system/README.md)
+- Token architecture and naming
+- Component catalog and state variants
+- Screen fidelity mapping against mockups
 
 ### Feature Patterns
 [feature-patterns/README.md](./feature-patterns/README.md)

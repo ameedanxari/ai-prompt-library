@@ -112,27 +112,75 @@ The AI Prompt Library now includes **COVE (Chain-of-Verification)** templates to
 
 ---
 
-## Quick Start: One-Command Setup
+## Quick Start: Production Setup Prompt (Recommended)
 
-**NEW**: The AI Prompt Library now sets up automatically! Simply paste this into your AI assistant:
+Paste this into your AI assistant exactly (then replace the project idea):
 
-```
-I want to use the AI Prompt Library to build my project.
+```markdown
+I want to use the AI Prompt Library in this repository.
 
 Library URL: https://github.com/ameedanxari/ai-prompt-library
+Project idea: [Describe your idea in 2-6 sentences]
 
-My project idea: [Describe your idea here - even 2-3 sentences is enough!]
+Use `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` as the mandatory entry point for this request and every future request in this project.
 
-Please set up everything automatically and start the specification pipeline with COVE verification enabled.
+Before generating specs, do this in order:
+1. Run setup automatically if needed.
+2. Scan all available design/reference files in `working_copy/` and `prompts/working_copy/` (if present), then generate a complete asset inventory + mapping.
+3. Build a design-system foundation first (tokens, typography, spacing, component primitives, state variants, platform mappings) using design-system modules before screen-level implementation.
+4. Create a prompt-selection manifest and a stage-by-stage prompt-usage log showing which library templates/orchestrators/modules ("lego blocks") are selected and where each one is applied.
+   Also create an output-to-prompt composition index with one concrete row per generated artifact (no grouped labels/wildcards), and include a `Prompt Blocks Applied` section inside every generated artifact.
+5. Create backend/API integration contracts (auth, data, payments, notifications, admin) plus explicit data architecture (database choice, schema ownership, migrations, backup) and backend infrastructure plan.
+   Integration contracts must include method/path/auth/request schema/response schema/error model/idempotency per endpoint.
+6. Enforce no stub-only production paths: mock/fake data is allowed only with explicit toggle and replacement task.
+7. Require a deployment prerequisites package (environment matrix + access/secrets checklist) before Stage 07 can be marked complete.
+   Missing prerequisites must include owner, status, due date (no TBD), and unblock action.
+8. Start the stage pipeline with COVE enabled for architecture, API contracts, and security-critical outputs, and enforce stage completion gates.
+9. In Stage 06, generate a per-task implementation prompt pack:
+   - `prompts/outputs/implementation-prompts/prompt-pack-index.md`
+   - one prompt file per task from the task lists.
+10. For Stage 04, require endpoint-level API delivery matrix and screen-by-screen fidelity matrix tied to source mockup files.
+11. In Stage 06, enforce design-system-first sequencing for every UI surface:
+    - add reusable token/component foundation tasks before screen tasks
+    - make downstream UI tasks depend on those foundation tasks.
+12. Reject unresolved placeholders in generated per-task prompts (for example `[implementation file paths ...]`, `[project-specific ...]`, `- \`) and require concrete `.ai-prompts/prompts/...` entries in every `Prompt Blocks Applied` section.
+13. For UI scope projects, apply these dedicated design-system templates and produce their outputs:
+    - `.ai-prompts/prompts/templates/design-system-foundation-template.md` -> `design-system-foundation.md`
+    - `.ai-prompts/prompts/templates/design-system-component-catalog-template.md` -> `design-system-component-catalog.md`
+    - `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md` -> `design-system-implementation-sequencing.md`
+    - `.ai-prompts/prompts/templates/design-system-verification-report-template.md` -> `quality/design-system-verification-report.md`
+14. For every Stage 06 per-task implementation prompt, require explicit prompt routing:
+    - include one semantic module from `.ai-prompts/prompts/modules/...` based on task intent (auth/profile/booking/payment/notification/design-system/discovery/analytics/moderation/etc.)
+    - include one stack module from `.ai-prompts/prompts/modules/technology-stacks/...` based on detected stack (for example Flutter, Firebase, React).
+    - for profile/discovery/analytics/moderation tasks, require intent-specific semantic modules and do not allow only `integration/service-integration`.
+
+Required early outputs:
+- `prompts/outputs/specifications/asset-mapping.md`
+- `prompts/outputs/specifications/design-system-foundation.md`
+- `prompts/outputs/specifications/design-system-component-catalog.md`
+- `prompts/outputs/specifications/prompt-selection-manifest.md`
+- `prompts/outputs/specifications/prompt-composition-index.md`
+- `prompts/outputs/specifications/prompt-usage-log.md`
+- `prompts/outputs/specifications/integration-contracts.md`
+- `prompts/outputs/specifications/data-architecture.md`
+- `prompts/outputs/specifications/backend-infrastructure.md`
+- `prompts/outputs/specifications/screen-fidelity-matrix.md`
+- `prompts/outputs/specifications/design-system-implementation-sequencing.md` (Stage 06, UI scope)
+
+UI scope quality output (Stage 09):
+- `prompts/outputs/quality/design-system-verification-report.md`
+
+For every new user request after setup, route through the auto-request-router first, record the routing decision, and then execute.
 ```
 
-**That's it!** The AI will automatically:
+The AI will automatically:
 1. ✅ Initialize the library (submodule or clone)
 2. ✅ Configure steering files for your AI tool (Kiro, Cursor, Windsurf, etc.)
-3. ✅ Create all required state files
-4. ✅ Set up project structure
-5. ✅ Enable COVE verification for critical stages
-6. ✅ Start the specification pipeline
+3. ✅ Create/update project root `AGENTS.md` with mandatory steering references
+4. ✅ Create all required state files
+5. ✅ Set up project structure
+6. ✅ Enforce routing + audit trail behavior
+7. ✅ Start the specification pipeline with stronger design/API/database/deployment integration defaults
 
 ### How It Works (Fully Automated)
 
@@ -145,7 +193,7 @@ The AI Prompt Library now includes **automatic routing and setup**:
 
 #### 2. Automatic Request Routing
 - **You say**: Any request (feature, fix, continue, etc.)
-- **AI does**: Analyzes request → Routes optimally (atomic vs pipeline) → Executes
+- **AI does**: Analyzes request via router first → Logs routing decision → Routes optimally (atomic vs pipeline) → Executes
 - **You get**: Right-sized approach for each request type
 
 #### 3. Seamless Continuation
@@ -232,7 +280,7 @@ git submodule update --remote .ai-prompts
 git add .ai-prompts && git commit -m "Update AI Prompt Library"
 
 # NEW: Validate integration health after update
-./validate-integration.sh
+./validate-integration.sh --strict
 ```
 
 **What the validation does:**
@@ -241,6 +289,11 @@ git add .ai-prompts && git commit -m "Update AI Prompt Library"
 - ✅ Ensures integration health
 - ✅ Updates version tracking
 - ✅ Reports any issues that need attention
+- ✅ Optionally runs strict output checks (`--strict`)
+
+**Validation modes:**
+- `./validate-integration.sh` → baseline setup/integration health
+- `./validate-integration.sh --strict` → baseline + output traceability quality checks
 
 **If validation fails:**
 1. Review the safeguard documentation: `.ai-prompts/docs/SAFEGUARDS.md`
@@ -257,7 +310,11 @@ Once you've completed a feature or development cycle, you can start the next one
 Copy this prompt to your AI assistant:
 
 ```markdown
-I have a new request for my project. Please use the **Next Feature Orchestrator** at `.ai-prompts/prompts/templates/next-feature-orchestrator.md`:
+I have a new request for my project.
+
+First route this request through `.ai-prompts/prompts/orchestrators/auto-request-router.md` and log the routing decision.
+
+If the request is feature-scale, use the **Next Feature Orchestrator** at `.ai-prompts/prompts/templates/next-feature-orchestrator.md`:
 
 1.  **Assess current state** (check for pending tasks).
 2.  **Request my consent** before archiving previous results.
@@ -348,7 +405,7 @@ git add .ai-prompts
 git commit -m "Update AI Prompt Library to latest version"
 
 # NEW: Validate integration health
-./validate-integration.sh
+./validate-integration.sh --strict
 ```
 
 This updates your submodule to the latest commit on the main branch and validates that your integration is still healthy with the new version.
@@ -364,7 +421,7 @@ git clone https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
 
 # NEW: Validate integration after update
 if [ -f "validate-integration.sh" ]; then
-    ./validate-integration.sh
+    ./validate-integration.sh --strict
 else
     echo "⚠️ Integration validation script not found"
     echo "💡 Consider using submodule approach for better update management"
@@ -541,15 +598,22 @@ Token Level: medium
 outputs/
 ├── specifications/
 │   ├── requirements.md      # 47 user stories with acceptance criteria
-│   ├── architecture.md      # React Native + Node.js + PostgreSQL
-│   └── features.md          # Streaming, playlists, artist profiles, payments
+│   ├── design-system-foundation.md # Tokens + component primitives
+│   ├── integration-contracts.md    # Auth/payments/notifications APIs
+│   ├── data-architecture.md        # PostgreSQL + migration strategy
+│   └── features.md                 # Streaming, playlists, artist profiles, payments
 ├── task-lists/
-│   ├── frontend-tasks.md    # 23 implementation tasks
-│   ├── backend-tasks.md     # 31 API implementation tasks
-│   └── deployment-tasks.md  # AWS deployment with CDN for streaming
+│   ├── implementation-master-plan.md
+│   ├── task-list-index.md
+│   ├── mobile-app-tasks.md
+│   └── backend-shared-tasks.md
+├── deployment/
+│   ├── deployment-plan.md
+│   ├── environment-matrix.md
+│   └── access-and-secrets-checklist.md
 └── documentation/
-    ├── api-docs.md          # OpenAPI specification
-    └── artist-onboarding.md # Artist portal documentation
+    ├── integration-setup-guide.md
+    └── artist-onboarding.md
 ```
 
 ---

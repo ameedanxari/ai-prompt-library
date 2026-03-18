@@ -57,6 +57,9 @@ Define comprehensive testing strategy including unit tests, property-based tests
 - `platform-agnostic.md` - Core testing strategy and framework
 - `web.md` - Web-specific testing approaches
 - `mobile.md` - Mobile-specific testing strategies
+- `prompts/outputs/specifications/testing-strategy.md`
+- `prompts/outputs/specifications/integration-test-plan.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 05 entry)
 - Property-based testing specifications
 - Quality assurance checklists and procedures
 

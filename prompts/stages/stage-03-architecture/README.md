@@ -115,6 +115,8 @@ app/
 - `web.md` - Web architecture specifications
 - `mobile.md` - Mobile architecture specifications
 - `backend.md` - Backend architecture and APIs
+- `prompts/outputs/specifications/data-architecture.md` - Database choice, migrations, backup strategy
+- `prompts/outputs/specifications/backend-infrastructure.md` - Runtime/deployment topology and ownership
 - Technology stack decisions with rationale
 - Integration and deployment architecture
 

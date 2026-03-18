@@ -12,8 +12,12 @@ Create detailed implementation plans, task lists, and development workflows for 
 - `platform-agnostic.md` - Core implementation strategy
 - `web.md` - Web development implementation plan
 - `mobile.md` - Mobile development implementation plan
+- `prompts/outputs/task-lists/implementation-master-plan.md`
+- `prompts/outputs/task-lists/task-list-index.md`
 - Context-agnostic task lists and development workflows
-- Implementation prompts and guidance documents
+- `prompts/outputs/implementation-prompts/prompt-pack-index.md`
+- Per-task implementation prompt files (one file per task)
+- `prompts/outputs/specifications/design-system-implementation-sequencing.md` (UI scope)
 
 ## Prerequisites
 - Stage 05 (Testing) completed
@@ -49,6 +53,10 @@ Stage 07 - Deployment (Deployment configuration and procedures)
    - Create self-contained task descriptions with clear acceptance criteria
    - Establish task dependencies and sequencing
    - Include testing and quality assurance tasks
+   - Add design-system foundation/component-primitives tasks before any UI screen implementation tasks
+   - Ensure per-task implementation prompt outputs are fully populated (no placeholder tokens)
+   - Ensure each per-task prompt applies semantic modules for task intent and technology-stack modules for stack-specific guidance
+   - Ensure profile/discovery/analytics/moderation tasks apply intent-specific semantic modules and do not rely only on `integration/service-integration`
 
 5. **Create Development Workflows**
    - Define code review processes and standards
@@ -61,10 +69,16 @@ Stage 07 - Deployment (Deployment configuration and procedures)
    - Develop troubleshooting guides and common solutions
    - Establish communication protocols for development team
    - Plan knowledge sharing and documentation processes
+   - Produce design-system implementation sequencing artifact for UI tracks
 
 ### Templates
 
 This module includes the following templates:
+- `prompts/templates/task-generation.md`
+- `prompts/templates/task-prompt-template.md`
+- `prompts/templates/implementation-prompt-generation.md`
+- `prompts/templates/implementation-prompt-pack-template.md`
+- `prompts/templates/design-system-implementation-sequencing-template.md` (UI scope)
 
 ## Integration with Other Stages
 

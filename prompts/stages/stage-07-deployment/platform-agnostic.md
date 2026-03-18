@@ -22,6 +22,23 @@ Configure deployment infrastructure, CI/CD pipelines, and production environment
 4. **Scalability Planning**: Design for growth and performance requirements
 5. **Monitoring Integration**: Set up comprehensive observability and alerting
 
+## Non-Negotiable Deployment Outputs
+Stage 07 must produce these artifacts before moving forward:
+- `prompts/outputs/deployment/deployment-plan.md`
+- `prompts/outputs/deployment/environment-matrix.md`
+- `prompts/outputs/deployment/access-and-secrets-checklist.md`
+- `prompts/outputs/deployment/release-runbook.md`
+- `prompts/outputs/specifications/prompt-usage-log.md` (Stage 07 entry)
+
+Required behavior:
+1. Enumerate all required accounts, keys, certificates, and roles by environment.
+2. Identify owner + status for each missing prerequisite (who provides what, by when).
+3. Define API deployment topology and rollout sequence separate from UI deployment.
+4. Include rollback and verification criteria for each environment.
+5. `environment-matrix.md` must include owner + approver + rollback target + release channel per environment.
+6. `access-and-secrets-checklist.md` must include environment, owner, status, storage location, and rotation policy per secret.
+7. Missing-prerequisites references may remain open, but due dates must not be `TBD` by Stage 08 closeout.
+
 ## Examples
 
 ### Example 1: Multi-Platform SaaS Deployment

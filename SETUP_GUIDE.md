@@ -37,24 +37,37 @@ git clone https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
 echo ".ai-prompts/" >> .gitignore
 ```
 
-### Step 2: Use Your AI Tool Normally
+### Step 2: Use the Integration Contract Prompt
 
-Open your AI tool (Cursor, Windsurf, Kiro, Claude, etc.) and just ask it to help with your project:
+Open your AI tool (Cursor, Windsurf, Kiro, Claude, etc.) and start with this:
 
-```
-I want to build a social media app with real-time collaboration features
-```
+```markdown
+I want to use the AI Prompt Library in this repository.
 
-Or:
+Use `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` as the mandatory entry point for this request and all future requests.
 
-```
-Fix the authentication flow in the login screen
-```
-
-Or:
-
-```
-Add file upload functionality to the dashboard
+Before generating specs:
+1. Scan `working_copy/` and `prompts/working_copy/` (if present) and create a complete asset map.
+2. Create `design-system-foundation.md` first (tokens, components, variants, responsive rules).
+3. Create `prompt-selection-manifest.md` showing which templates/orchestrators are selected and why.
+4. Create `prompt-usage-log.md` with one concrete section per stage and `prompt-composition-index.md` with one concrete row per generated artifact.
+5. Create `integration-contracts.md` with endpoint-level contract rows (method/path/auth/schema/error/idempotency).
+6. Create `api-delivery-plan.md` with endpoint rollout matrix and test gates.
+7. Create `screen-fidelity-matrix.md` as screen-by-screen mapping tied to source mockup files and task IDs.
+8. Route every new request through `auto-request-router.md` first and record routing decisions.
+9. Do not ship stub-only production paths; allow mocks only behind explicit toggle with replacement tasks.
+10. In Stage 06, generate `implementation-prompts/prompt-pack-index.md` and one prompt file per task.
+11. In Stage 06, enforce design-system-first UI sequencing: add reusable token/component foundation tasks before screen tasks for mobile/web/admin tracks.
+12. Per-task prompt files must be fully populated and executable (no unresolved placeholders such as `[implementation file paths ...]` or `- \`) and must include concrete `.ai-prompts/prompts/...` entries in `Prompt Blocks Applied`.
+13. For UI scope projects, use dedicated design-system templates:
+    - `design-system-foundation-template.md`
+    - `design-system-component-catalog-template.md`
+    - `design-system-implementation-sequencing-template.md`
+    - `design-system-verification-report-template.md`
+    and produce corresponding outputs in `prompts/outputs/specifications/` and `prompts/outputs/quality/`.
+14. For every Stage 06 per-task prompt, include:
+    - at least one semantic module from `.ai-prompts/prompts/modules/...` selected by task intent
+    - at least one technology-stack module from `.ai-prompts/prompts/modules/technology-stacks/...` selected from detected stack.
 ```
 
 ### Step 3: Done
@@ -64,8 +77,36 @@ The library automatically:
 - Routes your request optimally
 - Guides you through the specification/implementation process
 - Maintains state between sessions
+- Ensures project root `AGENTS.md` includes steering references
+- Installs `validate-integration.sh` wrapper backed by library scripts
 
 **That's it.** No configuration needed.
+
+### Step 4: Verify Setup Contract Artifacts (Recommended)
+
+After the first routed request, confirm these files exist:
+
+```bash
+ls prompts/outputs/specifications/asset-mapping.md
+ls prompts/outputs/specifications/design-system-foundation.md
+ls prompts/outputs/specifications/prompt-selection-manifest.md
+ls prompts/outputs/specifications/prompt-usage-log.md
+ls prompts/outputs/specifications/prompt-composition-index.md
+ls prompts/outputs/specifications/integration-contracts.md
+ls prompts/outputs/specifications/api-delivery-plan.md
+ls prompts/outputs/specifications/screen-fidelity-matrix.md
+ls prompts/outputs/implementation-prompts/prompt-pack-index.md
+grep -n "AI Prompt Library Steering (Auto-Managed)" AGENTS.md
+./validate-integration.sh --strict
+```
+
+These artifacts ensure setup actually activated design-system-first planning, template composition tracking, and API integration expectations.
+The `AGENTS.md` check ensures project-level agent instructions explicitly reference steering files and router/entry-point flow.
+
+Canonical integration scripts (installed/used automatically):
+- `.ai-prompts/scripts/bootstrap-project-integration.sh`
+- `.ai-prompts/scripts/validate-project-integration.sh`
+- `./validate-integration.sh` (project-level wrapper)
 
 ---
 
@@ -79,7 +120,8 @@ The library detects that it's the first time and automatically:
 3. ✅ Creates MY_PROJECT.md (your project brief)
 4. ✅ Sets up steering files for your AI tool (Cursor, Windsurf, Kiro, Claude, etc.)
 5. ✅ Creates project directories (for specs, tasks, code, tests, docs)
-6. ✅ Validates everything works correctly
+6. ✅ Runs bootstrap integration script for consistent setup defaults
+7. ✅ Installs and runs integration validation script
 
 **Result**: Your AI tool automatically knows how to help with your project.
 

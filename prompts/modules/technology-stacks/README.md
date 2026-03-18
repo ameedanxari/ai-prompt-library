@@ -159,6 +159,7 @@ export default function Dashboard() {
 - **web-vue.md** - Vue.js application setup
 
 ### Backend Development
+- **backend-firebase.md** - Firebase Auth/Firestore/Cloud Functions production patterns
 - **backend-nodejs.md** - Node.js and Express setup
 - **python-ecosystem.md** - Python (Django, FastAPI, Flask) comprehensive setup
 - **go-microservices.md** - Go microservices with gRPC, NATS, and cloud-native patterns

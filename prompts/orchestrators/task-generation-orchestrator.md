@@ -9,6 +9,33 @@ Generate implementation tasks that are:
 - **Self-contained**: No dependencies on conversation history
 - **Resumable**: Any AI agent can pick up and execute
 - **Traceable**: Clear references to specifications and decisions
+- **Design-system aligned**: Explicitly mapped to design tokens/components
+- **Integration-ready**: Explicitly mapped to real API contracts
+
+## Mandatory Stage 06 Deliverables
+Do not mark Stage 06 complete unless all are generated:
+- `prompts/outputs/task-lists/implementation-master-plan.md`
+- `prompts/outputs/task-lists/task-list-index.md`
+- Fleshed task tracks (no high-level-only bullet lists)
+- `prompts/outputs/implementation-prompts/prompt-pack-index.md`
+- One prompt file per task in `prompts/outputs/implementation-prompts/`
+- `prompts/outputs/specifications/design-system-implementation-sequencing.md` (for UI scope)
+
+Required template inputs:
+- `.ai-prompts/prompts/templates/task-generation.md`
+- `.ai-prompts/prompts/templates/task-prompt-template.md`
+- `.ai-prompts/prompts/templates/implementation-prompt-generation.md`
+- `.ai-prompts/prompts/templates/implementation-prompt-pack-template.md`
+- `.ai-prompts/prompts/modules/design-system/component-implementation-sequencing.md`
+- `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md`
+
+Stage 06 quality gates:
+- UI tracks must include reusable design-system foundation/component-primitives tasks before screen tasks.
+- Per-task prompt files must be fully populated and must not contain placeholder text (`[implementation file paths ...]`, `[project-specific ...]`, `- \`).
+- Per-task prompts must include semantic module lineage (`.ai-prompts/prompts/modules/...`) tied to task intent.
+- Per-task prompts must include stack-module lineage (`.ai-prompts/prompts/modules/technology-stacks/...`) aligned to project stack.
+- Per-task prompts matching `profile`, `discovery/search`, `analytics/reporting`, or `moderation/review` intent must include intent-specific semantic modules (not only `integration/service-integration`).
+- Prompt-pack index rows must expose semantic and stack module mappings per task.
 
 ## Task Generation Protocol
 
@@ -35,6 +62,19 @@ done
 if [ -f "prompts/outputs/ARCHITECTURE_DECISIONS.md" ]; then
     echo "🏗️ Architecture decisions available"
 fi
+
+# Validate high-value specification artifacts
+for required in \
+  "prompts/outputs/specifications/design-system-foundation.md" \
+  "prompts/outputs/specifications/prompt-selection-manifest.md" \
+  "prompts/outputs/specifications/integration-contracts.md"
+do
+  if [ -f "$required" ]; then
+    echo "✅ Found: $required"
+  else
+    echo "⚠️ Missing: $required (generate before finalizing task lists)"
+  fi
+done
 ```
 
 ### Step 2: Generate Context-Agnostic Tasks
@@ -55,6 +95,7 @@ For each major component, generate tasks with full context:
 - API endpoints
 - Testing framework
 - Deployment configuration
+- Task-list indexing and execution sequencing
 
 **Task Structure:**
 Each task will include:
@@ -63,6 +104,16 @@ Each task will include:
 - Reference to all relevant specifications
 - Acceptance criteria
 - Testing requirements
+- Prompt template composition references
+- Design-system mapping references
+- API contract references
+- Semantic module routing (for example auth/profile/booking/payment/notification)
+- Technology stack module routing (for example Flutter/Firebase/React/Node)
+- Intent-specific semantic routing for:
+  - profile -> `social/user-profiles` or `social/user-verification`
+  - discovery/search -> `search-discovery/*` or `social/social-discovery` or `commerce/product-search`
+  - analytics/reporting -> `analytics/*` or `search-discovery/search-analytics` or `notifications/notification-analytics`
+  - moderation/review/audit -> `content-management/content-moderation` or `social/*moderation` or `enterprise-saas/audit-trails`
 ```
 
 ### Step 3: Task Template Structure
@@ -96,6 +147,7 @@ Each generated task follows this structure:
 - [APIs to integrate with]
 - [Database interactions]
 - [External services]
+- [Temporary mock policy + replacement path if mocks are used]
 
 ## Implementation Details
 ### Files to Create/Modify
@@ -323,6 +375,37 @@ cat > prompts/outputs/task-lists/deployment-tasks.md << 'EOF'
 EOF
 ```
 
+### Step 6: Generate Master Plan and Task Index (Mandatory)
+```bash
+cat > prompts/outputs/task-lists/implementation-master-plan.md << 'EOF'
+# Implementation Master Plan
+
+## Purpose
+Execution sequencing and dependency map across task tracks.
+
+## Task Tracks
+- prompts/outputs/task-lists/frontend-tasks.md
+- prompts/outputs/task-lists/backend-tasks.md
+- prompts/outputs/task-lists/mobile-tasks.md (if present)
+- prompts/outputs/task-lists/deployment-tasks.md
+
+## Rules
+1. API integration tasks are required for each in-scope app surface.
+2. Database migration/seed tasks must be explicit where applicable.
+3. Mock tasks must include replacement task IDs and owner.
+EOF
+
+{
+  echo "# Task List Index"
+  echo
+  echo "## Ordered Tracks"
+  ls prompts/outputs/task-lists/*-tasks.md 2>/dev/null | sed 's#^#- #' || true
+  echo
+  echo "## Source Of Truth"
+  echo "- Use this file to pick the next task track and task ID."
+} > prompts/outputs/task-lists/task-list-index.md
+```
+
 ### Step 6: Create Task Execution Tracker
 ```bash
 # Create execution progress tracker
@@ -363,6 +446,45 @@ cat > EXECUTION_PROGRESS.md << 'EOF'
 ---
 *Updated by Task Generation Orchestrator*
 EOF
+```
+
+### Step 7: Generate Implementation Prompt Pack (Mandatory)
+```bash
+mkdir -p prompts/outputs/implementation-prompts
+
+cat > prompts/outputs/implementation-prompts/prompt-pack-index.md << 'EOF'
+# Implementation Prompt Pack Index
+
+| Task ID | Prompt File | Depends On | Status |
+|---|---|---|---|
+| [task-id] | prompts/outputs/implementation-prompts/[track]-[task-id].md | [deps] | ready |
+EOF
+
+# For each task in each task track, create a prompt file:
+# prompts/outputs/implementation-prompts/<track>-<task-id>.md
+# Each file must include:
+# - Objective
+# - Context + spec references
+# - API/design/data references
+# - Acceptance criteria
+# - Validation commands
+# - Prompt Blocks Applied
+```
+
+### Step 8: Validate Stage 06 Output Quality
+```bash
+# 1) Ensure prompt pack exists
+test -f prompts/outputs/implementation-prompts/prompt-pack-index.md || echo "❌ Missing prompt-pack-index.md"
+
+# 2) Ensure at least one implementation prompt file exists
+find prompts/outputs/implementation-prompts -type f -name "*.md" ! -name "prompt-pack-index.md" | grep -q . || echo "❌ No per-task prompt files generated"
+
+# 3) Ensure tasks are fleshed (objective + acceptance criteria)
+for f in prompts/outputs/task-lists/*-tasks.md; do
+  [ -f "$f" ] || continue
+  grep -q "Objective" "$f" || echo "❌ Task file lacks Objective sections: $f"
+  grep -q "Acceptance Criteria" "$f" || echo "❌ Task file lacks Acceptance Criteria sections: $f"
+done
 ```
 
 ## Task Quality Standards

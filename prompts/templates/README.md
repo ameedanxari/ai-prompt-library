@@ -116,6 +116,9 @@ The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to
 - [project-state-files.md](./project-state-files.md) - State file templates (NEXT_ACTION, PROJECT_STATE, etc.)
 - [project-state-tracking.md](./project-state-tracking.md) - Project state management
 - [project-status-maintenance.md](./project-status-maintenance.md) - Status tracking
+- [prompt-usage-log-template.md](./prompt-usage-log-template.md) - Stage-by-stage prompt composition traceability
+- [prompt-composition-index-template.md](./prompt-composition-index-template.md) - Output-to-prompt block mapping index
+- [implementation-prompt-pack-template.md](./implementation-prompt-pack-template.md) - Per-task executable prompt pack generation
 - [execution-phase.md](./execution-phase.md) - **Execution Phase: Build code from specifications**
 
 ### Preservation & Optimization
@@ -128,7 +131,16 @@ The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to
 
 ### Design & Deployment
 - [design-system-generation.md](./design-system-generation.md) - Design system generation
+- [design-system-foundation-template.md](./design-system-foundation-template.md) - Token architecture and platform mapping output template
+- [design-system-component-catalog-template.md](./design-system-component-catalog-template.md) - Reusable component inventory and state matrix template
+- [design-system-implementation-sequencing-template.md](./design-system-implementation-sequencing-template.md) - Stage 06 design-system-first sequencing template
+- [design-system-verification-report-template.md](./design-system-verification-report-template.md) - Stage 09 design-system quality verification template
+- [data-architecture-planning.md](./data-architecture-planning.md) - Database/migration planning
+- [screen-fidelity-matrix-template.md](./screen-fidelity-matrix-template.md) - Screen-by-screen mockup fidelity matrix
+- [integration-contracts-spec-template.md](./integration-contracts-spec-template.md) - Executable API/integration contract structure
+- [api-delivery-plan-template.md](./api-delivery-plan-template.md) - Endpoint-level rollout and gating plan
 - [deployment-artifacts-generation.md](./deployment-artifacts-generation.md) - Deployment artifact creation
+- [deployment-prerequisites-package.md](./deployment-prerequisites-package.md) - Accounts/keys/environment prerequisite package
 - [agents-generation.md](./agents-generation.md) - AI agent configuration generation
 
 ### Library Maintenance
