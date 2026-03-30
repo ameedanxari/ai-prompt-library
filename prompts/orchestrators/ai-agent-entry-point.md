@@ -66,6 +66,11 @@ For this and all future requests:
     - at least one semantic module path (`.ai-prompts/prompts/modules/...`) based on task intent
     - at least one technology-stack module path (`.ai-prompts/prompts/modules/technology-stacks/...`) based on project stack.
     - for `profile`, `discovery/search`, `analytics/reporting`, and `moderation/review` intents, require dedicated semantic modules (not only `integration/service-integration`).
+17. For hi-fidelity UI scope, enforce screen-level parity gates before marking tasks complete:
+    - source mockup anchors per screen
+    - shell composition checks (sidebar/topbar/page chrome)
+    - typography/spacing/token/iconography checks
+    - no scaffold/placeholder substitutions as final output
 
 ## How to Use This Template
 

@@ -38,6 +38,7 @@ validate_design_artifacts() {
     echo "🔍 Validating design artifacts..."
     
     local missing_artifacts=()
+    local ui_scope=false
     
     # Check for task lists (modern index-first format or legacy files)
     if [ ! -f "prompts/outputs/task-lists/task-list-index.md" ]; then
@@ -57,10 +58,21 @@ validate_design_artifacts() {
     [ ! -f "prompts/outputs/specifications/prompt-usage-log.md" ] && missing_artifacts+=("Prompt usage log")
     [ ! -f "prompts/outputs/specifications/data-architecture.md" ] && missing_artifacts+=("Data architecture")
     [ ! -f "prompts/outputs/specifications/backend-infrastructure.md" ] && missing_artifacts+=("Backend infrastructure plan")
+    [ ! -f "prompts/outputs/specifications/design-system-component-catalog.md" ] && missing_artifacts+=("Design system component catalog")
     
     # Check for implementation prompts
     [ ! -d "prompts/outputs/implementation-prompts" ] && missing_artifacts+=("Implementation prompts directory")
     [ ! -f "prompts/outputs/implementation-prompts/prompt-pack-index.md" ] && missing_artifacts+=("Implementation prompt pack index")
+
+    # Detect UI scope and enforce fidelity artifacts
+    if [ -f "prompts/outputs/task-lists/implementation-master-plan.md" ] && \
+       rg -qi "ui|screen|mobile|web|admin|design-system|dashboard|layout" "prompts/outputs/task-lists/implementation-master-plan.md"; then
+        ui_scope=true
+    fi
+    if [ "$ui_scope" = true ]; then
+        [ ! -f "prompts/outputs/specifications/screen-fidelity-matrix.md" ] && missing_artifacts+=("Screen fidelity matrix")
+        [ ! -f "prompts/outputs/specifications/design-system-verification-report.md" ] && missing_artifacts+=("Design system verification report")
+    fi
     
     if [ ${#missing_artifacts[@]} -gt 0 ]; then
         echo "❌ Missing critical design artifacts:"
@@ -128,8 +140,29 @@ I will now implement by following the generated task lists and prompts EXACTLY, 
 4. Validate completion against the task's success criteria
 5. Move to the next task only after validation
 6. Reject "done" state if implementation is still mock-only without planned replacement
+7. For UI tasks, enforce source-mockup parity checks (layout, typography, spacing, color/gradients, iconography, component states)
+8. Block task completion if scaffold/placeholder composition is used where hi-fidelity output is required
 
 **Starting with the first pending task from task-list-index.md...**
+```
+
+### Step 3.5: UI Fidelity Hard Gate (Mandatory for UI Tasks)
+
+Before marking any UI task complete, run this gate:
+
+```markdown
+🔒 **UI FIDELITY HARD GATE**
+
+For this task, validate against source mockups and `screen-fidelity-matrix.md`:
+- [ ] Shell composition matches (sidebar/topbar/page chrome where applicable)
+- [ ] Typography family/weight/size hierarchy matches target
+- [ ] Spacing rhythm and section placement match target composition
+- [ ] Color tokens and gradient treatment match design-system definitions
+- [ ] Icon set/style/size usage matches target
+- [ ] Interaction states (default/hover/focus/disabled/loading/empty/error) are implemented as specified
+- [ ] No scaffold placeholders remain in implemented surfaces
+
+If any check fails: task status stays **In Progress** and a follow-up fix task is created.
 ```
 
 ### Step 4: Task-by-Task Execution Enforcement
@@ -187,6 +220,7 @@ prevent_context_drift() {
 - Do NOT use different technologies than specified
 - ONLY follow the exact task instructions and referenced specifications
 - Do NOT count mock-only behavior as production completion unless explicitly approved and tracked with a replacement task
+- Do NOT substitute simplified scaffold layouts for hi-fidelity screen composition requirements
 
 If you find yourself thinking "I should also add..." or "It would be better to..." - STOP.
 Follow the task exactly as written.

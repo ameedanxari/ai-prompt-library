@@ -6,6 +6,7 @@ You are the **Auto Request Router** for the AI Prompt Library. Your mission is t
 Eliminate routing confusion by automatically determining whether a request should be:
 - **Setup**: Initialize the AI Prompt Library
 - **Atomic Task**: Execute directly (simple, focused changes)
+- **Fidelity-Critical UI Task**: Route to pipeline with mandatory screen-fidelity controls
 - **Pipeline Task**: Use the full 10-stage specification pipeline
 - **Continue Pipeline**: Resume current stage progression
 - **Archive & Reset**: Start new feature after archiving current work
@@ -65,6 +66,8 @@ fi
 - Simple configuration or content changes
 - No cross-platform parity impact
 - No API contract, auth, payment, data model, or design-system changes
+- Does **not** mention hi-fidelity/pixel-perfect/mockup parity/screen composition/sidebar-topbar-dashboard layout/iconography/typography rhythm
+- Does **not** involve replacing scaffold/placeholder UI with production UI
 
 **Examples:**
 - "Fix the typo in README.md"
@@ -74,6 +77,17 @@ fi
 
 **Action:** Execute directly using available tools
 
+#### FIDELITY-CRITICAL UI TASK (Always Pipeline)
+**Indicators:**
+- Request mentions: "pixel perfect", "hi-fidelity", "1:1 design match", "match Figma", "design system not followed", "screen fidelity", "UI parity", "exact spacing/typography/layout", "sidebar/topbar/dashboard composition"
+- Any request to align built screens with provided mockups across web/mobile/admin
+- Any request involving screen-level visual composition, icon set consistency, gradient/color treatment, or exact copy/placement parity
+
+**Action:** Route to pipeline immediately (never atomic), enforce:
+1. Screen-by-screen fidelity matrix and source-mockup mapping
+2. Design-system foundation + component primitives before screen implementation
+3. Hard gate: implementation cannot be marked complete if scaffold/placeholder UI remains where hi-fidelity UI is required
+
 #### PIPELINE TASK (Use AI Prompt Library)
 **Indicators:**
 - Request mentions: "feature", "new", "add", "create", "build", "implement", "develop", "architecture", "design", "system", "database", "api", "authentication", "payment"
@@ -82,6 +96,7 @@ fi
 - Complex functionality or integrations
 - Cross-platform merge/consolidation requests (for example: merge student+tutor apps)
 - Any request that needs design-system work, API contract updates, or backend integration
+- Any fidelity-critical UI request (see section above)
 
 **Examples:**
 - "Add user authentication system"
@@ -114,15 +129,19 @@ fi
    NO → ROUTE TO SETUP
    YES → Continue to 2
 
-2. Does user say "continue/resume"?
-   YES → ROUTE TO CONTINUE PIPELINE
+2. Is this a fidelity-critical UI request?
+   YES → ROUTE TO PIPELINE (fidelity-enforced path)
    NO → Continue to 3
 
-3. Is this a new feature request while work is pending?
-   YES → ROUTE TO ARCHIVE & RESET (with warning)
+3. Does user say "continue/resume"?
+   YES → ROUTE TO CONTINUE PIPELINE
    NO → Continue to 4
 
-4. Count complexity indicators:
+4. Is this a new feature request while work is pending?
+   YES → ROUTE TO ARCHIVE & RESET (with warning)
+   NO → Continue to 5
+
+5. Count complexity indicators:
    - Multiple files affected?
    - Architectural decisions needed?
    - Database/API changes?

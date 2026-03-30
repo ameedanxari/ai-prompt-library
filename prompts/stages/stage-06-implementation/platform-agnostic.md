@@ -17,6 +17,8 @@ Stage 06 must produce these artifacts before moving forward:
 - One prompt file per task under `prompts/outputs/implementation-prompts/`
 - `prompts/outputs/specifications/prompt-usage-log.md` (Stage 06 entry)
 - `prompts/outputs/specifications/design-system-implementation-sequencing.md` (required when UI scope exists)
+- `prompts/outputs/specifications/screen-fidelity-matrix.md` (required when UI scope exists)
+- `prompts/outputs/specifications/design-system-verification-report.md` (required when UI scope exists)
 
 Required behavior:
 1. Task list index must list every task file and dependency ordering.
@@ -36,6 +38,9 @@ Required behavior:
 12. Every per-task prompt must include stack module lineage (`.ai-prompts/prompts/modules/technology-stacks/...`) selected from project stack.
 13. `prompt-pack-index.md` rows must include semantic and stack module mappings per task.
 14. For tasks with `profile`, `discovery/search`, `analytics/reporting`, or `moderation/review` intent, semantic routing must include at least one intent-specific module (for example `social/user-profiles`, `search-discovery/*`, `analytics/*`, `content-moderation`/`audit-trails`) and must not default to only `integration/service-integration`.
+15. UI task prompts must include source mockup anchors (exact file/frame references) and measurable parity checks.
+16. UI scope tasks must prohibit scaffold/placeholder substitutions unless explicitly temporary with a linked replacement task ID.
+17. UI tracks must define completion gates for shell composition (sidebar/topbar), typography rhythm, spacing, token usage, iconography, and interaction states.
 
 ## Examples
 ```markdown

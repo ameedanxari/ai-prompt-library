@@ -36,12 +36,22 @@ Generated task prompts MUST satisfy all of the following:
 - Select semantic and stack modules from `prompt-selection-manifest.md` and document why they apply to this task.
 - For tasks matching profile/discovery/analytics/moderation intent, include intent-specific semantic modules (for example `social/user-profiles`, `search-discovery/*`, `analytics/*`, `content-moderation`/`audit-trails`) and do not rely only on `integration/service-integration`.
 - File paths in `Files to Create/Modify` must be rooted in real project directories (no synthetic placeholder roots).
+- For UI tasks, include all of the following sections:
+  - `## Source Mockup Anchors`
+  - `## Exact Composition Requirements`
+  - `## Pixel Fidelity Acceptance Checklist`
+  - `## Forbidden UI Substitutions`
+- UI task prompts must define exact text/copy, placement, and shell composition requirements (for example sidebar/topbar/dashboard chrome) from source mockups.
+- UI task prompts must explicitly reject scaffold/placeholder layouts as final output when hi-fidelity match is required.
 
 Forbidden output patterns in generated task prompt files:
 - `[implementation file paths for ...]`
 - `[test file paths for ...]`
 - `[project-specific lint/test/build commands for ...]`
 - `- \` placeholder bullet lines
+- Generic, non-source-based UI direction like:
+  - "match modern dashboard style"
+  - "use best judgment for spacing/colors"
 
 If any forbidden pattern remains, the task prompt is invalid and must be regenerated.
 
@@ -201,6 +211,37 @@ interface Example {
 **Interactions**: [User interactions to implement]
 **States**: [Loading, error, empty, success states]
 
+## Source Mockup Anchors
+[Required for UI tasks]
+- **Primary Source File(s)**: `[working_copy/... or prompts/working_copy/...]`
+- **Frame/Screen IDs**: [Exact IDs or names]
+- **Parity Scope**: [Which regions must match 1:1]
+
+## Exact Composition Requirements
+[Required for UI tasks]
+- **Shell Composition**: [sidebar/topbar/header/footer/navigation requirements]
+- **Typography Rhythm**: [font family, size scale, weight hierarchy, line-height]
+- **Spacing Rhythm**: [key paddings/margins/gaps with measurable expectations]
+- **Color/Gradient Treatment**: [token names + gradient usage constraints]
+- **Iconography**: [icon set/style/size rules]
+- **Text Copy**: [exact visible strings and placement requirements]
+
+## Forbidden UI Substitutions
+[Required for UI tasks]
+- No scaffold placeholder cards/blocks where production composition is specified.
+- No alternate shell layouts when source mockup defines shell regions.
+- No token substitutions outside design-system definitions unless explicitly approved.
+- No simplified typography scale when source mockup defines exact hierarchy.
+
+## Pixel Fidelity Acceptance Checklist
+[Required for UI tasks]
+- [ ] Source mockup anchors are mapped to implemented surfaces
+- [ ] Shell composition and section placement match source composition
+- [ ] Typography scale and spacing rhythm match source composition
+- [ ] Color/gradient/icon usage matches design-system definitions and source
+- [ ] Interaction states match target behavior
+- [ ] No scaffold/placeholder substitutions remain in parity-required scope
+
 ---
 
 ## Code Patterns to Follow
@@ -255,6 +296,8 @@ import AnotherThing from './path';
 - [ ] Proper error handling implemented
 - [ ] Uses design-system tokens/components from design-system-foundation.md
 - [ ] Uses real integration contracts or includes explicit replacement task for temporary mocks
+- [ ] (UI tasks) Source mockup anchors are implemented with 1:1 composition intent
+- [ ] (UI tasks) No scaffold/placeholder substitutions remain in in-scope surfaces
 
 ### Testing Criteria
 - [ ] Unit tests written and passing
@@ -355,6 +398,11 @@ import AnotherThing from './path';
    - [ ] All criteria from above met
    - [ ] Edge cases handled
    - [ ] Error handling complete
+
+6. **UI Fidelity Review (UI tasks only)**
+   - [ ] Matches source mockup anchors and frame composition
+   - [ ] Shell/topbar/sidebar composition aligns with target
+   - [ ] Typography/spacing/token/icon checks pass against screen-fidelity-matrix.md
 
 ---
 

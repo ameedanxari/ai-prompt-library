@@ -116,7 +116,8 @@ The library's auto-stabilization (Step 0 in ai-agent-entry-point.md) runs invisi
 
 ## Request Types (Auto-Detected)
 - **Setup**: User mentions "setup", "getting started", "first time" → Auto-setup runs
-- **Atomic**: User says "fix typo", "change color" → Direct implementation  
+- **Atomic**: User says "fix typo", "change color" → Direct implementation (only if not a hi-fidelity/screen-parity request)  
+- **Fidelity-Critical UI**: User asks for pixel-perfect/hi-fidelity/1:1 mockup parity → Always pipeline with screen-fidelity controls
 - **Pipeline**: User says "add authentication" → Full 10-stage pipeline
 - **Continue**: User says "continue", "next", "resume" → Read state and resume
 - **Reset**: User wants new feature while work pending → Archive and restart
