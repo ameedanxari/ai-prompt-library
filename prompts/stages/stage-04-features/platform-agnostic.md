@@ -20,6 +20,9 @@ Required behavior:
 2. For every major screen/view, map required design tokens/components and mockup references.
 3. Identify missing dependencies (accounts, keys, external services) that block implementation.
 4. Mark mocks as temporary with explicit replacement tasks and sequencing.
+5. If `ui-fidelity-source-map.md` exists, derive all screen fidelity rows from it and do not invent screen composition from scratch.
+6. Capture clickflow parity (`trigger -> destination screen/state`) for each in-scope UI transition.
+7. Include state parity coverage per screen (`default`, `hover`, `focus`, `disabled`, `loading`, `empty`, `error` where applicable).
 
 Mandatory templates for this stage:
 - `.ai-prompts/prompts/templates/integration-contracts-spec-template.md`
@@ -28,8 +31,9 @@ Mandatory templates for this stage:
 
 Hard output requirements:
 1. `api-delivery-plan.md` must include endpoint-level rows (`method`, `path`, `provider milestone`, `client milestone`, `test suite`, `rollback`).
-2. `screen-fidelity-matrix.md` must be screen-by-screen (no grouped flow rows) and include: `Screen ID`, source mockup file, token/component mapping, owner, follow-up task ID.
+2. `screen-fidelity-matrix.md` must be screen-by-screen (no grouped flow rows) and include: `Screen ID`, `Source Mockup File`, `Source Frame ID`, `Clickflow ID(s)`, token/component mapping, measurable parity checks, owner, follow-up task ID.
 3. `integration-contracts.md` must contain concrete endpoint rows with auth scope, schema refs, and error codes before Stage 04 can be marked complete.
+4. For screens with parity priority `strict`, the matrix must include explicit "forbidden substitutions" and visual evidence baseline references.
 
 ## Examples
 ```markdown

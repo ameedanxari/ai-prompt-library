@@ -5,6 +5,7 @@ Verify that generated implementation plans preserve provided mockups and design 
 
 ## Instructions
 1. Build a screen inventory from `working_copy/` and `prompts/working_copy/`.
+1a. If HTML/CSS mockups or clickable flow docs exist, generate `ui-fidelity-source-map.md` first and use it as source-of-truth.
 2. For each screen, map:
    - source file/reference
    - source frame/artboard ID
@@ -14,6 +15,7 @@ Verify that generated implementation plans preserve provided mockups and design 
    - exact visible text/copy requirements
    - key interactions/states
 3. Record expected parity level and acceptable deviations (must be explicit and approved).
+3a. For strict/high parity screens, assign visual evidence baseline IDs and clickflow IDs.
 4. Add measurable checks for:
    - shell composition (sidebar/topbar/header/footer/navigation)
    - typography hierarchy (family, size, weight, line-height)
@@ -30,6 +32,9 @@ Generate `prompts/outputs/specifications/screen-fidelity-matrix.md` with:
 - Fidelity criteria (layout, spacing, typography, color, interactions)
 - Status (`ready`, `needs-clarification`, `blocked`)
 - Owner and follow-up actions for each gap
+
+If high-fidelity UI sources exist, also require:
+- `prompts/outputs/specifications/ui-fidelity-source-map.md`
 
 Required columns:
 - `Screen ID`
@@ -57,6 +62,7 @@ Forbidden:
 - Missing task IDs for unresolved gaps
 - Status `ready` without measurable checks
 - Marking placeholder/scaffold screens as complete parity
+- Reinterpreting source HTML/prototype composition without explicit approved deviation
 
 ## Acceptance Criteria
 - 100% of in-scope screens are mapped.

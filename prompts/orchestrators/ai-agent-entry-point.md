@@ -71,6 +71,10 @@ For this and all future requests:
     - shell composition checks (sidebar/topbar/page chrome)
     - typography/spacing/token/iconography checks
     - no scaffold/placeholder substitutions as final output
+18. If high-fidelity UI sources include HTML/CSS or clickable flow artifacts:
+    - generate `ui-fidelity-source-map.md` before Stage 04
+    - treat source HTML/prototype as composition/copy/state source-of-truth unless explicit approved deviations are documented
+    - require clickflow parity mapping and visual evidence baseline references for strict/high parity screens
 
 ## How to Use This Template
 

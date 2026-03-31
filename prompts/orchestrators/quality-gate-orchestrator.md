@@ -9,6 +9,7 @@ Enforce quality through:
 - **Content quality**: Validate output quality and consistency
 - **Cross-platform parity**: Ensure consistency across platforms
 - **Dependency verification**: Check all references and dependencies
+- **Fidelity evidence**: Require source-linked design parity checks for high-fidelity UI scope
 
 ## Quality Gate Framework
 
@@ -26,6 +27,24 @@ Enforce quality through:
 | **08 - Documentation** | Deployment exists | documentation.md generated | Documentation quality |
 | **09 - Quality** | Documentation exists | quality-report.md generated | Quality metrics |
 | **10 - Handoff** | Quality report exists | handoff.md generated | Handoff completeness |
+
+## Fidelity-Critical Overrides (Mandatory for Hi-Fidelity UI Scope)
+
+When high-fidelity UI sources exist (`working_copy/` or `prompts/working_copy/` mockups, HTML/CSS prototypes, clickable flows), these gates are mandatory:
+
+1. Stage 01 must produce `ui-fidelity-source-map.md`.
+2. Stage 04 must produce `screen-fidelity-matrix.md` with:
+   - `Source Frame ID`
+   - `Clickflow ID(s)`
+   - measurable composition/state checks
+   - visual evidence baseline IDs for strict/high parity screens
+3. Stage 06 UI task prompts must include:
+   - `Source Mockup Anchors`
+   - `Source Reuse Plan`
+   - `Clickflow Parity Contract`
+   - `Visual Regression Gate`
+4. Stage 09 quality must fail if strict/high parity screens lack visual evidence or clickflow validation.
+5. No "complete" decision is allowed when scaffold/placeholder substitutions remain in parity-required areas.
 
 ## Quality Validation Protocol
 

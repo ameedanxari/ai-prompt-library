@@ -48,6 +48,11 @@ Convert Stage 06 task lists into executable, per-task prompts that any agent can
    - `.ai-prompts/prompts/modules/integration/service-integration.md` is allowed as a supporting module, but it must not be the only semantic module when one of the above intents is detected.
 7. Per-task prompt `Files to Create/Modify` paths must anchor to real project roots (for example existing top-level directories) and avoid synthetic placeholder trees.
 8. `prompt-pack-index.md` must include explicit semantic and stack prompt block columns per task row.
+9. For UI tasks with high-fidelity sources, prompts must include:
+   - `Source Mockup Anchors`
+   - `Source Reuse Plan`
+   - `Clickflow Parity Contract`
+   - `Visual Regression Gate`
 
 ## Semantic Intent Routing Matrix (Required)
 
@@ -78,6 +83,8 @@ If multiple intents match, include one semantic module per matched intent catego
 ## Context
 - Specifications: [absolute file references]
 - Design assets: [mockup file references]
+- UI fidelity source map references: [rows from `ui-fidelity-source-map.md`]
+- Screen fidelity matrix references: [rows from `screen-fidelity-matrix.md`]
 - API contracts: [contract IDs and endpoint rows]
 - Data architecture references: [collections/tables/indexes]
 

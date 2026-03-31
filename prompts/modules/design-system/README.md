@@ -13,6 +13,7 @@ Provide explicit prompt modules for building and enforcing a production-ready de
 When these modules are selected, they should drive:
 - `prompts/outputs/specifications/design-system-foundation.md`
 - `prompts/outputs/specifications/design-system-component-catalog.md`
+- `prompts/outputs/specifications/ui-fidelity-source-map.md` (when high-fidelity UI source files exist)
 - `prompts/outputs/specifications/screen-fidelity-matrix.md`
 - Stage 06 task tracks that sequence design-system component implementation before screens
 - `prompts/outputs/specifications/design-system-implementation-sequencing.md` (UI scope)
@@ -21,6 +22,7 @@ When these modules are selected, they should drive:
 ## Complementary Templates
 - `.ai-prompts/prompts/templates/design-system-foundation-template.md`
 - `.ai-prompts/prompts/templates/design-system-component-catalog-template.md`
+- `.ai-prompts/prompts/templates/ui-fidelity-source-map-template.md`
 - `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md`
 - `.ai-prompts/prompts/templates/design-system-verification-report-template.md`
 

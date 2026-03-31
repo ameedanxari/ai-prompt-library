@@ -44,6 +44,22 @@ if [ -f "EXECUTION_PROGRESS.md" ]; then
     echo "⚠️ Execution in progress"
     grep -c "\[ \]" EXECUTION_PROGRESS.md || echo "0"
 fi
+
+# Detect high-fidelity source assets (required for fidelity routing)
+UI_SOURCE_COUNT=$(
+  find working_copy prompts/working_copy -type f 2>/dev/null \
+    | grep -Ei '\.(fig|figma|sketch|xd|psd|png|jpg|jpeg|webp|svg|html|htm)$' \
+    | wc -l \
+    | tr -d ' '
+)
+CLICKABLE_SOURCE_COUNT=$(
+  find working_copy prompts/working_copy -type f 2>/dev/null \
+    | grep -Ei '(prototype|flow|click|journey|wireflow|user-flow|interaction).*\.((html?)|(md)|(pdf)|(png)|(jpg)|(jpeg)|(svg))$' \
+    | wc -l \
+    | tr -d ' '
+)
+echo "UI sources detected: ${UI_SOURCE_COUNT}"
+echo "Clickable-flow sources detected: ${CLICKABLE_SOURCE_COUNT}"
 ```
 
 ### Step 2: Request Classification
@@ -68,6 +84,7 @@ fi
 - No API contract, auth, payment, data model, or design-system changes
 - Does **not** mention hi-fidelity/pixel-perfect/mockup parity/screen composition/sidebar-topbar-dashboard layout/iconography/typography rhythm
 - Does **not** involve replacing scaffold/placeholder UI with production UI
+- No provided high-fidelity source assets (`working_copy`/`prompts/working_copy` mockups, HTML prototypes, clickable flows)
 
 **Examples:**
 - "Fix the typo in README.md"
@@ -82,11 +99,15 @@ fi
 - Request mentions: "pixel perfect", "hi-fidelity", "1:1 design match", "match Figma", "design system not followed", "screen fidelity", "UI parity", "exact spacing/typography/layout", "sidebar/topbar/dashboard composition"
 - Any request to align built screens with provided mockups across web/mobile/admin
 - Any request involving screen-level visual composition, icon set consistency, gradient/color treatment, or exact copy/placement parity
+- Any request where high-fidelity source files exist and the requested change touches UI
+- Any request with clickable prototype flow artifacts (HTML prototype, flow map, interaction doc)
 
 **Action:** Route to pipeline immediately (never atomic), enforce:
 1. Screen-by-screen fidelity matrix and source-mockup mapping
 2. Design-system foundation + component primitives before screen implementation
 3. Hard gate: implementation cannot be marked complete if scaffold/placeholder UI remains where hi-fidelity UI is required
+4. Generate `ui-fidelity-source-map.md` from source assets before Stage 04 feature planning
+5. Require click-flow parity mapping and screen-state coverage (default/hover/focus/disabled/loading/empty/error) for each in-scope screen
 
 #### PIPELINE TASK (Use AI Prompt Library)
 **Indicators:**
@@ -130,6 +151,10 @@ fi
    YES → Continue to 2
 
 2. Is this a fidelity-critical UI request?
+   YES → ROUTE TO PIPELINE (fidelity-enforced path)
+   NO → Continue to 3
+
+2b. Are high-fidelity sources present and request touches UI?
    YES → ROUTE TO PIPELINE (fidelity-enforced path)
    NO → Continue to 3
 

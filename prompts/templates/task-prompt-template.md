@@ -38,11 +38,15 @@ Generated task prompts MUST satisfy all of the following:
 - File paths in `Files to Create/Modify` must be rooted in real project directories (no synthetic placeholder roots).
 - For UI tasks, include all of the following sections:
   - `## Source Mockup Anchors`
+  - `## Source Reuse Plan`
+  - `## Clickflow Parity Contract`
   - `## Exact Composition Requirements`
+  - `## Visual Regression Gate`
   - `## Pixel Fidelity Acceptance Checklist`
   - `## Forbidden UI Substitutions`
 - UI task prompts must define exact text/copy, placement, and shell composition requirements (for example sidebar/topbar/dashboard chrome) from source mockups.
 - UI task prompts must explicitly reject scaffold/placeholder layouts as final output when hi-fidelity match is required.
+- If HTML/CSS or clickable prototypes are provided, UI task prompts must treat them as source-of-truth and describe direct reuse/translation strategy explicitly.
 
 Forbidden output patterns in generated task prompt files:
 - `[implementation file paths for ...]`
@@ -217,6 +221,19 @@ interface Example {
 - **Frame/Screen IDs**: [Exact IDs or names]
 - **Parity Scope**: [Which regions must match 1:1]
 
+## Source Reuse Plan
+[Required for UI tasks when HTML/CSS/prototype source exists]
+- **Directly Reused Structure**: [semantic regions/components carried over verbatim]
+- **Tokenized Translation**: [what gets mapped to design-system tokens]
+- **Do-Not-Reinterpret Areas**: [regions where layout/copy/state behavior must remain source-identical]
+
+## Clickflow Parity Contract
+[Required for UI tasks when clickable flow exists]
+- **Flow IDs Covered**: [from ui-fidelity-source-map.md]
+- **Route/State Transitions**:
+  - `[trigger] -> [destination screen/state]`
+- **Validation Steps**: [how transition behavior will be verified]
+
 ## Exact Composition Requirements
 [Required for UI tasks]
 - **Shell Composition**: [sidebar/topbar/header/footer/navigation requirements]
@@ -232,6 +249,14 @@ interface Example {
 - No alternate shell layouts when source mockup defines shell regions.
 - No token substitutions outside design-system definitions unless explicitly approved.
 - No simplified typography scale when source mockup defines exact hierarchy.
+- No alternate clickflow transitions when clickable source flow defines behavior.
+
+## Visual Regression Gate
+[Required for strict/high parity UI tasks]
+- **Baseline Evidence ID(s)**: [from screen-fidelity-matrix.md]
+- **Capture Method**: [playwright/storybook/screenshot tooling]
+- **Allowed Drift**: [explicit threshold or exact-match requirement]
+- **Fail Condition**: [what blocks task completion]
 
 ## Pixel Fidelity Acceptance Checklist
 [Required for UI tasks]
@@ -240,6 +265,8 @@ interface Example {
 - [ ] Typography scale and spacing rhythm match source composition
 - [ ] Color/gradient/icon usage matches design-system definitions and source
 - [ ] Interaction states match target behavior
+- [ ] Clickflow transitions match source flow mapping
+- [ ] Visual regression gate passes against baseline evidence
 - [ ] No scaffold/placeholder substitutions remain in parity-required scope
 
 ---
@@ -298,6 +325,8 @@ import AnotherThing from './path';
 - [ ] Uses real integration contracts or includes explicit replacement task for temporary mocks
 - [ ] (UI tasks) Source mockup anchors are implemented with 1:1 composition intent
 - [ ] (UI tasks) No scaffold/placeholder substitutions remain in in-scope surfaces
+- [ ] (UI tasks) Clickflow parity contract is validated for in-scope transitions
+- [ ] (UI tasks) Visual regression gate passes for strict/high parity screens
 
 ### Testing Criteria
 - [ ] Unit tests written and passing

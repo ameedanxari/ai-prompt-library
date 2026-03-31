@@ -18,7 +18,6 @@ Stage 06 must produce these artifacts before moving forward:
 - `prompts/outputs/specifications/prompt-usage-log.md` (Stage 06 entry)
 - `prompts/outputs/specifications/design-system-implementation-sequencing.md` (required when UI scope exists)
 - `prompts/outputs/specifications/screen-fidelity-matrix.md` (required when UI scope exists)
-- `prompts/outputs/specifications/design-system-verification-report.md` (required when UI scope exists)
 
 Required behavior:
 1. Task list index must list every task file and dependency ordering.
@@ -41,6 +40,9 @@ Required behavior:
 15. UI task prompts must include source mockup anchors (exact file/frame references) and measurable parity checks.
 16. UI scope tasks must prohibit scaffold/placeholder substitutions unless explicitly temporary with a linked replacement task ID.
 17. UI tracks must define completion gates for shell composition (sidebar/topbar), typography rhythm, spacing, token usage, iconography, and interaction states.
+18. If HTML/CSS or clickable prototype sources exist, UI task prompts must include a direct reuse plan (what is reused verbatim vs tokenized translation).
+19. UI task prompts must include clickflow parity checks and route/state transition validation steps.
+20. UI tasks with strict parity priority must require visual regression evidence (before/after screenshots or measurable diff gate) before completion.
 
 ## Examples
 ```markdown

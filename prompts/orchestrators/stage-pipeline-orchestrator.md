@@ -33,12 +33,14 @@ Do not mark a stage complete unless all items below are true:
 15. UI scope projects must include design-system sequencing (`design-system-implementation-sequencing.md`) and quality verification report (`design-system-verification-report.md`).
 16. Stage 06 per-task prompts must include semantic module lineage and technology-stack module lineage in `Prompt Blocks Applied`.
 17. For Stage 06 tasks with profile/discovery/analytics/moderation intent, semantic routing must include intent-specific modules and not rely only on `integration/service-integration`.
+18. If high-fidelity UI sources exist (mockups/prototypes/HTML), Stage 01 must produce `ui-fidelity-source-map.md` before Stage 04.
+19. For strict/high parity screens, completion requires clickflow parity mapping and visual evidence baseline references.
 
 ## Required Artifacts by Stage
 
 | Stage | Required Artifacts |
 |---|---|
-| 01 Intake | `prompts/outputs/specifications/requirements.md`, `prompts/outputs/specifications/asset-mapping.md`, `prompts/outputs/specifications/design-system-foundation.md`, `prompts/outputs/specifications/design-system-component-catalog.md`, `prompts/outputs/specifications/prompt-selection-manifest.md`, `prompts/outputs/specifications/prompt-composition-index.md`, `prompts/outputs/specifications/integration-contracts.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
+| 01 Intake | `prompts/outputs/specifications/requirements.md`, `prompts/outputs/specifications/asset-mapping.md`, `prompts/outputs/specifications/design-system-foundation.md`, `prompts/outputs/specifications/design-system-component-catalog.md`, `prompts/outputs/specifications/ui-fidelity-source-map.md` (when high-fidelity UI sources exist), `prompts/outputs/specifications/prompt-selection-manifest.md`, `prompts/outputs/specifications/prompt-composition-index.md`, `prompts/outputs/specifications/integration-contracts.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
 | 02 Charter | `prompts/outputs/specifications/charter.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
 | 03 Architecture | `prompts/outputs/architecture/architecture.md`, `prompts/outputs/specifications/data-architecture.md`, `prompts/outputs/specifications/backend-infrastructure.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
 | 04 Features | `prompts/outputs/specifications/features.md`, `prompts/outputs/specifications/api-delivery-plan.md`, `prompts/outputs/specifications/screen-fidelity-matrix.md`, `prompts/outputs/specifications/prompt-usage-log.md` |
@@ -113,6 +115,15 @@ case $CURRENT_STAGE in
     test -f "prompts/outputs/specifications/asset-mapping.md" || echo "❌ Missing asset-mapping.md"
     test -f "prompts/outputs/specifications/design-system-foundation.md" || echo "❌ Missing design-system-foundation.md"
     test -f "prompts/outputs/specifications/design-system-component-catalog.md" || echo "❌ Missing design-system-component-catalog.md"
+    UI_SOURCE_COUNT=$(
+      find working_copy prompts/working_copy -type f 2>/dev/null \
+        | grep -Ei '\.(fig|figma|sketch|xd|psd|png|jpg|jpeg|webp|svg|html|htm)$' \
+        | wc -l \
+        | tr -d ' '
+    )
+    if [ "${UI_SOURCE_COUNT:-0}" -gt 0 ]; then
+      test -f "prompts/outputs/specifications/ui-fidelity-source-map.md" || echo "❌ Missing ui-fidelity-source-map.md for UI source assets"
+    fi
     test -f "prompts/outputs/specifications/prompt-selection-manifest.md" || echo "❌ Missing prompt-selection-manifest.md"
     test -f "prompts/outputs/specifications/prompt-composition-index.md" || echo "❌ Missing prompt-composition-index.md"
     test -f "prompts/outputs/specifications/integration-contracts.md" || echo "❌ Missing integration-contracts.md"
@@ -214,6 +225,8 @@ if [ "$CURRENT_STAGE" = "stage-04-features" ]; then
     echo "❌ Stage 04 requires endpoint-level API delivery matrix (Endpoint column)"
   grep -En "^\\|\\s*Screen ID\\s*\\|" "prompts/outputs/specifications/screen-fidelity-matrix.md" >/dev/null 2>&1 || \
     echo "❌ Stage 04 requires screen-by-screen fidelity matrix (Screen ID column)"
+  grep -En "^\\|\\s*Screen ID\\s*\\|.*\\|\\s*Source Frame ID\\s*\\|.*\\|\\s*Clickflow ID" "prompts/outputs/specifications/screen-fidelity-matrix.md" >/dev/null 2>&1 || \
+    echo "❌ Screen fidelity matrix must include Source Frame ID and Clickflow columns"
 fi
 
   if [ "$CURRENT_STAGE" = "stage-06-implementation" ]; then
@@ -240,6 +253,16 @@ fi
       echo "❌ Stage 06 implementation prompt missing semantic module lineage: $impl_file"
     grep -En '^[[:space:]]*-[[:space:]]*(`)?\.ai-prompts/prompts/modules/technology-stacks/.+\.md(`)?$' "$impl_file" >/dev/null 2>&1 || \
       echo "❌ Stage 06 implementation prompt missing technology-stack module lineage: $impl_file"
+    if grep -Eiq "(web|admin|mobile|screen|dashboard|layout|ui)" "$impl_file"; then
+      grep -Fq "## Source Mockup Anchors" "$impl_file" || \
+        echo "❌ UI implementation prompt missing Source Mockup Anchors: $impl_file"
+      grep -Fq "## Source Reuse Plan" "$impl_file" || \
+        echo "❌ UI implementation prompt missing Source Reuse Plan: $impl_file"
+      grep -Fq "## Clickflow Parity Contract" "$impl_file" || \
+        echo "❌ UI implementation prompt missing Clickflow Parity Contract: $impl_file"
+      grep -Fq "## Visual Regression Gate" "$impl_file" || \
+        echo "❌ UI implementation prompt missing Visual Regression Gate: $impl_file"
+    fi
   done
   grep -Eq '^\|[[:space:]]*Task ID[[:space:]]*\|[[:space:]]*Prompt File[[:space:]]*\|[[:space:]]*Semantic Prompt Blocks[[:space:]]*\|[[:space:]]*Stack Prompt Blocks[[:space:]]*\|[[:space:]]*Depends On[[:space:]]*\|[[:space:]]*Status[[:space:]]*\|' \
     "prompts/outputs/implementation-prompts/prompt-pack-index.md" || \

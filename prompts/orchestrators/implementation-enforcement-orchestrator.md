@@ -70,8 +70,9 @@ validate_design_artifacts() {
         ui_scope=true
     fi
     if [ "$ui_scope" = true ]; then
+        [ ! -f "prompts/outputs/specifications/ui-fidelity-source-map.md" ] && missing_artifacts+=("UI fidelity source map")
         [ ! -f "prompts/outputs/specifications/screen-fidelity-matrix.md" ] && missing_artifacts+=("Screen fidelity matrix")
-        [ ! -f "prompts/outputs/specifications/design-system-verification-report.md" ] && missing_artifacts+=("Design system verification report")
+        [ ! -f "prompts/outputs/quality/design-system-verification-report.md" ] && missing_artifacts+=("Design system verification report")
     fi
     
     if [ ${#missing_artifacts[@]} -gt 0 ]; then
@@ -142,6 +143,8 @@ I will now implement by following the generated task lists and prompts EXACTLY, 
 6. Reject "done" state if implementation is still mock-only without planned replacement
 7. For UI tasks, enforce source-mockup parity checks (layout, typography, spacing, color/gradients, iconography, component states)
 8. Block task completion if scaffold/placeholder composition is used where hi-fidelity output is required
+9. For HTML/CSS or clickable prototypes, enforce source reuse/translation plan before editing implementation code
+10. Block task completion if clickflow parity or visual regression gate evidence is missing for strict/high parity screens
 
 **Starting with the first pending task from task-list-index.md...**
 ```
@@ -160,6 +163,9 @@ For this task, validate against source mockups and `screen-fidelity-matrix.md`:
 - [ ] Color tokens and gradient treatment match design-system definitions
 - [ ] Icon set/style/size usage matches target
 - [ ] Interaction states (default/hover/focus/disabled/loading/empty/error) are implemented as specified
+- [ ] Clickflow transitions match source flow mapping (`trigger -> destination screen/state`)
+- [ ] Source reuse plan is implemented for HTML/CSS-prototype derived screens
+- [ ] Visual regression gate passes for strict/high parity screens
 - [ ] No scaffold placeholders remain in implemented surfaces
 
 If any check fails: task status stays **In Progress** and a follow-up fix task is created.

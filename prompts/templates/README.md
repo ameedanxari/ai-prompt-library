@@ -133,6 +133,7 @@ The AI Prompt Library now includes **Chain-of-Verification (COVE)** templates to
 - [design-system-generation.md](./design-system-generation.md) - Design system generation
 - [design-system-foundation-template.md](./design-system-foundation-template.md) - Token architecture and platform mapping output template
 - [design-system-component-catalog-template.md](./design-system-component-catalog-template.md) - Reusable component inventory and state matrix template
+- [ui-fidelity-source-map-template.md](./ui-fidelity-source-map-template.md) - Source-of-truth mapping for hi-fi mockups, HTML prototypes, and clickable flows
 - [design-system-implementation-sequencing-template.md](./design-system-implementation-sequencing-template.md) - Stage 06 design-system-first sequencing template
 - [design-system-verification-report-template.md](./design-system-verification-report-template.md) - Stage 09 design-system quality verification template
 - [data-architecture-planning.md](./data-architecture-planning.md) - Database/migration planning

@@ -16,6 +16,7 @@ Expected high-value artifacts include:
 - `charter.md`
 - `design-system-foundation.md`
 - `design-system-component-catalog.md`
+- `ui-fidelity-source-map.md` (when high-fidelity UI source files exist)
 - `asset-mapping.md`
 - `integration-contracts.md`
 - `data-architecture.md`

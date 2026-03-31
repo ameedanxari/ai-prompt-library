@@ -126,6 +126,8 @@ The library's auto-stabilization (Step 0 in ai-agent-entry-point.md) runs invisi
 
 ## Non-Negotiable Output Guardrails
 - Design system work must be explicit (`design-system-foundation.md` + component catalog) before screen-level tasks.
+- For high-fidelity UI source assets, `ui-fidelity-source-map.md` must be generated before feature/task planning.
+- HTML/CSS/clickable prototypes must be treated as source-of-truth for composition/copy/state behavior unless deviations are explicitly approved and tracked.
 - API integration contracts and data architecture must be explicit before implementation planning.
 - Deployment prerequisites (`environment-matrix.md`, `access-and-secrets-checklist.md`) must be prepared before deployment stage completion.
 - Prompt selection must be traceable (`prompt-selection-manifest.md` + `prompt-usage-log.md`).

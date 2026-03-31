@@ -11,6 +11,7 @@ Stage 01 must produce these artifacts before moving forward:
 - `prompts/outputs/specifications/asset-mapping.md`
 - `prompts/outputs/specifications/design-system-foundation.md`
 - `prompts/outputs/specifications/design-system-component-catalog.md`
+- `prompts/outputs/specifications/ui-fidelity-source-map.md` (required when UI source mockups/prototypes exist)
 - `prompts/outputs/specifications/prompt-selection-manifest.md`
 - `prompts/outputs/specifications/prompt-usage-log.md`
 - `prompts/outputs/specifications/integration-contracts.md`
@@ -24,6 +25,8 @@ Required behavior:
 6. Create a Stage 01 entry in `prompt-usage-log.md` with selected modules/templates and mapped outputs.
 7. Include design-system modules (`token-architecture`, `component-system`, `screen-fidelity-audit`) in prompt selection unless explicitly out of scope.
 8. For UI scope projects, use design-system templates for concrete output structure (foundation + component catalog).
+9. When HTML/CSS mockups or clickable flows exist, generate `ui-fidelity-source-map.md` and treat these files as source-of-truth for composition/copy/state behavior.
+10. Route unresolved visual ambiguities into explicit blockers with owner and follow-up task IDs (never implicit assumptions).
 
 Mandatory templates for this stage:
 - `.ai-prompts/prompts/templates/integration-contracts-spec-template.md`
@@ -31,6 +34,7 @@ Mandatory templates for this stage:
 - `.ai-prompts/prompts/templates/prompt-usage-log-template.md`
 - `.ai-prompts/prompts/templates/design-system-foundation-template.md`
 - `.ai-prompts/prompts/templates/design-system-component-catalog-template.md`
+- `.ai-prompts/prompts/templates/ui-fidelity-source-map-template.md` (when UI source mockups/prototypes exist)
 
 ## Examples
 ```markdown

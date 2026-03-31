@@ -39,6 +39,7 @@ This automatically handles:
   - `prompts/outputs/specifications/asset-mapping.md`
   - `prompts/outputs/specifications/design-system-foundation.md`
   - `prompts/outputs/specifications/design-system-component-catalog.md`
+  - `prompts/outputs/specifications/ui-fidelity-source-map.md` (when hi-fidelity UI source assets exist)
   - `prompts/outputs/specifications/prompt-selection-manifest.md`
   - `prompts/outputs/specifications/prompt-usage-log.md`
   - `prompts/outputs/specifications/integration-contracts.md`

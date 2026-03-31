@@ -38,6 +38,7 @@ After setup, the agent must operate with these defaults:
 15. UI scope projects must use dedicated design-system templates for foundation, component catalog, sequencing, and quality verification outputs.
 16. Stage 06 per-task prompts must include semantic module lineage and technology-stack module lineage.
 17. For Stage 06 profile/discovery/analytics/moderation tasks, semantic routing must include intent-specific modules and not default to only `integration/service-integration`.
+18. If high-fidelity UI sources (including HTML/CSS or clickable flows) exist, Stage 01 must generate `ui-fidelity-source-map.md` and Stage 06 prompts must include clickflow + visual-regression parity gates.
 
 ## Auto-Detection Protocol
 
@@ -395,7 +396,7 @@ After successful setup, display:
 
 ## What You'll Get:
 - Complete requirements and architecture
-- Design-system foundation + screen fidelity matrix
+- Design-system foundation + UI fidelity source map + screen fidelity matrix
 - Detailed feature specifications
 - API/data/infrastructure integration contracts
 - Testing strategy and test cases
