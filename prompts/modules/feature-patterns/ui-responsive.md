@@ -1,5 +1,19 @@
 # Responsive Design Module
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 This module provides comprehensive responsive design patterns that ensure optimal user experience across all devices and screen sizes. It implements mobile-first design principles, accessibility compliance, and performance optimization while supporting internationalization and offline scenarios. The module ensures consistent functionality and visual hierarchy from mobile phones to large desktop displays, with special attention to touch interfaces, keyboard navigation, and assistive technologies.
 

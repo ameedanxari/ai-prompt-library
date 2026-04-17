@@ -1,5 +1,19 @@
 # React Native Technology Stack Module
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 This module provides comprehensive React Native setup patterns with Expo and bare React Native support, optimized for cross-platform mobile development with native performance and platform-specific adaptations. It includes authentication, navigation, offline data management, and platform-specific optimizations for both iOS and Android, while maintaining cost-effective development and deployment strategies.
 

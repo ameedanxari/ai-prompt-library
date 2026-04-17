@@ -1,5 +1,19 @@
 # Coding Standards Template
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 This template provides comprehensive coding standards and best practices for development, ensuring code quality, consistency, and maintainability across the project.
 

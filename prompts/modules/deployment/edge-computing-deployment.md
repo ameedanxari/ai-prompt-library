@@ -1,5 +1,19 @@
 # Edge Computing Deployment Template
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 
 This template provides comprehensive patterns for implementing edge computing deployment strategies including CDN-native applications, edge function orchestration, distributed edge infrastructure, and intelligent edge workload management. It covers enterprise-scale edge deployment with AI-driven optimization, real-time adaptation, and global edge network coordination.

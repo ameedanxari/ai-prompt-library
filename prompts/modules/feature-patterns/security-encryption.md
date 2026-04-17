@@ -1,5 +1,19 @@
 # Data Encryption Module
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 This module provides comprehensive data encryption capabilities for protecting sensitive information at rest and in transit. It implements industry-standard encryption algorithms, secure key management, and compliance with security regulations including GDPR, HIPAA, and SOC 2. The module ensures data confidentiality, integrity, and authenticity across web, mobile, and server environments while maintaining performance and usability.
 

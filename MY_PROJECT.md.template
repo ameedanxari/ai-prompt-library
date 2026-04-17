@@ -1,0 +1,59 @@
+# My Project
+
+_Copy this file to `MY_PROJECT.md` (no `.template` suffix) and fill it in.
+The drill-down engine reads `MY_PROJECT.md` at Step 1 (Seed)._
+
+## Brief (required)
+
+_2–3 sentences. What is the product? Who is it for? What is the single most
+important outcome?_
+
+Example: _"A team todo app for small remote teams (3–20 people). Members
+organize work into shared workspaces and see real-time updates. Success
+means a team can replace a spreadsheet + Slack thread with it in one day."_
+
+## Core features (bullet list, 3–8 items)
+
+_What must exist for the product to be useful at all? Skip nice-to-haves._
+
+- …
+- …
+- …
+
+## Users / roles
+
+_Who uses it, and what are the distinct roles?_
+
+- …
+
+## Tech preferences (optional — leave blank if no preference)
+
+- **Frontend:**
+- **Backend:**
+- **Database:**
+- **Hosting:**
+- **Auth provider:**
+
+## Constraints (optional — list only if real)
+
+_Compliance (HIPAA, PCI, GDPR), performance targets, offline support,
+specific integrations, etc._
+
+- …
+
+## External material (optional)
+
+_If you have designs, specs, or existing code the engine should read, list
+where they live:_
+
+- `working_copy/` — designs and mockups
+- `prompts/working_copy/` — specs / PRDs / reference code
+
+The external-input-handler will extract these into
+`prompts/outputs/current/project-context.md` before Step 1 runs.
+
+## Non-goals (optional but recommended)
+
+_What this product is explicitly NOT. Keeps the engine from over-expanding._
+
+- …

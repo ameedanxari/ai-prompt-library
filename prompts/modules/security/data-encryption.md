@@ -1,5 +1,19 @@
 # Data Encryption Template
 
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names — MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+
 ## Purpose
 
 This template provides comprehensive patterns for implementing end-to-end encryption, key management, field-level encryption, and cryptographic best practices. It covers symmetric and asymmetric encryption, secure key storage, key rotation, and compliance with security standards for protecting sensitive data at rest and in transit.

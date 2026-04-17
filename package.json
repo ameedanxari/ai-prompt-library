@@ -11,7 +11,8 @@
     "lint-staged": "lint-staged",
     "archive": "vite-node src/archive.ts",
     "safeguard-status": "bash scripts/validate-safeguards.sh",
-    "safeguard-recovery": "git restore PREVENTION_CHECKLIST.md COMMIT_GUIDELINES.md docs/SAFEGUARDS.md prompts/orchestrators/ && npm run safeguard-status"
+    "safeguard-recovery": "git restore docs/optional/PREVENTION_CHECKLIST.md docs/optional/COMMIT_GUIDELINES.md docs/optional/SAFEGUARDS.md prompts/orchestrators/ && npm run safeguard-status",
+    "validate:instantiation": "bash scripts/validate-instantiation.sh"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

@@ -1,98 +1,74 @@
 #!/bin/bash
-# AI Prompt Library - Safeguard System Validation
+# AI Prompt Library — library health check.
+# Verifies the active orchestrator set + test suite health.
 
-echo "🛡️ AI PROMPT LIBRARY SAFEGUARD VALIDATION"
-echo "=========================================="
+echo "🛡️ AI PROMPT LIBRARY HEALTH CHECK"
+echo "=================================="
 
-# Check for required safeguard files
 REQUIRED_FILES=(
-    "PREVENTION_CHECKLIST.md"
-    "COMMIT_GUIDELINES.md"
-    "docs/SAFEGUARDS.md"
-    "prompts/orchestrators/change-impact-guard.md"
-    "prompts/orchestrators/self-healing-monitor.md"
-    "prompts/orchestrators/implementation-enforcement-orchestrator.md"
+    "prompts/AGENTS.md"
     "prompts/orchestrators/ai-agent-entry-point.md"
+    "prompts/orchestrators/drill-down-engine.md"
+    "prompts/orchestrators/external-input-handler.md"
+    "prompts/orchestrators/module-selection-index.md"
+    "scripts/validate-instantiation.sh"
     ".husky/pre-commit"
 )
 
-missing_files=0
+OPTIONAL_FILES=(
+    "docs/optional/PREVENTION_CHECKLIST.md"
+    "docs/optional/COMMIT_GUIDELINES.md"
+    "docs/optional/SAFEGUARDS.md"
+)
+
+missing=0
+
+echo ""
+echo "🔹 Active orchestrators & scripts"
+echo "---------------------------------"
 for file in "${REQUIRED_FILES[@]}"; do
     if [ -f "$file" ]; then
         echo "✅ $file"
     else
         echo "❌ MISSING: $file"
-        ((missing_files++))
+        missing=$((missing+1))
     fi
 done
 
-# Check test baseline
 echo ""
-echo "📊 TEST BASELINE VALIDATION"
-echo "----------------------------"
-if command -v npm >/dev/null 2>&1; then
-    test_output=$(npm test 2>&1)
-    # Parse the final summary line that shows "Tests  X failed | Y passed (Z)"
-    passing_tests=$(echo "$test_output" | grep -E "Tests.*passed" | tail -1 | grep -o "[0-9]* passed" | grep -o "[0-9]*" || echo "0")
-    failed_tests=$(echo "$test_output" | grep -E "Tests.*failed" | tail -1 | grep -o "[0-9]* failed" | grep -o "[0-9]*" || echo "0")
-    
-    echo "📊 Test Results: $passing_tests passed, $failed_tests failed"
-    
-    # STRICT REQUIREMENT: 100% test success rate
-    if [ "$failed_tests" -eq 0 ]; then
-        echo "✅ Test Success: 100% tests passing (REQUIRED)"
+echo "🔸 Optional (load-on-demand) docs"
+echo "---------------------------------"
+for file in "${OPTIONAL_FILES[@]}"; do
+    if [ -f "$file" ]; then
+        echo "✅ $file"
     else
-        echo "❌ CRITICAL FAILURE: $failed_tests tests failing"
-        echo "🚨 SAFEGUARD VIOLATION: 100% test success rate required"
-        echo "🔧 REQUIRED ACTION: Fix all failing tests before proceeding"
-        ((missing_files++))
+        echo "⚠️  $file not present (optional)"
+    fi
+done
+
+echo ""
+echo "📊 TEST HEALTH"
+echo "---------------"
+if command -v npm >/dev/null 2>&1; then
+    if npm test >/tmp/safeguard-test-output.log 2>&1; then
+        summary=$(grep -E "Tests.*passed" /tmp/safeguard-test-output.log | tail -1)
+        echo "✅ npm test passed"
+        [ -n "$summary" ] && echo "   $summary"
+    else
+        summary=$(grep -E "Tests.*(passed|failed)" /tmp/safeguard-test-output.log | tail -1)
+        echo "❌ npm test failed"
+        [ -n "$summary" ] && echo "   $summary"
+        missing=$((missing+1))
     fi
 else
-    echo "⚠️ npm not available - cannot validate test baseline"
+    echo "⚠️  npm not available — skipping test run"
 fi
 
-# Check pre-commit hook
 echo ""
-echo "🪝 PRE-COMMIT HOOK VALIDATION"
-echo "------------------------------"
-if [ -x ".husky/pre-commit" ]; then
-    echo "✅ Pre-commit hook is executable"
-else
-    echo "❌ Pre-commit hook is not executable"
-    echo "🔧 Fix: chmod +x .husky/pre-commit"
-    ((missing_files++))
-fi
-
-# Check orchestrator integration
-echo ""
-echo "🤖 ORCHESTRATOR INTEGRATION"
-echo "----------------------------"
-if grep -q "ai-agent-entry-point" prompts/steering/library-context.md 2>/dev/null; then
-    echo "✅ AI Agent Entry Point integrated in steering"
-else
-    echo "⚠️ AI Agent Entry Point not referenced in steering files"
-fi
-
-if grep -q "change-impact-guard" prompts/orchestrators/ai-agent-entry-point.md 2>/dev/null; then
-    echo "✅ Change Impact Guard integrated in entry point"
-else
-    echo "⚠️ Change Impact Guard not integrated in entry point"
-fi
-
-# Overall status
-echo ""
-echo "🎯 OVERALL SAFEGUARD STATUS"
-echo "==========================="
-if [ "$missing_files" -eq 0 ]; then
-    echo "🟢 ALL SAFEGUARDS ACTIVE - System fully protected"
+if [ "$missing" -eq 0 ]; then
+    echo "🟢 Library healthy"
     exit 0
 else
-    echo "🔴 SAFEGUARDS COMPROMISED - $missing_files issues found"
-    echo ""
-    echo "🔧 RECOMMENDED ACTIONS:"
-    echo "1. Restore missing files from git"
-    echo "2. Run npm test to validate system health"
-    echo "3. Ensure pre-commit hooks are executable"
-    echo "4. Review docs/SAFEGUARDS.md for complete system overview"
+    echo "🔴 $missing issue(s) — see above"
     exit 1
 fi

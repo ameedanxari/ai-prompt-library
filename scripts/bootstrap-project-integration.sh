@@ -68,44 +68,45 @@ if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
   cat >> AGENTS.md << 'EOF'
 
 ## AI Prompt Library Steering (Auto-Managed)
-Always load and follow these files before executing user requests:
-- `.ai-prompts/prompts/steering/library-context.md`
-- `.ai-prompts/prompts/steering/architecture-guard.md`
-- `.ai-prompts/prompts/steering/change-review.md`
+Load these files (in order) before handling any non-trivial request:
+1. `.ai-prompts/prompts/AGENTS.md` — the authoritative instructions.
+2. `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — entry point.
+3. `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — the engine.
 
-Routing requirement:
-- Route every request through `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`
-- Use `.ai-prompts/prompts/orchestrators/auto-request-router.md` before task execution
+Do NOT auto-load anything under `.ai-prompts/prompts/stages/` or any other
+orchestrator in `.ai-prompts/prompts/orchestrators/` — they are deprecated.
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
 fi
 
-# Ensure key state files exist.
-if [ ! -f "NEXT_ACTION.md" ]; then
-  cat > NEXT_ACTION.md << 'EOF'
-# Next Action
-
-## Current Status
-- **Stage**: stage-01-intake
-- **Phase**: Specification
-- **Mode**: Dry-Run
-
-## Next Action
-Generate Stage 01 intake outputs and prompt traceability artifacts.
-EOF
-fi
-
+# MY_PROJECT.md — the brief the drill-down engine reads at Step 1 (Seed).
 if [ ! -f "MY_PROJECT.md" ]; then
-  cat > MY_PROJECT.md << 'EOF'
+  if [ -f ".ai-prompts/MY_PROJECT.md.template" ]; then
+    cp .ai-prompts/MY_PROJECT.md.template MY_PROJECT.md
+  else
+    cat > MY_PROJECT.md << 'EOF'
 # My Project
 
-## Project Idea
-Describe your product in 2-6 sentences.
+## Brief
+_2–3 sentences: what is the product, who is it for, what is the most important outcome?_
 
-## Design + Reference Sources
-- `working_copy/`
-- `prompts/working_copy/` (if used)
+## Core features
+- …
+- …
+
+## Users / roles
+- …
+
+## Tech preferences (optional)
+- Frontend:
+- Backend:
+- Database:
+
+## External material (optional)
+- working_copy/ — designs and mockups
+- prompts/working_copy/ — specs / reference code
 EOF
+  fi
 fi
 
 # Track current library version for update validation.
