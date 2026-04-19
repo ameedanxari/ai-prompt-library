@@ -125,8 +125,12 @@ _Ordered by severity, then by dependency._
 ## G1 · <slug: ios-xcode-target-setup>
 - **Severity:** critical | high | medium | low
 - **Description:** <one sentence>
-- **Blocks:** <which other gaps this blocks, or `none`>
-- **Blocked by:** <which gaps must close first, or `none`>
+- **Blocks:** <list of gap ids, or `none`>
+- **Blocked by:** <list of gap ids, or `none`>
+- **Reason (required if Blocked by is not `none`):** <one line — what
+  concrete artifact or change from the blocking gap does this gap need
+  before it can start? If you cannot name an artifact, the dependency is
+  spurious — remove it.>
 - **Component:** <path>
 
 ## G2 · <next gap>
@@ -139,6 +143,16 @@ Severity rules:
 - `medium` — partial functionality gap or test/ops gap affecting
   confidence.
 - `low` — polish, docs, nice-to-have.
+
+Dependency rules (strict — prevents invented ordering):
+- `Blocked by: GN` is valid ONLY if this gap's remediation tasks would
+  literally fail without GN's code-level changes in place (shared module,
+  migration, API endpoint, config, etc.).
+- Shared high-level themes (e.g. "both are infrastructure work") are NOT
+  a dependency. Platform independence (iOS build does not need AWS ALB)
+  must be respected.
+- If uncertain, set `Blocked by: none`. Do not invent ordering to make
+  the gap list look hierarchical.
 
 **Write to:** `prompts/outputs/current/gap-list.md`.
 
@@ -159,47 +173,89 @@ only:
   (consult the "Ops / Readiness" section for production-readiness gaps).
 
 **Produce:** atomic remediation tasks. Each task MUST name:
-- An exact **existing** file path (create-new is allowed only if the
-  audit identified a missing file).
-- The precise change to make (new function, refactored signature, new
-  import, config value, migration, etc.).
-- Concrete acceptance criteria — what does "fixed" look like, verifiable.
-- The test that will prove the fix, by exact path (create-new OK).
+- **Exactly ONE** file path. Not a directory (no trailing `/`). Not a
+  group like "multiple files" or "several test files". If the change
+  really spans N files, emit N tasks — one per file.
+- For `modify-existing` change types, the file path MUST exist in the
+  repo at the time of writing.
+- The precise change to make — a concrete delta, not a category of
+  work. Good: "Add `socket.io` dependency to the `dependencies` object
+  in `backend/package.json`, version `^4.7.0`." Bad: "Review test
+  failures and fix assertion errors." If you cannot state the delta in
+  one or two sentences of concrete terms, split the task.
+- Concrete acceptance criteria — each bullet must be independently
+  verifiable by running a command or reading a file. Forbidden bullets:
+  "tests pass", "it works", "no errors", "functional", "successful".
+- The test that will prove the fix, by exact path (create-new OK). If
+  the test is an existing command (e.g. `npm test`), state the command
+  AND the specific test name(s) that will assert the fix.
 - Estimated LOC delta.
-- Dependencies on other remediation tasks (by gap + task id).
+- Dependencies on other remediation tasks, with a one-line reason (see
+  dependency rules below).
 
 ```markdown
 # Remediation — <Gap Slug>
 
 _Closes gap:_ G1 · ios-xcode-target-setup
 
-## R1 · Generate Xcode project targets for Customer and Business apps
-- **Change type:** create-new | modify-existing | delete | refactor
-- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj` (modify) + `ios/create_targets.sh` (create)
-- **Precise change:** Add two new app targets ("MenuMaker-Customer" and
-  "MenuMaker-Business") with distinct bundle IDs, shared code linked via
-  a "MenuMakerCore" static library target. Script provisions the pbxproj
-  additions.
+## R1 · Add MenuMaker-Customer app target to the Xcode project
+- **Change type:** modify-existing
+- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
+- **Precise change:** In the `PBXProject` `targets` array, add one new
+  `PBXNativeTarget` with name `MenuMaker-Customer`, product type
+  `com.apple.product-type.application`, bundle identifier
+  `com.creatrixe.MenuMaker.customer`. Link the `MenuMakerCore` static
+  library target (create in R0 if absent) and add all source files
+  currently under `ios/MenuMaker/Customer/` to the new target's
+  `PBXSourcesBuildPhase`.
 - **Acceptance:**
-  - `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' build` succeeds
-  - `xcodebuild -scheme MenuMaker-Business -destination 'generic/platform=iOS' build` succeeds
-  - Both targets include every file under `ios/MenuMaker/Core/` and
-    `ios/MenuMaker/Shared/`
-- **Test:** `ios/MenuMaker.xcodeproj/ci-smoke-build.sh` (new) — runs both
-  xcodebuild commands, exits non-zero on any failure.
-- **Estimated LOC delta:** +120 / -20
+  - `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build` exits 0.
+  - `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Customer/Info.plist` prints `com.creatrixe.MenuMaker.customer`.
+  - `grep -c "MenuMaker-Customer" ios/MenuMaker.xcodeproj/project.pbxproj` is ≥ 4 (target definition + build phases).
+- **Test:** `ios/scripts/ci-customer-build.sh` (new) — exec the xcodebuild
+  command above; exit non-zero on failure.
+- **Estimated LOC delta:** +120 / -0
 - **Depends on:** none
+
+## R2 · Add MenuMaker-Business app target to the Xcode project
+- **Change type:** modify-existing
+- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
+- **Precise change:** Same pattern as R1, name `MenuMaker-Business`,
+  bundle id `com.creatrixe.MenuMaker.business`, source files under
+  `ios/MenuMaker/Business/`.
+- **Acceptance:**
+  - `xcodebuild -scheme MenuMaker-Business -destination 'generic/platform=iOS' -configuration Debug build` exits 0.
+  - `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Business/Info.plist` prints `com.creatrixe.MenuMaker.business`.
+- **Test:** `ios/scripts/ci-business-build.sh` (new).
+- **Estimated LOC delta:** +120 / -0
+- **Depends on:** none
+  _(Independent of R1 — different target; both write to the same file but
+  non-overlapping sections.)_
 ```
+
+### Dependency rules (same as the gap list)
+
+- `Depends on: RN` is valid ONLY if this task's acceptance cannot be met
+  without RN's code change in place (shared symbol, migration, new
+  config key, etc.).
+- Sharing a file is NOT a dependency if the edits don't overlap. Two
+  tasks editing different sections of `project.pbxproj` are independent.
+- Provide a one-line reason in parentheses after `Depends on:` whenever
+  it is not `none`.
 
 ### Hard stop conditions
 
 Do not declare the remediation ready if any of these are true:
-- The file path is generic or does not exist (for `modify-existing`) in
-  the repo at the time of writing.
-- Acceptance criteria are not independently verifiable.
-- No test is named (every remediation must ship a test, even if the test
-  is manual with a precise script).
+- The File: field ends with `/`, contains `(multiple files ...)`, or
+  names more than one path.
+- For `modify-existing`, the named file does not exist in the repo at
+  the time of writing.
+- Any acceptance bullet is `tests pass`, `it works`, `no errors`,
+  `functional`, `successful`, or similar tautology.
+- The precise change is a category of work, not a concrete delta.
+- No test is named.
 - A task references a module path that does not exist on disk.
+- `Depends on: RN` lacks a one-line reason.
 
 **Write to:** `prompts/outputs/current/remediation-<gap-slug>.md`.
 
