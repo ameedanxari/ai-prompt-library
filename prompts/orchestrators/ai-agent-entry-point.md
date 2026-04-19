@@ -14,40 +14,84 @@ orchestrators. All of those are opt-in, on demand, one at a time.
 
 ## Routing
 
-After the two startup reads:
+After the two startup reads, execute these checks **in order** and do NOT
+stop between them. Each step flows into the next without user confirmation.
 
-### A. External input check (one file read, conditional)
+### A. Stale-integration check (run FIRST — before anything else)
+
+If the user asked to "reset", "re-integrate", "start fresh", or "clean up",
+OR if you detect any of these pre-existing integration artifacts at the
+project root, the project has stale state from an older library version:
+
+- `NEXT_ACTION.md`, `PROJECT_STATE.md`, `DEVELOPMENT_LOG.md`,
+  `EXECUTION_PROGRESS.md`, `IMPLEMENTATION_STATUS.md`,
+  `IMPLEMENTATION_SUMMARY.md`, `PRODUCTION_COMPLETION_REPORT.md`,
+  `QUICK_STATUS.md`, `COMPLETED_FEATURES.md`, `ARCHITECTURE_DECISIONS.md`,
+  `KNOWN_ISSUES.md`
+- A root `AGENTS.md` that references deleted orchestrators (e.g.
+  `execution-orchestrator.md`, `auto-request-router.md`,
+  `stage-pipeline-orchestrator.md`, `quality-gate-orchestrator.md`,
+  `task-generation-orchestrator.md`)
+- `.kiro/steering/` or `.cursor/rules/` that mentions "10-stage pipeline",
+  "stage-01-intake", or "COVE" (all deprecated)
+
+If any of the above is present, run the reset script first:
+
+```bash
+bash .ai-prompts/scripts/reset-integration.sh --yes
+```
+
+Then continue to step B. Do not stop to ask the user — they already asked
+for reset or the stale state is unambiguous.
+
+### B. External input check
 
 Is there user-provided external material? Check for any of:
 - Non-empty `working_copy/` or `prompts/working_copy/`
 - Attached spec / PRD / RFC
-- Existing source code the user wants to extend
+- Existing source code the user wants to extend (e.g. `src/`, `backend/`,
+  `frontend/`, `android/`, `ios/` with non-trivial content)
+- `MY_PROJECT.md` lists external material under "External material"
 
 If yes:
 1. Read `prompts/orchestrators/external-input-handler.md` (file #3).
-2. Run it to produce `prompts/outputs/current/project-context.md`.
-3. Return here.
+2. Execute it to produce `prompts/outputs/current/project-context.md`.
+3. The handler itself continues to step C when it finishes — do not wait.
 
-If no, continue to step B.
+If no, continue directly to step C.
 
-### B. Context precedence
+### C. Context precedence
 
 Does `prompts/outputs/current/project-context.md` exist?
 - **Yes:** load it before Step 1 of the engine. It takes precedence over any
   template defaults.
 - **No:** skip.
 
-### C. Route to the engine
+### D. Route to the engine (Step 1 → Step 2 → Step 3, no pausing)
 
-Execute `drill-down-engine.md`:
-- Step 1 — Seed → `prompts/outputs/current/epics.md`
-- Step 2 — Expand epics (one context per epic) → `features-<epic>.md`
-- Step 3 — Expand features to atomic tasks (one context per feature) →
-  `tasks-<feature>.md`
+Execute `drill-down-engine.md` in order:
+1. **Step 1 — Seed** → writes `prompts/outputs/current/epics.md`. Continue.
+2. **Step 2 — Expand epics** (one context per epic) → writes
+   `features-<epic>.md` per epic. Continue after every epic.
+3. **Step 3 — Atomize features** (one context per feature) → writes
+   `tasks-<feature>.md` per feature. Continue after every feature.
 
-After Step 3, run `bash scripts/validate-instantiation.sh` to confirm no
-task output references `.ai-prompts/prompts/` or contains unreplaced
-placeholders.
+Do NOT stop between steps. Do NOT say "Step 1 complete, shall I proceed?".
+Proceed. The only valid stop points are:
+- A hard stop condition in the engine trips (placeholder remains, acceptance
+  criteria insufficient, etc.) — report to user with the specific file.
+- All features have `tasks-*.md` → run validation (next step).
+
+### E. Validate
+
+After Step 3 completes for every feature:
+
+```bash
+bash scripts/validate-instantiation.sh
+```
+
+Report the validator's output to the user, then list every file written
+under `prompts/outputs/current/`. That is the end of the flow.
 
 ## What NOT to auto-load
 

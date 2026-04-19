@@ -77,6 +77,9 @@ writing features, not epics — collapse.
 
 **Write to:** `prompts/outputs/current/epics.md`
 
+**After writing — continue immediately to Step 2.** Do not stop, do not ask
+the user for confirmation. The epics file you just wrote is Step 2's input.
+
 ---
 
 ## STEP 2 — Expand each epic (one context per epic)
@@ -119,6 +122,10 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 ```
 
 **Write to:** `prompts/outputs/current/features-<epic-slug>.md`
+
+**After each epic's features are written, continue to the next epic.** Once
+all epics have been expanded (one `features-*.md` per epic), continue
+immediately to Step 3 — do not stop, do not ask for confirmation.
 
 ---
 
@@ -176,6 +183,10 @@ edit). Each task has:
 ```
 
 **Write to:** `prompts/outputs/current/tasks-<feature-slug>.md`
+
+**After each feature's tasks are written, continue to the next feature.**
+Only stop when every feature across every epic has a `tasks-*.md` file.
+Then run the validation gate below — do not wait for the user to ask.
 
 ### Dissolution: good vs. bad
 

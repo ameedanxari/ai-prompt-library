@@ -55,26 +55,44 @@ else
   fi
 fi
 
-# Ensure AGENTS.md contains steering block.
+# Ensure AGENTS.md contains the current steering block. If a previous
+# version's block exists (or a hand-rolled file references deleted
+# orchestrators), rewrite the managed section cleanly.
+STALE_MARKERS='execution-orchestrator|auto-request-router|stage-pipeline-orchestrator|quality-gate-orchestrator|task-generation-orchestrator|10-stage|stage-01-intake'
+
+if [ -f "AGENTS.md" ] && grep -qE "$STALE_MARKERS" AGENTS.md; then
+  # Stale content detected — move aside and recreate.
+  mv AGENTS.md "AGENTS.md.stale-$(date +%s)"
+  echo "ℹ️  Existing AGENTS.md references deprecated orchestrators; moved aside."
+fi
+
 if [ ! -f "AGENTS.md" ]; then
   cat > AGENTS.md << 'EOF'
 # AGENTS
 
-This file provides project-level instructions for AI coding agents.
+Steering for AI coding agents working on this project.
 EOF
 fi
 
 if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
   cat >> AGENTS.md << 'EOF'
 
-## AI Prompt Library Steering (Auto-Managed)
-Load these files (in order) before handling any non-trivial request:
-1. `.ai-prompts/prompts/AGENTS.md` — the authoritative instructions.
-2. `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — entry point.
-3. `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — the engine.
+## AI Prompt Library Steering (Auto-Managed — do not edit)
 
-Do NOT auto-load anything under `.ai-prompts/prompts/stages/` or any other
-orchestrator in `.ai-prompts/prompts/orchestrators/` — they are deprecated.
+Load these files (in order) before handling any non-trivial request:
+1. `.ai-prompts/prompts/AGENTS.md` — authoritative instructions.
+2. `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — entry point.
+3. `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — the 3-step engine.
+
+If `MY_PROJECT.md` lists external material or the project already has
+source code, also load:
+4. `.ai-prompts/prompts/orchestrators/external-input-handler.md`
+
+Do NOT auto-load anything under `.ai-prompts/prompts/stages/` or any
+orchestrator other than the three above.
+
+After the handler finishes, proceed IMMEDIATELY to Step 1 of the engine
+without waiting for the user. Between engine steps, continue automatically.
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
 fi

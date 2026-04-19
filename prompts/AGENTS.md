@@ -76,6 +76,24 @@ step is expanding.
    `bash scripts/validate-instantiation.sh` before declaring tasks ready.
    Any match against forbidden patterns means regenerate the offending file.
 
+6. **Do not stop between the handler and Step 1, or between engine steps.**
+   After the external-input-handler writes `project-context.md`, proceed
+   immediately to Step 1. After Step 1 writes `epics.md`, proceed to
+   Step 2. After Step 2 writes all `features-*.md`, proceed to Step 3.
+   Do not ask the user "should I continue?" — the engine is designed to
+   run end-to-end in one session.
+
+7. **Reset stale integration before routing.** If the project root has
+   pre-existing library-state files (`NEXT_ACTION.md`, `PROJECT_STATE.md`,
+   `IMPLEMENTATION_STATUS.md`, `QUICK_STATUS.md`, etc.) OR the root
+   `AGENTS.md` references orchestrators that no longer exist
+   (`execution-orchestrator.md`, `auto-request-router.md`,
+   `stage-pipeline-orchestrator.md`, `quality-gate-orchestrator.md`,
+   `task-generation-orchestrator.md`, etc.), run
+   `bash .ai-prompts/scripts/reset-integration.sh --yes` before anything
+   else. This refreshes steering, rewrites the project `AGENTS.md`, and
+   clears old outputs.
+
 ---
 
 ## Minimal project state
