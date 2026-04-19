@@ -10,17 +10,24 @@ Loaded by the IDE at every session. Keep it short.
 
 1. Read `.ai-prompts/prompts/AGENTS.md`.
 2. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`.
-3. Read `.ai-prompts/prompts/orchestrators/drill-down-engine.md`.
-4. If user-provided designs/specs/existing code exist under `working_copy/`,
-   `prompts/working_copy/`, or the project has source directories like
-   `src/`, `backend/`, `frontend/`, `android/`, `ios/`, also read
-   `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
-5. Follow the entry point's routing end-to-end. Do NOT stop between the
-   handler and Step 1, or between engine steps — the engine is designed
-   to run through to validation in one session.
+3. The entry point chooses one of three modes:
+   - **Greenfield** (new project) → `drill-down-engine.md`.
+   - **Gap-closure** (existing codebase; user asks to review, audit,
+     fix gaps, productionize, write tests, finish) →
+     `audit-and-remediate.md`.
+   - **Trivial** (single-file edit) → skip engines, just do the work.
+4. If external material exists (designs/specs/source code under
+   `working_copy/`, `prompts/working_copy/`, or project has real
+   `src/`/`backend/`/`frontend/`/`android/`/`ios/` directories), also
+   read `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
+5. Follow the chosen engine end-to-end. Do NOT stop between steps.
 
-Trivial requests (rename a variable, one-line bug fix, copy tweak) bypass
-the engine — just do the work.
+## IDE-native spec kits
+
+Do NOT use Kiro's `.kiro/specs/`, Cursor's `.cursor/plans/`, or any
+other IDE-native spec workflow in place of the library's engines. Our
+outputs are richer and verifiable. Write to `prompts/outputs/current/`
+regardless of which IDE is running.
 
 ## Reset signal
 

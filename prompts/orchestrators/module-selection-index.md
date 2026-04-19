@@ -73,7 +73,7 @@ Paths are relative to the repository root.
 | Intent | Module |
 |---|---|
 | Multi-channel (email/push/SMS) | `prompts/modules/notifications/notification-channels.md` |
-| In-app notifications | `prompts/modules/notifications/in-app-notifications.md` |
+| In-app notifications | `prompts/modules/notifications/real-time-notifications.md` |
 
 ## Search & Discovery
 
@@ -147,6 +147,32 @@ Paths are relative to the repository root.
 | Cloud hosting | `prompts/modules/deployment/cloud-deployment.md` |
 | Observability | `prompts/modules/deployment/monitoring-observability.md` |
 | Disaster recovery | `prompts/modules/deployment/disaster-recovery.md` |
+
+## Ops / Readiness (gap-closure / productionize)
+
+For `audit-and-remediate.md` Step 3 when the gap is about taking an
+existing codebase to production. Pick whichever is most specific to the gap.
+
+| Intent | Module |
+|---|---|
+| Production deployment readiness (secrets, envs, DNS, SSL) | `prompts/modules/deployment/environment-management.md` |
+| CI/CD pipeline (build → test → deploy) | `prompts/modules/deployment/ci-cd-pipelines.md` |
+| Container orchestration (k8s, ECS, Fargate) | `prompts/modules/deployment/kubernetes-deployment.md` |
+| Blue/green, canary, feature flags | `prompts/modules/deployment/modern-deployment-patterns.md` |
+| Observability (logs + metrics + traces + alerts) | `prompts/modules/deployment/monitoring-observability.md` |
+| Disaster recovery / backups / RPO/RTO | `prompts/modules/deployment/disaster-recovery.md` |
+| Zero-downtime migrations / rollback | `prompts/modules/deployment/modern-deployment-patterns.md` |
+| Security audit / vulnerability scan | `prompts/modules/security/threat-detection.md` |
+| Penetration testing scope | `prompts/modules/testing/security-testing.md` |
+| Load / performance testing | `prompts/modules/testing/performance-testing.md` |
+| Chaos engineering | `prompts/modules/testing/chaos-engineering.md` |
+| Integration test coverage (backend API) | `prompts/modules/testing/test-automation.md` |
+| Accessibility audit (WCAG) | `prompts/modules/testing/accessibility-testing.md` |
+| Mobile app store submission (iOS) | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
+| Mobile app store submission (Android) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
+| Beta / TestFlight / internal testing | `prompts/modules/testing/test-automation.md` |
+| Documentation / runbook readiness | `prompts/modules/best-practices/coding-standards.md` |
+| Compliance readiness (GDPR, HIPAA, PCI) | pick from the domain sections above (`healthcare/hipaa-compliance.md`, `commerce/payment-security.md`, `security/data-encryption.md`) |
 
 ## Design System (UI)
 

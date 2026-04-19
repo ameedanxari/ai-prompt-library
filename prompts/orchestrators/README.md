@@ -1,28 +1,23 @@
 # Orchestrators
 
-## Active (the only three you should auto-load)
+## Active (the only files you should auto-load)
 
 | File | Purpose |
 |---|---|
-| `ai-agent-entry-point.md` | Primary entry. Routes every request. |
-| `drill-down-engine.md` | Three-step expansion: Seed → Features → Tasks. |
-| `external-input-handler.md` | Runs once when user provides designs/specs/code. |
+| `ai-agent-entry-point.md` | Primary entry. Routes every request into one of three modes. |
+| `drill-down-engine.md` | **Greenfield mode.** Seed → Features → Tasks. |
+| `audit-and-remediate.md` | **Gap-closure mode.** For existing codebases. Audit → Gaps → Remediation. |
+| `external-input-handler.md` | Runs first when user provides designs / specs / existing code. |
+| `module-selection-index.md` | Intent → single-module lookup. Not loaded into session context; consulted at expansion time. |
 
-See `../AGENTS.md` for the full flow.
+See `../AGENTS.md` for the full flow and mode-selection logic.
 
-## Deprecated (retained for legacy tests only)
+## Deprecated (not present — reference only)
 
-Every other `*.md` file in this directory carries a
-**`⚠️ DEPRECATED — DO NOT AUTO-LOAD`** banner at the top. They document the
-legacy 10-stage waterfall pipeline and its auxiliary orchestrators (auto
-setup, auto routing, stage pipeline, state management, quality gates,
-error recovery, COVE, A/B testing, parallel execution, self-healing,
-intelligent caching, template composition, etc.).
-
-These files are still on disk because:
-- Some tests under `tests/` reference the waterfall structure.
-- The safeguard script checks for their existence.
-
-**Do not auto-load them during session startup, routing, or engine
-execution.** Load one only if the user explicitly names it and asks for
-that specific capability.
+Earlier versions of this library shipped ~25 auxiliary orchestrators
+(auto setup, auto routing, stage pipeline, state management, quality
+gates, error recovery, COVE, A/B testing, parallel execution, self-
+healing, intelligent caching, template composition, etc.). Those have
+all been removed. If you encounter a consumer project whose
+`AGENTS.md` still references any of those files, run
+`bash scripts/reset-integration.sh --yes` from that project's root.

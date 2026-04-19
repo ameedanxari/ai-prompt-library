@@ -8,9 +8,11 @@ at startup: **2** (this file + `drill-down-engine.md`).
 1. **Read this file.**
 2. **Read `prompts/orchestrators/drill-down-engine.md`.**
 
-That is the entire auto-load list. Nothing else loads automatically —
-not safeguards, not stage files, not modules, not templates, not router
-orchestrators. All of those are opt-in, on demand, one at a time.
+That is the entire auto-load list at startup. If step D below routes to
+gap-closure mode, you will also read `audit-and-remediate.md` (one more
+file). Nothing else loads automatically — not safeguards, not stage
+files, not modules, not templates, not router orchestrators. All of
+those are opt-in, on demand, one at a time.
 
 ## Routing
 
@@ -67,24 +69,62 @@ Does `prompts/outputs/current/project-context.md` exist?
   template defaults.
 - **No:** skip.
 
-### D. Route to the engine (Step 1 → Step 2 → Step 3, no pausing)
+### D. Mode selection — greenfield vs. gap-closure vs. trivial
 
-Execute `drill-down-engine.md` in order:
-1. **Step 1 — Seed** → writes `prompts/outputs/current/epics.md`. Continue.
-2. **Step 2 — Expand epics** (one context per epic) → writes
-   `features-<epic>.md` per epic. Continue after every epic.
-3. **Step 3 — Atomize features** (one context per feature) → writes
-   `tasks-<feature>.md` per feature. Continue after every feature.
+Decide ONE of three modes based on the user's ask and the project state.
 
-Do NOT stop between steps. Do NOT say "Step 1 complete, shall I proceed?".
-Proceed. The only valid stop points are:
-- A hard stop condition in the engine trips (placeholder remains, acceptance
-  criteria insufficient, etc.) — report to user with the specific file.
-- All features have `tasks-*.md` → run validation (next step).
+#### Mode 1 — Trivial (skip the engine entirely)
 
-### E. Validate
+Use when the user's ask is a single-file edit or a one-line change:
+"rename X", "fix typo", "tweak copy in file Y", "change the color".
+Just do the work directly. Do not run either engine.
 
-After Step 3 completes for every feature:
+#### Mode 2 — Gap-closure (existing-project audit + remediation)
+
+Use when ALL of these are true:
+- Project has real source directories (`src/`, `backend/`, `frontend/`,
+  `android/`, `ios/`, or similar) with non-trivial content (more than a
+  few files).
+- User's prompt OR `MY_PROJECT.md` indicates existing-work:
+  - Prompt contains any of: "review", "audit", "fix gaps",
+    "productionize", "production-ready", "finish", "complete",
+    "test coverage", "deploy-ready", "functional completeness", "QA".
+  - OR `MY_PROJECT.md` "External material" section lists source
+    directories with completion percentages (e.g. "95% complete",
+    "85% complete").
+
+Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
+4-step flow (Component audit → Gap list → Remediation tasks → Validate).
+
+#### Mode 3 — Greenfield (drill-down engine)
+
+Use when the project is empty of meaningful source OR the user's brief
+describes something new to build. This is the default when neither
+Mode 1 nor Mode 2 applies.
+
+Route to `drill-down-engine.md` and follow its 3-step flow
+(Seed → Features → Tasks → Validate).
+
+**Do NOT let an IDE's native spec-kit workflow (e.g. `.kiro/specs/`,
+`.cursor/plans/`) override the mode selection above.** Our outputs are
+richer and verifiable. If the IDE tries to produce its own spec files,
+ignore that and write to `prompts/outputs/current/` per the engine's
+rules.
+
+### E. Execute the chosen engine (no pausing)
+
+Run the engine end-to-end. Do NOT stop between steps. Do NOT say
+"Step 1 complete, shall I proceed?". Proceed.
+
+The only valid stop points are:
+- A hard stop condition in the engine trips (placeholder remains,
+  acceptance criteria insufficient, file path doesn't exist for a
+  remediation task, etc.) — report to user with the specific file.
+- All outputs written → run validation (next step).
+
+### F. Validate
+
+After the engine's last step:
 
 ```bash
 bash scripts/validate-instantiation.sh

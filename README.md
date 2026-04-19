@@ -5,15 +5,19 @@ implementation-ready tasks — designed to run on **small context windows**
 so a lower-end coding model can build production software one task at a
 time without needing the whole project in context.
 
-The library does this by replacing the common "one huge planning context"
-approach with a **drill-down engine** that expands work in focused,
-isolated steps:
+The library offers two engines, picked automatically based on what you ask:
 
-1. **Seed** — the user's brief becomes 5–7 epics.
-2. **Features** — each epic expands into 6–10 features, with real data
-   models and API contracts.
-3. **Tasks** — each feature expands into atomic tasks — one file, one
-   function, real signatures, real acceptance criteria.
+**Greenfield — `drill-down-engine.md`** (new project from a brief)
+1. **Seed** — user brief → 5–7 epics.
+2. **Features** — each epic → 6–10 features with data model + API contract.
+3. **Tasks** — each feature → atomic tasks (real file, real signature,
+   real API shape).
+
+**Gap-closure — `audit-and-remediate.md`** (existing codebase needs
+review / finishing / productionizing)
+1. **Component audit** — what exists, what works, what is broken.
+2. **Gap list** — ordered by severity, with dependencies.
+3. **Remediation tasks** — atomic tasks pointing at real existing files.
 
 Each step runs in its own context, so token cost stays flat as the
 project grows.

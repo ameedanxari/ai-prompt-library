@@ -9,14 +9,24 @@ If anything elsewhere in this repo contradicts this file, this file wins.
 ## The only flow you need
 
 1. Read `prompts/orchestrators/ai-agent-entry-point.md` (the entry point).
-2. Read `prompts/orchestrators/drill-down-engine.md` (the engine).
-3. If the user provided designs/specs/existing code → also read
-   `prompts/orchestrators/external-input-handler.md`.
-4. Execute the engine's 3-step flow and write outputs to
-   `prompts/outputs/current/`.
+2. Read `prompts/orchestrators/drill-down-engine.md` (the greenfield engine).
+3. The entry point selects one of three modes:
+   - **Greenfield** — user is building something new. Use the drill-down
+     engine.
+   - **Gap-closure** — user has an existing codebase and asks to
+     "review", "audit", "fix gaps", "productionize", or similar. Use
+     `prompts/orchestrators/audit-and-remediate.md` instead.
+   - **Trivial** — one-file edit. Skip the engines, just do the work.
+4. If external material is present (designs/specs/existing code), read
+   `prompts/orchestrators/external-input-handler.md` first. It produces
+   `prompts/outputs/current/project-context.md` and hands off to the
+   selected engine.
+5. Write outputs to `prompts/outputs/current/`.
 
-Total auto-load budget at session start: **2 files** (entry point + engine).
-Conditional 3rd file only when external material is present.
+Total auto-load budget at session start: **2 files** (entry point +
+drill-down engine). In gap-closure mode, add one more read
+(`audit-and-remediate.md`). Conditional extra read for
+`external-input-handler.md` when external material exists.
 
 ---
 
@@ -25,7 +35,8 @@ Conditional 3rd file only when external material is present.
 | Path / group | Status | Load when |
 |---|---|---|
 | `prompts/stages/**` | **Deprecated waterfall.** Retained only so old tests pass. | Never. |
-| `prompts/orchestrators/*.md` (all except the 3 named above) | **Deprecated.** Each has a `DEPRECATED — DO NOT AUTO-LOAD` banner. | Only if the user explicitly names the file. |
+| `prompts/orchestrators/*.md` (all except the 4 active ones) | **Deprecated.** Each has a `DEPRECATED — DO NOT AUTO-LOAD` banner. | Only if the user explicitly names the file. |
+| `.kiro/specs/`, `.cursor/plans/`, or other IDE-native spec workflows | Do NOT let the IDE's default spec workflow override our engine. Write to `prompts/outputs/current/` regardless of IDE. | Never. |
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | Optional | Only if user asks about safeguards/commit policy. |
 | `docs/archive/` | Historical | Never. |
 | `prompts/modules/**` (266 files) | Load one at a time, during engine Step 2 or Step 3 only. | Never all at once. |
@@ -37,17 +48,26 @@ point, and restart.
 
 ---
 
-## The three-step flow (summary — full details in `drill-down-engine.md`)
+## The flows (summary — full details in each orchestrator)
+
+### Greenfield: drill-down-engine.md
 
 | Step | Input context | Output |
 |---|---|---|
-| **1 — Seed** | user brief + optional `project-context.md` | `prompts/outputs/current/epics.md` (5–7 epics, <500 tokens) |
-| **2 — Expand epic** | one epic block + optional `project-context.md` + ≤1 module | `features-<epic-slug>.md` (6–10 features per epic) |
-| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 template | `tasks-<feature-slug>.md` (atomic tasks — real file paths, signatures, API shapes) |
+| **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) |
+| **2 — Expand epic** | one epic block + optional `project-context.md` + ≤1 module | `features-<epic>.md` (6–10 features per epic) |
+| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 template | `tasks-<feature>.md` (atomic tasks — real file paths, signatures, API shapes) |
+
+### Gap-closure: audit-and-remediate.md
+
+| Step | Input context | Output |
+|---|---|---|
+| **1 — Component audit** | 5–10 key files per component + `project-context.md` | `audit-report.md` (≤ 300 lines, factual, per component) |
+| **2 — Gap list** | `audit-report.md` | `gap-list.md` (ordered by severity, with blocking deps) |
+| **3 — Remediation per gap** | one gap + relevant audit slice + ≤1 module | `remediation-<gap>.md` (atomic tasks naming real existing files) |
 
 Each step runs in a **fresh context**. Do not carry the previous step's full
-artifact forward; load only the specific slice (epic / feature) the current
-step is expanding.
+artifact forward; load only the specific slice the current step is expanding.
 
 ---
 
