@@ -333,23 +333,38 @@ Report the validator's output, then print a one-line summary:
 
 ---
 
-## STEP 4.5 — Revise outputs (MANDATORY — must run before any chain)
+## STEP 4.5 — Revise (MANDATORY — one shell command)
 
-Invoke `prompts/orchestrators/revise-outputs.md` against
-`prompts/outputs/current/`. This runs nine coverage + schema checks
-(C1-C9) on the audit + gap-list + remediation files and regenerates
-any slice that fails. Outputs `revise-report.md`.
+After Step 4 writes the last `remediation-*.md`, run exactly:
 
-**This step runs every time**, whether or not the user signaled
-execution. The rationale: schema violations and baseline-coverage
-gaps routinely slip past the engine (e.g. collapsing `Hindi (all
-device sizes)` into one task when the rule is per locale × per device
-class). The validator alone cannot catch these; the revise
-orchestrator can, by reading `baseline-task-shapes.md`.
+```bash
+bash scripts/revise.sh prompts/outputs/current
+```
 
-If `revise-report.md` reports `executor_gate: fail`, STOP here and
-surface `remaining_issues` to the user. Do not proceed to Step 5.
-A weak model must not work around a failing revise gate by ignoring
+This produces `revise-report.md` with `executor_gate: pass|fail` and
+a `failing_files:` list naming every remediation file that needs
+regeneration.
+
+Exit codes:
+- `0` → `executor_gate: pass`. Continue to Step 5.
+- non-zero → `executor_gate: fail`. Read the report's `failing_files:`
+  list, regenerate each offending `remediation-<gap>.md` via Step 3
+  scoped to that single gap, then re-run `bash scripts/revise.sh
+  prompts/outputs/current`. Repeat until exit 0.
+
+Do NOT hand-edit individual tasks to patch symptoms. Regenerate via
+the engine so the whole remediation stays coherent.
+
+The check rationale (historical): schema violations and baseline-
+coverage gaps routinely slip past the engine (e.g. collapsing `Hindi
+(all device sizes)` into one task when the rule is per locale × per
+device class). The validator alone cannot catch these; the revise
+script invokes the full C1–C8 check set (including baseline
+coverage via `baseline-task-shapes.md`).
+
+If `executor_gate: fail` persists after one regeneration cycle,
+surface `remaining_issues` to the user and stop. Do not proceed to
+Step 5. A weak model must not work around a failing revise gate by ignoring
 it — the fail means the plan is not ready to execute.
 
 **Only when `executor_gate: pass`, continue to Step 5.**

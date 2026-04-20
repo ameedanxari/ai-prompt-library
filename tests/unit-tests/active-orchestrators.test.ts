@@ -121,17 +121,53 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/do NOT write the literal string "\$\(uuidgen\)"/);
   });
 
+  it('engines point at bash scripts/revise.sh as the concrete revise command', () => {
+    const drill = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    const audit = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    expect(drill).toMatch(/bash scripts\/revise\.sh/);
+    expect(audit).toMatch(/bash scripts\/revise\.sh/);
+    // Must tell the agent NOT to hand-edit files — regenerate via engine.
+    expect(drill.toLowerCase()).toMatch(
+      /do not.*manually|do not hand-edit|regenerate.*via/,
+    );
+    expect(audit.toLowerCase()).toMatch(/regenerate/);
+  });
+
+  it('revise.sh exists, is executable, and writes revise-report.md', () => {
+    const script = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
+    expect(fs.existsSync(script)).toBe(true);
+    expect((fs.statSync(script).mode & 0o111) !== 0).toBe(true);
+    const body = fs.readFileSync(script, 'utf8');
+    // Must write revise-report.md explicitly.
+    expect(body).toMatch(/revise-report\.md/);
+    // Must exit non-zero on validator failure.
+    expect(body).toMatch(/exit 1/);
+    // Must emit a YAML frontmatter with executor_gate.
+    expect(body).toMatch(/executor_gate/);
+  });
+
+  it('executor preflight now uses revise.sh (not just the bare validator)', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    expect(body).toMatch(/bash scripts\/revise\.sh/);
+  });
+
   it('executor has a hard preflight gate that checks companion artifacts', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
     expect(body).toMatch(/## Preflight gate/);
-    // Must explicitly refuse without the validator passing.
+    // Must explicitly refuse without the gate passing.
     expect(body).toMatch(/refuse/i);
-    // Must name the exact preflight command.
-    expect(body).toMatch(/bash scripts\/validate-instantiation\.sh/);
-    // Must name the three specific failure modes.
+    // Must name revise.sh as the preflight command (wraps validator +
+    // writes revise-report.md atomically).
+    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    // Must name the specific failure modes.
     expect(body).toMatch(/external-accounts\.md/);
     expect(body).toMatch(/revise-report\.md/);
-    expect(body).toMatch(/executor_gate: fail/);
     // Must explicitly forbid a "let's just start with what we have" path.
     // Body wraps across lines, so tolerate whitespace-or-newline.
     expect(body.toLowerCase()).toMatch(/let's\s+just\s+start/);
@@ -283,24 +319,20 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/field-tests/);
   });
 
-  it('drill-down engine runs revise gate after validation, before handoff', () => {
+  it('drill-down engine runs the revise gate before handoff', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),
       'utf8',
     );
-    // Validation Gate and Revise Gate sections must both exist.
-    const validateIdx = body.search(/^## Validation Gate/m);
     const reviseIdx = body.search(/^## Revise Gate/m);
     const handoffIdx = body.search(/^## Handing off to an implementer/m);
-    expect(validateIdx).toBeGreaterThan(-1);
     expect(reviseIdx).toBeGreaterThan(-1);
     expect(handoffIdx).toBeGreaterThan(-1);
-    // Order: validate → revise → handoff.
-    expect(validateIdx).toBeLessThan(reviseIdx);
     expect(reviseIdx).toBeLessThan(handoffIdx);
-    // Revise gate must be flagged MANDATORY and non-skippable.
+    // Revise gate must be flagged MANDATORY and use the concrete command.
     expect(body).toMatch(/Revise Gate \(MANDATORY/);
-    // Revise must run on executor_gate:pass only.
+    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    // Revise must name executor_gate states.
     expect(body).toMatch(/executor_gate: fail/);
   });
 
@@ -310,16 +342,16 @@ describe('active orchestrators', () => {
       'utf8',
     );
     const step4 = body.search(/^## STEP 4 — Validate/m);
-    const step4_5 = body.search(/^## STEP 4\.5 — Revise outputs/m);
+    const step4_5 = body.search(/^## STEP 4\.5 — Revise/m);
     const step5 = body.search(/^## STEP 5 — Chain to execution/m);
     expect(step4).toBeGreaterThan(-1);
     expect(step4_5).toBeGreaterThan(-1);
     expect(step5).toBeGreaterThan(-1);
     expect(step4).toBeLessThan(step4_5);
     expect(step4_5).toBeLessThan(step5);
-    // Step 4.5 must be mandatory and non-skippable.
+    // Step 4.5 must be mandatory and use the concrete shell command.
     expect(body).toMatch(/STEP 4\.5.*MANDATORY/);
-    expect(body).toMatch(/revise-outputs\.md/);
+    expect(body).toMatch(/bash scripts\/revise\.sh/);
   });
 
   it('entry point explains that engines own the revise gate (not the entry point)', () => {

@@ -371,28 +371,33 @@ validation gate below.
 
 ---
 
-## Validation Gate (run after Step 3, before anything else)
+## Revise Gate (MANDATORY — run one command, then act on the result)
 
-Run `bash scripts/validate-instantiation.sh`. It scans every `tasks-*.md` in
-`prompts/outputs/current/` for: `.ai-prompts/prompts/`, `{{...}}`, `<TBD>`,
-`[project name]`, directory-as-path, tautological acceptance, and missing
-or malformed user-story linkage. Exit status:
-- `0` → outputs schematically clean, proceed to Revise.
-- non-zero → regenerate the offending file(s) from Step 3 before continuing.
+After Step 3 writes the last `tasks-*.md`, you do NOT manually inspect
+task files. You run exactly one shell command:
 
-## Revise Gate (MANDATORY — must run after validation)
+```bash
+bash scripts/revise.sh prompts/outputs/current
+```
 
-Invoke `prompts/orchestrators/revise-outputs.md`. It performs nine
-coverage + schema checks (C1–C9) including baseline-topic completeness
-against `baseline-task-shapes.md`. Produces `revise-report.md`.
+This wraps the instantiation validator and always writes
+`prompts/outputs/current/revise-report.md` with frontmatter that names
+every failing file.
 
-**This gate runs every time.** A weak model cannot skip it even when the
-validator passed — the validator covers syntax, the revise gate covers
-semantics (e.g. "Hindi × all device sizes" collapsed into one task
-when the rule is per locale × per device class).
+Exit codes:
+- `0` → `executor_gate: pass`. All schema + coverage checks passed.
+  Proceed to handoff.
+- non-zero → `executor_gate: fail`. The report's `failing_files:` list
+  names every file to regenerate. Pick ONE file at a time, regenerate
+  it via Step 3 scoped to that single feature, then re-run
+  `bash scripts/revise.sh prompts/outputs/current`. Repeat until
+  exit 0.
 
-If `revise-report.md` reports `executor_gate: fail`, STOP. Surface
-`remaining_issues` to the user and do not hand off to the executor.
+Do NOT try to fix failures by reading each tasks file in sequence and
+editing it. That path leads to loops where you search for files that
+don't exist. The validator knows exactly what is wrong; the report
+tells you which files and why. Regenerate from the engine, do not
+hand-edit.
 
 ## Handing off to an implementer (only when revise gate passes)
 

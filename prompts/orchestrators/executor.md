@@ -22,24 +22,29 @@ hard gates — you cannot "explain them away" or work around them by
 writing task entries anyway. Your first action on invocation is:
 
 ```bash
-bash scripts/validate-instantiation.sh prompts/outputs/current
+bash scripts/revise.sh prompts/outputs/current
 ```
+
+This command runs the full instantiation validator and writes a fresh
+`revise-report.md` reflecting the CURRENT state of the plan directory.
+Running it is idempotent — if the plan is clean it just re-confirms
+`executor_gate: pass`.
 
 Act on the exit code:
 
-- **Exit 0** → validator passed, including the presence and shape of
-  `external-accounts.md` and `revise-report.md` with
-  `executor_gate: pass`. Proceed to the execution loop.
+- **Exit 0** → `executor_gate: pass`. External-accounts.md and
+  revise-report.md are both present and valid. Proceed to the
+  execution loop.
 - **Non-zero exit** → stop immediately. Do NOT start writing
-  `execution-log.md`. Report the validator's output verbatim to the
-  user and tell them which engine step failed to complete:
+  `execution-log.md`. Read `revise-report.md`'s `failing_files:` list
+  and report the specific files to the user, then name which engine
+  step needs to re-run:
   - Missing `external-accounts.md` → audit-and-remediate Step 3.5
     (or drill-down Step 2.5) was skipped.
-  - Missing `revise-report.md` → audit-and-remediate Step 4.5 (or
-    drill-down Revise Gate) was skipped.
-  - `executor_gate: fail` → the revise gate caught a violation that
-    was not regenerated. Re-run the engine's revise step with the
-    failing check's regeneration rule.
+  - Missing or failing `revise-report.md` → the revise gate caught a
+    violation. Regenerate the offending `tasks-*.md` /
+    `remediation-*.md` via the engine's Step 3, then re-invoke
+    `bash scripts/revise.sh` until exit 0.
 
 This gate exists because field tests repeatedly showed weak models
 treating Steps 3.5/4.5 as optional and starting the executor on an

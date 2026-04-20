@@ -55,6 +55,7 @@ describe('validator — clean fixture passes', () => {
           '- **Acceptance:**',
           '  - `hello()` returns the exact string `hi`.',
           '  - File exports exactly one symbol named `hello`.',
+          '  - `tsc --noEmit` exits 0 after the edit.',
           '- **Test:** `src/app.test.ts` (new) — calls hello, asserts return.',
           '- **Estimated LOC delta:** +5',
           '- **Depends on:** none',
@@ -423,6 +424,43 @@ describe('validator — user-story linkage', () => {
       }
       expect(code).not.toBe(0);
       expect(out).toMatch(/collapse|per locale|per device/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a task with fewer than 3 acceptance bullets', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-sparse-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-sparse.md'),
+        [
+          '# Remediation — sparse',
+          '',
+          '## R1 · thin acceptance',
+          '- **Closes user story:** As a maintainer, I want a thing, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - It returns the expected value.',
+          '  - File compiles with tsc.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/fewer than 3 acceptance bullet|only 2 acceptance bullet/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

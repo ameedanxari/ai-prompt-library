@@ -126,6 +126,41 @@ for f in "${files[@]}"; do
     fail=1
   fi
 
+  # 4b. Acceptance-bullet count: per schema, each task needs ≥3
+  # acceptance bullets. Compact one-line acceptances (common SWE 1.6
+  # defect) slip past the tautology check because they're not literally
+  # "tests pass" — they just describe everything in one sentence.
+  # Scan per task section; count bullets between **Acceptance:** and the
+  # next `- **X:**` field or the next `## ` heading.
+  sparse_accept=$(awk '
+    BEGIN { in_task = 0; task_title = ""; in_accept = 0; bullets = 0 }
+    function flush() {
+      if (in_task && in_accept_seen && bullets < 3) {
+        printf "   %s — only %d acceptance bullet(s) (schema requires >= 3)\n", task_title, bullets
+      }
+    }
+    /^## [RT][0-9]+/ {
+      flush()
+      in_task = 1; task_title = $0
+      in_accept = 0; in_accept_seen = 0; bullets = 0
+      next
+    }
+    /^-[[:space:]]*\*\*Acceptance:\*\*/ { in_accept = 1; in_accept_seen = 1; next }
+    /^-[[:space:]]*\*\*/ { in_accept = 0; next }
+    /^## / { flush(); in_task = 0; in_accept = 0; next }
+    {
+      if (in_accept) {
+        if ($0 ~ /^[[:space:]]+-[[:space:]]+/) bullets++
+      }
+    }
+    END { flush() }
+  ' "$f")
+  if [ -n "$sparse_accept" ]; then
+    echo "❌ $f: task(s) with fewer than 3 acceptance bullets"
+    printf "%s\n" "$sparse_accept"
+    fail=1
+  fi
+
   # 5. Every task block must carry a well-formed Closes-user-story line.
   # We assume one task per "## " section (after the title-level #). Count
   # task headings vs. user-story markers — any shortfall is a violation.
