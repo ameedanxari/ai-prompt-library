@@ -17,9 +17,11 @@ If anything elsewhere in this repo contradicts this file, this file wins.
      "do the work". Use `prompts/orchestrators/executor.md`.
    - **Gap-closure** — user has an existing codebase and asks to
      "review", "audit", "fix gaps", "productionize", or similar. Use
-     `prompts/orchestrators/audit-and-remediate.md`. Chains into
-     Execute mode automatically after the plan passes validation if
-     the user's ask implied execution.
+     `prompts/orchestrators/audit-and-remediate.md`. Its Step 5
+     **mandatorily** chains into Execute mode when the user's ask
+     contains any execute signal ("fix", "implement", "close the
+     gaps", "write the tests", etc.). Do NOT treat the chain as
+     optional — a field test failed because an earlier agent did.
    - **Greenfield** — user is building something new. Use the drill-down
      engine.
 4. If external material is present (designs/specs/existing code), read

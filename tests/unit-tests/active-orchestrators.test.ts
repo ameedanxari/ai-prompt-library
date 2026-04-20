@@ -94,4 +94,31 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/remediation-/);
     expect(body).toMatch(/project-context\.md/);
   });
+
+  it('audit-and-remediate has a Step 5 that mandatorily chains to executor', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    expect(body).toMatch(/STEP 5/);
+    expect(body.toLowerCase()).toMatch(/chain to execution/);
+    // Must name the execute-signal words for the weak model.
+    expect(body.toLowerCase()).toMatch(/"fix"/);
+    expect(body.toLowerCase()).toMatch(/"implement"/);
+    expect(body.toLowerCase()).toMatch(/"close the gaps"/);
+    // Must point at executor.md explicitly.
+    expect(body).toMatch(/executor\.md/);
+    // Must use "IMMEDIATELY" or "mandatory" to signal non-optionality.
+    expect(body).toMatch(/IMMEDIATELY|mandatory|MANDATORY/);
+  });
+
+  it('audit-report format uses live date, not a static string', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    // The schema must reference a command that produces today's date.
+    expect(body).toMatch(/date \+%Y-%m-%d|today's ISO date/);
+    expect(body.toLowerCase()).toMatch(/do not guess/);
+  });
 });

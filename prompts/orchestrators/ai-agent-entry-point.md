@@ -136,10 +136,14 @@ Use when ALL of these are true:
   wants a fresh audit).
 
 Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
-4-step flow (Component audit → Gap list → Remediation tasks →
-Validate). If the user's ask signals both "plan and execute"
-(e.g. "fix the gaps" starting from nothing), chain into Mode 2 after
-the audit finishes and validation passes.
+5-step flow (Component audit → Gap list → Remediation tasks → Validate
+→ Chain to executor).
+
+The orchestrator's Step 5 inspects the user's prompt for execute signals
+("fix", "implement", "close the gaps", "write the tests", etc.) and
+chains into Mode 2 automatically when any match. That chain is MANDATORY
+— SWE 1.6 failed this in an earlier test by treating chain language as
+optional. Trust Step 5; do not second-guess it.
 
 #### Mode 4 — Greenfield (drill-down engine)
 

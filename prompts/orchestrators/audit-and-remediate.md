@@ -60,7 +60,7 @@ Same as the drill-down engine:
 ```markdown
 # Audit Report
 
-_Audited: <date>_
+_Audited: <today's ISO date — obtain via `date +%Y-%m-%d`, do not guess>_
 
 ## Components
 
@@ -272,13 +272,42 @@ and every other file under `prompts/outputs/current/`:
 bash scripts/validate-instantiation.sh
 ```
 
-Report the validator's output to the user, then print a one-line summary:
+Report the validator's output, then print a one-line summary:
 - Number of components audited
 - Number of gaps identified (by severity)
 - Number of remediation tasks total
 - Number of files under `prompts/outputs/current/`
 
-That is the end of the flow.
+**After writing the summary, continue immediately to Step 5.**
+
+---
+
+## STEP 5 — Chain to execution (mandatory when user's ask signals execute)
+
+Inspect the user's original prompt (the one that started this flow) for
+**execute-signal** words, case-insensitive:
+
+- "fix" (when applied to gaps, bugs, issues, the app)
+- "implement", "implementation"
+- "execute", "run the plan", "run it"
+- "do the work", "get it done"
+- "build it", "ship", "close the gaps", "finish"
+- "write the tests", "make it pass", "make it work"
+- "productionize", "deploy-ready"
+
+If ANY of these appear, the audit was not the user's endpoint. Proceed
+IMMEDIATELY to `prompts/orchestrators/executor.md` (Mode 2 in the entry
+point). Do not stop. Do not ask "shall I execute?". The user already
+told you: the planning was the precondition; executing is the task.
+
+If NONE of the execute signals appear and the user's ask was planning-
+oriented ("review", "audit", "analyze", "what are the gaps", "produce
+a plan", "tell me what's missing"), the flow ends here. Report the
+summary and stop.
+
+Ambiguous case: if the user's ask contains both "review/audit" AND one
+execute signal (e.g. "review the project... fix the gaps"), that is NOT
+ambiguous — it is a plan-and-execute request. Chain to the executor.
 
 ---
 
