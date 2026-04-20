@@ -61,13 +61,22 @@ fi
 
 # Build a YAML-safe list of failing files from the validator output.
 # Each "❌ <path>:" line names a failing file. Deduplicate.
-# Exclude revise-report.md itself (the gate-value check is a consequence
-# of other failures, not a defect in the report file itself).
+# Exclude revise-report.md itself and coverage-gap pseudo-entries —
+# coverage-gap file names are captured in a separate block in the body.
 failed_files=$(grep -E "^❌ " "$VAL_OUT_FILE" \
   | sed -E 's/^❌ ([^:]+):.*/\1/' \
   | grep -v "revise-report\.md$" \
   | grep -v "missing required companion$" \
+  | grep -v "^coverage$" \
   | sort -u || true)
+
+# Extract the coverage-gap list (indented "- tasks-<slug>.md" bullets
+# under the coverage error). These are features without tasks files.
+coverage_gaps=$(awk '
+  /^❌ coverage:/ { inblk = 1; next }
+  inblk && /^   - / { sub(/^   - /, ""); print; next }
+  inblk && !/^   / { inblk = 0 }
+' "$VAL_OUT_FILE" | sort -u)
 failed_yaml="[]"
 if [ -n "$failed_files" ]; then
   failed_yaml="["
@@ -101,10 +110,16 @@ fi
     echo "checks_failed: []"
   else
     echo "checks_passed: [see regenerations_performed]"
-    echo "checks_failed: [validator reported issues in failing_files]"
+    echo "checks_failed: [validator reported issues in failing_files or coverage_gap_count]"
   fi
   echo "regenerations_performed: []"
   echo "failing_files: $failed_yaml"
+  if [ -n "$coverage_gaps" ]; then
+    gap_count=$(printf "%s\n" "$coverage_gaps" | wc -l | tr -d ' ')
+    echo "coverage_gap_count: $gap_count"
+  else
+    echo "coverage_gap_count: 0"
+  fi
   echo "executor_gate: $gate"
   echo "---"
   echo ""
@@ -119,18 +134,38 @@ fi
     echo "its preflight will re-run this same validator and then"
     echo "start the execution loop."
   else
-    echo "## Failing files"
+    if [ -n "$failed_files" ]; then
+      echo "## Failing files (schema violations)"
+      echo ""
+      echo "Regenerate each file below from the originating engine's Step 3."
+      echo "See \`## Validator output\` at the bottom for the specific defect."
+      echo ""
+      while IFS= read -r f; do
+        [ -z "$f" ] && continue
+        echo "- \`$(basename "$f")\`"
+      done <<< "$failed_files"
+      echo ""
+    fi
+    if [ -n "$coverage_gaps" ]; then
+      echo "## Coverage gaps (features without tasks files)"
+      echo ""
+      echo "Each feature below was declared in a features-*.md file but has"
+      echo "no matching tasks-<feature>.md on disk. Step 3 was not run to"
+      echo "completion. Generate one tasks file per item via the engine:"
+      echo ""
+      printf "%s\n" "$coverage_gaps" | sed 's/^/- /'
+      echo ""
+    fi
+    echo "## What to do next"
     echo ""
-    echo "Regenerate each of the files below from the originating engine's"
-    echo "Step 3. Use the validator output in \`## Validator output\` below"
-    echo "to see the exact defect per file."
+    echo "1. Regenerate every file listed above via drill-down-engine Step 3"
+    echo "   (scoped to one feature at a time). Do NOT hand-edit."
+    echo "2. Re-run: \`bash scripts/revise.sh $TARGET_DIR\`"
+    echo "3. Repeat until this report shows \`executor_gate: pass\`."
     echo ""
-    while IFS= read -r f; do
-      [ -z "$f" ] && continue
-      echo "- \`$(basename "$f")\`"
-    done <<< "$failed_files"
-    echo ""
-    echo "After regenerating, re-run: \`bash scripts/revise.sh $TARGET_DIR\`"
+    echo "Do NOT edit this report to change executor_gate manually. The"
+    echo "next revise.sh run will overwrite it based on the live validator"
+    echo "state."
     echo ""
   fi
   echo "## Validator output"
@@ -146,7 +181,18 @@ if [ "$gate" = "pass" ]; then
   echo "✅ revise gate: pass — wrote $REPORT"
   exit 0
 else
-  echo "❌ revise gate: fail — wrote $REPORT with failing_files list"
-  echo "   Regenerate the offending files, then re-run this script."
+  echo "❌ revise gate: fail — wrote $REPORT"
+  echo ""
+  echo "Next steps (in order):"
+  echo "  1. Open $REPORT."
+  echo "  2. Regenerate every file listed under 'Failing files' or"
+  echo "     'Coverage gaps' via the engine's Step 3 — one feature/gap"
+  echo "     at a time. Do NOT hand-edit files to patch symptoms."
+  echo "  3. Re-run THIS SCRIPT to refresh the report:"
+  echo "       bash scripts/revise.sh $TARGET_DIR"
+  echo "  4. Repeat until the script prints 'revise gate: pass'."
+  echo ""
+  echo "Do NOT manually edit executor_gate in the report — the next run"
+  echo "of this script overwrites it based on the live validator state."
   exit 1
 fi

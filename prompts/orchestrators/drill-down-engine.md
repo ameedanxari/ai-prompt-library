@@ -318,7 +318,24 @@ Each task has:
 
 **After each feature's tasks are written, continue to the next feature.**
 Only stop when every feature across every epic has a `tasks-*.md` file.
-Then run the validation gate below — do not wait for the user to ask.
+
+### Step 3 completion checkpoint
+
+Before you claim Step 3 is finished, you MUST reconcile the two sides:
+
+- **Every `## <Feature Name>` heading** in every `features-*.md` file
+  → one `tasks-<slug>.md` file on disk, where `<slug>` is the feature
+  name lowercased, non-alphanumerics stripped, whitespace → hyphen.
+
+If the numbers do not match — e.g. 161 features declared, only 29
+tasks files on disk — Step 3 is NOT complete. Resume the per-feature
+loop for the missing ones. Do not advance to the Revise Gate with an
+incomplete plan; Revise Gate will catch this (C2) but it is cheaper to
+catch it here first.
+
+The Revise Gate script (`bash scripts/revise.sh`) reports
+`coverage_gap_count: N` in its output. If N > 0, generate the missing
+N task files via this step before re-running the revise script.
 
 ### Dissolution: good vs. bad
 

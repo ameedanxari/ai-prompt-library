@@ -429,6 +429,119 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('rejects a plan with features that have no matching tasks file (coverage gap)', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-cov-'));
+    try {
+      // One features file with 3 features declared…
+      fs.writeFileSync(
+        path.join(sandbox, 'features-auth.md'),
+        [
+          '# Features — Auth',
+          '',
+          '## Sign up',
+          '**Description:** x',
+          '',
+          '## Sign in',
+          '**Description:** x',
+          '',
+          '## Password reset',
+          '**Description:** x',
+          '',
+        ].join('\n'),
+      );
+      // …but only one tasks file on disk.
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-sign-up.md'),
+        [
+          '## T1 · signup handler',
+          '- **Closes user story:** As a new user, I want to sign up, so that I can use the app.',
+          '- **File:** `src/signup.ts`',
+          '- **Precise change:** add signup().',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/signup.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/coverage:\s+2 feature\(s\) declared/);
+      expect(out).toMatch(/tasks-sign-in\.md/);
+      expect(out).toMatch(/tasks-password-reset\.md/);
+      // Must explicitly instruct regeneration via engine, not hand-edit.
+      expect(out).toMatch(/Regenerate via the engine, not by hand/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('user-story error message names the canonical form and gives an example', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-us-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-bad.md'),
+        [
+          '## R1 · x',
+          '- **Closes user story:** As the app I want something so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      // Error must include the exact canonical form and an example.
+      expect(out).toMatch(/As a <role>, I want <outcome>, so that <value>/);
+      expect(out).toMatch(/Example:/);
+      expect(out).toMatch(/NOT 'As the'/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a task with fewer than 3 acceptance bullets', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-sparse-'));
     try {
@@ -501,7 +614,7 @@ describe('validator — user-story linkage', () => {
         code = err.status ?? 0;
       }
       expect(code).not.toBe(0);
-      expect(out).toMatch(/As a \.\.\. I want \.\.\. so that/);
+      expect(out).toMatch(/As a <role>, I want <outcome>, so that <value>/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

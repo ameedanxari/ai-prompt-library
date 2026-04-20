@@ -55,6 +55,44 @@ fi
 
 fail=0
 
+# 0b. Feature→task coverage (C2). If features-*.md files exist, every
+# feature heading inside them must have a matching tasks-<slug>.md on
+# disk. This catches the "agent generated 29 of 161 task files and
+# declared done" failure. The slug mapping is lowercase, punctuation
+# stripped, whitespace to hyphen.
+shopt -s nullglob
+feature_files=("$TARGET_DIR"/features-*.md)
+if [ ${#feature_files[@]} -gt 0 ]; then
+  declared=$(mktemp)
+  produced=$(mktemp)
+  for ff in "${feature_files[@]}"; do
+    grep -E "^## " "$ff" | sed -E 's/^## +//' \
+      | tr '[:upper:]' '[:lower:]' \
+      | sed -E 's/[^a-z0-9 -]//g' \
+      | tr -s ' ' '-' \
+      | sed -E 's/^-+//; s/-+$//' \
+      >> "$declared"
+  done
+  sort -u "$declared" -o "$declared"
+
+  for tf in "$TARGET_DIR"/tasks-*.md; do
+    base=$(basename "$tf" .md)
+    echo "${base#tasks-}"
+  done | sort -u > "$produced"
+
+  missing=$(comm -23 "$declared" "$produced")
+  if [ -n "$missing" ]; then
+    missing_count=$(printf "%s\n" "$missing" | wc -l | tr -d ' ')
+    echo "❌ coverage: $missing_count feature(s) declared but have no tasks-<feature>.md"
+    echo "   Generate a tasks file for each of these via drill-down Step 3:"
+    printf "%s\n" "$missing" | sed 's/^/   - tasks-/;s/$/.md/'
+    echo "   Do NOT declare Step 3 complete until every feature has a"
+    echo "   matching tasks file. Regenerate via the engine, not by hand."
+    fail=1
+  fi
+  rm -f "$declared" "$produced"
+fi
+
 # 0. Required-companion-files check. When plan files exist, two more files
 # MUST also exist in the same directory — skipping them is a structural
 # defect that blocks execution regardless of per-task validity.
@@ -178,8 +216,12 @@ for f in "${files[@]}"; do
     # Flag lines that have the marker but don't match the well-formed shape.
     bad_stories=$(grep -nE "$USER_STORY_MARKER" "$f" | grep -vE "$USER_STORY_WELL_FORMED" || true)
     if [ -n "$bad_stories" ]; then
-      echo "❌ $f: Closes user story lines must use 'As a ... I want ... so that ...' form"
-      echo "$bad_stories" | sed 's/^/   /'
+      echo "❌ $f: Closes user story lines must use the canonical form"
+      echo "   Required: **Closes user story:** As a <role>, I want <outcome>, so that <value>."
+      echo "   Example:  **Closes user story:** As a user, I want to sign up with email, so that I can save my preferences."
+      echo "   Rules:    start with 'As a' or 'As an' (NOT 'As the'). Include the two commas."
+      echo "   Offending lines:"
+      echo "$bad_stories" | sed 's/^/     /'
       fail=1
     fi
   fi
