@@ -21,14 +21,27 @@ stop between them. Each step flows into the next without user confirmation.
 
 ### A. Stale-integration check (run FIRST — before anything else)
 
-If the user asked to "reset", "re-integrate", "start fresh", or "clean up",
-OR if you detect any of these pre-existing integration artifacts at the
-project root, the project has stale state from an older library version:
+Trigger A1 — **explicit user request**. If the user's prompt contains ANY
+of these phrases (case-insensitive), run the reset script unconditionally.
+This is NOT optional. Do not evaluate whether the project state looks
+clean — the user asked, so we reset:
 
-- `NEXT_ACTION.md`, `PROJECT_STATE.md`, `DEVELOPMENT_LOG.md`,
-  `EXECUTION_PROGRESS.md`, `IMPLEMENTATION_STATUS.md`,
-  `IMPLEMENTATION_SUMMARY.md`, `PRODUCTION_COMPLETION_REPORT.md`,
-  `QUICK_STATUS.md`, `COMPLETED_FEATURES.md`, `ARCHITECTURE_DECISIONS.md`,
+- "force reset"
+- "reset" (as a request, not a description)
+- "re-integrate" / "reintegrate"
+- "start fresh" / "fresh start"
+- "clean up" / "clean slate"
+- "remove all library ... working data"
+- "wipe" (library / integration / state / outputs)
+
+Trigger A2 — **detected stale markers**. If any of these pre-existing
+integration artifacts live at the project root, also run reset:
+
+- Legacy state files: `NEXT_ACTION.md`, `PROJECT_STATE.md`,
+  `DEVELOPMENT_LOG.md`, `EXECUTION_PROGRESS.md`,
+  `IMPLEMENTATION_STATUS.md`, `IMPLEMENTATION_SUMMARY.md`,
+  `PRODUCTION_COMPLETION_REPORT.md`, `QUICK_STATUS.md`,
+  `COMPLETED_FEATURES.md`, `ARCHITECTURE_DECISIONS.md`,
   `KNOWN_ISSUES.md`
 - A root `AGENTS.md` that references deleted orchestrators (e.g.
   `execution-orchestrator.md`, `auto-request-router.md`,
@@ -37,11 +50,17 @@ project root, the project has stale state from an older library version:
 - `.kiro/steering/` or `.cursor/rules/` that mentions "10-stage pipeline",
   "stage-01-intake", or "COVE" (all deprecated)
 
-If any of the above is present, run the reset script first:
+If trigger A1 OR trigger A2 fires, run:
 
 ```bash
 bash .ai-prompts/scripts/reset-integration.sh --yes
 ```
+
+Verify the script succeeded by checking that `prompts/outputs/current/`
+is empty (or contains only `project-context.md` if an in-progress handler
+run existed). If the directory still contains `audit-report.md`,
+`gap-list.md`, or `remediation-*.md` from a previous run, the reset did
+NOT run correctly — surface that failure to the user and stop.
 
 Then continue to step B. Do not stop to ask the user — they already asked
 for reset or the stale state is unambiguous.
@@ -69,17 +88,38 @@ Does `prompts/outputs/current/project-context.md` exist?
   template defaults.
 - **No:** skip.
 
-### D. Mode selection — greenfield vs. gap-closure vs. trivial
+### D. Mode selection — four modes
 
-Decide ONE of three modes based on the user's ask and the project state.
+Decide ONE of four modes based on the user's ask AND the project state.
+Check in this order (first match wins):
 
-#### Mode 1 — Trivial (skip the engine entirely)
+#### Mode 1 — Trivial (skip engines entirely)
 
 Use when the user's ask is a single-file edit or a one-line change:
 "rename X", "fix typo", "tweak copy in file Y", "change the color".
-Just do the work directly. Do not run either engine.
+Just do the work directly. Do not run any engine.
 
-#### Mode 2 — Gap-closure (existing-project audit + remediation)
+#### Mode 2 — Execute existing plan
+
+Use when BOTH of these are true:
+- `prompts/outputs/current/` contains `remediation-*.md` (gap-closure
+  plan) OR `tasks-*.md` (greenfield plan), AND those plan files pass
+  `scripts/validate-instantiation.sh`.
+- The user's ask signals execution, not re-planning: "fix", "implement",
+  "execute", "run the plan", "do the work", "build it", "ship", "close
+  the gaps", "write the tests", "make it pass".
+
+Route to `prompts/orchestrators/executor.md`. Do NOT re-run the audit
+— a plan already exists. The executor will resume from
+`execution-log.md` if it exists, or start at the first task otherwise.
+
+**Why this mode exists:** planning and execution are separate phases.
+The library's engines produce plans; this orchestrator runs them.
+Without this mode, an agent facing "fix the gaps" on a project that
+already has a plan will either re-plan wastefully or try to execute
+without structure. Both were observed failure modes.
+
+#### Mode 3 — Gap-closure (existing-project audit + remediation)
 
 Use when ALL of these are true:
 - Project has real source directories (`src/`, `backend/`, `frontend/`,
@@ -92,15 +132,20 @@ Use when ALL of these are true:
   - OR `MY_PROJECT.md` "External material" section lists source
     directories with completion percentages (e.g. "95% complete",
     "85% complete").
+- Mode 2 does NOT apply (either no plan exists or the user explicitly
+  wants a fresh audit).
 
 Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
-4-step flow (Component audit → Gap list → Remediation tasks → Validate).
+4-step flow (Component audit → Gap list → Remediation tasks →
+Validate). If the user's ask signals both "plan and execute"
+(e.g. "fix the gaps" starting from nothing), chain into Mode 2 after
+the audit finishes and validation passes.
 
-#### Mode 3 — Greenfield (drill-down engine)
+#### Mode 4 — Greenfield (drill-down engine)
 
 Use when the project is empty of meaningful source OR the user's brief
-describes something new to build. This is the default when neither
-Mode 1 nor Mode 2 applies.
+describes something new to build. This is the default when none of
+modes 1-3 apply.
 
 Route to `drill-down-engine.md` and follow its 3-step flow
 (Seed → Features → Tasks → Validate).

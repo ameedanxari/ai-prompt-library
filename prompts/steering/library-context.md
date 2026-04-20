@@ -10,12 +10,15 @@ Loaded by the IDE at every session. Keep it short.
 
 1. Read `.ai-prompts/prompts/AGENTS.md`.
 2. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`.
-3. The entry point chooses one of three modes:
-   - **Greenfield** (new project) → `drill-down-engine.md`.
+3. The entry point chooses one of four modes:
+   - **Trivial** (single-file edit) → skip engines, just do the work.
+   - **Execute** (a validated plan exists and user says fix/implement/
+     do-the-work) → `executor.md`.
    - **Gap-closure** (existing codebase; user asks to review, audit,
      fix gaps, productionize, write tests, finish) →
-     `audit-and-remediate.md`.
-   - **Trivial** (single-file edit) → skip engines, just do the work.
+     `audit-and-remediate.md`. Chains into Execute automatically when
+     the plan passes validation and the user's ask implied execution.
+   - **Greenfield** (new project) → `drill-down-engine.md`.
 4. If external material exists (designs/specs/source code under
    `working_copy/`, `prompts/working_copy/`, or project has real
    `src/`/`backend/`/`frontend/`/`android/`/`ios/` directories), also

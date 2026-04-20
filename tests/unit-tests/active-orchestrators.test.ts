@@ -17,6 +17,7 @@ const ACTIVE = [
   'ai-agent-entry-point.md',
   'drill-down-engine.md',
   'audit-and-remediate.md',
+  'executor.md',
   'external-input-handler.md',
   'module-selection-index.md',
 ];
@@ -51,14 +52,36 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/audit-and-remediate\.md/);
   });
 
-  it('entry point mode selection names three modes', () => {
+  it('entry point mode selection names all four modes', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'ai-agent-entry-point.md'),
       'utf8',
     );
-    expect(body.toLowerCase()).toMatch(/greenfield/);
-    expect(body.toLowerCase()).toMatch(/gap-closure/);
-    expect(body.toLowerCase()).toMatch(/trivial/);
+    expect(body.toLowerCase()).toMatch(/mode 1 — trivial/);
+    expect(body.toLowerCase()).toMatch(/mode 2 — execute/);
+    expect(body.toLowerCase()).toMatch(/mode 3 — gap-closure/);
+    expect(body.toLowerCase()).toMatch(/mode 4 — greenfield/);
+  });
+
+  it('entry point treats explicit reset as unconditional trigger', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'ai-agent-entry-point.md'),
+      'utf8',
+    );
+    // Must document that explicit user reset runs unconditionally.
+    expect(body.toLowerCase()).toMatch(/unconditional/);
+    expect(body.toLowerCase()).toMatch(/force reset/);
+    expect(body).toMatch(/reset-integration\.sh --yes/);
+  });
+
+  it('executor references plan artifacts and log', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    expect(body).toMatch(/remediation-/);
+    expect(body).toMatch(/tasks-/);
+    expect(body).toMatch(/execution-log\.md/);
+    expect(body).toMatch(/gap-list\.md|epics\.md/);
+    // Hard requirement: never execute unvalidated plan.
+    expect(body).toMatch(/validate-instantiation\.sh/);
   });
 
   it('audit-and-remediate references all four required output files', () => {

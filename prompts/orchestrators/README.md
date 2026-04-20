@@ -4,9 +4,10 @@
 
 | File | Purpose |
 |---|---|
-| `ai-agent-entry-point.md` | Primary entry. Routes every request into one of three modes. |
+| `ai-agent-entry-point.md` | Primary entry. Routes every request into one of four modes. |
 | `drill-down-engine.md` | **Greenfield mode.** Seed → Features → Tasks. |
 | `audit-and-remediate.md` | **Gap-closure mode.** For existing codebases. Audit → Gaps → Remediation. |
+| `executor.md` | **Execute mode.** Runs an existing plan (remediation or tasks) against real code. |
 | `external-input-handler.md` | Runs first when user provides designs / specs / existing code. |
 | `module-selection-index.md` | Intent → single-module lookup. Not loaded into session context; consulted at expansion time. |
 

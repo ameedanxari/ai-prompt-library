@@ -10,13 +10,18 @@ If anything elsewhere in this repo contradicts this file, this file wins.
 
 1. Read `prompts/orchestrators/ai-agent-entry-point.md` (the entry point).
 2. Read `prompts/orchestrators/drill-down-engine.md` (the greenfield engine).
-3. The entry point selects one of three modes:
-   - **Greenfield** — user is building something new. Use the drill-down
-     engine.
+3. The entry point selects one of four modes:
+   - **Trivial** — one-file edit. Skip engines, just do the work.
+   - **Execute** — a validated plan (`remediation-*.md` or `tasks-*.md`)
+     already exists and the user says "fix", "implement", "execute",
+     "do the work". Use `prompts/orchestrators/executor.md`.
    - **Gap-closure** — user has an existing codebase and asks to
      "review", "audit", "fix gaps", "productionize", or similar. Use
-     `prompts/orchestrators/audit-and-remediate.md` instead.
-   - **Trivial** — one-file edit. Skip the engines, just do the work.
+     `prompts/orchestrators/audit-and-remediate.md`. Chains into
+     Execute mode automatically after the plan passes validation if
+     the user's ask implied execution.
+   - **Greenfield** — user is building something new. Use the drill-down
+     engine.
 4. If external material is present (designs/specs/existing code), read
    `prompts/orchestrators/external-input-handler.md` first. It produces
    `prompts/outputs/current/project-context.md` and hands off to the
@@ -66,6 +71,17 @@ point, and restart.
 | **2 — Gap list** | `audit-report.md` | `gap-list.md` (ordered by severity, with blocking deps) |
 | **3 — Remediation per gap** | one gap + relevant audit slice + ≤1 module | `remediation-<gap>.md` (atomic tasks naming real existing files) |
 
+### Execute: executor.md
+
+| Step | Input context | Output |
+|---|---|---|
+| Loop | one `remediation-<gap>.md` or `tasks-<feature>.md` at a time, plus `execution-log.md` for resume | Code changes in the app, test runs, entries in `execution-log.md` per task |
+
+The executor picks tasks in severity + dependency order, runs the
+Precise change, runs the named Test, checks Acceptance bullets, logs
+the outcome. Stops on regressions, 3+ consecutive blockers, or user
+interrupt.
+
 Each step runs in a **fresh context**. Do not carry the previous step's full
 artifact forward; load only the specific slice the current step is expanding.
 
@@ -103,16 +119,24 @@ artifact forward; load only the specific slice the current step is expanding.
    Do not ask the user "should I continue?" — the engine is designed to
    run end-to-end in one session.
 
-7. **Reset stale integration before routing.** If the project root has
-   pre-existing library-state files (`NEXT_ACTION.md`, `PROJECT_STATE.md`,
-   `IMPLEMENTATION_STATUS.md`, `QUICK_STATUS.md`, etc.) OR the root
-   `AGENTS.md` references orchestrators that no longer exist
-   (`execution-orchestrator.md`, `auto-request-router.md`,
-   `stage-pipeline-orchestrator.md`, `quality-gate-orchestrator.md`,
-   `task-generation-orchestrator.md`, etc.), run
-   `bash .ai-prompts/scripts/reset-integration.sh --yes` before anything
-   else. This refreshes steering, rewrites the project `AGENTS.md`, and
-   clears old outputs.
+7. **Reset when the user asks, OR when stale markers appear.** Two
+   independent triggers, both hard:
+   - **Explicit user request** (unconditional): if the user's prompt
+     contains "force reset", "reset", "re-integrate", "start fresh",
+     "fresh start", "clean up", "clean slate", "wipe", or "remove all
+     library working data", run
+     `bash .ai-prompts/scripts/reset-integration.sh --yes` immediately.
+     Do NOT inspect project state first to decide if reset is "needed"
+     — the user asked, so it runs.
+   - **Detected stale markers**: pre-existing `NEXT_ACTION.md` /
+     `PROJECT_STATE.md` / `IMPLEMENTATION_STATUS.md` / similar, OR a
+     root `AGENTS.md` referencing deleted orchestrators
+     (`execution-orchestrator.md`, `auto-request-router.md`,
+     `stage-pipeline-orchestrator.md`, etc.).
+   After running reset, verify `prompts/outputs/current/` no longer
+   contains `audit-report.md`, `gap-list.md`, or `remediation-*.md` from
+   a previous run. If those files persist, the reset did not run
+   correctly — stop and surface the failure.
 
 ---
 
