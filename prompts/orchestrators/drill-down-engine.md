@@ -50,35 +50,95 @@ prompts/outputs/current/
 
 **Do NOT load:** stage files, modules, templates, orchestrators beyond this one.
 
-**Produce:** 5–7 epics. Each epic entry has exactly:
+### Produce two groups of epics
+
+**(a) Feature epics** — the user's brief turned into 4–6 epics that capture
+what makes this product *this product*. Each epic covers a primary user
+capability. Examples: for a music app → "Playback engine", "Library &
+playlists", "Discovery & recommendations"; for a marketplace → "Product
+catalog", "Checkout", "Order fulfilment".
+
+**(b) Production-readiness baseline epics** — a fixed set that MUST also be
+emitted unless the user's `MY_PROJECT.md` **Restrict** section explicitly
+lists them as excluded. This enforces the library's "assume maximum
+completeness" vision: a weak model cannot forget production concerns
+because the engine always surfaces them.
+
+Emit each baseline epic below UNLESS `MY_PROJECT.md` **Restrict** names it:
+
+| Baseline epic | Covers |
+|---|---|
+| Identity, auth & onboarding | Sign up / sign in / OAuth / password reset / email verification / biometric on mobile / first-run onboarding tour / consent capture. |
+| Admin & RBAC | Admin portal, role-based permissions, impersonation / audit, account lifecycle, user management. |
+| Observability | Structured logging, metrics, error tracking (e.g. Sentry), uptime / alerting, distributed tracing, log → AI feedback loop. |
+| Localization & RTL | i18n framework, string extraction, RTL + LTR layouts, locale negotiation, date/number formatting, per-locale app store assets. |
+| Theming & whitelabel | Design-token architecture, dark + light mode, brand swap without code changes, theme preview in debug menu. |
+| Accessibility | WCAG 2.1 AA pass across web + mobile; screen-reader labels; keyboard nav; reduced-motion; minimum touch target sizes. |
+| Testing & QA | Unit + integration + UI + E2E + visual regression; mocked + deterministic data; coverage thresholds; test data factories. |
+| CI/CD & release | GitHub Actions (or equivalent) pipeline: lint → test → build → deploy; branch protection; semantic versioning; release notes. |
+| Infrastructure as code | Terraform / Pulumi / similar; prefer free-tier / freemium managed services for MVP; staging + production environments. |
+| App store release prep | For each mobile platform: icons, launch screens, screenshots per locale, store descriptions, privacy nutrition labels, TestFlight / Play internal track, signing + distribution. |
+| Settings, debug menu & dev UX | User-facing settings; developer debug menu (API endpoint switch, feature flags, mock-data toggle, localization preview, theme preview); one-command dev setup script. |
+| Privacy, PII & compliance | Consent flows, data export / deletion (GDPR / CCPA), age gating, restricted content controls, PII classification + minimization, cookie policy. |
+
+Platform default: **web + Android + iOS** unless `MY_PROJECT.md`
+**Platforms** is filled in. If it is, use only those platforms.
+
+### Per-epic schema
+
+Each epic entry has exactly:
 - `name` — short, noun-phrase, unique
+- `category` — `feature` | `baseline`
 - `goal` — one sentence, starts with a verb
 - `acceptance_criteria` — 2–4 bullets, each measurable/testable
 - `complexity` — `S` (<1 week) | `M` (1–2 weeks) | `L` (2+ weeks)
+- `applies_to` — list of platforms this epic spans (subset of the
+  project's platforms)
 
-**Output format:**
+### Output format
 
 ```markdown
 # Epics
 
-## 1. <Epic Name>
+_Project platforms: web, android, ios_
+_Feature epics: N · Baseline epics: M · Total: N+M_
+
+## Feature epics
+
+### 1. <Epic Name>
+- **Category:** feature
 - **Goal:** <one sentence>
 - **Acceptance:**
   - <bullet>
+- **Complexity:** <S|M|L>
+- **Applies to:** web, android, ios
+
+### 2. …
+
+## Baseline epics
+
+### B1. Identity, auth & onboarding
+- **Category:** baseline
+- **Goal:** …
+- **Acceptance:**
   - <bullet>
 - **Complexity:** <S|M|L>
+- **Applies to:** web, android, ios
 
-## 2. <Epic Name>
-...
+### B2. …
 ```
 
-**Target size:** < 500 tokens (≈ 125 lines max). If you exceed this, you're
-writing features, not epics — collapse.
+**Target size:** < 1,200 tokens (≈ 300 lines max). Baseline epics add
+to the total, which is why this cap is higher than the original 500.
+Each individual epic block should still stay under ~15 lines — no
+feature creep inside an epic.
 
 **Write to:** `prompts/outputs/current/epics.md`
 
 **After writing — continue immediately to Step 2.** Do not stop, do not ask
 the user for confirmation. The epics file you just wrote is Step 2's input.
+Step 2 expands every epic — feature AND baseline — into features; do not
+selectively skip baseline epics.
 
 ---
 

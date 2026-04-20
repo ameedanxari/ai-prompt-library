@@ -121,4 +121,36 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/date \+%Y-%m-%d|today's ISO date/);
     expect(body.toLowerCase()).toMatch(/do not guess/);
   });
+
+  it('drill-down Step 1 emits production-readiness baseline epics', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    // Every baseline epic must be documented by name in Step 1.
+    const baselineTopics = [
+      /identity.*auth.*onboarding/i,
+      /admin.*rbac/i,
+      /observability/i,
+      /localization.*rtl/i,
+      /theming.*whitelabel/i,
+      /accessibility/i,
+      /testing.*qa/i,
+      /ci\/cd.*release/i,
+      /infrastructure as code/i,
+      /app store release/i,
+      /debug menu/i,
+      /privacy.*pii.*compliance/i,
+    ];
+    for (const pat of baselineTopics) {
+      expect(
+        pat.test(body),
+        `drill-down-engine.md is missing baseline topic ${pat}`,
+      ).toBe(true);
+    }
+    // Baseline must be conditional on MY_PROJECT.md Restrict.
+    expect(body).toMatch(/Restrict/);
+    // Default platforms must be explicit.
+    expect(body.toLowerCase()).toMatch(/web \+ android \+ ios/);
+  });
 });

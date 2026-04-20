@@ -1,59 +1,131 @@
 # My Project
 
-_Copy this file to `MY_PROJECT.md` (no `.template` suffix) and fill it in.
-The drill-down engine reads `MY_PROJECT.md` at Step 1 (Seed)._
+> **Minimum you must do**: fill in the **Brief** section below and save
+> this file as `MY_PROJECT.md` at the root of your project.
+> Everything else on this page is **optional** — the library assumes
+> industry-standard defaults when fields are left blank.
+>
+> **You do not need to read the rest of this file** if you are using the
+> Quick Start prompt (`.ai-prompts/QUICK_START.md`) — the agent will
+> gather everything it needs from you in plain language.
 
-## Brief (required)
+---
 
-_2–3 sentences. What is the product? Who is it for? What is the single most
-important outcome?_
+## Brief (required — the ONLY required field)
 
-Example: _"A team todo app for small remote teams (3–20 people). Members
-organize work into shared workspaces and see real-time updates. Success
-means a team can replace a spreadsheet + Slack thread with it in one day."_
+_One paragraph. What is the product? Who is it for? Why does it exist?_
 
-## Core features (bullet list, 3–8 items)
+_Write in plain language. You can be vague about tech ("like Spotify but
+for audiobooks") or specific ("a React PWA for restaurant owners"). The
+library will fill in the rest._
 
-_What must exist for the product to be useful at all? Skip nice-to-haves._
+---
+
+## Defaults the library will assume if you leave the rest blank
+
+Skip ahead and leave the sections below empty if any of these defaults
+are fine. Only edit them if you want to **restrict** the scope or
+**override** a default.
+
+- **Platforms**: web (responsive, PWA-capable) + Android + iOS. All three.
+- **Web stack**: React 18 + TypeScript + Vite + Tailwind. Next.js if the
+  brief implies server-rendered pages.
+- **Mobile stack**: native Kotlin/Jetpack Compose on Android, native
+  Swift/SwiftUI on iOS. React Native only if the brief asks for
+  "cross-platform" or similar.
+- **Backend stack**: Node.js + Fastify + PostgreSQL + Redis. Python/
+  Django or Go/Gin only if the brief mentions domain constraints that
+  favour them (ML, high-throughput, etc.).
+- **Hosting**: prefers free-tier / freemium managed services
+  (Vercel / Netlify / Railway / Supabase / Neon / Fly.io) for hobby and
+  MVP scale; AWS ECS + RDS for anything that hints at production scale.
+- **Auth**: email + password + OAuth (Google, Apple) with JWT +
+  refresh tokens. Biometric on mobile (Face ID / Touch ID /
+  Fingerprint).
+- **Data storage**: PostgreSQL for relational; object storage (S3 /
+  R2 / Supabase Storage) for blobs; Redis for cache + queues.
+- **Production readiness baseline** (always generated): auth +
+  admin portal + RBAC, observability (structured logs + metrics +
+  error tracking), localization (i18n + RTL), theming (dark + light
+  mode, decoupled tokens for whitelabeling), accessibility (WCAG 2.1
+  AA), automated tests (unit + integration + UI + e2e), CI/CD
+  pipelines, infra-as-code, app store release assets for mobile,
+  user onboarding, settings + debug menu, privacy + PII controls +
+  consent flows.
+
+If you want any of those turned **off**, list them under **Restrict**
+below.
+
+---
+
+## Platforms (optional — overrides the default above)
+
+_Leave blank to get web + Android + iOS. Otherwise, list only the
+platforms you want built._
 
 - …
+
+---
+
+## Tech preferences (optional — overrides specific stack defaults)
+
+_Leave blank to get the industry-standard stack for your brief. Fill in
+any field to pin a specific choice._
+
+- **Frontend (web)**:
+- **Mobile**:
+- **Backend**:
+- **Database**:
+- **Hosting**:
+- **Auth provider**:
+- **Payments** (if relevant):
+
+---
+
+## Users / roles (optional — the library will infer from the brief)
+
+_Leave blank to let the library derive roles from the brief (e.g. a
+marketplace implies Customer + Seller + Admin). Fill in only to add
+non-obvious roles or to remove an inferred one._
+
 - …
-- …
 
-## Users / roles
-
-_Who uses it, and what are the distinct roles?_
-
-- …
-
-## Tech preferences (optional — leave blank if no preference)
-
-- **Frontend:**
-- **Backend:**
-- **Database:**
-- **Hosting:**
-- **Auth provider:**
+---
 
 ## Constraints (optional — list only if real)
 
-_Compliance (HIPAA, PCI, GDPR), performance targets, offline support,
-specific integrations, etc._
+_Compliance (HIPAA, PCI, GDPR, CCPA, SOC2), performance targets,
+offline support, data residency, integrations you MUST use._
 
 - …
 
-## External material (optional)
+---
 
-_If you have designs, specs, or existing code the engine should read, list
-where they live:_
+## Reference material (optional)
 
-- `working_copy/` — designs and mockups
-- `prompts/working_copy/` — specs / PRDs / reference code
+_If you have designs, mockups, specs, brand guidelines, or existing
+code you want the library to respect, drop them into `working_copy/`
+at the project root. The library will read them first and treat their
+contents as authoritative — names, entities, flows, colors, typography
+all come from what you provide._
 
-The external-input-handler will extract these into
-`prompts/outputs/current/project-context.md` before Step 1 runs.
+_You don't need to list files here. Just drop them into
+`working_copy/`._
 
-## Non-goals (optional but recommended)
+---
 
-_What this product is explicitly NOT. Keeps the engine from over-expanding._
+## Restrict (optional — turn OFF parts of the production-readiness baseline)
+
+_The library generates the full production-readiness baseline by
+default. List here any baseline topics you DO NOT want generated._
+
+- …
+
+---
+
+## Non-goals (optional — tells the library what NOT to build)
+
+_Things this product is explicitly not. Keeps the library from
+over-expanding into tangential features._
 
 - …

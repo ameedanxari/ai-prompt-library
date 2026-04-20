@@ -26,29 +26,23 @@ project grows.
 
 ## Quick start
 
-1. Clone (or submodule) this repo into your project as `.ai-prompts/`:
+**→ See [`QUICK_START.md`](QUICK_START.md) for the single copy-paste
+prompt.** Paste it into any agentic AI chat inside an empty folder, answer
+one question, and the library handles everything else — installation,
+project scaffolding, planning, and implementation.
 
-   ```bash
-   git submodule add https://github.com/your-fork/ai-prompt-library .ai-prompts
-   ```
+If you want the manual path instead:
 
-2. Create `MY_PROJECT.md` at your project root by copying the template:
-
-   ```bash
-   cp .ai-prompts/MY_PROJECT.md.template MY_PROJECT.md
-   # then edit MY_PROJECT.md and fill in the brief
-   ```
-
-3. Point your coding agent at the entry point:
-
-   ```
-   Read .ai-prompts/prompts/AGENTS.md, then
-   .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md,
-   then follow its routing.
-   ```
-
-That is the whole setup. There are no scripts to run, no config to write,
-no state files to create by hand.
+1. `git submodule add https://github.com/ameedanxari/ai-prompt-library .ai-prompts`
+2. `bash .ai-prompts/scripts/bootstrap-project-integration.sh` — creates
+   `AGENTS.md`, copies `MY_PROJECT.md` from the template, wires IDE
+   steering.
+3. Edit `MY_PROJECT.md` — fill in the **Brief** (only required field).
+   Leave everything else blank to get the production-readiness defaults
+   (web + Android + iOS, auth + admin, i18n, a11y, tests, CI/CD, etc.).
+4. In your AI chat: "Read `.ai-prompts/prompts/AGENTS.md` and
+   `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`, follow
+   its routing, do not stop between steps."
 
 ---
 
