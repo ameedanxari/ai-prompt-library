@@ -165,40 +165,34 @@ rules.
 Run the engine end-to-end. Do NOT stop between steps. Do NOT say
 "Step 1 complete, shall I proceed?". Proceed.
 
+Each engine runs its own internal pipeline:
+
+- **drill-down-engine.md**: Seed → Expand epics → Roll up external
+  services → Atomize tasks → Validate → Revise → Hand off.
+- **audit-and-remediate.md**: Audit → Gap list → Remediation → Roll up
+  external services → Validate → Revise → Chain to executor.
+
+The Revise gate (inside each engine) is non-optional. It runs every
+time. If `revise-report.md` reports `executor_gate: fail`, the engine
+stops and surfaces `remaining_issues` — do not attempt to continue.
+
 The only valid stop points are:
 - A hard stop condition in the engine trips (placeholder remains,
   acceptance criteria insufficient, file path doesn't exist for a
   remediation task, etc.) — report to user with the specific file.
-- All outputs written → proceed to revise (step F) and then validate
-  (step G).
+- The revise gate fails — report `remaining_issues` to the user.
+- All gates pass AND the user's ask was planning-only → stop after
+  listing written files.
+- All gates pass AND the user's ask included execute-signal words →
+  hand off to `executor.md` (the engines do this themselves).
 
-### F. Revise (review / gap / fix)
+### F. Executor (invoked by the engines when user asked to execute)
 
-After the engine's last step, run
-`prompts/orchestrators/revise-outputs.md`. It performs nine coverage
-and schema checks (C1–C9), regenerates any missing expansions, and
-writes a `revise-report.md`. If the revise orchestrator's
-`executor_gate` is `fail`, stop here and surface the remaining issues
-to the user.
-
-### G. Validate
-
-After revise completes with `executor_gate: pass`:
-
-```bash
-bash scripts/validate-instantiation.sh
-```
-
-Report the validator's output. Then list every file written under
-`prompts/outputs/current/`, including `external-accounts.md` and
-`revise-report.md`.
-
-### H. Chain to executor (if the user's ask implied execution)
-
-The active engine's Step 5 (audit-and-remediate) or Mode 2 routing
-(drill-down) inspects the user's prompt for execute-signal words and
-invokes `executor.md` if any match. If the prompt was planning-only
-("review", "audit", "what are the gaps"), stop at step G.
+The engines hand off to `executor.md` directly — the entry point does
+not re-invoke it. The executor reads the plan from
+`prompts/outputs/current/`, maintains `execution-log.md` (with YAML
+handoff envelope), and stops on regressions, 3+ consecutive blockers,
+or user interrupt.
 
 ## What NOT to auto-load
 

@@ -92,12 +92,22 @@ A new agent resuming work reads only the envelope and continues from
 
 ### Revise (review / gap / fix loop): revise-outputs.md
 
-Runs automatically between the planning engine and the executor. Nine
-coverage checks (C1–C9): epic→feature, feature→task, gap→remediation,
-task schema, baseline-topic completeness, external-services manifest,
-user-story linkage, platform coverage, regression-against-prior-pass.
-Fails the executor gate if any check remains failing after one
-regeneration attempt. Emits `revise-report.md`.
+Runs as a **mandatory gate inside each planning engine** (not as a
+separate entry-point step). Triggered by:
+- `drill-down-engine.md` after Step 3 (Atomize), following the
+  validator.
+- `audit-and-remediate.md` at Step 4.5, following the validator.
+
+Nine coverage checks (C1–C9): epic→feature, feature→task,
+gap→remediation, task schema, baseline-topic completeness (via
+`baseline-task-shapes.md`), external-services manifest, user-story
+linkage, platform coverage, regression-against-prior-pass. Fails the
+executor gate if any check remains failing after one regeneration
+attempt. Emits `revise-report.md`.
+
+**If the revise gate fails, stop.** Do not hand off to the executor.
+The fail means the plan is not ready — surface `remaining_issues` to
+the user instead.
 
 ### Baseline task-shape rules: baseline-task-shapes.md
 

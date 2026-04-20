@@ -168,21 +168,58 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/field-tests/);
   });
 
-  it('entry point flow sequences revise step before chain-to-executor step', () => {
+  it('drill-down engine runs revise gate after validation, before handoff', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    // Validation Gate and Revise Gate sections must both exist.
+    const validateIdx = body.search(/^## Validation Gate/m);
+    const reviseIdx = body.search(/^## Revise Gate/m);
+    const handoffIdx = body.search(/^## Handing off to an implementer/m);
+    expect(validateIdx).toBeGreaterThan(-1);
+    expect(reviseIdx).toBeGreaterThan(-1);
+    expect(handoffIdx).toBeGreaterThan(-1);
+    // Order: validate → revise → handoff.
+    expect(validateIdx).toBeLessThan(reviseIdx);
+    expect(reviseIdx).toBeLessThan(handoffIdx);
+    // Revise gate must be flagged MANDATORY and non-skippable.
+    expect(body).toMatch(/Revise Gate \(MANDATORY/);
+    // Revise must run on executor_gate:pass only.
+    expect(body).toMatch(/executor_gate: fail/);
+  });
+
+  it('audit-and-remediate runs revise gate at Step 4.5 before Step 5 chain', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    const step4 = body.search(/^## STEP 4 — Validate/m);
+    const step4_5 = body.search(/^## STEP 4\.5 — Revise outputs/m);
+    const step5 = body.search(/^## STEP 5 — Chain to execution/m);
+    expect(step4).toBeGreaterThan(-1);
+    expect(step4_5).toBeGreaterThan(-1);
+    expect(step5).toBeGreaterThan(-1);
+    expect(step4).toBeLessThan(step4_5);
+    expect(step4_5).toBeLessThan(step5);
+    // Step 4.5 must be mandatory and non-skippable.
+    expect(body).toMatch(/STEP 4\.5.*MANDATORY/);
+    expect(body).toMatch(/revise-outputs\.md/);
+  });
+
+  it('entry point explains that engines own the revise gate (not the entry point)', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'ai-agent-entry-point.md'),
       'utf8',
     );
-    // Both files referenced somewhere.
-    expect(body).toMatch(/revise-outputs\.md/);
-    expect(body).toMatch(/executor\.md/);
-    // In the lettered flow (step E … step H), the Revise step comes
-    // before the Chain-to-executor step.
-    const reviseStep = body.search(/^###\s+F\.\s+Revise/m);
-    const chainStep = body.search(/^###\s+H\.\s+Chain to executor/m);
-    expect(reviseStep).toBeGreaterThan(-1);
-    expect(chainStep).toBeGreaterThan(-1);
-    expect(reviseStep).toBeLessThan(chainStep);
+    // Entry point must NOT re-invoke revise-outputs itself — it just
+    // explains what the engines do internally.
+    expect(body).toMatch(/revise-outputs|Revise gate/i);
+    // Entry point flow must describe that the engines hand off directly
+    // to executor (entry point does not re-invoke executor).
+    expect(body.toLowerCase()).toMatch(
+      /engines hand off|engines do this|engines run their own/,
+    );
   });
 
   it('audit-and-remediate references all four required output files', () => {

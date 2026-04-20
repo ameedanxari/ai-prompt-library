@@ -371,20 +371,40 @@ validation gate below.
 
 ---
 
-## Validation Gate (run after Step 3, before handing tasks to implementer)
+## Validation Gate (run after Step 3, before anything else)
 
 Run `bash scripts/validate-instantiation.sh`. It scans every `tasks-*.md` in
 `prompts/outputs/current/` for: `.ai-prompts/prompts/`, `{{...}}`, `<TBD>`,
-and `[project name]`. Exit status:
-- `0` → outputs are clean, proceed.
+`[project name]`, directory-as-path, tautological acceptance, and missing
+or malformed user-story linkage. Exit status:
+- `0` → outputs schematically clean, proceed to Revise.
 - non-zero → regenerate the offending file(s) from Step 3 before continuing.
 
-## Handing off to an implementer
+## Revise Gate (MANDATORY — must run after validation)
 
-Once validation passes, a task file is self-contained: a weak model can open
-one `tasks-<feature>.md`, pick one task (`T1`, `T2`, …), and implement it
-without reading any other file in this library. That is the whole point —
-the expansion work happens here so the implementation context stays tiny.
+Invoke `prompts/orchestrators/revise-outputs.md`. It performs nine
+coverage + schema checks (C1–C9) including baseline-topic completeness
+against `baseline-task-shapes.md`. Produces `revise-report.md`.
+
+**This gate runs every time.** A weak model cannot skip it even when the
+validator passed — the validator covers syntax, the revise gate covers
+semantics (e.g. "Hindi × all device sizes" collapsed into one task
+when the rule is per locale × per device class).
+
+If `revise-report.md` reports `executor_gate: fail`, STOP. Surface
+`remaining_issues` to the user and do not hand off to the executor.
+
+## Handing off to an implementer (only when revise gate passes)
+
+Once validation and revise both pass, a task file is self-contained: a
+weak model can open one `tasks-<feature>.md`, pick one task (`T1`, `T2`,
+…), and implement it without reading any other file in this library.
+That is the whole point — the expansion work happens here so the
+implementation context stays tiny.
+
+If the user's original prompt carried execute-signal words (see the
+same list as `audit-and-remediate.md` Step 5), hand off IMMEDIATELY to
+`prompts/orchestrators/executor.md`. Do not wait for confirmation.
 
 ## See also
 
