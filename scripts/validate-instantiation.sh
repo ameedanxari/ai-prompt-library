@@ -55,6 +55,46 @@ fi
 
 fail=0
 
+# 0. Required-companion-files check. When plan files exist, two more files
+# MUST also exist in the same directory — skipping them is a structural
+# defect that blocks execution regardless of per-task validity.
+required_companions=(
+  "$TARGET_DIR/external-accounts.md"
+  "$TARGET_DIR/revise-report.md"
+)
+for rc in "${required_companions[@]}"; do
+  if [ ! -f "$rc" ]; then
+    echo "❌ missing required companion: $rc"
+    echo "   When remediation-*.md / tasks-*.md exist, the engine must"
+    echo "   also produce external-accounts.md (Step 3.5 / 2.5) AND"
+    echo "   revise-report.md (Step 4.5 / Revise Gate). Re-run the engine"
+    echo "   through to completion — not just Steps 1-3."
+    fail=1
+  fi
+done
+
+# 0a. If revise-report.md exists, its frontmatter must report
+# executor_gate: pass. Anything else means the plan is not cleared.
+if [ -f "$TARGET_DIR/revise-report.md" ]; then
+  # Read first 30 lines (frontmatter region).
+  head -n 30 "$TARGET_DIR/revise-report.md" > /tmp/revise-head.$$
+  if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" /tmp/revise-head.$$; then
+    :  # passes — continue
+  else
+    gate_line=$(grep -E "^executor_gate:" /tmp/revise-head.$$ | head -n 1 || true)
+    echo "❌ revise-report.md: executor_gate is not 'pass'"
+    if [ -n "$gate_line" ]; then
+      echo "   $gate_line"
+    else
+      echo "   (no executor_gate line found in frontmatter)"
+    fi
+    echo "   The plan has a failing check; regenerate the offending"
+    echo "   remediation/tasks file before proceeding to execution."
+    fail=1
+  fi
+  rm -f /tmp/revise-head.$$
+fi
+
 for f in "${files[@]}"; do
   # 1. Global forbidden patterns (template refs, placeholders).
   for pat in "${GLOBAL_PATTERNS[@]}"; do

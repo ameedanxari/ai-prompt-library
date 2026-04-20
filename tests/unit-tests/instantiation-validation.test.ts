@@ -39,7 +39,7 @@ describe('validator — clean fixture passes', () => {
     expect(result).toMatch(/✅|nothing to validate/);
   });
 
-  it('accepts a well-formed remediation file', () => {
+  it('accepts a well-formed remediation file with companion files', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ok-'));
     try {
       fs.writeFileSync(
@@ -61,10 +61,163 @@ describe('validator — clean fixture passes', () => {
           '',
         ].join('\n'),
       );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n\nNo new external services required.\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '---',
+          'revised_at: 2026-04-20T00:00:00Z',
+          'engine: audit-and-remediate',
+          'checks_run: [C3, C4, C6, C7, C8]',
+          'checks_passed: [C3, C4, C6, C7, C8]',
+          'checks_failed: []',
+          'regenerations_performed: []',
+          'remaining_issues: []',
+          'executor_gate: pass',
+          '---',
+          '',
+          '# Revise Report',
+          'all checks passed.',
+          '',
+        ].join('\n'),
+      );
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
       });
       expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a remediation dir missing external-accounts.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-noext-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        [
+          '## R1 · stuff',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let code = 0;
+      let out = '';
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing required companion.*external-accounts/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a remediation dir missing revise-report.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-norev-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        [
+          '## R1 · stuff',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      let code = 0;
+      let out = '';
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing required companion.*revise-report/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a revise-report.md with executor_gate: fail', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-gatefail-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        [
+          '## R1 · stuff',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '---',
+          'executor_gate: fail',
+          'remaining_issues: [C5: screenshots collapsed]',
+          '---',
+          '',
+        ].join('\n'),
+      );
+      let code = 0;
+      let out = '';
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/executor_gate is not 'pass'/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -216,6 +369,14 @@ describe('validator — user-story linkage', () => {
           '- **Depends on:** none',
           '',
         ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n\nNo new external services required.\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
       );
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',

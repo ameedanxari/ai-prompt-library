@@ -15,10 +15,42 @@ The entry point routes here when ALL of these are true:
   "close the gaps", or similar.
 - The plan passed `scripts/validate-instantiation.sh`.
 
-If the plan has NOT been validated, run the validator first and fix any
-issues before executing. Never execute against an unvalidated plan —
-directory paths, tautological acceptance, and placeholders will all
-produce broken work.
+## Preflight gate (MUST run before ANY task execution)
+
+The executor refuses to run if ANY of the following is true. These are
+hard gates — you cannot "explain them away" or work around them by
+writing task entries anyway. Your first action on invocation is:
+
+```bash
+bash scripts/validate-instantiation.sh prompts/outputs/current
+```
+
+Act on the exit code:
+
+- **Exit 0** → validator passed, including the presence and shape of
+  `external-accounts.md` and `revise-report.md` with
+  `executor_gate: pass`. Proceed to the execution loop.
+- **Non-zero exit** → stop immediately. Do NOT start writing
+  `execution-log.md`. Report the validator's output verbatim to the
+  user and tell them which engine step failed to complete:
+  - Missing `external-accounts.md` → audit-and-remediate Step 3.5
+    (or drill-down Step 2.5) was skipped.
+  - Missing `revise-report.md` → audit-and-remediate Step 4.5 (or
+    drill-down Revise Gate) was skipped.
+  - `executor_gate: fail` → the revise gate caught a violation that
+    was not regenerated. Re-run the engine's revise step with the
+    failing check's regeneration rule.
+
+This gate exists because field tests repeatedly showed weak models
+treating Steps 3.5/4.5 as optional and starting the executor on an
+incomplete plan. The executor must refuse that — there is no "let's
+just start with what we have" path.
+
+If `execution-log.md` already exists (a prior session was in progress),
+the preflight still runs. If the plan has been re-planned since the
+last session and the revise gate is now failing, the executor stops
+with a clear message — resuming across a broken plan would compound
+drift.
 
 ## Startup load
 

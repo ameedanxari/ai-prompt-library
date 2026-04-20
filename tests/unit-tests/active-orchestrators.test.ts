@@ -77,6 +77,22 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/reset-integration\.sh --yes/);
   });
 
+  it('executor has a hard preflight gate that checks companion artifacts', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    expect(body).toMatch(/## Preflight gate/);
+    // Must explicitly refuse without the validator passing.
+    expect(body).toMatch(/refuse/i);
+    // Must name the exact preflight command.
+    expect(body).toMatch(/bash scripts\/validate-instantiation\.sh/);
+    // Must name the three specific failure modes.
+    expect(body).toMatch(/external-accounts\.md/);
+    expect(body).toMatch(/revise-report\.md/);
+    expect(body).toMatch(/executor_gate: fail/);
+    // Must explicitly forbid a "let's just start with what we have" path.
+    // Body wraps across lines, so tolerate whitespace-or-newline.
+    expect(body.toLowerCase()).toMatch(/let's\s+just\s+start/);
+  });
+
   it('executor references plan artifacts and log', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
     expect(body).toMatch(/remediation-/);
