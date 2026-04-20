@@ -27,6 +27,27 @@ executor invocation:
 
 The user never invokes this directly.
 
+## Check applicability by engine
+
+Not every check applies to every engine. But the checks that DO apply
+are mandatory — the agent cannot silently drop them. Use this table:
+
+| Check | Drill-down (greenfield) | Audit-and-remediate (gap-closure) |
+|---|---|---|
+| C1 — Epic→feature | Applies | Skip |
+| C2 — Feature→task | Applies | Skip |
+| C3 — Gap→remediation | Skip | Applies |
+| C4 — Task atomicity | Applies | Applies |
+| C5 — Baseline coverage | Applies | **Applies** (to gaps whose slug matches a baseline topic — see C5 for keyword table) |
+| C6 — External-services manifest | Applies | Applies |
+| C7 — User-story linkage | Applies | Applies |
+| C8 — Platform coverage | Applies | Applies |
+| C9 — Regression against prior pass | Applies if prior revise-report exists | Applies if prior revise-report exists |
+
+`checks_run` in the report's frontmatter MUST list every check row
+marked "Applies" for the active engine. A revise report that omits an
+applicable check is itself a defect — treat as `executor_gate: fail`.
+
 ## Checks (in order)
 
 ### C1 — Epic-to-feature coverage (greenfield only)
@@ -68,17 +89,61 @@ closure) and verify each task meets the schema. If any task fails:
 Any failure triggers `scripts/validate-instantiation.sh` — if it exits
 non-zero, stop here and report. Do NOT proceed to C5 with invalid tasks.
 
-### C5 — Baseline coverage (greenfield only)
+### C5 — Baseline coverage (BOTH engines — greenfield AND gap-closure)
 
-For every baseline epic from the drill-down Step 1 table that applies
-to this project, apply the rules in
-`prompts/orchestrators/baseline-task-shapes.md`. That file is the
-single source of truth for per-topic coverage requirements. Load it
-here and evaluate each baseline epic's `tasks-*.md` against its rules.
+Run for every run, both modes. Load
+`prompts/orchestrators/baseline-task-shapes.md` as the single source of
+truth for per-topic rules.
 
-If any baseline topic is under-covered, surface it with a `baseline-
-coverage-report.md` entry (below) and regenerate the affected
-tasks file via `drill-down-engine.md` Step 3 scoped to that feature.
+**Greenfield (drill-down) scope:** evaluate each baseline epic's
+`tasks-<feature>.md` against the rules for its topic. For an epic
+marked `category: baseline` in `epics.md`, the tasks must satisfy the
+matching section in `baseline-task-shapes.md`.
+
+**Gap-closure (audit-and-remediate) scope:** inspect each
+`remediation-<gap-slug>.md`. Classify the gap's slug against the 12
+baseline topics — if the slug matches a baseline topic, the
+remediation's tasks MUST satisfy that topic's rules. Matching is
+substring-based and non-strict; apply common sense:
+
+| Baseline topic | Gap-slug keywords (any match triggers C5 check) |
+|---|---|
+| App Store Release Prep | `app-store`, `appstore`, `play-store`, `playstore`, `store-prep`, `store-listing`, `screenshots`, `app-icon`, `signing`, `provisioning`, `fastlane` |
+| Localization & RTL | `localization`, `i18n`, `translation`, `locale`, `rtl`, `multi-language` |
+| Theming & Whitelabel | `theme`, `theming`, `whitelabel`, `white-label`, `dark-mode`, `design-token` |
+| Accessibility | `accessibility`, `a11y`, `wcag`, `screen-reader` |
+| Identity, auth & onboarding | `auth`, `authentication`, `signup`, `signin`, `login`, `onboarding`, `oauth`, `sso`, `biometric`, `password-reset` |
+| Admin & RBAC | `admin`, `rbac`, `permission`, `role-based` |
+| Observability | `observability`, `monitoring`, `logging`, `metrics`, `tracing`, `sentry`, `error-tracking`, `crash-reporting` |
+| Testing & QA | `test-coverage`, `integration-test`, `e2e`, `unit-test`, `ui-test`, `property-test`, `chaos` |
+| CI/CD & Release | `ci-cd`, `cicd`, `pipeline`, `deployment-pipeline`, `release` |
+| Infrastructure as Code | `infrastructure`, `terraform`, `iac`, `rds`, `elasticache`, `ecs`, `kubernetes`, `load-balancer`, `cloudfront` |
+| Settings, debug menu & dev UX | `settings`, `debug-menu`, `dev-ux`, `setup-script` |
+| Privacy, PII & compliance | `privacy`, `pii`, `gdpr`, `ccpa`, `hipaa`, `consent`, `data-export`, `data-deletion`, `age-gate` |
+
+When a remediation's slug matches a topic, run the topic's rules from
+`baseline-task-shapes.md`. Flag violations specifically:
+
+**Common collapse violation — screenshots.** If the rule is "per
+locale × per device class" and the remediation has a single task
+"Create <platform> app screenshots", that is a violation. Expected:
+`MY_PROJECT.md` locale list × required device classes tasks. For
+iOS: iPhone 6.7" + iPhone 6.5" + iPhone 5.5" + iPad Pro 12.9" + iPad
+Pro 11" as the common five. For Android: phone + 7" tablet + 10"
+tablet.
+
+**Common collapse violation — localization.** If the rule is "one
+task per locale" and the remediation has a single task "Translate
+strings", that is a violation. Expected: N tasks for N locales.
+
+**Common collapse violation — platform.** If a baseline task is
+platform-specific (e.g. biometric auth) and the remediation has one
+task covering multiple platforms, that is a violation.
+
+If any baseline topic is under-covered, surface it with a
+`remaining_issues` entry AND regenerate the affected remediation /
+tasks file via the originating engine's Step 3, scoped to just that
+gap/feature, with the specific rule cited in the regeneration prompt.
 
 ### C6 — External services manifest
 

@@ -112,6 +112,88 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('rejects a screenshot task that collapses across device sizes', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-collapse-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-app-store-prep.md'),
+        [
+          '# Remediation — app store prep',
+          '',
+          '## R1 · Create iOS app screenshots',
+          '- **Closes user story:** As a reviewer, I want screenshots, so that I can approve the app.',
+          '- **Change type:** create-new',
+          '- **File:** `ios/screenshots/en-US/iPhone-6.7/screen-1.png`',
+          '- **Precise change:** Generate 6 screenshots for each device size: iPhone 6.7", 6.5", and 5.5". Use fastlane snapshot.',
+          '- **Acceptance:**',
+          '  - Directory exists.',
+          '  - 6 files per size.',
+          '  - Dimensions match spec.',
+          '- **Test:** `ios/scripts/check.sh`',
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/collapse|per locale|per device/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an app-icon task that collapses across platforms or locales', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-icon-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-icons.md'),
+        [
+          '# Remediation — icons',
+          '',
+          '## R1 · Create app icons',
+          '- **Closes user story:** As a user, I want icons, so that I can recognize the app.',
+          '- **Change type:** create-new',
+          '- **File:** `assets/icons/android-icon.png`',
+          '- **Precise change:** Generate app icons for all platforms and all required sizes.',
+          '- **Acceptance:**',
+          '  - Icons exist in correct paths.',
+          '  - Sizes match platform specs.',
+          '  - No placeholder images remain.',
+          '- **Test:** `scripts/check-icons.sh`',
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/collapse|per locale|per device/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a malformed user story line', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-badstory-'));
     try {

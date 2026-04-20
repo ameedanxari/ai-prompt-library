@@ -116,6 +116,42 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/iteration cap|one regeneration/);
   });
 
+  it('revise-outputs C5 baseline coverage applies to BOTH engines', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'revise-outputs.md'),
+      'utf8',
+    );
+    // C5 must not be gated to greenfield only — that was the bug.
+    expect(body).toMatch(/C5 — Baseline coverage \(BOTH engines/);
+    // Must provide a gap-slug → baseline-topic keyword table so a
+    // weak model can classify deterministically.
+    expect(body.toLowerCase()).toMatch(/app-store.*playstore|playstore.*app-store/);
+    expect(body.toLowerCase()).toMatch(/localization|i18n/);
+    // Must name the common collapse violations.
+    expect(body.toLowerCase()).toMatch(
+      /collapse violation.*screenshot|screenshot.*collapse/,
+    );
+  });
+
+  it('revise-outputs check-applicability table is explicit and machine-parseable', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'revise-outputs.md'),
+      'utf8',
+    );
+    // Must have a check-applicability table and mark C5 Applies for both.
+    expect(body).toMatch(/Check applicability by engine/);
+    // C5 applies to both — the string "Applies" (case-sensitive) should
+    // appear twice on the C5 line.
+    const c5Row = body
+      .split('\n')
+      .find((l) => l.includes('C5') && l.includes('Baseline'));
+    expect(c5Row).toBeDefined();
+    const appliesCount = (c5Row!.match(/Applies/g) ?? []).length;
+    expect(appliesCount).toBeGreaterThanOrEqual(2);
+    // Must declare that dropping an applicable check is itself a defect.
+    expect(body).toMatch(/omits an\s+applicable check|itself a defect/);
+  });
+
   it('baseline-task-shapes covers all twelve baseline topics', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'baseline-task-shapes.md'),

@@ -34,6 +34,13 @@ TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(te
 USER_STORY_MARKER='^\s*[-*]?\s*\*\*Closes user story:\*\*'
 USER_STORY_WELL_FORMED='\*\*Closes user story:\*\*\s+As (a|an)\s+.+,\s+I want\s+.+,\s+so that\s+.+'
 
+# Screenshot-collapse detector. A single task that says it creates
+# screenshots for multiple device sizes OR multiple locales at once
+# violates the baseline-task-shapes "per locale × per device" rule.
+# Triggered only on task titles that mention screenshot/store/app-icon.
+SCREENSHOT_TASK_TITLE='^##\s+R?T?[0-9]+.*\b(screenshot|store\s+listing|app\s+icon)s?\b'
+SCREENSHOT_COLLAPSE_PRECISE='Precise change:.*\b(all|multiple|each|every)\b.*\b(device|locale|size|language)'
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "ℹ️  no output directory at $TARGET_DIR — nothing to validate"
   exit 0
@@ -100,6 +107,44 @@ for f in "${files[@]}"; do
       echo "$bad_stories" | sed 's/^/   /'
       fail=1
     fi
+  fi
+
+  # 6. Screenshot / app-icon / store-listing collapse detector.
+  # Split the file into task sections at each "## " heading. For each
+  # section whose heading mentions screenshot/icon/listing, scan the
+  # section body for collapse words (each/all/multiple + device/locale/
+  # size/language). awk receives simple POSIX ERE (no \s, no \b).
+  collapse_report=$(awk '
+    function is_screenshot_title(line) {
+      l = tolower(line)
+      return (l ~ /screenshot/ || l ~ /app icon/ || l ~ /app-icon/ || l ~ /store listing/ || l ~ /store-listing/)
+    }
+    function is_collapse_precise(line) {
+      l = tolower(line)
+      # Must be a Precise change line AND mention collapse-words.
+      if (l !~ /precise change/) return 0
+      return (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform)/)
+    }
+    /^## / {
+      if (in_sec && matched) {
+        printf "   %s\n      (collapsed across devices/locales — split per locale x per device)\n", section_title
+      }
+      in_sec = is_screenshot_title($0) ? 1 : 0
+      section_title = $0
+      matched = 0
+      next
+    }
+    { if (in_sec && is_collapse_precise($0)) matched = 1 }
+    END {
+      if (in_sec && matched) {
+        printf "   %s\n      (collapsed across devices/locales — split per locale x per device)\n", section_title
+      }
+    }
+  ' "$f")
+  if [ -n "$collapse_report" ]; then
+    echo "❌ $f: screenshot / icon / store-listing task collapses multiple locales or devices"
+    printf "%s\n" "$collapse_report"
+    fail=1
   fi
 done
 
