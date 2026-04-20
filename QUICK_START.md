@@ -51,17 +51,30 @@ single question in step 4. If a step is already done, skip it.
 6. Run the library end-to-end. Read .ai-prompts/prompts/AGENTS.md and
    .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md, then
    follow the entry point's routing. This will automatically:
-   - Pick Greenfield mode.
-   - Produce epics.md (feature epics PLUS the production-readiness
-     baseline — auth, admin, RBAC, observability, i18n, theming, a11y,
-     CI/CD, infra, release prep, onboarding, privacy).
+   - Pick Greenfield mode (drill-down engine).
+   - Produce prompts/outputs/current/epics.md — feature epics PLUS a
+     production-readiness baseline (auth, admin/RBAC, observability,
+     i18n/RTL, theming/whitelabel, a11y, tests, CI/CD, infra, app-store
+     release prep, settings/debug, privacy/PII).
    - Expand each epic into features-*.md (one per platform where
      applicable — web, Android, iOS).
-   - Expand each feature into atomic tasks-*.md.
-   - Validate the outputs with scripts/validate-instantiation.sh.
-   - Chain into the executor, which writes the actual code under
-     src/, backend/, frontend/, android/, ios/, infrastructure/, etc.,
-     runs tests, and appends progress to execution-log.md.
+   - Roll up external services into external-accounts.md (which
+     third-party accounts I need to sign up for, sign-up URLs, env
+     vars, free-tier notes).
+   - Expand each feature into atomic tasks-*.md (each task names a
+     real file, a real function signature, and ≥3 verifiable
+     acceptance criteria).
+   - Run the instantiation validator.
+   - Run the revise gate — nine coverage checks against
+     baseline-task-shapes rules. Produces revise-report.md with
+     executor_gate: pass|fail. If fail, regenerates the offending
+     file once; if still failing, stops and tells me exactly what is
+     wrong.
+   - Chain into the executor, which runs the preflight gate, then
+     writes actual code under src/, backend/, frontend/, android/,
+     ios/, infrastructure/, etc. Runs tests, appends per-task entries
+     to execution-log.md with a YAML handoff envelope at the top (so
+     any future session can pick up without re-planning).
 
    Do NOT stop between any of these steps. Do NOT ask for confirmation.
    Only stop if a hard blocker appears (external credentials needed,
@@ -70,12 +83,18 @@ single question in step 4. If a step is already done, skip it.
 
 7. When everything is done, report to me:
    - Every file under prompts/outputs/current/ with a one-line purpose.
+     Expect: project-context.md (optional), epics.md, features-*.md,
+     external-accounts.md, tasks-*.md, revise-report.md,
+     execution-log.md.
    - A tree of what got created in the app (src/, backend/, frontend/,
      android/, ios/, infrastructure/).
    - One command I can run to start the app locally.
    - One command I can run to run the tests.
    - A list of any external keys/accounts I need to create (Stripe,
      Firebase, AWS, etc.), with a one-line "where to get it" for each.
+     This comes from external-accounts.md — don't re-invent it.
+   - A short summary from execution-log.md: how many tasks done, how
+     many blocked on external credentials, which tests are green/red.
 
 Start now.
 ```
@@ -92,6 +111,25 @@ Start now.
    away; it won't need you again unless it hits a real blocker.
 5. When it's done, the agent tells you how to run the app, how to run
    the tests, and what external accounts/keys (if any) you still need.
+
+## Expected output layout
+
+After a successful run, `prompts/outputs/current/` contains:
+
+| File | Who writes it | What it's for |
+|---|---|---|
+| `project-context.md` | external-input-handler (if you dropped files in `working_copy/`) | Extracted entities, roles, flows, constraints |
+| `epics.md` | drill-down Step 1 | 5–7 feature epics + ~12 production-readiness baseline epics |
+| `features-<epic>.md` | drill-down Step 2 | One per epic, with data models and API contracts |
+| `external-accounts.md` | drill-down Step 2.5 | Every third-party service + signup URL + env vars (your to-do list) |
+| `tasks-<feature>.md` | drill-down Step 3 | Atomic tasks — real file paths, signatures, acceptance criteria |
+| `revise-report.md` | revise gate | Coverage + schema check results (`executor_gate: pass` means execution is cleared) |
+| `execution-log.md` | executor | YAML handoff envelope + per-task journal |
+
+You generally don't need to read these. The agent's final summary
+tells you everything you need to act on (start command, test command,
+external accounts to create). The files are there for the agent to
+resume from — or for you to inspect if something goes sideways.
 
 ## If you want more control
 
