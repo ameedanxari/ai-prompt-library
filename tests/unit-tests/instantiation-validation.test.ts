@@ -174,6 +174,118 @@ describe('validator — clean fixture passes', () => {
     }
   });
 
+  it('rejects a hand-written narrative revise-report.md (no YAML frontmatter)', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-narr-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        [
+          '## R1 · stuff',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      // Narrative report — no YAML frontmatter on line 1.
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '# Revise Report',
+          '',
+          '## Overview',
+          'All features validated successfully.',
+          '',
+          '### Results',
+          '- Feature 1: ✅',
+          '- Feature 2: ✅',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/hand-written narrative/);
+      expect(out).toMatch(/bash scripts\/revise\.sh/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a hand-written narrative execution-log.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-exec-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        [
+          '## R1 · stuff',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A is present.',
+          '  - B is present.',
+          '  - C is present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      // Narrative execution log.
+      fs.writeFileSync(
+        path.join(sandbox, 'execution-log.md'),
+        [
+          '# Execution Log — Project',
+          '',
+          '## Summary',
+          'Completed all tasks successfully.',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/hand-written narrative/);
+      expect(out).toMatch(/session_id/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a revise-report.md with executor_gate: fail', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-gatefail-'));
     try {

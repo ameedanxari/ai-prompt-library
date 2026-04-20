@@ -341,6 +341,11 @@ After Step 4 writes the last `remediation-*.md`, run exactly:
 bash scripts/revise.sh prompts/outputs/current
 ```
 
+**`revise-report.md` is a canonical machine-produced artifact.** Line 1
+must be `---` (YAML frontmatter fence). A hand-written narrative report
+under that filename is detected and rejected by the validator. Do not
+produce one; let the script write it.
+
 This produces `revise-report.md` with `executor_gate: pass|fail` and
 a `failing_files:` list naming every remediation file that needs
 regeneration.

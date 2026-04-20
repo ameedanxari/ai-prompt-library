@@ -111,26 +111,60 @@ for rc in "${required_companions[@]}"; do
   fi
 done
 
-# 0a. If revise-report.md exists, its frontmatter must report
-# executor_gate: pass. Anything else means the plan is not cleared.
+# 0a. revise-report.md must be the canonical script output, not a
+# hand-written narrative. The canonical form starts with a YAML
+# frontmatter block (--- on line 1) and contains executor_gate: pass.
 if [ -f "$TARGET_DIR/revise-report.md" ]; then
-  # Read first 30 lines (frontmatter region).
-  head -n 30 "$TARGET_DIR/revise-report.md" > /tmp/revise-head.$$
-  if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" /tmp/revise-head.$$; then
-    :  # passes — continue
+  first_line=$(head -n 1 "$TARGET_DIR/revise-report.md")
+  if [ "$first_line" != "---" ]; then
+    echo "❌ revise-report.md is not the canonical form (line 1 must be '---')"
+    echo "   This file appears to be a hand-written narrative report."
+    echo "   The ONLY valid way to produce revise-report.md is:"
+    echo "       bash scripts/revise.sh prompts/outputs/current"
+    echo "   Delete the current file and re-run the script."
+    fail=1
   else
-    gate_line=$(grep -E "^executor_gate:" /tmp/revise-head.$$ | head -n 1 || true)
-    echo "❌ revise-report.md: executor_gate is not 'pass'"
-    if [ -n "$gate_line" ]; then
-      echo "   $gate_line"
+    # Canonical — check executor_gate.
+    head -n 30 "$TARGET_DIR/revise-report.md" > /tmp/revise-head.$$
+    if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" /tmp/revise-head.$$; then
+      :  # passes — continue
     else
-      echo "   (no executor_gate line found in frontmatter)"
+      gate_line=$(grep -E "^executor_gate:" /tmp/revise-head.$$ | head -n 1 || true)
+      echo "❌ revise-report.md: executor_gate is not 'pass'"
+      if [ -n "$gate_line" ]; then
+        echo "   $gate_line"
+      else
+        echo "   (no executor_gate line found in frontmatter)"
+      fi
+      echo "   The plan has a failing check. Regenerate the offending"
+      echo "   file(s) named in failing_files, then run:"
+      echo "       bash scripts/revise.sh prompts/outputs/current"
+      echo "   (the script rewrites this report from live validator state)"
+      fail=1
     fi
-    echo "   The plan has a failing check; regenerate the offending"
-    echo "   remediation/tasks file before proceeding to execution."
+    rm -f /tmp/revise-head.$$
+  fi
+fi
+
+# 0c. execution-log.md, when present, must be the canonical executor
+# output — YAML frontmatter with session_id, next_task, etc. A
+# hand-written "Execution Log - Project Name" narrative is not valid.
+if [ -f "$TARGET_DIR/execution-log.md" ]; then
+  first_line=$(head -n 1 "$TARGET_DIR/execution-log.md")
+  if [ "$first_line" != "---" ]; then
+    echo "❌ execution-log.md is not the canonical form (line 1 must be '---')"
+    echo "   This file appears to be a hand-written narrative summary."
+    echo "   execution-log.md is written by the executor (executor.md),"
+    echo "   with a YAML handoff envelope at the top:"
+    echo "     ---"
+    echo "     session_id: <uuid>"
+    echo "     next_task: G1.R1"
+    echo "     last_completed_task: null"
+    echo "     ..."
+    echo "     ---"
+    echo "   If the executor has not run yet, delete this file."
     fail=1
   fi
-  rm -f /tmp/revise-head.$$
 fi
 
 for f in "${files[@]}"; do

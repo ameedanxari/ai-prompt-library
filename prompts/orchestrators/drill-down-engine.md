@@ -391,11 +391,18 @@ validation gate below.
 ## Revise Gate (MANDATORY — run one command, then act on the result)
 
 After Step 3 writes the last `tasks-*.md`, you do NOT manually inspect
-task files. You run exactly one shell command:
+task files AND you do NOT hand-write `revise-report.md`. You run
+exactly one shell command:
 
 ```bash
 bash scripts/revise.sh prompts/outputs/current
 ```
+
+**`revise-report.md` is a canonical machine-produced artifact.** It
+starts with a YAML frontmatter block (`---` on line 1) that the
+validator and the executor both read. A hand-written narrative
+markdown file named `revise-report.md` is detected by the validator
+as "not the canonical form" and rejected. Do not produce one.
 
 This wraps the instantiation validator and always writes
 `prompts/outputs/current/revise-report.md` with frontmatter that names

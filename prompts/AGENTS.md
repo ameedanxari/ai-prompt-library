@@ -90,6 +90,20 @@ test_suite_state, regressions_since_green, external_keys_needed).
 A new agent resuming work reads only the envelope and continues from
 `next_task`. Cross-session continuity requires no other state.
 
+## Canonical artifacts: never hand-write `revise-report.md` or `execution-log.md`
+
+Both files are **machine-produced**. Their first line is always `---`
+(YAML frontmatter fence). The validator rejects narrative look-alikes
+as "not the canonical form" and refuses to let the executor start.
+
+- `revise-report.md` → produced by `scripts/revise.sh prompts/outputs/current`.
+- `execution-log.md` → produced by the executor (`executor.md`), one
+  YAML envelope + one journal entry per task.
+
+If you are tempted to write either file by hand as a narrative summary,
+stop. The summary the user wants is what `scripts/revise.sh` already
+writes into the report body — let the script do it.
+
 ### Revise (review / gap / fix loop): revise-outputs.md
 
 Runs as a **mandatory gate inside each planning engine** (not as a

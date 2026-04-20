@@ -121,6 +121,39 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/do NOT write the literal string "\$\(uuidgen\)"/);
   });
 
+  it('engines explicitly forbid hand-writing revise-report.md', () => {
+    const drill = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    const audit = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    // Both engines must call out the canonical-artifact rule.
+    expect(drill.toLowerCase()).toMatch(
+      /canonical machine-produced|never hand-write|let the script/,
+    );
+    expect(audit.toLowerCase()).toMatch(
+      /canonical machine-produced|never hand-write|let the script/,
+    );
+    // Both must name the YAML frontmatter requirement.
+    expect(drill).toMatch(/YAML frontmatter|line 1/);
+    expect(audit).toMatch(/YAML frontmatter|line 1/);
+  });
+
+  it('AGENTS.md has a canonical-artifact rule covering both files', () => {
+    const body = fs.readFileSync(
+      path.resolve(REPO_ROOT, 'prompts', 'AGENTS.md'),
+      'utf8',
+    );
+    expect(body).toMatch(/Canonical artifacts/);
+    expect(body).toMatch(/revise-report\.md/);
+    expect(body).toMatch(/execution-log\.md/);
+    expect(body).toMatch(/scripts\/revise\.sh/);
+    expect(body.toLowerCase()).toMatch(/never hand-write|machine-produced/);
+  });
+
   it('engines point at bash scripts/revise.sh as the concrete revise command', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),
