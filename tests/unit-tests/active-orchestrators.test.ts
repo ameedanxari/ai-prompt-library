@@ -77,6 +77,50 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/reset-integration\.sh --yes/);
   });
 
+  it('steering guard centralises the execute-signal list and forbids A/B/C/D menus', () => {
+    const body = fs.readFileSync(
+      path.resolve(REPO_ROOT, 'prompts', 'steering', 'library-context.md'),
+      'utf8',
+    );
+    // Named guard section.
+    expect(body).toMatch(/Execute-signal guard/);
+    // Lists the execute-signal words canonically.
+    expect(body.toLowerCase()).toMatch(/fix/);
+    expect(body.toLowerCase()).toMatch(/implement/);
+    expect(body.toLowerCase()).toMatch(/close the gaps/);
+    expect(body.toLowerCase()).toMatch(/write the tests/);
+    // Forbids the A/B/C/D menu pattern explicitly.
+    expect(body.toLowerCase()).toMatch(/menu/);
+    expect(body.toLowerCase()).toMatch(/forbidden|do not produce|do not emit/);
+    // Keeps the policy short — steering should not bloat.
+    const lineCount = body.split('\n').length;
+    expect(lineCount).toBeLessThan(90);
+  });
+
+  it('audit-remediate Step 5 delegates to steering guard (no duplicated list)', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    // Step 5 body must reference the steering guard as authority.
+    const stepIdx = body.indexOf('## STEP 5');
+    const nextSection = body.indexOf('\n## ', stepIdx + 10);
+    const step5 = body.slice(stepIdx, nextSection > -1 ? nextSection : undefined);
+    expect(step5).toMatch(/steering\/library-context\.md/);
+    // Should no longer inline the full execute-signal bullet list.
+    const bulletMatches = step5.match(/^- "/gm) ?? [];
+    expect(bulletMatches.length).toBeLessThan(5);
+    // Must forbid the A/B/C/D menu pattern too.
+    expect(step5.toLowerCase()).toMatch(/menu/);
+  });
+
+  it('executor uuidgen template is unambiguous (no literal $(uuidgen) can slip through)', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    // The template instruction must explicitly say to substitute the value,
+    // and must call out the specific anti-pattern.
+    expect(body).toMatch(/do NOT write the literal string "\$\(uuidgen\)"/);
+  });
+
   it('executor has a hard preflight gate that checks companion artifacts', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
     expect(body).toMatch(/## Preflight gate/);
@@ -304,21 +348,17 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/project-context\.md/);
   });
 
-  it('audit-and-remediate has a Step 5 that mandatorily chains to executor', () => {
+  it('audit-and-remediate has a Step 5 that chains to the executor', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
     expect(body).toMatch(/STEP 5/);
     expect(body.toLowerCase()).toMatch(/chain to execution/);
-    // Must name the execute-signal words for the weak model.
-    expect(body.toLowerCase()).toMatch(/"fix"/);
-    expect(body.toLowerCase()).toMatch(/"implement"/);
-    expect(body.toLowerCase()).toMatch(/"close the gaps"/);
-    // Must point at executor.md explicitly.
+    // The execute-signal word list now lives in steering; Step 5 must
+    // reference it rather than duplicate it.
     expect(body).toMatch(/executor\.md/);
-    // Must use "IMMEDIATELY" or "mandatory" to signal non-optionality.
-    expect(body).toMatch(/IMMEDIATELY|mandatory|MANDATORY/);
+    expect(body).toMatch(/steering\/library-context\.md/);
   });
 
   it('audit-report format uses live date, not a static string', () => {

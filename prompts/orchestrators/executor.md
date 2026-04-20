@@ -74,7 +74,7 @@ journal. Schema:
 
 ```markdown
 ---
-session_id: <UUID generated via `uuidgen` on first write>
+session_id: <run the shell command `uuidgen` yourself, then paste the 36-char UUID value here — do NOT write the literal string "$(uuidgen)" or the placeholder>
 parent_session: <previous session_id, or null on first run>
 plan_source: audit-and-remediate | drill-down-engine
 started_at: <ISO 8601 — e.g. 2026-04-19T22:45:03Z>

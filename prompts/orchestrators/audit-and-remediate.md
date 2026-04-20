@@ -356,32 +356,24 @@ it — the fail means the plan is not ready to execute.
 
 ---
 
-## STEP 5 — Chain to execution (mandatory when user's ask signals execute)
+## STEP 5 — Chain to execution
 
-Inspect the user's original prompt (the one that started this flow) for
-**execute-signal** words, case-insensitive:
+The **execute-signal guard** lives in
+`prompts/steering/library-context.md` — one canonical list of the words
+that authorise end-to-end execution. Apply it here:
 
-- "fix" (when applied to gaps, bugs, issues, the app)
-- "implement", "implementation"
-- "execute", "run the plan", "run it"
-- "do the work", "get it done"
-- "build it", "ship", "close the gaps", "finish"
-- "write the tests", "make it pass", "make it work"
-- "productionize", "deploy-ready"
+- If any execute-signal word is present in the user's original prompt,
+  invoke `prompts/orchestrators/executor.md` immediately. The executor
+  will run its own preflight gate against `prompts/outputs/current/`;
+  you do not need to re-validate.
+- If none are present and the ask was planning-oriented ("review",
+  "audit", "analyze", "what are the gaps", "produce a plan"), stop
+  here and report the summary.
+- "Review AND fix" / "audit AND write tests" are plan-and-execute
+  requests — chain to the executor.
 
-If ANY of these appear, the audit was not the user's endpoint. Proceed
-IMMEDIATELY to `prompts/orchestrators/executor.md` (Mode 2 in the entry
-point). Do not stop. Do not ask "shall I execute?". The user already
-told you: the planning was the precondition; executing is the task.
-
-If NONE of the execute signals appear and the user's ask was planning-
-oriented ("review", "audit", "analyze", "what are the gaps", "produce
-a plan", "tell me what's missing"), the flow ends here. Report the
-summary and stop.
-
-Ambiguous case: if the user's ask contains both "review/audit" AND one
-execute signal (e.g. "review the project... fix the gaps"), that is NOT
-ambiguous — it is a plan-and-execute request. Chain to the executor.
+Do NOT emit a menu-of-options ("Would you like me to: A. execute, B.
+review…") — see the steering guard for why.
 
 ---
 

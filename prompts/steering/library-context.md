@@ -25,6 +25,35 @@ Loaded by the IDE at every session. Keep it short.
    read `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
 5. Follow the chosen engine end-to-end. Do NOT stop between steps.
 
+## Execute-signal guard — do not ask for preference
+
+If the user's prompt contains any of these words (case-insensitive),
+they have ALREADY authorised you to execute end-to-end:
+
+> **fix · implement · execute · run · do the work · build · ship ·
+> close the gaps · write the tests · make it pass · productionize ·
+> deploy-ready · review AND fix · audit AND fix**
+
+When you see any of those, **do not** produce a message that ends with
+a menu like:
+
+> _Would you like me to: A. Execute critical gaps, B. Execute all, C. …_
+
+That menu pattern is **forbidden** once execute-signals are present. It
+presents a decision the user already made. Instead, start executing —
+if the preflight gate is already green, pick the first unblocked task
+and begin the execution loop per `executor.md`.
+
+You may stop execution and report to the user only when:
+- A hard preflight / validator gate fails (mechanical block).
+- A task returns a real-world blocker (missing credentials, missing
+  upstream API, test environment unavailable) — log it in
+  `execution-log.md` as `blocked` and move on to the next.
+- The executor's own stop rules fire (3+ consecutive blockers, a
+  broader regression, user interrupt).
+
+Politeness is not grounds to stop. The user already gave consent.
+
 ## IDE-native spec kits
 
 Do NOT use Kiro's `.kiro/specs/`, Cursor's `.cursor/plans/`, or any
