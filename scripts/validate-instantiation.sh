@@ -109,6 +109,85 @@ for f in "${files[@]}"; do
     fi
   fi
 
+  # 6a. File-count-mismatch detector: if a task's Acceptance section
+  # lists N distinct file paths and N > 1, and the task's File field
+  # names only one file, the task is implicitly creating N files
+  # — a covert collapse. Scan each task section.
+  mismatch_report=$(awk '
+    BEGIN { in_task = 0; in_accept = 0; task_title = ""; file_field = ""; accept_paths = ""; paths_n = 0 }
+    function flush() {
+      # Count distinct paths mentioned in the Accept section that differ
+      # from the File field path. If > 1 distinct, flag.
+      n = split(accept_paths, arr, ",")
+      seen[""] = 1
+      distinct = 0
+      for (i = 1; i <= n; i++) {
+        p = arr[i]
+        if (p != "" && p != file_field && !(p in seen)) {
+          seen[p] = 1; distinct++
+        }
+      }
+      # Require: File field set, at least 2 distinct extra paths that
+      # share the same parent directory shape as File field
+      # (reduces false positives on general test references).
+      if (file_field != "" && distinct >= 2) {
+        printf "   %s\n      File: is one path but Acceptance names %d additional file paths (implicit collapse across files)\n", task_title, distinct
+      }
+      for (k in seen) delete seen[k]
+      accept_paths = ""; distinct = 0
+    }
+    /^## / {
+      if (in_task) flush()
+      in_task = 1; in_accept = 0
+      task_title = $0; file_field = ""; accept_paths = ""
+      next
+    }
+    /^-[[:space:]]*\*\*File:\*\*/ {
+      # Extract backticked path.
+      if (match($0, /`[^`]+`/)) {
+        file_field = substr($0, RSTART + 1, RLENGTH - 2)
+      }
+      in_accept = 0
+      next
+    }
+    /^-[[:space:]]*\*\*Acceptance:\*\*/ { in_accept = 1; next }
+    /^-[[:space:]]*\*\*/ { in_accept = 0; next }
+    {
+      if (in_accept) {
+        # Only count a bullet when it is asserting that a specific path
+        # must EXIST or be CREATED. Avoids false positives where the
+        # bullet references a path for context (e.g. "coverage for
+        # src/foo.ts increases", "npm test -- tests/foo.test.ts passes").
+        l = tolower($0)
+        creation_verb = 0
+        if (l ~ /file[s]? exist/) creation_verb = 1
+        else if (l ~ /(is|are)[[:space:]]+(png|jpg|jpeg|svg|gif|mp4|webm)[[:space:]]+(format|file)/) creation_verb = 1
+        else if (l ~ /has[[:space:]]+dimensions/) creation_verb = 1
+        else if (l ~ /is[[:space:]]+created/) creation_verb = 1
+        else if (l ~ /directory[[:space:]]+contains/) creation_verb = 1
+        else if (l ~ /(created|generated|added)[[:space:]]+at/) creation_verb = 1
+
+        if (creation_verb) {
+          s = $0
+          while (match(s, /`[^`]+`/)) {
+            token = substr(s, RSTART + 1, RLENGTH - 2)
+            # Only count things that look like file paths with / and an extension.
+            if (token ~ /\// && token ~ /\.[a-zA-Z0-9]+$/) {
+              accept_paths = accept_paths token ","
+            }
+            s = substr(s, RSTART + RLENGTH)
+          }
+        }
+      }
+    }
+    END { if (in_task) flush() }
+  ' "$f")
+  if [ -n "$mismatch_report" ]; then
+    echo "❌ $f: task has File: one path but Acceptance lists multiple file paths"
+    printf "%s\n" "$mismatch_report"
+    fail=1
+  fi
+
   # 6. Screenshot / app-icon / store-listing collapse detector.
   # Split the file into task sections at each "## " heading. For each
   # section whose heading mentions screenshot/icon/listing, scan the

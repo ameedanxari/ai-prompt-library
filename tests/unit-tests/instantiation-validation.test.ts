@@ -153,6 +153,79 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('rejects a task whose Acceptance lists multiple files that must exist', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-multifile-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-multifile.md'),
+        [
+          '# Remediation — multi-file collapse',
+          '',
+          '## R1 · Create screenshot placeholders',
+          '- **Closes user story:** As a reviewer, I want screenshots, so that I can approve the app.',
+          '- **Change type:** create-new',
+          '- **File:** `ios/screenshots/en/phone-1.png`',
+          '- **Precise change:** Create one screenshot.',
+          '- **Acceptance:**',
+          '  - `ios/screenshots/en/phone-1.png` file exists and is PNG format with dimensions 1290x2796px.',
+          '  - `ios/screenshots/en/phone-2.png` file exists and is PNG format with dimensions 1290x2796px.',
+          '  - `ios/screenshots/en/phone-3.png` file exists and is PNG format with dimensions 1290x2796px.',
+          '- **Test:** `ios/scripts/check.sh`',
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/Acceptance (lists|names) multiple|implicit collapse/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('does NOT reject a test task that references the source-under-test', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-testref-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-middleware-tests.md'),
+        [
+          '# Remediation — middleware tests',
+          '',
+          '## R1 · Add auth middleware tests',
+          '- **Closes user story:** As a maintainer, I want middleware covered, so that regressions are caught.',
+          '- **Change type:** modify-existing',
+          '- **File:** `backend/tests/authMiddleware.test.ts`',
+          '- **Precise change:** Add 10 tests covering valid token, expired token, invalid signature, missing token, wrong algorithm, wrong issuer, happy path, 401 on invalid, context set on success.',
+          '- **Acceptance:**',
+          '  - `backend/tests/authMiddleware.test.ts` has at least 10 tests covering all branches.',
+          '  - `npm test -- backend/tests/authMiddleware.test.ts` passes.',
+          '  - Coverage for `backend/src/middleware/auth.ts` increases from 40% to 90%.',
+          '- **Test:** `npm test -- backend/tests/authMiddleware.test.ts`',
+          '- **Estimated LOC delta:** +80',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+        encoding: 'utf8',
+      });
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects an app-icon task that collapses across platforms or locales', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-icon-'));
     try {

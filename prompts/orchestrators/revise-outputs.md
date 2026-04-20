@@ -205,9 +205,30 @@ executor_gate: pass | fail
 (items that could not be auto-fixed; user decision needed)
 ```
 
-## Regeneration rules
+## Regeneration rules (MANDATORY — not optional)
 
-When a check identifies a missing expansion:
+**Every failed check triggers exactly one regeneration attempt.** You
+do not ask the user whether to regenerate. You do not skip regeneration
+because the user "might prefer the current shape." The library's
+schema rules are not user preferences — they are invariants.
+
+Correct flow when a check fails:
+
+1. Immediately attempt the single regeneration described below for
+   that check's class.
+2. Re-run the same check against the regenerated file.
+3. Record the attempt in `revise-report.md` under `regenerations_performed`.
+4. Only if the regeneration **still fails** after its one attempt,
+   record the residual problem in `remaining_issues` and set
+   `executor_gate: fail`.
+
+A revise report with `checks_failed` non-empty AND
+`regenerations_performed: []` is itself a defect — it means the
+orchestrator surfaced a failure without attempting the required fix.
+Such a report must be rejected (treat as `executor_gate: fail` with a
+note that the agent skipped the regeneration step).
+
+### When a check identifies a missing expansion
 
 1. Invoke the relevant engine step with a **narrow context** — only
    the single epic / feature / gap in question. Do NOT re-run the
@@ -216,15 +237,15 @@ When a check identifies a missing expansion:
 3. Re-run the check to confirm the regeneration closed the issue.
 4. Log in `revise-report.md`.
 
-When a check identifies a schema violation:
+### When a check identifies a schema violation
 
 1. Do NOT silently edit the offending task. The planning agent made a
    judgment; overriding that judgment without replanning invites
    drift. Instead, re-invoke engine Step 3 for that feature/gap with
-   the violation as context ("your previous attempt produced a task
-   with a directory for File:; produce a new tasks file for
+   the violation as context (e.g. "your previous attempt produced a
+   task with a directory for File:; produce a new tasks file for
    <feature> that places each change in a single file").
-2. Replace the old tasks/remediation file.
+2. Replace the old tasks/remediation file atomically.
 
 When a check identifies a baseline-coverage gap:
 
@@ -243,6 +264,30 @@ regeneration attempt:
 - A regression from a prior revise pass is detected.
 
 Report the stop to the user and surface the specific files + issues.
+
+### How to surface remaining issues (no "accept the violation" option)
+
+When `executor_gate: fail` after the allowed regeneration attempt:
+
+- State what violated, which check, which rule.
+- State that the library cannot proceed to execution with this plan.
+- Offer ONLY these decisions to the user:
+  - **A. Retry.** The user can re-run the flow; the engine may
+    produce a different plan this time.
+  - **B. Manual fix.** The user edits the remediation/tasks file
+    themselves to add the missing breakdown, then the revise gate
+    must pass before execution.
+  - **C. Escalate.** The user files a library issue (the engine
+    cannot produce a compliant plan for this case).
+
+Do NOT offer an "accept the current collapsed plan as-is" option.
+Baseline-task-shape rules are invariants, not preferences; once C5
+fails, the executor must not run against the offending remediation.
+
+The purpose of this strict stance: a weak model may be tempted to
+present the violation as a trade-off ("full plan vs quick plan") to
+avoid re-work. That defeats the library's purpose. The correct
+response is always "regenerate or stop," never "ship the shortcut".
 
 ## Iteration cap
 

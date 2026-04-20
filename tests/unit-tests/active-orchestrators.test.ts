@@ -133,6 +133,25 @@ describe('active orchestrators', () => {
     );
   });
 
+  it('revise-outputs regeneration is mandatory and not a user choice', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'revise-outputs.md'),
+      'utf8',
+    );
+    // The regeneration section must be framed as mandatory/not optional.
+    expect(body).toMatch(/Regeneration rules \(MANDATORY/);
+    // A revise report that has failed checks but no regens is itself a defect.
+    expect(body).toMatch(/regenerations_performed: \[\]/);
+    expect(body.toLowerCase()).toMatch(/itself a defect/);
+    // When surfacing remaining issues, there must NOT be an
+    // "accept the violation" user option.
+    expect(body).toMatch(/"accept the violation" option|accept.*collapsed/i);
+    // Explicitly says the library cannot proceed.
+    expect(body.toLowerCase()).toMatch(
+      /library cannot proceed|must not run against|never.*ship the shortcut/,
+    );
+  });
+
   it('revise-outputs check-applicability table is explicit and machine-parseable', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'revise-outputs.md'),
