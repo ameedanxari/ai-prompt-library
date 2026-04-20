@@ -48,6 +48,7 @@ describe('validator — clean fixture passes', () => {
           '# Remediation — good',
           '',
           '## R1 · do the thing',
+          '- **Closes user story:** As a developer, I want a hello function, so that I can smoke-test the module.',
           '- **Change type:** modify-existing',
           '- **File:** `src/app.ts`',
           '- **Precise change:** add `export function hello()` returning `"hi"`.',
@@ -64,6 +65,89 @@ describe('validator — clean fixture passes', () => {
         encoding: 'utf8',
       });
       expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('validator — user-story linkage', () => {
+  it('rejects a task missing Closes user story', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nostory-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-nostory.md'),
+        [
+          '# Remediation — no story',
+          '',
+          '## R1 · do the thing',
+          '- **Change type:** modify-existing',
+          '- **File:** `src/app.ts`',
+          '- **Precise change:** add `hello()`.',
+          '- **Acceptance:**',
+          '  - `hello()` returns `hi`.',
+          '  - Only one export named `hello`.',
+          '  - File size stays under 100 lines.',
+          '- **Test:** `src/app.test.ts`',
+          '- **Estimated LOC delta:** +5',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/Closes user story/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a malformed user story line', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-badstory-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-badstory.md'),
+        [
+          '# Remediation — bad story',
+          '',
+          '## R1 · do the thing',
+          '- **Closes user story:** users need the hello function',
+          '- **Change type:** modify-existing',
+          '- **File:** `src/app.ts`',
+          '- **Precise change:** add `hello()`.',
+          '- **Acceptance:**',
+          '  - `hello()` returns `hi`.',
+          '  - Only one export named `hello`.',
+          '  - File size stays under 100 lines.',
+          '- **Test:** `src/app.test.ts`',
+          '- **Estimated LOC delta:** +5',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/As a \.\.\. I want \.\.\. so that/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

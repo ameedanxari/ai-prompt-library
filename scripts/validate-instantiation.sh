@@ -29,6 +29,11 @@ FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|
 # **Acceptance:** header.
 TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?\s*$'
 
+# User-story line. Each task block must contain a **Closes user story:**
+# line that uses the canonical "As a ... I want ... so that ..." form.
+USER_STORY_MARKER='^\s*[-*]?\s*\*\*Closes user story:\*\*'
+USER_STORY_WELL_FORMED='\*\*Closes user story:\*\*\s+As (a|an)\s+.+,\s+I want\s+.+,\s+so that\s+.+'
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "ℹ️  no output directory at $TARGET_DIR — nothing to validate"
   exit 0
@@ -72,6 +77,29 @@ for f in "${files[@]}"; do
     echo "❌ $f: tautological acceptance criteria (nothing meaningful asserted)"
     grep -niE "$TAUTOLOGIES" "$f" | sed 's/^/   /'
     fail=1
+  fi
+
+  # 5. Every task block must carry a well-formed Closes-user-story line.
+  # We assume one task per "## " section (after the title-level #). Count
+  # task headings vs. user-story markers — any shortfall is a violation.
+  task_headings=$(grep -cE "^##\s+(T|R)[0-9]+" "$f" || true)
+  story_markers=$(grep -cE "$USER_STORY_MARKER" "$f" || true)
+  if [ "$task_headings" -gt 0 ] && [ "$story_markers" -lt "$task_headings" ]; then
+    echo "❌ $f: $((task_headings - story_markers)) task(s) missing **Closes user story:** line"
+    fail=1
+  fi
+  # Every Closes user story that IS present must be well-formed.
+  if grep -E "$USER_STORY_MARKER" "$f" >/dev/null 2>&1; then
+    if ! grep -E "$USER_STORY_WELL_FORMED" "$f" >/dev/null 2>&1; then
+      :  # no well-formed line matches — flag below
+    fi
+    # Flag lines that have the marker but don't match the well-formed shape.
+    bad_stories=$(grep -nE "$USER_STORY_MARKER" "$f" | grep -vE "$USER_STORY_WELL_FORMED" || true)
+    if [ -n "$bad_stories" ]; then
+      echo "❌ $f: Closes user story lines must use 'As a ... I want ... so that ...' form"
+      echo "$bad_stories" | sed 's/^/   /'
+      fail=1
+    fi
   fi
 done
 

@@ -84,6 +84,53 @@ Precise change, runs the named Test, checks Acceptance bullets, logs
 the outcome. Stops on regressions, 3+ consecutive blockers, or user
 interrupt.
 
+`execution-log.md` carries a YAML handoff envelope (session_id,
+parent_session, last_completed_task, next_task, blocked_tasks,
+test_suite_state, regressions_since_green, external_keys_needed).
+A new agent resuming work reads only the envelope and continues from
+`next_task`. Cross-session continuity requires no other state.
+
+### Revise (review / gap / fix loop): revise-outputs.md
+
+Runs automatically between the planning engine and the executor. Nine
+coverage checks (C1–C9): epic→feature, feature→task, gap→remediation,
+task schema, baseline-topic completeness, external-services manifest,
+user-story linkage, platform coverage, regression-against-prior-pass.
+Fails the executor gate if any check remains failing after one
+regeneration attempt. Emits `revise-report.md`.
+
+### Baseline task-shape rules: baseline-task-shapes.md
+
+Consulted during Step 3 of either engine when expanding a baseline
+epic/gap. Enforces per-topic requirements (e.g. app-store prep
+requires one screenshot task per locale × per device class;
+localization requires a completeness test; theming requires a visual-
+regression test; privacy requires explicit data-export and data-
+deletion tasks).
+
+### Self-maintain: self-maintain.md
+
+Runs the library's engines on the library itself. For maintainers,
+not end users. Writes to `prompts/outputs/self-maintain/` so it never
+collides with a user project's `prompts/outputs/current/`.
+
+## Output artefacts an engine run leaves behind
+
+Under `prompts/outputs/current/`:
+
+| File | Produced by |
+|---|---|
+| `project-context.md` | external-input-handler (when external material exists) |
+| `epics.md` | drill-down Step 1 (greenfield only) |
+| `features-<epic>.md` | drill-down Step 2 |
+| `external-accounts.md` | drill-down Step 2.5 / audit-remediate Step 3.5 |
+| `tasks-<feature>.md` | drill-down Step 3 |
+| `audit-report.md` | audit-remediate Step 1 (gap-closure only) |
+| `gap-list.md` | audit-remediate Step 2 |
+| `remediation-<gap>.md` | audit-remediate Step 3 |
+| `revise-report.md` | revise-outputs |
+| `execution-log.md` | executor (includes YAML handoff envelope) |
+
 Each step runs in a **fresh context**. Do not carry the previous step's full
 artifact forward; load only the specific slice the current step is expanding.
 

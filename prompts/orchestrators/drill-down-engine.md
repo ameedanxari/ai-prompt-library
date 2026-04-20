@@ -161,6 +161,10 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 - `api_contract` — concrete endpoints: `METHOD /path → request/response shape`
   (omit if the feature has no API surface; note why)
 - `dependencies` — other features this depends on (by name), or `none`
+- `external_services` — third-party services this feature requires, if
+  any. Each entry: service name + signup URL + env vars needed + brief
+  role in the feature. Use `none` if the feature needs no external
+  service. See Step 2.5 for how these roll up.
 
 **Output format:**
 
@@ -185,7 +189,59 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 **After each epic's features are written, continue to the next epic.** Once
 all epics have been expanded (one `features-*.md` per epic), continue
-immediately to Step 3 — do not stop, do not ask for confirmation.
+immediately to Step 2.5 (roll-up) — do not stop.
+
+---
+
+## STEP 2.5 — Roll up external services manifest
+
+After every `features-*.md` is written, scan each file's
+`external_services` sections and aggregate them into one file:
+`prompts/outputs/current/external-accounts.md`.
+
+Dedupe by service name. Merge env var lists. Collect the feature names
+that use each service. For each unique service write:
+
+```markdown
+## <Service name>
+
+- **What it does in this project:** <one sentence, aggregated from
+  feature descriptions>
+- **Sign up at:** <URL>
+- **Env vars needed:** `VAR_NAME_ONE`, `VAR_NAME_TWO`
+- **Used by features:** <list of feature names>
+- **How to get credentials:** <one short paragraph — enough for a
+  non-technical user to follow. Mention dashboard navigation, free
+  tier limits, whether a credit card is required.>
+- **Cost tier:** free | freemium | paid-only
+- **Production note:** <one line on what the user must upgrade or
+  configure before production use — e.g. "Stripe requires business
+  verification before accepting real payments.">
+```
+
+Add a top-of-file summary:
+
+```markdown
+# External Accounts Required
+
+_You must create accounts and obtain credentials for each service below
+before the app will function in <dev | staging | production>. Free-tier
+accounts are sufficient for development unless noted otherwise._
+
+Total services: N (F free, M freemium, P paid-only)
+
+---
+```
+
+**Write to:** `prompts/outputs/current/external-accounts.md`.
+
+If no feature declared an external service, write the file anyway with a
+single line: "No external services required — the project runs with
+local-only dependencies." The file must always exist so downstream
+consumers (README generator, executor's env-var check, CI setup) can
+rely on its presence.
+
+**After writing, continue immediately to Step 3.**
 
 ---
 
@@ -209,7 +265,21 @@ MUST NOT contain:
 - Generic function names (`implement_auth`, `create_thing`)
 
 **Produce:** atomic tasks — one task = one file × one function (or one focused
-edit). Each task has:
+edit). Each task MUST name:
+- `closes_user_story` — the user story this task closes, phrased as
+  `As a <role>, I want <outcome>, so that <value>`. MUST trace back to
+  an epic goal or a feature description. An orphan task (no user story)
+  is a schema violation.
+
+If the parent epic is a **baseline** epic (per Step 1's two-group
+output), consult
+`prompts/orchestrators/baseline-task-shapes.md` for extra schema rules
+that apply to that topic (e.g. "one screenshot task per locale × per
+device class" for App Store Release Prep). These rules are non-optional
+— a weak model cannot substitute one omnibus task for the required
+breakdown.
+
+Each task has:
 
 - `id` — short slug, unique within the feature
 - `objective` — one sentence, imperative verb, names the concrete outcome
@@ -228,6 +298,8 @@ edit). Each task has:
 # Tasks — <Feature Name>
 
 ## T1 · <objective>
+- **Closes user story:** As a new user, I want to register with email
+  and password, so that I can access the app under my own account.
 - **File:** `src/auth/signup.ts`
 - **Signature:** `async function signup(req: SignupReq): Promise<SignupRes>`
 - **API shape:**

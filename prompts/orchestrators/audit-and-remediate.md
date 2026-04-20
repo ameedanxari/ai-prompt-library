@@ -171,8 +171,18 @@ only:
 - At most one module from `prompts/modules/` chosen via
   `prompts/orchestrators/module-selection-index.md` based on gap intent
   (consult the "Ops / Readiness" section for production-readiness gaps).
+- If the gap maps to a baseline topic (auth, admin/RBAC, observability,
+  localization, theming, accessibility, testing, CI/CD, IaC, app-store
+  prep, settings/debug, privacy/PII), ALSO load
+  `prompts/orchestrators/baseline-task-shapes.md` for the per-topic
+  rules. They override any weaker defaults.
 
 **Produce:** atomic remediation tasks. Each task MUST name:
+- **Closes user story** — one line phrased as
+  `As a <role>, I want <outcome>, so that <value>`. Must trace back to
+  a user-visible behaviour in the audit (or to a baseline concern like
+  "As an operator, I want error alerts, so that I can respond to
+  production incidents"). An orphan task is a schema violation.
 - **Exactly ONE** file path. Not a directory (no trailing `/`). Not a
   group like "multiple files" or "several test files". If the change
   really spans N files, emit N tasks — one per file.
@@ -199,6 +209,9 @@ only:
 _Closes gap:_ G1 · ios-xcode-target-setup
 
 ## R1 · Add MenuMaker-Customer app target to the Xcode project
+- **Closes user story:** As a Customer using an iPhone, I want a
+  dedicated customer app on my device, so that I only see customer
+  features and can install it from the App Store.
 - **Change type:** modify-existing
 - **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
 - **Precise change:** In the `PBXProject` `targets` array, add one new
@@ -256,10 +269,48 @@ Do not declare the remediation ready if any of these are true:
 - No test is named.
 - A task references a module path that does not exist on disk.
 - `Depends on: RN` lacks a one-line reason.
+- `Closes user story` is missing, or does not use the
+  `As a ... I want ... so that ...` form, or refers to a role / outcome
+  absent from the audit / gap description.
 
 **Write to:** `prompts/outputs/current/remediation-<gap-slug>.md`.
 
-**After every gap has a remediation file, continue to Step 4.**
+**After every gap has a remediation file, continue to Step 3.5.**
+
+---
+
+## STEP 3.5 — External services manifest
+
+Scan every `remediation-*.md` for tasks that add, modify, or touch a
+third-party service (payment processors, auth providers, email/SMS,
+analytics, error tracking, object storage, push notification services,
+map providers, translation services, etc.).
+
+Aggregate into `prompts/outputs/current/external-accounts.md` using the
+same schema as the drill-down engine's Step 2.5:
+
+```markdown
+## <Service name>
+- **What it does in this project:** <one sentence>
+- **Sign up at:** <URL>
+- **Env vars needed:** `VAR_ONE`, `VAR_TWO`
+- **Used by tasks:** G1.R4, G3.R2, G7.R1
+- **How to get credentials:** <short instructions for a non-technical user>
+- **Cost tier:** free | freemium | paid-only
+- **Production note:** <what must change before real production use>
+```
+
+If the project's existing code already integrates a service but the
+remediation only touches a missing configuration (e.g. adding Stripe
+webhook signing), still include the service — mark it as "already
+integrated, finalising configuration" under _What it does_.
+
+If no remediation task introduces a new external service, write a
+single-line file: "No new external services required for this
+remediation pass." Preserve any prior `external-accounts.md` from the
+greenfield generation — do not overwrite it.
+
+**After writing, continue immediately to Step 4.**
 
 ---
 

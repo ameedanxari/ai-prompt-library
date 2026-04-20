@@ -20,6 +20,9 @@ const ACTIVE = [
   'executor.md',
   'external-input-handler.md',
   'module-selection-index.md',
+  'revise-outputs.md',
+  'baseline-task-shapes.md',
+  'self-maintain.md',
 ];
 
 describe('active orchestrators', () => {
@@ -82,6 +85,104 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/gap-list\.md|epics\.md/);
     // Hard requirement: never execute unvalidated plan.
     expect(body).toMatch(/validate-instantiation\.sh/);
+  });
+
+  it('executor execution-log schema includes a YAML handoff envelope', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    // Envelope must name the fields needed for cross-session resume.
+    expect(body).toMatch(/session_id/);
+    expect(body).toMatch(/parent_session/);
+    expect(body).toMatch(/last_completed_task/);
+    expect(body).toMatch(/next_task/);
+    expect(body).toMatch(/blocked_tasks/);
+    expect(body).toMatch(/test_suite_state/);
+    expect(body).toMatch(/external_keys_needed/);
+    // Must explicitly describe the resumption contract.
+    expect(body.toLowerCase()).toMatch(/resumption contract|any new agent/);
+  });
+
+  it('revise-outputs enumerates coverage checks', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'revise-outputs.md'),
+      'utf8',
+    );
+    // Must reference the canonical check numbering.
+    expect(body).toMatch(/C1/);
+    expect(body).toMatch(/C5/);
+    expect(body).toMatch(/baseline-task-shapes\.md/);
+    expect(body).toMatch(/validate-instantiation\.sh/);
+    expect(body).toMatch(/revise-report\.md/);
+    // Iteration is explicitly capped.
+    expect(body.toLowerCase()).toMatch(/iteration cap|one regeneration/);
+  });
+
+  it('baseline-task-shapes covers all twelve baseline topics', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'baseline-task-shapes.md'),
+      'utf8',
+    );
+    const topics = [
+      /identity.*auth.*onboarding/i,
+      /admin.*rbac/i,
+      /observability/i,
+      /localization.*rtl/i,
+      /theming.*whitelabel/i,
+      /accessibility/i,
+      /testing.*qa/i,
+      /ci\/cd.*release/i,
+      /infrastructure as code/i,
+      /app store release prep/i,
+      /debug menu/i,
+      /privacy.*pii.*compliance/i,
+    ];
+    for (const pat of topics) {
+      expect(
+        pat.test(body),
+        `baseline-task-shapes.md is missing topic ${pat}`,
+      ).toBe(true);
+    }
+    // App-store prep must enforce screenshots per locale × device.
+    expect(body).toMatch(/per locale.*per (required )?device/i);
+  });
+
+  it('drill-down and audit-remediate both require closes_user_story', () => {
+    const drill = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    const audit = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    expect(drill).toMatch(/closes_user_story|Closes user story/);
+    expect(audit).toMatch(/Closes user story/);
+    // Both must name the canonical form.
+    expect(drill).toMatch(/As a.*I want.*so that/);
+    expect(audit).toMatch(/As a.*I want.*so that/);
+  });
+
+  it('self-maintain writes outputs to a separate directory', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'self-maintain.md'), 'utf8');
+    // Must NOT write into prompts/outputs/current — collides with user projects.
+    expect(body).toMatch(/prompts\/outputs\/self-maintain/);
+    expect(body).toMatch(/field-tests/);
+  });
+
+  it('entry point flow sequences revise step before chain-to-executor step', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'ai-agent-entry-point.md'),
+      'utf8',
+    );
+    // Both files referenced somewhere.
+    expect(body).toMatch(/revise-outputs\.md/);
+    expect(body).toMatch(/executor\.md/);
+    // In the lettered flow (step E … step H), the Revise step comes
+    // before the Chain-to-executor step.
+    const reviseStep = body.search(/^###\s+F\.\s+Revise/m);
+    const chainStep = body.search(/^###\s+H\.\s+Chain to executor/m);
+    expect(reviseStep).toBeGreaterThan(-1);
+    expect(chainStep).toBeGreaterThan(-1);
+    expect(reviseStep).toBeLessThan(chainStep);
   });
 
   it('audit-and-remediate references all four required output files', () => {

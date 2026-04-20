@@ -36,13 +36,29 @@ planning engines carries over here.
 ## Output artifact: execution-log.md
 
 Maintained continuously under `prompts/outputs/current/execution-log.md`.
-Append-only with one section per task attempt. Schema:
+**Two parts**: a YAML-frontmatter handoff envelope (machine-parseable,
+kept up-to-date at every task completion) and an append-only per-task
+journal. Schema:
 
 ```markdown
-# Execution Log
+---
+session_id: <UUID generated via `uuidgen` on first write>
+parent_session: <previous session_id, or null on first run>
+plan_source: audit-and-remediate | drill-down-engine
+started_at: <ISO 8601 — e.g. 2026-04-19T22:45:03Z>
+updated_at: <ISO 8601 — set on every task completion>
+platforms: [web, android, ios]   # from MY_PROJECT.md or inferred
+last_completed_task: G1.R3        # or E1.T3; null if none yet
+next_task: G1.R4                   # computed from dependency graph
+blocked_tasks: [G2.R1, G5.R7]
+failed_tasks: []
+deferred_tasks: [G3.R2]            # waiting on a dependency
+test_suite_state: green | red | unknown
+regressions_since_green: []        # task ids that introduced red
+external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
+---
 
-_Started: <timestamp>_
-_Plan source: audit-and-remediate.md | drill-down-engine.md_
+# Execution Log
 
 ## G1 · <gap-slug>  (or E1 · <epic-slug>)
 
@@ -57,9 +73,39 @@ _Plan source: audit-and-remediate.md | drill-down-engine.md_
   - ❌ <bullet from plan — not met, with one-line reason>
 - **Status:** done | blocked | deferred | failed
 - **Notes:** <one sentence; only if status is not `done`>
+- **Session:** <session_id> (which session completed this task — lets a
+  future agent reconstruct order across multiple sessions)
 
 ### R2 · ...
 ```
+
+### Handoff envelope — maintenance rules
+
+- On first write (no existing `execution-log.md`), generate a new
+  `session_id` and leave `parent_session: null`.
+- On later writes, if `execution-log.md` exists with a previous
+  envelope, generate a NEW `session_id`, set `parent_session` to the
+  old one, and keep every prior journal entry intact. The executor is
+  append-only for journal entries and atomic-replace for the envelope.
+- `updated_at` ticks on every task transition.
+- `next_task` is computed: first task in dependency+severity order that
+  is not in `done` / `blocked` / `deferred` / `failed`.
+- A new agent resuming work reads ONLY the envelope first. If every
+  task is `done`, report done. Otherwise continue from `next_task`.
+
+### Session resumption contract
+
+Any new agent can produce correct continuation behaviour by following
+**only** these steps:
+
+1. Read the YAML frontmatter of `execution-log.md` (lines between `---`).
+2. Parse `next_task`. If `null`, the plan is complete — run a final
+   regression check and report.
+3. Open the remediation/tasks file that contains `next_task`.
+4. Resume the execution loop from that task.
+
+A weak model must not re-run the audit when an envelope exists. The
+envelope is the source of truth for "where we are".
 
 `status` values:
 - `done` — code changed, test passed, all acceptance met.
