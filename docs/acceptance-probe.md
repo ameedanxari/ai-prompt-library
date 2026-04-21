@@ -130,7 +130,7 @@ mechanical gate, not a prose instruction — see `CONTRIBUTING.md`.
   surprisingly across models.
 - Patch releases (`vX.Y.Z` with Z > 0) can skip the probe if the
   patch is narrowly scoped (single validator tweak, docs only) and
-  all 944 tests still pass.
+  all 735 tests still pass.
 
 ---
 

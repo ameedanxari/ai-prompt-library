@@ -57,7 +57,7 @@ Generate code through multiple stages: skeleton, implementation, optimization, d
 ```typescript
 class CodeGenerationPipeline {
   async generateFromSpec(spec: Specification): Promise<GeneratedProject> {
-    // Stage 1: Generate code with COVE
+    // Stage 1: Generate code with self-verification
     const code = await this.generateWithVerification(spec);
     
     // Stage 2: Generate tests
@@ -83,9 +83,9 @@ class CodeGenerationPipeline {
   }
   
   private async generateWithVerification(spec: Specification): Promise<Code> {
-    // Apply COVE for critical code
+    // Self-verify generated code against the spec before returning
     const draft = await this.llm.generateCode(spec);
-    const verified = await this.cove.verify(draft, spec);
+    const verified = await this.verifier.check(draft, spec);
     return verified.code;
   }
 }
@@ -93,7 +93,7 @@ class CodeGenerationPipeline {
 
 ## Best Practices
 
-1. **Use COVE** for all generated code
+1. **Self-verify all generated code** against its spec before using it
 2. **Generate tests automatically** for validation
 3. **Run in sandbox** before deployment
 4. **Version all generated artifacts**

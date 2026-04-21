@@ -390,9 +390,9 @@ class MetaProgrammingFramework {
   private async generateImplementation(
     functionSpec: FunctionSpec
   ): Promise<Implementation> {
-    // Use COVE for critical functions
+    // Use the verification pipeline for critical functions
     if (functionSpec.criticality === 'high') {
-      return await this.generateWithCOVE(functionSpec);
+      return await this.generateWithVerification(functionSpec);
     }
     
     // Standard generation for others
@@ -528,18 +528,21 @@ class ChangeApprovalSystem {
 }
 ```
 
-## Integration with COVE
+## Self-verification of modifications
+
+Before a self-modifying agent applies a change, run a verification pass
+on the draft modification to surface behaviour, edge-case, and security
+regressions.
 
 ```typescript
-// Apply COVE to self-modifying code
-class COVEIntegratedSelfModification {
+class VerifyingSelfModification {
   async modifyCodeWithVerification(
     target: CodeTarget,
     modification: Modification
   ): Promise<VerifiedModification> {
     // Step 1: Generate modification
     const draft = await this.generateModification(target, modification);
-    
+
     // Step 2: Generate verification questions
     const questions = [
       'Does this preserve the original behavior?',
@@ -548,11 +551,11 @@ class COVEIntegratedSelfModification {
       'Are there any security implications?',
       'Is the code more maintainable?'
     ];
-    
-    // Step 3: Answer independently
+
+    // Step 3: Answer independently (without referencing the draft)
     const answers = await this.answerVerificationQuestions(questions, draft, target);
-    
-    // Step 4: Synthesize verified modification
+
+    // Step 4: Synthesise the verified modification
     return await this.synthesizeVerifiedModification(draft, answers);
   }
 }
@@ -566,7 +569,7 @@ class COVEIntegratedSelfModification {
 4. **Track all changes** for learning and auditing
 5. **Validate behavior preservation** through comprehensive testing
 6. **Monitor performance impact** of all modifications
-7. **Use COVE** for critical code generation
+7. **Run a self-verification pass** on high-criticality code-generation outputs before applying them
 8. **Implement gradual rollout** for runtime changes
 9. **Maintain human oversight** for important systems
 10. **Learn from failures** to improve future modifications

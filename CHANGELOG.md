@@ -112,12 +112,10 @@ check, a steering rule, a script) rather than prose guidance.
 
 ### Added — Tests
 
-- 944 passing tests (property-based over all modules, integration,
-  unit tests over the instantiation validator, orchestrator schema
-  tests).
+- 735 passing tests, 0 failing (property-based over all modules,
+  integration, unit tests over the instantiation validator,
+  orchestrator schema tests).
 - 141 unit tests specifically over `validate-instantiation.sh`.
-- 4 known-failing tests against a legacy Template Architecture Guard
-  (pre-existing, documented in `README.md`).
 
 ### Removed
 
@@ -126,13 +124,41 @@ check, a steering rule, a script) rather than prose guidance.
   COVE, A/B testing, parallel-execution, self-healing,
   intelligent-caching, template-composition, etc.). All had drifted
   from the engine architecture.
-- `prompts/stages/**` waterfall — kept only so legacy tests pass, but
-  never auto-loaded. Deprecated banners on every file.
+- **Legacy waterfall TypeScript engine** — the entire parallel
+  implementation that ran the deprecated 10-stage pipeline in code:
+  `stage-pipeline-controller`, `stage-pipeline-processor`,
+  `state-manager`, `task-generator`, `task-generation-engine`,
+  `validation-tools`, `error-recovery-system`, `quality-gate-system`,
+  `output-directory-manager`, `documentation-traceability-system`,
+  `archive-manager`, and seven prompt-scanning processors
+  (`deployment-`, `quality-assurance-`, `self-maintenance-`,
+  `functionality-preservation-`, `large-repetitive-changes-`,
+  `build-command-`, `documentation-processor.ts`), plus their 20+
+  tests. None were reachable from the v1.0 engine; all validated
+  deprecated concepts (PROJECT_STATE.md, NEXT_ACTION.md, 10-stage
+  prerequisites).
+- **Legacy `prompts/stages/**`** — removed 9 of 10 stage directories
+  (intake, charter, architecture, features, implementation, deployment,
+  documentation, quality, handoff). Only `stage-05-testing/` remains,
+  kept because three active template-validator processors reference
+  it. No orchestrator or engine ever auto-loaded these.
+- **Legacy `prompts/templates/**`** — removed 40 of 68 legacy templates
+  that were unreferenced after the processor sweep, including every
+  file referencing NEXT_ACTION.md, PROJECT_STATE.md, COVE, or a 10-stage
+  pipeline (cove-quick-reference, cove-stage-integration,
+  cove-verification-framework, cove-examples/\*, execution-phase,
+  execution-progress-template, next-feature-orchestrator,
+  project-state-files, project-state-tracking, stage-orchestration,
+  stage-output-generation, state-management-orchestration,
+  task-router, and others).
 - Legacy state files (`PROJECT_STATE.md`, `EXECUTION_PROGRESS.md`,
   `DEVELOPMENT_LOG.md`, `NEXT_ACTION.md`, etc.). The engine uses only
   `MY_PROJECT.md` + `prompts/outputs/current/`.
 - `asset-management` and `template-composition` legacy module clusters
   (7 files + meta-modules, never integrated).
+- Remaining COVE inline references in `prompts/modules/ai-native/*.md`
+  content files — rewritten to use generic "self-verification"
+  language that doesn't depend on a removed orchestrator.
 
 ### Developer experience
 

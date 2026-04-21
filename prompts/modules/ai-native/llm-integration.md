@@ -441,23 +441,23 @@ class LLMObservability {
 }
 ```
 
-## Integration with COVE
+## Self-verification of outputs
 
-Apply COVE verification to LLM outputs:
+For high-stakes answers, generate first and verify second:
 
 ```typescript
-class COVEIntegratedLLM {
+class VerifyingLLM {
   async generateWithVerification(request: CompletionRequest): Promise<VerifiedResponse> {
     // Step 1: Generate initial response
     const draft = await this.llm.complete(request);
-    
-    // Step 2: Generate verification questions
+
+    // Step 2: Generate targeted verification questions for the claims in the draft
     const questions = await this.generateVerificationQuestions(draft, request);
-    
-    // Step 3: Answer questions independently
+
+    // Step 3: Answer the questions independently (do not reference the draft)
     const answers = await this.answerVerificationQuestions(questions);
-    
-    // Step 4: Synthesize verified response
+
+    // Step 4: Synthesise the verified response; flag drift between draft and answers
     return await this.synthesizeVerifiedResponse(draft, answers);
   }
 }
@@ -474,7 +474,7 @@ class COVEIntegratedLLM {
 7. **Track all metrics** for optimization and debugging
 8. **Version your prompts** for reproducibility
 9. **Test with multiple models** to find optimal cost/quality balance
-10. **Apply COVE** for critical use cases requiring high accuracy
+10. **Use a self-verification pass** (draft → verify → re-answer → synthesise) for critical use cases requiring high accuracy
 
 ## Related Modules
 

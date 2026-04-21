@@ -98,11 +98,8 @@ npm install
 npm test
 ```
 
-The test suite takes ~20 seconds. You should see 944 tests pass and
-4 known-failing tests in `tests/integration-tests/prompt-library-integration.test.ts`
-against the Template Architecture Guard. Those 4 are pre-existing and
-unrelated to the engine; don't spend time on them unless you're
-specifically working on the T.A.G.
+The test suite takes ~25 seconds. You should see 735 tests pass and
+none failing.
 
 Run a single test file:
 

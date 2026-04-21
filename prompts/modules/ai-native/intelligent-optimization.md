@@ -251,7 +251,7 @@ class CostPerformanceOptimizer {
 5. **Balance multiple objectives** (cost, performance, reliability)
 6. **Learn from outcomes** to improve future optimizations
 7. **Set safety constraints** to prevent over-optimization
-8. **Use COVE** for critical optimization decisions
+8. **Self-verify critical optimization decisions** against observed metrics before rolling them out
 
 ## Related Modules
 

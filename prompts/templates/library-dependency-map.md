@@ -125,7 +125,6 @@ graph TD
 
 ### Related Templates
 - [brief-validation.md](./brief-validation.md) - Brief content validation
-- [task-generation.md](./task-generation.md) - Task structure generation
 - [feature-implementation-prompt.md](./feature-implementation-prompt.md) - Implementation prompts
 
 ## Dependencies (What This Template Uses)
