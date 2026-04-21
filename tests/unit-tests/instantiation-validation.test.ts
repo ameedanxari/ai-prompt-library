@@ -829,6 +829,81 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('rejects a Depends-on line without a reason', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-dep-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dep.md'),
+        [
+          '## R1 · x',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          // Depends on with just a task id and no reason — the exact
+          // shape of invented ordering the MenuMaker run produced.
+          '- **Depends on:** T0',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/\*\*Depends on:\*\* lines lack a reason/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts a Depends-on line with a parenthetical reason', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-dep-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dep-ok.md'),
+        [
+          '## R1 · x',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '- **Depends on:** T0 (requires the schema from T0 to exist)',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a task missing **Change type:**', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nochange-'));
     try {

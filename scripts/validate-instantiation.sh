@@ -40,6 +40,11 @@ USER_STORY_WELL_FORMED='\*\*Closes user story:\*\*\s+As (a|an)\s+.+,\s+I want\s+
 CHANGE_TYPE_MARKER='^\s*[-*]?\s*\*\*Change type:\*\*'
 TEST_MARKER='^\s*[-*]?\s*\*\*Test:\*\*'
 
+# Depends-on must carry a Reason when not `none`. Both engines require
+# this to prevent invented ordering between unrelated tasks.
+DEPENDS_NONE='^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*[[:space:]]*none[[:space:]]*\.?[[:space:]]*$'
+DEPENDS_WITH_REASON='^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*.*(reason|because|needs|requires|blocked by|\(|—|-[[:space:]])'
+
 # Screenshot-collapse detector. A single task that says it creates
 # screenshots for multiple device sizes OR multiple locales at once
 # violates the baseline-task-shapes "per locale × per device" rule.
@@ -268,6 +273,30 @@ for f in "${files[@]}"; do
   if [ "$task_headings" -gt 0 ] && [ "$test_markers" -lt "$task_headings" ]; then
     echo "❌ $f: $((task_headings - test_markers)) task(s) missing **Test:** line"
     echo "   Required: **Test:** <path to test> OR <command> — names the verifier"
+    fail=1
+  fi
+
+  # 5c. `Depends on:` must be either `none` or carry a reason (Phase 6b).
+  # A bare task-id list like "T1, T2" is a schema violation — invented
+  # ordering without justification is what broke the MenuMaker run.
+  # Use awk (no grep -n prefix, so ^ anchor behaves) to collect
+  # the offending lines with their line numbers.
+  bad_depends=$(awk '
+    /^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*/ {
+      none_match  = ($0 ~ /^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*[[:space:]]*none[[:space:]]*\.?[[:space:]]*$/)
+      reason_match = ($0 ~ /^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*.*(reason|because|needs|requires|blocked by|\(|—|-[[:space:]])/)
+      if (!none_match && !reason_match) {
+        printf "%d:%s\n", NR, $0
+      }
+    }
+  ' "$f")
+  if [ -n "$bad_depends" ]; then
+    echo "❌ $f: **Depends on:** lines lack a reason"
+    echo "   Rule: when not 'none', a Depends-on line must include a reason"
+    echo "   (e.g. parenthetical after the task ids, or an explicit"
+    echo "    'Reason: <why this dependency is code-level>' line)."
+    echo "   Offending lines:"
+    echo "$bad_depends" | sed 's/^/     /'
     fail=1
   fi
   # Every Closes user story that IS present must be well-formed.
