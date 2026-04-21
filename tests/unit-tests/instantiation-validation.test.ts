@@ -22,6 +22,29 @@ const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-instantiation.sh');
 const TASKS_DIR = path.join(REPO_ROOT, 'prompts', 'outputs', 'current');
 
+// Minimal canonical revise-report.md for passing fixtures. The validator
+// now verifies `revised_at` is close to the file's mtime and that the
+// check arrays are non-empty — a bare stub was previously OK but hides
+// hand-written reports with placeholder timestamps. Tests that exercise
+// the tamper-detection itself still write their own frontmatter.
+function passingReviseReport(): string {
+  const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+  return [
+    '---',
+    `revised_at: ${now}`,
+    'engine: drill-down-engine',
+    'plan_files: 0',
+    'checks_run: [C1, C2, C3]',
+    'checks_passed: [all]',
+    'checks_failed: []',
+    'regenerations_performed: []',
+    'remaining_issues: []',
+    'executor_gate: pass',
+    '---',
+    '',
+  ].join('\n');
+}
+
 describe('validator — script exists', () => {
   it('exists and is executable', () => {
     expect(fs.existsSync(VALIDATOR)).toBe(true);
@@ -114,7 +137,7 @@ describe('validator — clean fixture passes', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let code = 0;
       let out = '';
@@ -254,7 +277,7 @@ describe('validator — clean fixture passes', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       // Narrative execution log.
       fs.writeFileSync(
@@ -599,12 +622,146 @@ describe('validator — user-story linkage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
       });
       expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts "As the app/developer/maintainer" canonical form for infrastructure tasks', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-as-the-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-infra.md'),
+        [
+          '# Remediation — infrastructure',
+          '',
+          '## R1 · Seed the MediaItem data model',
+          '- **Closes user story:** As the app, I need a MediaItem data structure, so that downstream filters and the UI share one canonical type.',
+          '- **Change type:** create-new',
+          '- **File:** `android/app/src/main/java/com/creatrixe/cleaner/data/model/MediaItem.kt`',
+          '- **Signature:** `data class MediaItem(val id: String, val uri: Uri, val sizeBytes: Long, val createdAt: Instant)`',
+          '- **Precise change:** Add `data class MediaItem` with fields id, uri, sizeBytes, createdAt. Make it Parcelable. Add companion factory `fromCursor(cursor: Cursor): MediaItem`.',
+          '- **Acceptance:**',
+          '  - `MediaItem` compiles without warnings under Kotlin 1.9.',
+          '  - `MediaItem.fromCursor(mockCursor)` returns an instance whose id, uri, sizeBytes, createdAt match the cursor values.',
+          '  - `MediaItem` is Parcelable and round-trips through `Bundle.putParcelable` / `getParcelable` unchanged.',
+          '- **Test:** `android/app/src/test/java/com/creatrixe/cleaner/data/model/MediaItemTest.kt`',
+          '- **Estimated LOC delta:** +40',
+          '- **Depends on:** none',
+          '',
+          '## R2 · Wire the debug menu entry',
+          '- **Closes user story:** As the developer, I need a debug-only entry to reset local state, so that I can repro onboarding flows without reinstalling the app.',
+          '- **Change type:** modify-existing',
+          '- **File:** `android/app/src/main/java/com/creatrixe/cleaner/debug/DebugMenuFragment.kt`',
+          '- **Signature:** `override fun onViewCreated(view: View, savedInstanceState: Bundle?)`',
+          '- **Precise change:** Append a `ListPreference` titled "Reset local state" to the existing `onViewCreated`. Gate behind `BuildConfig.DEBUG`. On click, call `LocalStateResetter.reset()` and toast the result.',
+          '- **Acceptance:**',
+          '  - The new preference appears only in debug builds.',
+          '  - Tapping it clears SharedPreferences under namespace `com.creatrixe.cleaner.local`.',
+          '  - A toast announces "Local state cleared" on success.',
+          '- **Test:** `android/app/src/androidTest/java/com/creatrixe/cleaner/debug/DebugMenuFragmentTest.kt`',
+          '- **Estimated LOC delta:** +22',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n\nNo new external services required.\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects revise-report.md with a placeholder revised_at timestamp', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-placeholder-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        '# x\n\n## R1 · x\n- **Closes user story:** As a user, I want x, so that y.\n- **Change type:** create-new\n- **File:** `src/a.ts`\n- **Precise change:** add.\n- **Acceptance:**\n  - A present.\n  - B present.\n  - C present.\n- **Test:** `src/a.test.ts`\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# External Accounts Required\n');
+      // Hand-written-mimic: matches canonical shape but placeholder date.
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '---',
+          'revised_at: 2025-01-01T00:00:00Z',
+          'engine: drill-down-engine',
+          'plan_files: 1',
+          'checks_run: [C1, C2]',
+          'checks_passed: [all]',
+          'checks_failed: []',
+          'regenerations_performed: []',
+          'remaining_issues: []',
+          'executor_gate: pass',
+          '---',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/revised_at.*not within 48h/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects revise-report.md with both checks_passed and checks_failed empty', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-empty-checks-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-x.md'),
+        '# x\n\n## R1 · x\n- **Closes user story:** As a user, I want x, so that y.\n- **Change type:** create-new\n- **File:** `src/a.ts`\n- **Precise change:** add.\n- **Acceptance:**\n  - A present.\n  - B present.\n  - C present.\n- **Test:** `src/a.test.ts`\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# External Accounts Required\n');
+      const now = new Date().toISOString().replace(/\.\d{3}Z$/, 'Z');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '---',
+          `revised_at: ${now}`,
+          'engine: drill-down-engine',
+          'plan_files: 1',
+          'checks_run: [C1, C2]',
+          'checks_passed: []',
+          'checks_failed: []',
+          'regenerations_performed: []',
+          'remaining_issues: []',
+          'executor_gate: pass',
+          '---',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/checks_passed and checks_failed are empty/i);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -654,7 +811,7 @@ describe('validator — user-story linkage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
@@ -749,7 +906,7 @@ describe('validator — user-story linkage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -915,7 +1072,7 @@ describe('validator — user-story linkage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -963,7 +1120,7 @@ describe('validator — user-story linkage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -978,9 +1135,9 @@ describe('validator — user-story linkage', () => {
       }
       expect(code).not.toBe(0);
       // Error must include the exact canonical form and an example.
-      expect(out).toMatch(/As a <role>, I want <outcome>, so that <value>/);
+      expect(out).toMatch(/As <a\|an\|the> <role>, I <want\|need> <outcome>, so that <value>/);
       expect(out).toMatch(/Example:/);
-      expect(out).toMatch(/NOT 'As the'/);
+      expect(out).toMatch(/'As a', 'As an', or 'As the'/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -1013,7 +1170,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       // Deliberately no brief-keywords.md.
 
@@ -1061,7 +1218,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       fs.writeFileSync(
         path.join(sandbox, 'brief-keywords.md'),
@@ -1111,7 +1268,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       fs.writeFileSync(
         path.join(sandbox, 'brief-keywords.md'),
@@ -1165,7 +1322,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -1206,7 +1363,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       expect(out).toMatch(/✅/);
@@ -1236,7 +1393,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -1275,7 +1432,7 @@ describe('validator — user-story linkage', () => {
       fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
       fs.writeFileSync(
         path.join(sandbox, 'revise-report.md'),
-        '---\nexecutor_gate: pass\n---\n',
+        passingReviseReport(),
       );
       let out = '';
       let code = 0;
@@ -1365,7 +1522,7 @@ describe('validator — user-story linkage', () => {
         code = err.status ?? 0;
       }
       expect(code).not.toBe(0);
-      expect(out).toMatch(/As a <role>, I want <outcome>, so that <value>/);
+      expect(out).toMatch(/As <a\|an\|the> <role>, I <want\|need> <outcome>, so that <value>/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

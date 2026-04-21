@@ -378,8 +378,10 @@ describe('active orchestrators', () => {
     );
     expect(drill).toMatch(/closes_user_story|Closes user story/);
     expect(audit).toMatch(/Closes user story/);
-    // Both must name the canonical form.
-    expect(drill).toMatch(/As a.*I want.*so that/);
+    // Both must name the canonical form. The drill-down engine allows
+    // "As the <role>" for infrastructure tasks (no direct end-user); the
+    // audit engine sticks to the user-story form.
+    expect(drill).toMatch(/As[^.]+I (want|need)[^.]+so that/);
     expect(audit).toMatch(/As a.*I want.*so that/);
   });
 

@@ -314,9 +314,14 @@ MUST NOT contain:
 **Produce:** atomic tasks — one task = one file × one function (or one focused
 edit). Each task MUST name:
 - `closes_user_story` — the user story this task closes, phrased as
-  `As a <role>, I want <outcome>, so that <value>`. MUST trace back to
-  an epic goal or a feature description. An orphan task (no user story)
-  is a schema violation.
+  `As <a|an|the> <role>, I <want|need> <outcome>, so that <value>`.
+  For user-facing work use "As a user, I want …" (or "a new user",
+  "an admin", etc.). For infrastructure / platform work that has no
+  direct end-user — data models, build config, debug menus, test
+  harnesses — use "As the app", "As the developer", or "As the
+  maintainer". The validator accepts those as legitimate stakeholders.
+  MUST trace back to an epic goal or a feature description. An orphan
+  task (no user story) is a schema violation.
 
 If the parent epic is a **baseline** epic (per Step 1's two-group
 output), consult
