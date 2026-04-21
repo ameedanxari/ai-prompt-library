@@ -251,8 +251,10 @@ For each feature in Step 2's output, start a **fresh context** containing only:
 
 - The single feature block (name, description, data model, API contract, deps)
 - `project-context.md` if it exists
-- At most ONE template from `prompts/modules/` or `prompts/templates/`
-  selected by intent
+- At most ONE module from `prompts/modules/` selected via
+  `prompts/orchestrators/module-selection-index.md` (same rule as
+  Step 2). Do NOT load from `prompts/templates/` — that directory
+  contains waterfall-era legacy content and is not indexed.
 
 **Do NOT load:** other features, other templates, epics, stage files.
 
