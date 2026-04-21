@@ -46,8 +46,8 @@ drill-down engine). In gap-closure mode, add one more read
 | `.kiro/specs/`, `.cursor/plans/`, or other IDE-native spec workflows | Do NOT let the IDE's default spec workflow override our engine. Write to `prompts/outputs/current/` regardless of IDE. | Never. |
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | Optional | Only if user asks about safeguards/commit policy. |
 | `docs/archive/` | Historical | Never. |
-| `prompts/modules/**` (266 files) | Load one at a time, during engine Step 2 or Step 3 only. | Never all at once. |
-| `README.md`, `SETUP_GUIDE.md`, `prompts/README.md`, `prompts/EXECUTION_PHASE_GUIDE.md`, etc. | Human-facing docs. | Never as steering. |
+| `prompts/modules/**` (252 template files across 29 categories) | Load one at a time, during engine Step 2 or Step 3 only. | Never all at once. |
+| `README.md`, `QUICK_START.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `prompts/README.md`, `docs/acceptance-probe.md` | Human-facing docs. | Never as steering. |
 
 If a weak model finds itself reading any legacy orchestrator, stage file, or
 long-form README during routing, it is off-track. Stop, return to the entry

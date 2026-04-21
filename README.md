@@ -148,7 +148,7 @@ preference menu — you already authorised the run.
 | `prompts/orchestrators/external-input-handler.md` | Runs first when user supplies designs/specs/code. |
 | `prompts/orchestrators/module-selection-index.md` | Intent → single-module lookup. |
 | `prompts/orchestrators/self-maintain.md` | Runs the library's engines on the library itself (maintainer tool). |
-| `prompts/modules/` | 266 dissolvable templates by domain. Engine loads one per expansion. |
+| `prompts/modules/` | 252 dissolvable templates across 29 domain categories. Engine loads one per expansion. |
 | `scripts/validate-instantiation.sh` | Mechanical validator. Refuses to pass on template leaks, schema violations, missing companions, missing brief-keyword coverage, or failing revise gate. |
 | `scripts/revise.sh` | Wraps the validator and writes `revise-report.md` with YAML frontmatter. Canonical producer — never hand-write the report. |
 | `scripts/step3-progress.sh` | Disk-derived checklist of features vs. task files. Engine consults between task-file writes to avoid jumping stages on memory. |
@@ -165,7 +165,7 @@ npm install
 npm test
 ```
 
-The suite includes property-based tests over all 266 modules, integration
+The suite includes property-based tests over every module, integration
 tests for the library's internal structure, and the instantiation
 validator. 944 tests pass; 4 are known-failing against the Template
 Architecture Guard (pre-existing, unrelated to the new engine).

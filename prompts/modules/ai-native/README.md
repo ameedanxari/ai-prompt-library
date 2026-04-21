@@ -146,15 +146,6 @@ AI-Native Development represents a paradigm shift where AI is not just a feature
 - Monitor costs and usage
 - A/B test model versions
 
-## Integration with COVE
-
-AI-Native applications benefit significantly from COVE verification:
-
-- **Verify AI outputs** for accuracy and safety
-- **Validate generated code** before execution
-- **Check decision logic** for consistency
-- **Ensure compliance** with business rules
-
 ## Related Modules
 
 - `testing/ai-testing.md` - Testing AI-powered features

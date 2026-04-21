@@ -38,8 +38,12 @@ scope: the "project" being audited is this library.
    scripts, tests), flows (entry-point routing, engine steps), and
    constraints (auto-load budget, validator rules).
 2. Run `audit-and-remediate.md` Step 1 against components:
-   - `prompts/orchestrators/` (the 7 active orchestrators)
-   - `prompts/modules/` (266 templates — sample, don't read all)
+   - `prompts/orchestrators/` (the active orchestrators: entry-point,
+     drill-down-engine, audit-and-remediate, executor, revise-outputs,
+     external-input-handler, module-selection-index,
+     baseline-task-shapes, self-maintain)
+   - `prompts/modules/` (252 templates across 29 categories — sample,
+     don't read all)
    - `prompts/steering/`
    - `scripts/`
    - `tests/`

@@ -8,8 +8,7 @@ This domain collects templates and guidance for desktop-specific applications an
 
 1. Navigate to the relevant templates within this domain (security, performance, offline, integrations).
 2. Fill out prompts according to your project context and run validation with the brief template.
-3. Apply COVE verification on high-risk areas (security, architecture, deployment).
-4. Use examples below to understand how components fit together.
+3. Use examples below to understand how components fit together.
 
 ## Templates
 
@@ -45,12 +44,11 @@ Use `modules/desktop/native-integrations.md` for patterns on interacting with OS
 
 1. Review the templates in this domain to choose ones relevant to your project.
 2. Validate input using standard prompt validation templates.
-3. Incorporate COVE verification for critical components.
-4. Document decisions and security considerations as part of your prompt outputs.
+3. Document decisions and security considerations as part of your prompt outputs.
 
 ## Code Example
 
 ```bash
 # generate a desktop distribution plan
-prompt "Create a distribution strategy for a cross-platform desktop app" | cove-verify
+prompt "Create a distribution strategy for a cross-platform desktop app"
 ```

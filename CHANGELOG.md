@@ -84,12 +84,12 @@ check, a steering rule, a script) rather than prose guidance.
 ### Added — Module discoverability
 
 - **Module selection index**
-  (`prompts/orchestrators/module-selection-index.md`): 248 entries
-  across 28 categories. Consulted at expansion time, not pre-loaded.
+  (`prompts/orchestrators/module-selection-index.md`): 258 entries
+  across 29 categories. Consulted at expansion time, not pre-loaded.
   Engine loads at most one module per expansion context.
-- **Module catalog**: 266 dissolvable templates across domains
-  (auth, payments, AI/ML, performance, accessibility, i18n, IaC,
-  tech stacks, etc.).
+- **Module catalog**: 252 dissolvable template files across 29
+  domain categories (auth, payments, AI/ML, performance,
+  accessibility, i18n, IaC, tech stacks, etc.).
 
 ### Added — Steering
 
