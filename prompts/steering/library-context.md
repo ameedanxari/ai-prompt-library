@@ -25,6 +25,21 @@ Loaded by the IDE at every session. Keep it short.
    read `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
 5. Follow the chosen engine end-to-end. Do NOT stop between steps.
 
+## Progress-checklist guard — don't advance stages on memory
+
+When an engine stage produces many files (Step 3 generates one
+`tasks-<feature>.md` per declared feature; on a real project that's
+often 100+), run the progress script between task files:
+
+```bash
+bash .ai-prompts/scripts/step3-progress.sh prompts/outputs/current
+```
+
+The script lists every declared feature with `- [x]` (tasks file on
+disk) or `- [ ]` (still needed). Do NOT advance to the next stage
+while any `- [ ]` remains. Do NOT track completion in memory — the
+script is the source of truth.
+
 ## Execute-signal guard — do not ask for preference
 
 If the user's prompt contains any of these words (case-insensitive),

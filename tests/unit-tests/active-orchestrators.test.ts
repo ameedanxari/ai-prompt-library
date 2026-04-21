@@ -93,8 +93,10 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/menu/);
     expect(body.toLowerCase()).toMatch(/forbidden|do not produce|do not emit/);
     // Keeps the policy short — steering should not bloat.
+    // Cap bumped to 120 when the progress-checklist guard was added;
+    // any new guard must fit within a tight budget.
     const lineCount = body.split('\n').length;
-    expect(lineCount).toBeLessThan(90);
+    expect(lineCount).toBeLessThan(120);
   });
 
   it('audit-remediate Step 5 delegates to steering guard (no duplicated list)', () => {

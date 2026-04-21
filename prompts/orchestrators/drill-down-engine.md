@@ -358,23 +358,50 @@ commas or semicolons does not count as separate bullets.
 **After each feature's tasks are written, continue to the next feature.**
 Only stop when every feature across every epic has a `tasks-*.md` file.
 
-### Step 3 completion checkpoint
+### Step 3 progress tracking (MANDATORY — run between every task file)
 
-Before you claim Step 3 is finished, you MUST reconcile the two sides:
+Step 3 generates one `tasks-<feature>.md` per declared feature. On a
+real project that is 100+ files. Weak models routinely **lose track**
+part-way through and advance to the next stage believing Step 3 is
+done. To prevent this, the library ships a progress script that is
+the single source of truth for "what still needs to be written":
 
-- **Every `## <Feature Name>` heading** in every `features-*.md` file
-  → one `tasks-<slug>.md` file on disk, where `<slug>` is the feature
-  name lowercased, non-alphanumerics stripped, whitespace → hyphen.
+```bash
+bash scripts/step3-progress.sh prompts/outputs/current
+```
 
-If the numbers do not match — e.g. 161 features declared, only 29
-tasks files on disk — Step 3 is NOT complete. Resume the per-feature
-loop for the missing ones. Do not advance to the Revise Gate with an
-incomplete plan; Revise Gate will catch this (C2) but it is cheaper to
-catch it here first.
+Output: a markdown checklist, grouped by epic, with one line per
+feature in the form `- [x] tasks-<slug>.md  (Feature Name)` or `- [ ]
+tasks-<slug>.md  (Feature Name)`. Bottom line: `Progress: N / M (P%)`.
 
-The Revise Gate script (`bash scripts/revise.sh`) reports
-`coverage_gap_count: N` in its output. If N > 0, generate the missing
-N task files via this step before re-running the revise script.
+Exit codes:
+- `0` → every declared feature has a matching tasks file. Step 3 is
+  complete. Proceed to the Revise Gate.
+- `1` → at least one feature is still unchecked. Step 3 is NOT
+  complete. Go back to the `[ ]` entries and generate each.
+
+**Required workflow during Step 3:**
+
+1. Read the progress script once at the start to see the full list.
+2. Pick the next `- [ ]` feature.
+3. Read just that feature's block from its `features-<epic>.md`.
+4. Write `tasks-<slug>.md` (use the exact slug the progress script
+   expects — match the filename shown in the `- [ ]` line, do not
+   invent a different slug).
+5. Re-run the progress script. Confirm the item flipped to `- [x]`.
+6. If unchanged, the slug you used doesn't match. Delete the file
+   you just wrote and use the canonical name from the checklist.
+7. Repeat until exit 0.
+
+**Do NOT advance to the Revise Gate while the progress script exits 1.**
+The Revise Gate will fail on coverage gaps and tell you the same
+thing in longer form. Catching it here is cheaper.
+
+**Do NOT generate multiple tasks files from memory in a single burst
+without re-running the progress script.** That is the failure pattern
+the library has observed across every field test: agent writes 20-30
+files, loses track, skips ahead. The progress script exists to keep
+you honest between writes.
 
 ### Dissolution: good vs. bad
 
