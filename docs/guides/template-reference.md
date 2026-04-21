@@ -495,15 +495,6 @@ Templates for connecting with external services and APIs.
 | `accessibility/cultural-adaptation.md` | Cultural | Regional customization; compliance |
 | `accessibility/responsive-design-advanced.md` | Responsive | Complex layouts; adaptive UX |
 
-### Template Composition Templates
-
-| Template | Purpose | Key Features |
-|----------|---------|--------------|
-| `template-composition/composition-rules.md` | Rules | Compatibility; conflicts; resolution |
-| `template-composition/template-validation.md` | Validation | Structure; parameters; quality |
-| `template-composition/template-dependencies.md` | Dependencies | Resolution; versioning |
-| `template-composition/composition-optimization.md` | Optimization | Redundancy; performance |
-
 ---
 
 ## Template Selection Guide

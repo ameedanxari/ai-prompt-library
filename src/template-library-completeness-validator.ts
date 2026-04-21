@@ -343,7 +343,6 @@ export class TemplateLibraryCompletenessValidator {
       'security',
       'social',
       'technology-stacks',
-      'template-composition',
       'testing'
     ];
   }
