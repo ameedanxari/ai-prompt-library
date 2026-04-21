@@ -22,9 +22,14 @@ Paths are relative to the repository root.
 | Sign up / sign in with email+password | `prompts/modules/feature-patterns/auth-oauth.md` |
 | OAuth / social login / SSO (consumer) | `prompts/modules/feature-patterns/auth-oauth.md` |
 | Enterprise SSO (SAML, OIDC) | `prompts/modules/enterprise-saas/sso-integration.md` |
+| Identity federation across providers | `prompts/modules/security/identity-federation.md` |
 | Role-based permissions | `prompts/modules/feature-patterns/auth-rbac.md` |
 | Enterprise RBAC with audit | `prompts/modules/enterprise-saas/rbac-enterprise.md` |
+| Advanced authorization (ABAC, policy engines, OPA) | `prompts/modules/security/advanced-authorization.md` |
 | Multi-factor / biometric | `prompts/modules/security/multi-factor-auth.md` |
+| Adaptive / risk-based authentication | `prompts/modules/security/adaptive-authentication.md` |
+| Zero-trust architecture | `prompts/modules/security/zero-trust-architecture.md` |
+| Privacy controls (consent, preferences, data-subject rights) | `prompts/modules/security/privacy-controls.md` |
 
 ## Data
 
@@ -32,18 +37,38 @@ Paths are relative to the repository root.
 |---|---|
 | CRUD with a database | `prompts/modules/feature-patterns/data-crud.md` |
 | Encryption at rest / in transit | `prompts/modules/security/data-encryption.md` |
+| Encryption (cross-platform pattern — web/mobile/server, GDPR/HIPAA/SOC2) | `prompts/modules/feature-patterns/security-encryption.md` |
 | Data pipelines / ETL | `prompts/modules/data-processing/data-pipelines.md` |
+| Data ingestion (streaming + batch sources) | `prompts/modules/data-processing/data-ingestion.md` |
+| Data transformation / shaping / enrichment | `prompts/modules/data-processing/data-transformation.md` |
+| Data quality (validation, profiling, lineage) | `prompts/modules/data-processing/data-quality.md` |
+| Data governance (catalog, policy, compliance) | `prompts/modules/data-processing/data-governance.md` |
+| Data security (masking, classification, access) | `prompts/modules/data-processing/data-security.md` |
+| Big data / scalable architectures | `prompts/modules/data-processing/scalable-architectures.md` |
+| Big data processing (Spark, Flink, etc.) | `prompts/modules/data-processing/big-data-processing.md` |
 | Sync across devices | `prompts/modules/integration/data-synchronization.md` |
 | Offline-first / local-first | `prompts/modules/feature-patterns/perf-offline.md` |
+
+## AI & ML
+
+| Intent | Module |
+|---|---|
+| LLM integration / chatbot / AI assistant | `prompts/modules/ai-native/llm-integration.md` |
+| AI model deployment / serving | `prompts/modules/ai-native/model-serving.md` |
+| ML-driven autoscaling / workload forecasting | `prompts/modules/ai-native/predictive-scaling.md` |
 
 ## Commerce
 
 | Intent | Module |
 |---|---|
 | Product catalog / inventory | `prompts/modules/commerce/product-catalog.md` |
+| Product search (within a catalog) | `prompts/modules/commerce/product-search.md` |
+| Product reviews / ratings / Q&A | `prompts/modules/commerce/product-reviews.md` |
+| Inventory management (stock, warehousing, thresholds) | `prompts/modules/commerce/inventory-management.md` |
 | Shopping cart | `prompts/modules/commerce/shopping-cart.md` |
 | Checkout | `prompts/modules/commerce/checkout-workflow.md` |
 | Payments (cards, etc.) | `prompts/modules/commerce/payment-processing.md` |
+| Payment methods (Apple Pay, Google Pay, alternative) | `prompts/modules/commerce/payment-methods.md` |
 | Subscriptions / recurring | `prompts/modules/commerce/payment-subscriptions.md` |
 | PCI compliance | `prompts/modules/commerce/payment-security.md` |
 | Orders & fulfillment | `prompts/modules/commerce/order-management.md` |
@@ -56,8 +81,16 @@ Paths are relative to the repository root.
 | User profiles | `prompts/modules/social/user-profiles.md` |
 | Follow / friend graphs | `prompts/modules/social/social-graphs.md` |
 | Feeds / timelines | `prompts/modules/social/content-feeds.md` |
+| User content creation (posts, photos, stories) | `prompts/modules/social/content-creation.md` |
+| Likes / comments / reactions / engagement | `prompts/modules/social/engagement-features.md` |
+| People discovery / follow suggestions | `prompts/modules/social/social-discovery.md` |
+| Identity verification (blue-check, authenticity) | `prompts/modules/social/user-verification.md` |
 | Real-time messaging / chat | `prompts/modules/social/real-time-messaging.md` |
-| Moderation / reporting | `prompts/modules/content-management/content-moderation.md` |
+| E2E message encryption | `prompts/modules/social/message-encryption.md` |
+| Voice / video calls (WebRTC) | `prompts/modules/social/voice-video-calls.md` |
+| Social content moderation | `prompts/modules/social/content-moderation.md` |
+| DM / communication moderation | `prompts/modules/social/communication-moderation.md` |
+| Generic content moderation (non-social apps) | `prompts/modules/content-management/content-moderation.md` |
 
 ## Real-time
 
@@ -66,7 +99,12 @@ Paths are relative to the repository root.
 | WebSocket infrastructure | `prompts/modules/real-time-communication/websocket-management.md` |
 | Presence / online status | `prompts/modules/real-time-communication/presence-systems.md` |
 | Live streaming | `prompts/modules/real-time-communication/live-streaming.md` |
+| Live events (virtual events, webinars) | `prompts/modules/real-time-communication/live-events.md` |
 | Video / voice conferencing | `prompts/modules/real-time-communication/video-conferencing.md` |
+| Real-time collaboration (CRDT, cursors, presence editing) | `prompts/modules/real-time-communication/real-time-collaboration.md` |
+| Real-time sync (multi-device state sync) | `prompts/modules/real-time-communication/real-time-sync.md` |
+| Streaming analytics on real-time data | `prompts/modules/real-time-communication/streaming-analytics.md` |
+| Message queuing / pub-sub (app layer) | `prompts/modules/real-time-communication/message-queuing.md` |
 
 ## Notifications
 
@@ -74,12 +112,23 @@ Paths are relative to the repository root.
 |---|---|
 | Multi-channel (email/push/SMS) | `prompts/modules/notifications/notification-channels.md` |
 | In-app notifications | `prompts/modules/notifications/real-time-notifications.md` |
+| Rich notifications (images, actions, deep links) | `prompts/modules/notifications/rich-notifications.md` |
+| Personalisation / targeting / segmentation | `prompts/modules/notifications/notification-personalization.md` |
+| Compliance (opt-in, CAN-SPAM, GDPR) | `prompts/modules/notifications/notification-compliance.md` |
+| Notification analytics (delivery, open, CTR) | `prompts/modules/notifications/notification-analytics.md` |
+| Automated comms / drip campaigns | `prompts/modules/notifications/communication-automation.md` |
+| Enterprise comms (internal, escalations) | `prompts/modules/notifications/enterprise-communications.md` |
 
 ## Search & Discovery
 
 | Intent | Module |
 |---|---|
 | Full-text search | `prompts/modules/search-discovery/full-text-search.md` |
+| Faceted search / filters | `prompts/modules/search-discovery/faceted-search.md` |
+| Search personalisation (ranking per user) | `prompts/modules/search-discovery/search-personalization.md` |
+| Voice search | `prompts/modules/search-discovery/voice-search.md` |
+| Visual / image search | `prompts/modules/search-discovery/visual-search.md` |
+| Search analytics (queries, CTR, zero-results) | `prompts/modules/search-discovery/search-analytics.md` |
 | Recommendations | `prompts/modules/search-discovery/recommendation-systems.md` |
 | Semantic / vector search | `prompts/modules/search-discovery/semantic-search.md` |
 
@@ -90,8 +139,11 @@ Paths are relative to the repository root.
 | GPS tracking | `prompts/modules/location-services/gps-tracking.md` |
 | Geofencing | `prompts/modules/location-services/geofencing.md` |
 | Matching (Uber-style) | `prompts/modules/location-services/service-matching.md` |
+| Booking management (slots, scheduling) | `prompts/modules/location-services/booking-management.md` |
+| Fleet management (vehicles, routing, dispatch) | `prompts/modules/location-services/fleet-management.md` |
 | Dynamic pricing | `prompts/modules/location-services/dynamic-pricing.md` |
 | Maps | `prompts/modules/location-services/map-integration.md` |
+| Location privacy (consent, anonymisation) | `prompts/modules/location-services/location-privacy.md` |
 
 ## Media
 
@@ -100,6 +152,50 @@ Paths are relative to the repository root.
 | CDN / streaming delivery | `prompts/modules/media-streaming/cdn-integration.md` |
 | Playlists / libraries | `prompts/modules/media-streaming/playlist-management.md` |
 | Offline media sync | `prompts/modules/media-streaming/offline-sync.md` |
+| Media search within a catalog | `prompts/modules/media-streaming/content-search.md` |
+| Media processing (transcode, thumbnails, waveforms) | `prompts/modules/media-streaming/media-processing.md` |
+| Streaming quality (ABR, bitrate, DRM) | `prompts/modules/media-streaming/streaming-quality.md` |
+| Recommendation engine (collaborative filtering) | `prompts/modules/media-streaming/recommendation-engine.md` |
+| Artist / creator tools (uploads, analytics, payouts) | `prompts/modules/media-streaming/artist-creator-tools.md` |
+
+## Gamification
+
+| Intent | Module |
+|---|---|
+| Points system (earn, spend, balance, anti-fraud) | `prompts/modules/gamification/point-systems.md` |
+| Achievements / badges / unlocks | `prompts/modules/gamification/achievement-systems.md` |
+| Leaderboards | `prompts/modules/gamification/leaderboards.md` |
+| Progression / levels / XP | `prompts/modules/gamification/progression-systems.md` |
+| Rewards (digital + real-world) | `prompts/modules/gamification/reward-systems.md` |
+| Streaks / daily challenges | `prompts/modules/gamification/streak-tracking.md` |
+| Social challenges / competitive play | `prompts/modules/gamification/social-challenges.md` |
+| Engagement psychology (retention, flow, loops) | `prompts/modules/gamification/engagement-psychology.md` |
+
+## IoT
+
+| Intent | Module |
+|---|---|
+| Device discovery + pairing + connectivity | `prompts/modules/iot/device-connectivity.md` |
+| Device fleet management + lifecycle | `prompts/modules/iot/device-management.md` |
+| Edge computing / local-first IoT processing | `prompts/modules/iot/edge-computing.md` |
+| Sensor data ingestion + processing | `prompts/modules/iot/sensor-data-processing.md` |
+| IoT analytics (real-time + predictive maintenance) | `prompts/modules/iot/iot-analytics.md` |
+| IoT automation / rules engine | `prompts/modules/iot/iot-automation.md` |
+| IoT security (device identity, secure provisioning) | `prompts/modules/iot/iot-security.md` |
+| Industrial IoT / SCADA / OT integration | `prompts/modules/iot/industrial-iot.md` |
+
+## Blockchain / Web3
+
+| Intent | Module |
+|---|---|
+| Smart contracts (Solidity, deployment, lifecycle) | `prompts/modules/blockchain/smart-contracts.md` |
+| Wallet integration (MetaMask, WalletConnect) | `prompts/modules/blockchain/wallet-integration.md` |
+| Token management (ERC-20, minting, transfers) | `prompts/modules/blockchain/token-management.md` |
+| NFTs (ERC-721/1155, marketplaces, royalties) | `prompts/modules/blockchain/nft-functionality.md` |
+| DeFi protocols (lending, AMM, staking) | `prompts/modules/blockchain/defi-protocols.md` |
+| On-chain governance / DAO voting | `prompts/modules/blockchain/governance-systems.md` |
+| Cross-chain bridges + multi-chain apps | `prompts/modules/blockchain/cross-chain.md` |
+| Enterprise blockchain (permissioned, consortium) | `prompts/modules/blockchain/enterprise-blockchain.md` |
 
 ## Fintech
 
@@ -110,6 +206,9 @@ Paths are relative to the repository root.
 | Fraud detection | `prompts/modules/fintech/fraud-detection.md` |
 | Compliance reporting | `prompts/modules/fintech/financial-reporting.md` |
 | Investments | `prompts/modules/fintech/investment-management.md` |
+| Budgeting / personal finance | `prompts/modules/fintech/budgeting-tools.md` |
+| Credit scoring | `prompts/modules/fintech/credit-scoring.md` |
+| Lending platform | `prompts/modules/fintech/lending-platform.md` |
 
 ## Healthcare
 
@@ -117,9 +216,12 @@ Paths are relative to the repository root.
 |---|---|
 | HIPAA scope | `prompts/modules/healthcare/hipaa-compliance.md` |
 | Patient records | `prompts/modules/healthcare/patient-data-management.md` |
+| Electronic medical records (EMR/EHR) | `prompts/modules/healthcare/medical-records.md` |
 | Telemedicine | `prompts/modules/healthcare/telemedicine.md` |
 | Appointment scheduling | `prompts/modules/healthcare/appointment-scheduling.md` |
 | Prescriptions | `prompts/modules/healthcare/prescription-management.md` |
+| Wearable / device integration (Apple Health, Fitbit) | `prompts/modules/healthcare/wearable-integration.md` |
+| Healthcare-specific security controls | `prompts/modules/healthcare/healthcare-security.md` |
 
 ## Enterprise SaaS
 
@@ -129,6 +231,8 @@ Paths are relative to the repository root.
 | Billing / metering | `prompts/modules/enterprise-saas/enterprise-billing.md` |
 | Audit trails | `prompts/modules/enterprise-saas/audit-trails.md` |
 | Admin workflows | `prompts/modules/enterprise-saas/workflow-automation.md` |
+| Enterprise API gateway (rate limit, dev portal, webhooks) | `prompts/modules/enterprise-saas/api-management.md` |
+| White-labelling / per-tenant branding | `prompts/modules/enterprise-saas/white-labeling.md` |
 
 ## Analytics
 
@@ -137,6 +241,20 @@ Paths are relative to the repository root.
 | Product analytics / events | `prompts/modules/analytics/user-analytics.md` |
 | A/B testing | `prompts/modules/analytics/ab-testing.md` |
 | Real-time dashboards | `prompts/modules/analytics/real-time-analytics.md` |
+| Business metrics (KPIs, OKRs, finance) | `prompts/modules/analytics/business-metrics.md` |
+| Cohort analysis / retention | `prompts/modules/analytics/cohort-analysis.md` |
+| Custom reporting / scheduled exports | `prompts/modules/analytics/custom-reporting.md` |
+| Predictive analytics (forecasting, churn) | `prompts/modules/analytics/predictive-analytics.md` |
+| Privacy-preserving analytics (DP, aggregation) | `prompts/modules/analytics/privacy-analytics.md` |
+
+## Performance
+
+| Intent | Module |
+|---|---|
+| Caching (in-memory, distributed, CDN, invalidation) | `prompts/modules/performance/caching-strategies.md` |
+| Application performance monitoring (APM) | `prompts/modules/performance/performance-monitoring.md` |
+| Resource optimization (memory, CPU, storage, network) | `prompts/modules/performance/resource-optimization.md` |
+| Horizontal scaling / load balancing / sharding | `prompts/modules/performance/scalability-patterns.md` |
 
 ## Ops / Platform
 
@@ -144,7 +262,15 @@ Paths are relative to the repository root.
 |---|---|
 | CI/CD | `prompts/modules/deployment/ci-cd-pipelines.md` |
 | Containerization | `prompts/modules/deployment/containerization.md` |
+| Kubernetes orchestration | `prompts/modules/deployment/kubernetes-orchestration.md` |
+| Serverless at scale (Lambda, Cloud Run) | `prompts/modules/deployment/serverless-orchestration-scale.md` |
 | Cloud hosting | `prompts/modules/deployment/cloud-deployment.md` |
+| Multi-cloud deployment strategies | `prompts/modules/deployment/multi-cloud-deployment-strategies.md` |
+| Edge computing deployment (CDN workers, POPs) | `prompts/modules/deployment/edge-computing-deployment.md` |
+| Zero-trust deployment architecture | `prompts/modules/deployment/zero-trust-deployment-architectures.md` |
+| IaC evolution (Terraform → Pulumi → CDK patterns) | `prompts/modules/deployment/infrastructure-as-code-evolution.md` |
+| GitOps advanced workflows (ArgoCD, Flux) | `prompts/modules/deployment/gitops-advanced-workflows.md` |
+| Enterprise deployment (change windows, approvals) | `prompts/modules/deployment/enterprise-deployment.md` |
 | Observability | `prompts/modules/deployment/monitoring-observability.md` |
 | Disaster recovery | `prompts/modules/deployment/disaster-recovery.md` |
 
@@ -178,9 +304,121 @@ existing codebase to production. Pick whichever is most specific to the gap.
 
 | Intent | Module |
 |---|---|
-| Design tokens | `prompts/modules/design-system/token-architecture.md` |
+| Design tokens (architecture) | `prompts/modules/design-system/token-architecture.md` |
+| Design tokens (generation pipeline — single source of truth across platforms) | `prompts/modules/design-system/token-generation-pipeline.md` |
 | Component system | `prompts/modules/design-system/component-system.md` |
+| Component implementation pattern (from tokens, no hardcoded styles) | `prompts/modules/design-system/component-implementation-pattern.md` |
+| Loading states / skeletons / motion tokens | `prompts/modules/design-system/loading-states-and-animations.md` |
 | Design-to-code validation | `prompts/modules/design-system/design-to-code-validation.md` |
+| Design system governance / ownership / change control | `prompts/modules/design-system/governance-and-maintenance.md` |
+
+## Cross-platform parity (web + mobile)
+
+| Intent | Module |
+|---|---|
+| Capability / feature-parity matrix across platforms | `prompts/modules/cross-platform/parity-matrix.md` |
+| Shared API contracts + data models across platforms | `prompts/modules/cross-platform/shared-contracts.md` |
+| Tests validating functional equivalence across platforms | `prompts/modules/cross-platform/parity-validation-tests.md` |
+| Parity documentation for team visibility | `prompts/modules/cross-platform/parity-documentation.md` |
+| Per-feature parity verification tasks | `prompts/modules/cross-platform/parity-verification-tasks.md` |
+| Dry-run parity check (structural only, no full gen) | `prompts/modules/cross-platform/parity-dry-run.md` |
+
+## Accessibility & Internationalization
+
+| Intent | Module |
+|---|---|
+| WCAG compliance / screen-reader / keyboard nav | `prompts/modules/accessibility/accessibility-compliance.md` |
+| i18n / translation / RTL / locale formatting | `prompts/modules/accessibility/internationalization.md` |
+| Regional customization / cultural adaptation | `prompts/modules/accessibility/cultural-adaptation.md` |
+| Advanced responsive design (fluid type, container queries) | `prompts/modules/accessibility/responsive-design-advanced.md` |
+| Responsive UI pattern (mobile-first, cross-device, a11y) | `prompts/modules/feature-patterns/ui-responsive.md` |
+
+## Integration & APIs
+
+| Intent | Module |
+|---|---|
+| API management (versioning, keys, throttling) | `prompts/modules/integration/api-management.md` |
+| Service integration (between internal services) | `prompts/modules/integration/service-integration.md` |
+| Event-driven architecture (event bus, CQRS) | `prompts/modules/integration/event-driven-architecture.md` |
+| Message queues (Kafka, RabbitMQ, SQS, pub-sub) | `prompts/modules/integration/message-queues.md` |
+| Webhook systems (incoming + outgoing) | `prompts/modules/integration/webhook-systems.md` |
+| Enterprise integration (ESB, iPaaS, legacy SOAP) | `prompts/modules/integration/enterprise-integration.md` |
+| Integration monitoring (delivery, retries, DLQ) | `prompts/modules/integration/integration-monitoring.md` |
+
+## Content Management
+
+| Intent | Module |
+|---|---|
+| Content creation (CMS authoring, rich text, media) | `prompts/modules/content-management/content-creation.md` |
+| Content organisation (taxonomies, tags, collections) | `prompts/modules/content-management/content-organization.md` |
+| Content workflow (draft → review → publish) | `prompts/modules/content-management/content-workflow.md` |
+| Content versioning / history / rollback | `prompts/modules/content-management/content-versioning.md` |
+| Content moderation (generic) | `prompts/modules/content-management/content-moderation.md` |
+| Content security (DRM, access control) | `prompts/modules/content-management/content-security.md` |
+| Content compliance (GDPR, takedowns) | `prompts/modules/content-management/content-compliance.md` |
+| Content analytics (performance, engagement) | `prompts/modules/content-management/content-analytics.md` |
+
+## Technology Stacks (pick when the project uses / targets this stack)
+
+### Web
+
+| Intent | Module |
+|---|---|
+| React web app | `prompts/modules/technology-stacks/web-react.md` |
+| Progressive Web App (installable, offline) | `prompts/modules/technology-stacks/progressive-web-apps.md` |
+| WebAssembly (perf-critical web features) | `prompts/modules/technology-stacks/webassembly.md` |
+
+### Mobile
+
+| Intent | Module |
+|---|---|
+| Native iOS (Swift / SwiftUI) | `prompts/modules/technology-stacks/swift-ios-development.md` |
+| iOS UI / UX patterns | `prompts/modules/technology-stacks/ios-ui-ux-patterns.md` |
+| iOS performance optimisation | `prompts/modules/technology-stacks/ios-performance-optimization.md` |
+| iOS testing (XCTest, XCUITest) | `prompts/modules/technology-stacks/ios-testing-comprehensive.md` |
+| iOS deployment / App Store | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
+| Native Android (Kotlin / Jetpack Compose) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
+| Cross-platform React Native | `prompts/modules/technology-stacks/mobile-react-native.md` |
+| Cross-platform Flutter | `prompts/modules/technology-stacks/mobile-flutter.md` |
+
+### Backend
+
+| Intent | Module |
+|---|---|
+| Node.js / TypeScript backend (use per-intent modules above — no dedicated Node module) | — |
+| Go microservices | `prompts/modules/technology-stacks/go-microservices.md` |
+| Java Spring Boot | `prompts/modules/technology-stacks/java-spring-boot.md` |
+| Python ecosystem (Django / FastAPI / Flask) | `prompts/modules/technology-stacks/python-ecosystem.md` |
+| Ruby on Rails | `prompts/modules/technology-stacks/ruby-on-rails.md` |
+| PHP ecosystem (Laravel, Symfony) | `prompts/modules/technology-stacks/php-ecosystem.md` |
+| .NET ecosystem (C#, ASP.NET Core) | `prompts/modules/technology-stacks/dotnet-ecosystem.md` |
+| Elixir / Phoenix web | `prompts/modules/technology-stacks/elixir-phoenix-web.md` |
+| Scala functional programming | `prompts/modules/technology-stacks/scala-functional-programming.md` |
+| Rust systems programming (high-perf services, CLI) | `prompts/modules/technology-stacks/rust-systems-programming.md` |
+| C++ high-performance | `prompts/modules/technology-stacks/cpp-high-performance.md` |
+
+### BaaS / Cloud
+
+| Intent | Module |
+|---|---|
+| Firebase backend-as-a-service | `prompts/modules/technology-stacks/backend-firebase.md` |
+| AWS cloud (EC2, ECS, RDS, S3, Lambda) | `prompts/modules/technology-stacks/cloud-aws.md` |
+
+### Desktop / specialised hardware
+
+| Intent | Module |
+|---|---|
+| Electron desktop app | `prompts/modules/technology-stacks/electron-desktop.md` |
+| Tauri desktop app (lightweight alternative to Electron) | `prompts/modules/technology-stacks/tauri-desktop.md` |
+| Apple CarPlay integration | `prompts/modules/technology-stacks/apple-carplay.md` |
+| Android Auto integration | `prompts/modules/technology-stacks/android-auto.md` |
+
+## Desktop Apps
+
+| Intent | Module |
+|---|---|
+| Native OS integrations (system APIs, protocol handlers) | `prompts/modules/desktop/native-integrations.md` |
+| Desktop offline-first with sync + conflict resolution | `prompts/modules/desktop/offline-first.md` |
 
 ## Testing
 
@@ -189,6 +427,16 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Test automation strategy | `prompts/modules/testing/test-automation.md` |
 | Property-based tests | `prompts/modules/testing/property-based-testing.md` |
 | Centralized mock data | `prompts/modules/testing/centralized-mock-data.md` |
+| Fake backend generator (local API doubles) | `prompts/modules/testing/fake-backend-generator.md` |
+| Mock consolidation / DRY test fixtures | `prompts/modules/testing/mock-consolidation.md` |
+| Mock validation (drift between real + mock) | `prompts/modules/testing/mock-validation.md` |
+| Test data management (factories, fixtures, seeding) | `prompts/modules/testing/test-data-management.md` |
+| Test management (plans, reports, traceability) | `prompts/modules/testing/test-management.md` |
+| Cross-browser testing | `prompts/modules/testing/cross-browser-testing.md` |
+| Domain-specific testing patterns | `prompts/modules/testing/domain-testing.md` |
+| CI/CD testing (pipeline-integrated tests) | `prompts/modules/testing/ci-cd-testing.md` |
+| Debug-menu integration (dev toggles in app) | `prompts/modules/testing/debug-menu-integration.md` |
+| Quality metrics (coverage, flake rate, MTTR) | `prompts/modules/testing/quality-metrics.md` |
 
 ## Rules
 

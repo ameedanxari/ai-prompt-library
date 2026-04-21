@@ -320,7 +320,6 @@ export class TemplateLibraryCompletenessValidator {
     return [
       'accessibility',
       'analytics',
-      'asset-management',
       'blockchain',
       'commerce',
       'content-management',
