@@ -1,112 +1,142 @@
-# Contributing to AI Prompt Library
+# Contributing to the AI Prompt Library
 
-First off, thank you for considering contributing! 🎉
+Thank you for taking the time to contribute.
 
-This project thrives on community input. Whether you're fixing a typo, adding a new module, or suggesting a major feature, your contribution is valued.
-
-## Ways to Contribute
-
-### 🐛 Report Bugs
-Found something broken? [Open an issue](https://github.com/ameedanxari/ai-prompt-library/issues/new) with:
-- A clear description of the problem
-- Steps to reproduce
-- Expected vs actual behavior
-- Your environment (OS, AI tool you're using)
-
-### 💡 Suggest Features
-Have an idea? [Start a discussion](https://github.com/ameedanxari/ai-prompt-library/discussions/new) with:
-- The problem you're trying to solve
-- Your proposed solution
-- Any alternatives you've considered
-
-### 🔧 Submit Code
-Ready to code? Here's how:
-
-1. **Fork the repository**
-2. **Create a feature branch**: `git checkout -b feature/amazing-feature`
-3. **Make your changes**
-4. **Test your changes**: Run `npm test` to ensure all tests pass
-5. **Commit with a clear message**: `git commit -m "Add: amazing feature for X"`
-6. **Push to your fork**: `git push origin feature/amazing-feature`
-7. **Open a Pull Request**
-
-### 📝 Improve Documentation
-Documentation improvements are always welcome:
-- Fix typos or unclear explanations
-- Add examples
-- Improve the README
-- Add JSDoc comments to code
-
-## Development Setup
-
-```bash
-# Clone your fork
-git clone https://github.com/YOUR_USERNAME/ai-prompt-library.git
-cd ai-prompt-library
-
-# Install dependencies
-npm install
-
-# Run tests
-npm test
-
-# Run specific test file
-npm test -- tests/property-tests/template-structure.test.ts
-```
-
-## Code Style
-
-- Use TypeScript for all source files
-- Follow existing patterns in the codebase
-- Add tests for new functionality
-- Keep prompts modular and composable
-
-## Prompt Template Guidelines
-
-When adding or modifying prompt templates:
-
-1. **Follow the structure**: Include Purpose, Instructions, and Examples sections
-2. **Be modular**: Templates should work as standalone units
-3. **Include examples**: Show concrete usage scenarios
-4. **Test with multiple AI tools**: Verify prompts work with Cursor, Windsurf, Claude, etc.
-
-## Commit Message Format
-
-```
-Type: Short description
-
-Longer description if needed.
-
-- Bullet points for multiple changes
-- Reference issues: Fixes #123
-```
-
-Types:
-- `Add`: New feature or file
-- `Fix`: Bug fix
-- `Update`: Modification to existing feature
-- `Remove`: Deletion of code or files
-- `Docs`: Documentation only
-- `Test`: Test additions or fixes
-- `Refactor`: Code restructuring without behavior change
-
-## Pull Request Process
-
-1. Update the README.md if your change affects usage
-2. Update relevant documentation
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Request review from maintainers
-
-## Questions?
-
-- 💬 [Start a discussion](https://github.com/ameedanxari/ai-prompt-library/discussions)
-- 📧 [Contact MatrixTribe](https://matrixtribe.ai/contact-us/)
-
-## Code of Conduct
-
-Be kind, be respectful, be constructive. We're all here to build something useful together.
+This document covers how to make changes that stay aligned with the
+engine architecture. Read it before sending a PR — the library has
+tight invariants and some surface area that looks editable but is not.
 
 ---
 
-Thank you for contributing! 🙏
+## Ways to contribute
+
+### Report a failure mode
+
+The library's value is that low-end coding models (SWE 1.6-class) can
+finish a project without a human mediating between planning stages. If
+you ran it and the model got stuck, went off-track, or silently
+dropped a requirement, that's the contribution we want most.
+
+Open an issue with:
+
+- The exact prompt and brief you used.
+- The IDE / model combination.
+- What the agent did (a transcript, not a summary — the specific
+  wrong output matters).
+- What you expected instead.
+
+### Fix a failure mode
+
+Each failure mode in the current library is closed by a mechanical
+gate, not prose guidance. Follow the same pattern:
+
+1. Write a failing unit test in `tests/unit-tests/` that reproduces
+   the agent's wrong output as a fixture.
+2. Add the validator check to `scripts/validate-instantiation.sh`
+   (bash/awk — see existing checks for the style).
+3. Add the corresponding assertion to
+   `tests/unit-tests/instantiation-validation.test.ts`.
+4. If the check has steering implications, add a short rule to
+   `prompts/steering/library-context.md` (stay under the line cap).
+
+Prose-only fixes ("added a paragraph telling the agent not to do X")
+tend to regress the next time the underlying model changes. Prefer a
+mechanical gate.
+
+### Add a module
+
+Modules live in `prompts/modules/<category>/`. A module is a single
+template that the engine can dissolve into project-specific content
+during Step 2 or Step 3.
+
+1. Put the file under the right category (run
+   `ls prompts/modules/` to see existing categories).
+2. Add an entry to `prompts/orchestrators/module-selection-index.md`
+   mapping the intent to the module path.
+3. If a property-based test fails, your module's shape is drifting —
+   align with a neighboring module rather than loosening the test.
+
+### Add documentation
+
+Keep docs and engines in lock-step. If you add a validator check or
+a new output artifact, also update:
+
+- `README.md` (pipeline table + key files list)
+- `QUICK_START.md` (expected output layout table)
+- `prompts/AGENTS.md` (output artefacts table + hard rules if relevant)
+- `prompts/orchestrators/README.md` (if an orchestrator changed)
+
+A PR that adds a new artifact without updating all four will be
+blocked on documentation drift.
+
+---
+
+## Things NOT to edit
+
+- `prompts/outputs/current/**` — this is where a user's engine run
+  writes its outputs. It is per-project, not part of the library.
+- `prompts/outputs/self-maintain/**` — this is where the library's
+  self-maintain mode writes. Also per-run, not committed content.
+- `prompts/stages/**` — deprecated waterfall, retained only so old
+  tests pass. Adding to it is actively harmful.
+- Any file with a `DEPRECATED — DO NOT AUTO-LOAD` banner.
+- Canonical-artifact producers — `revise-report.md` and
+  `execution-log.md` are machine-produced. Don't "clean up" their
+  YAML frontmatter by hand.
+
+If in doubt whether a file is library content or per-run output,
+check whether it's in `.gitignore`.
+
+---
+
+## Development setup
+
+```bash
+git clone https://github.com/ameedanxari/ai-prompt-library.git
+cd ai-prompt-library
+npm install
+npm test
+```
+
+The test suite takes ~20 seconds. You should see 944 tests pass and
+4 known-failing tests in `tests/integration-tests/prompt-library-integration.test.ts`
+against the Template Architecture Guard. Those 4 are pre-existing and
+unrelated to the engine; don't spend time on them unless you're
+specifically working on the T.A.G.
+
+Run a single test file:
+
+```bash
+npm test -- tests/unit-tests/instantiation-validation.test.ts
+```
+
+---
+
+## Commit and PR conventions
+
+- One logical change per commit. Don't bundle a new validator check
+  with a documentation refresh and a module addition — reviewers will
+  ask you to split.
+- Commit message format: `<type>(<scope>): <imperative summary>`,
+  e.g. `feat(validator): reject multi-file tasks`,
+  `fix(revise): avoid circular gate-check`,
+  `docs: update output artefacts table`.
+- PR body: describe the failure mode being closed, link to the field
+  test where it was found if there is one, and call out any new
+  validator checks so reviewers can verify the gate is mechanical.
+
+---
+
+## Code of conduct
+
+Be precise, be honest, and don't paper over failures. If a field
+test revealed that the agent did something unexpected, say so — the
+library gets stronger from named failure modes, not from smoothed-over
+anecdotes.
+
+---
+
+## Questions
+
+- Discussions: <https://github.com/ameedanxari/ai-prompt-library/discussions>
+- Issues: <https://github.com/ameedanxari/ai-prompt-library/issues>
