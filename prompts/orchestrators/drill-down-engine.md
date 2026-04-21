@@ -135,6 +135,51 @@ feature creep inside an epic.
 
 **Write to:** `prompts/outputs/current/epics.md`
 
+### Brief-keyword coverage (MANDATORY companion file)
+
+Distinctive terms from the user's brief must be traceable into the
+epics. Field tests have repeatedly shown weak models summarising away
+specific requirements — "liquid glass", "on-device AI/ML", "sensitive
+content detection", "tinder-like swipe" all surface in briefs and then
+silently disappear from the generated plan.
+
+Write `prompts/outputs/current/brief-keywords.md` alongside `epics.md`:
+
+```markdown
+# Brief Keywords
+
+_Distinctive terms extracted from MY_PROJECT.md (or the user's prompt).
+Each must be either covered by a specific epic/feature OR explicitly
+scoped out with a reason._
+
+## Keywords
+
+| Keyword / phrase | Status | Covered by / reason |
+|---|---|---|
+| liquid glass | covered | B5 Theming & Whitelabel — will cite UIVisualEffectView / tonalElevation |
+| tinder-like swipe | covered | Feature epic "Swipe-based review interface" |
+| on-device AI/ML | covered | Feature epic "Media scanner & analyzer" — no network access |
+| sensitive content detection | covered | Smart grouping & filters — flag documents/ID cards |
+| Face ID / biometric | covered | B1 Identity, auth & onboarding |
+| multi-language (English, Arabic, Hindi, Tamil, Urdu) | covered | B4 Localization & RTL |
+| offline-first | out-of-scope | User said "local-only processing" — covered by privacy epic, no separate offline-sync needed |
+```
+
+**How to pick keywords:** read MY_PROJECT.md Brief + Core features.
+Extract every phrase that is specific enough to misinterpret. Skip
+generic words ("app", "user"). Include technical terms ("WebSocket"),
+product metaphors ("like Spotify"), aesthetic language ("liquid
+glass"), and domain-specific concepts ("HIPAA", "PCI compliance").
+Aim for 5–15 keywords.
+
+**Status values:**
+- `covered` — maps to a specific epic/feature. Name it in the
+  "Covered by" column.
+- `out-of-scope` — intentionally excluded; state the reason.
+
+The validator checks this file exists and that every keyword row has
+both Status and "Covered by / reason" non-empty.
+
 **After writing — continue immediately to Step 2.** Do not stop, do not ask
 the user for confirmation. The epics file you just wrote is Step 2's input.
 Step 2 expands every epic — feature AND baseline — into features; do not

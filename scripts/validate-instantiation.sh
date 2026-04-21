@@ -122,6 +122,70 @@ for rc in "${required_companions[@]}"; do
   fi
 done
 
+# 0d. Greenfield-only: brief-keywords.md must exist alongside epics.md.
+# This is the Phase 6c brief-coverage gate. Audit-and-remediate flows
+# don't produce epics.md, so the check is scoped to greenfield output.
+if [ -f "$TARGET_DIR/epics.md" ]; then
+  if [ ! -f "$TARGET_DIR/brief-keywords.md" ]; then
+    echo "❌ missing required companion: $TARGET_DIR/brief-keywords.md"
+    echo "   Greenfield runs (drill-down-engine) must emit brief-keywords.md"
+    echo "   alongside epics.md, listing distinctive terms from the user's"
+    echo "   brief with their status (covered|out-of-scope) and where they"
+    echo "   land in the plan. Prevents silent dropout of specific"
+    echo "   requirements like 'liquid glass' or 'on-device AI/ML'."
+    fail=1
+  else
+    # Every keyword row must have a non-empty Status and Covered-by column.
+    # Rows follow the schema: "| keyword | status | covered-by |"
+    # with at least 3 non-empty pipe-delimited cells.
+    empty_rows=$(awk -F'|' '
+      # Skip non-rows, headers, and separator lines.
+      /^[[:space:]]*\|/ {
+        # Header row has "Keyword" or "Status" text; skip.
+        if ($0 ~ /[Kk]eyword|[Ss]tatus/) next
+        # Separator row has dashes only.
+        if ($0 ~ /^[[:space:]]*\|[[:space:]]*-+[[:space:]]*\|/) next
+        # Expect at least 4 fields (empty | keyword | status | rest).
+        if (NF < 4) next
+        # Trim cells.
+        kw = $2; gsub(/^[[:space:]]+|[[:space:]]+$/, "", kw)
+        st = $3; gsub(/^[[:space:]]+|[[:space:]]+$/, "", st)
+        cv = $4; gsub(/^[[:space:]]+|[[:space:]]+$/, "", cv)
+        if (kw == "" || st == "" || cv == "") {
+          printf "line %d: %s\n", NR, $0
+        } else {
+          st_lc = tolower(st)
+          if (st_lc != "covered" && st_lc != "out-of-scope") {
+            printf "line %d (status must be covered|out-of-scope): %s\n", NR, $0
+          }
+        }
+      }
+    ' "$TARGET_DIR/brief-keywords.md")
+    if [ -n "$empty_rows" ]; then
+      echo "❌ $TARGET_DIR/brief-keywords.md: malformed keyword rows"
+      echo "   Each row must follow: | <keyword> | covered|out-of-scope | <covered by epic/feature OR reason> |"
+      echo "$empty_rows" | sed 's/^/   /'
+      fail=1
+    fi
+    # Require at least 3 keyword rows — keeps a weak model from shipping
+    # an empty 0-row table to satisfy the existence check.
+    row_count=$(awk -F'|' '
+      /^[[:space:]]*\|/ {
+        if ($0 ~ /[Kk]eyword|[Ss]tatus/) next
+        if ($0 ~ /^[[:space:]]*\|[[:space:]]*-+[[:space:]]*\|/) next
+        if (NF < 4) next
+        print
+      }
+    ' "$TARGET_DIR/brief-keywords.md" | wc -l | tr -d ' ')
+    if [ "$row_count" -lt 3 ]; then
+      echo "❌ $TARGET_DIR/brief-keywords.md: only $row_count keyword row(s); need >= 3"
+      echo "   Most briefs contain many distinctive terms. If the brief is"
+      echo "   truly generic, state that at the top of the file."
+      fail=1
+    fi
+  fi
+fi
+
 # 0a. revise-report.md must be the canonical script output, not a
 # hand-written narrative. The canonical form starts with a YAML
 # frontmatter block (--- on line 1) and contains executor_gate: pass.

@@ -829,6 +829,160 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('rejects a greenfield plan missing brief-keywords.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nokw-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'epics.md'),
+        '# Epics\n\n## 1. Thing\n- Goal: x\n- Acceptance:\n  - y\n- Complexity: S\n- Applies to: web\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-thing.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      // Deliberately no brief-keywords.md.
+
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/brief-keywords\.md/);
+      expect(out).toMatch(/silent dropout|covered\|out-of-scope/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts a plan with a well-formed brief-keywords.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-kw-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'epics.md'),
+        '# Epics\n\n## 1. Thing\n- Goal: x\n- Acceptance:\n  - y\n- Complexity: S\n- Applies to: web\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-thing.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'brief-keywords.md'),
+        [
+          '# Brief Keywords',
+          '',
+          '| Keyword | Status | Covered by / reason |',
+          '|---|---|---|',
+          '| liquid glass | covered | B5 Theming — UIVisualEffectView + tonalElevation |',
+          '| tinder-like swipe | covered | Epic: Swipe interface |',
+          '| on-device AI/ML | covered | Epic: Media scanner & analyzer |',
+          '',
+        ].join('\n'),
+      );
+
+      const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a brief-keywords.md with fewer than 3 rows', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-kw-thin-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'epics.md'),
+        '# Epics\n\n## 1. Thing\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-thing.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A.',
+          '  - B.',
+          '  - C.',
+          '- **Test:** `src/a.test.ts`',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'brief-keywords.md'),
+        [
+          '# Brief Keywords',
+          '',
+          '| Keyword | Status | Covered by / reason |',
+          '|---|---|---|',
+          '| x | covered | Epic A |',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/only 1 keyword row|need >= 3/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a Depends-on line without a reason', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-dep-'));
     try {
