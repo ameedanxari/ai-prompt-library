@@ -121,6 +121,20 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/do NOT write the literal string "\$\(uuidgen\)"/);
   });
 
+  it('drill-down engine shows good/bad acceptance-criteria examples', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    // Must have a dedicated good-vs-bad block for acceptance criteria.
+    expect(body).toMatch(/Acceptance criteria — good vs\. bad|Acceptance criteria good vs bad/i);
+    // Must show the canonical bullet shape ("  - ") with multiple
+    // bullets and explicitly say the validator counts indented bullets.
+    expect(body).toMatch(/counts indented bullets|awk script counts/);
+    // Must include a BAD one-sentence / paragraph form as a counter-example.
+    expect(body.toLowerCase()).toMatch(/one sentence|paragraph|validator counts 0/);
+  });
+
   it('engines explicitly forbid hand-writing revise-report.md', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),

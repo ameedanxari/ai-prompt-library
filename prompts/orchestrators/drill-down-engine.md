@@ -288,7 +288,11 @@ Each task has:
   (e.g. `async function signup(req: SignupReq): Promise<SignupRes>`)
 - `api_shape` — when applicable, request + response JSON shapes with real field
   names and types
-- `acceptance_criteria` — 3 or more bullets, each independently testable
+- `acceptance_criteria` — 3 or more bulleted list items (each line
+  starts with `  - `). Not a paragraph. Not one sentence broken by
+  commas. The validator counts indented bullets and rejects tasks
+  with fewer than 3. See the "Acceptance criteria — good vs. bad"
+  block below for the exact shape.
 - `estimated_loc` — range (e.g. `40–80`)
 - `depends_on` — task ids, or `none`
 
@@ -313,6 +317,41 @@ Each task has:
 - **Estimated LOC:** 40–80
 - **Depends on:** none
 ```
+
+### Acceptance criteria — good vs. bad
+
+**BAD — one sentence / paragraph. Validator counts 0 bullets:**
+```markdown
+- **Acceptance:** The signup endpoint returns 201 on success and
+  rejects invalid emails and weak passwords with 400.
+```
+
+**BAD — a single bullet. Validator counts 1 bullet, rejects as <3:**
+```markdown
+- **Acceptance:**
+  - Returns 201 on success; 400 on invalid email; 400 on weak password.
+```
+
+**BAD — 2 bullets. Validator counts 2 bullets, rejects as <3:**
+```markdown
+- **Acceptance:**
+  - Valid email+password returns 201.
+  - Invalid input returns 400.
+```
+
+**GOOD — 3+ independently testable bullets, each verifiable by one
+command or one read:**
+```markdown
+- **Acceptance:**
+  - Valid email+password returns 201 with a token in the response body.
+  - Duplicate email returns 409; no second users row is inserted.
+  - Password shorter than 8 chars returns 400 with field "password".
+  - Token decodes to user id via `jwt.verify(token, JWT_SECRET)`.
+```
+
+Each bullet starts with `  - ` (two spaces, hyphen, space). The
+validator's awk script counts only those lines; inline text with
+commas or semicolons does not count as separate bullets.
 
 **Write to:** `prompts/outputs/current/tasks-<feature-slug>.md`
 

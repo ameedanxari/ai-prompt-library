@@ -541,6 +541,71 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('revise.sh emits batch-size guidance when defects total >= 20', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-batch-'));
+    const REVISE = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
+    try {
+      // Declare 22 features in one features file, create zero tasks files.
+      // That yields 22 coverage gaps — more than the 20 threshold.
+      const headings: string[] = [];
+      for (let i = 1; i <= 22; i++) {
+        headings.push(`## Feature ${i}`);
+        headings.push('**Description:** x');
+        headings.push('');
+      }
+      fs.writeFileSync(
+        path.join(sandbox, 'features-big.md'),
+        ['# Features — Big', '', ...headings].join('\n'),
+      );
+      // Need at least one tasks file for revise.sh to recognise this as
+      // a drill-down output dir.
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-feature-1.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${REVISE}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+
+      // Report body should carry the batch-size warning header and
+      // instructions.
+      const report = fs.readFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        'utf8',
+      );
+      expect(report).toMatch(/Large defect batch/);
+      expect(report).toMatch(/FIRST 5 files/);
+      expect(report).toMatch(/Work in batches/i);
+      // Coverage-gap section must say files do not exist yet.
+      expect(report).toMatch(/DO NOT EXIST YET|do not attempt to read/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a plan with features that have no matching tasks file (coverage gap)', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-cov-'));
     try {

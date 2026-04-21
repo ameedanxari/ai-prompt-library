@@ -134,11 +134,48 @@ fi
     echo "its preflight will re-run this same validator and then"
     echo "start the execution loop."
   else
+    failing_count=0
     if [ -n "$failed_files" ]; then
-      echo "## Failing files (schema violations)"
+      failing_count=$(printf "%s\n" "$failed_files" | wc -l | tr -d ' ')
+    fi
+    gap_count=0
+    if [ -n "$coverage_gaps" ]; then
+      gap_count=$(printf "%s\n" "$coverage_gaps" | wc -l | tr -d ' ')
+    fi
+    total_fixes=$((failing_count + gap_count))
+
+    if [ $total_fixes -ge 20 ]; then
+      echo "## ⚠️  Large defect batch ($total_fixes items) — do NOT fix all at once"
       echo ""
-      echo "Regenerate each file below from the originating engine's Step 3."
-      echo "See \`## Validator output\` at the bottom for the specific defect."
+      echo "Fixing >20 files in one agent session burns context before the"
+      echo "job is done. This is the failure pattern the library has"
+      echo "observed across multiple runs: agent tries to fix everything,"
+      echo "loses track mid-way, starts reading non-existent files."
+      echo ""
+      echo "Work in batches:"
+      echo ""
+      echo "  1. Pick the FIRST 5 files from one of the sections below."
+      echo "  2. Regenerate those 5 via drill-down-engine Step 3, one"
+      echo "     feature at a time. Each regeneration must replace the"
+      echo "     entire tasks-<feature>.md (or create it if missing)."
+      echo "  3. Run: \`bash scripts/revise.sh $TARGET_DIR\`"
+      echo "  4. Commit the 5 fixed files to git with a message like"
+      echo "     \"fix(plan): regenerate 5 tasks files to satisfy schema\"."
+      echo "  5. Repeat from step 1 with the next 5."
+      echo ""
+      echo "Do NOT try to process this list linearly by reading each file"
+      echo "and hand-editing. Regenerate via the engine. See the two"
+      echo "sections below for exactly which files need work."
+      echo ""
+    fi
+
+    if [ -n "$failed_files" ]; then
+      echo "## Failing files — files that EXIST but have schema violations"
+      echo ""
+      echo "These $failing_count file(s) are on disk but fail validation."
+      echo "Regenerate each via drill-down-engine Step 3 scoped to that"
+      echo "single feature. See \`## Validator output\` below for the"
+      echo "specific defect per file. Do NOT hand-edit."
       echo ""
       while IFS= read -r f; do
         [ -z "$f" ] && continue
@@ -147,10 +184,11 @@ fi
       echo ""
     fi
     if [ -n "$coverage_gaps" ]; then
-      echo "## Coverage gaps (features without tasks files)"
+      echo "## Coverage gaps — files that DO NOT EXIST YET"
       echo ""
-      echo "Each feature below was declared in a features-*.md file but has"
-      echo "no matching tasks-<feature>.md on disk. Step 3 was not run to"
+      echo "These $gap_count file(s) are features declared in features-*.md"
+      echo "but with no tasks-<feature>.md written yet. **Do not attempt"
+      echo "to read them** — they do not exist. Step 3 was not run to"
       echo "completion. Generate one tasks file per item via the engine:"
       echo ""
       printf "%s\n" "$coverage_gaps" | sed 's/^/- /'
@@ -159,7 +197,8 @@ fi
     echo "## What to do next"
     echo ""
     echo "1. Regenerate every file listed above via drill-down-engine Step 3"
-    echo "   (scoped to one feature at a time). Do NOT hand-edit."
+    echo "   (scoped to one feature at a time). Do NOT hand-edit files one"
+    echo "   at a time — regenerate the whole tasks-<feature>.md per feature."
     echo "2. Re-run: \`bash scripts/revise.sh $TARGET_DIR\`"
     echo "3. Repeat until this report shows \`executor_gate: pass\`."
     echo ""
