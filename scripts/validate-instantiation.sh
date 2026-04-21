@@ -461,41 +461,114 @@ for f in "${files[@]}"; do
   fi
 
   # 6. Screenshot / app-icon / store-listing collapse detector.
-  # Split the file into task sections at each "## " heading. For each
-  # section whose heading mentions screenshot/icon/listing, scan the
-  # section body for collapse words (each/all/multiple + device/locale/
-  # size/language). awk receives simple POSIX ERE (no \s, no \b).
+  # Fires only on CAPTURE tasks (File path ends in an image extension).
+  # Tooling tasks — a generator, organizer, or upload script whose File
+  # is a source file like .kt / .swift / .sh — legitimately iterate
+  # over locales internally and must NOT be flagged.
+  # awk receives simple POSIX ERE (no \s, no \b).
   collapse_report=$(awk '
     function is_screenshot_title(line) {
       l = tolower(line)
       return (l ~ /screenshot/ || l ~ /app icon/ || l ~ /app-icon/ || l ~ /store listing/ || l ~ /store-listing/)
     }
+    function is_image_file_line(line) {
+      # Extract any backticked token, return 1 if any looks like an
+      # image asset path (.png/.jpg/.jpeg/.webp/.heic/.gif/.svg).
+      s = line
+      while (match(s, /`[^`]+`/)) {
+        token = tolower(substr(s, RSTART + 1, RLENGTH - 2))
+        if (token ~ /\.(png|jpg|jpeg|webp|heic|gif|svg)([[:space:]]|$)/) return 1
+        if (token ~ /\.(png|jpg|jpeg|webp|heic|gif|svg)$/) return 1
+        s = substr(s, RSTART + RLENGTH)
+      }
+      return 0
+    }
+    function is_file_field(line) {
+      l = tolower(line)
+      return (l ~ /\*\*file:\*\*/ || l ~ /^[[:space:]]*-[[:space:]]*file:/)
+    }
     function is_collapse_precise(line) {
       l = tolower(line)
-      # Must be a Precise change line AND mention collapse-words.
       if (l !~ /precise change/) return 0
       return (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform)/)
     }
     /^## / {
-      if (in_sec && matched) {
-        printf "   %s\n      (collapsed across devices/locales — split per locale x per device)\n", section_title
+      if (in_sec && matched && captures_image) {
+        printf "   %s\n      (capture task collapses multiple locales/devices — split into one task per locale x per device, each producing a single image file)\n", section_title
       }
       in_sec = is_screenshot_title($0) ? 1 : 0
       section_title = $0
       matched = 0
+      captures_image = 0
       next
     }
-    { if (in_sec && is_collapse_precise($0)) matched = 1 }
+    {
+      if (in_sec) {
+        if (is_collapse_precise($0)) matched = 1
+        if (is_file_field($0) && is_image_file_line($0)) captures_image = 1
+      }
+    }
     END {
-      if (in_sec && matched) {
-        printf "   %s\n      (collapsed across devices/locales — split per locale x per device)\n", section_title
+      if (in_sec && matched && captures_image) {
+        printf "   %s\n      (capture task collapses multiple locales/devices — split into one task per locale x per device, each producing a single image file)\n", section_title
       }
     }
   ' "$f")
   if [ -n "$collapse_report" ]; then
-    echo "❌ $f: screenshot / icon / store-listing task collapses multiple locales or devices"
+    echo "❌ $f: screenshot / icon / store-listing capture task collapses multiple locales or devices"
     printf "%s\n" "$collapse_report"
     fail=1
+  fi
+
+  # 6b. Screenshot completeness check.
+  # If the file name or any task title mentions screenshot work, the
+  # file must contain at least one CAPTURE task (File path ending in
+  # an image extension). A file of tooling-only tasks cannot satisfy
+  # the app-store baseline by itself.
+  fname_lower=$(echo "$f" | tr 'A-Z' 'a-z')
+  needs_captures=0
+  case "$fname_lower" in
+    *screenshot*|*app-store*|*store-listing*|*store-metadata*|*app-icon*)
+      needs_captures=1
+      ;;
+  esac
+  if [ $needs_captures -eq 0 ]; then
+    # Fall back to scanning task titles in the file
+    title_screenshot=$(awk '
+      /^## / {
+        l = tolower($0)
+        if (l ~ /screenshot/ || l ~ /app icon/ || l ~ /app-icon/) { print "yes"; exit }
+      }
+    ' "$f")
+    if [ "$title_screenshot" = "yes" ]; then
+      needs_captures=1
+    fi
+  fi
+  if [ $needs_captures -eq 1 ]; then
+    capture_count=$(awk '
+      function is_image_path(token) {
+        t = tolower(token)
+        return (t ~ /\.(png|jpg|jpeg|webp|heic|gif|svg)$/)
+      }
+      /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ || /^[[:space:]]*-[[:space:]]*File:/ {
+        s = $0
+        while (match(s, /`[^`]+`/)) {
+          token = substr(s, RSTART + 1, RLENGTH - 2)
+          if (is_image_path(token)) { count++; break }
+          s = substr(s, RSTART + RLENGTH)
+        }
+      }
+      END { print count + 0 }
+    ' "$f")
+    if [ "$capture_count" -eq 0 ]; then
+      echo "❌ $f: screenshot / store-listing task file has no capture tasks"
+      echo "   A capture task names a specific image file path in its File field"
+      echo "   (e.g., \`fastlane/screenshots/en-US/iphone-6.5/1_feature.png\`) and"
+      echo "   describes one locale × one device combination. Add one capture"
+      echo "   task per locale × per required device class alongside any"
+      echo "   tooling tasks. See baseline-task-shapes.md §App-store prep."
+      fail=1
+    fi
   fi
 done
 

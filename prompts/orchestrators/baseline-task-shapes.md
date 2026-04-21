@@ -122,16 +122,67 @@ epic / gap targets one of the topics below.
 
 - Per mobile platform: one task for app-store listing copy (name,
   subtitle, description, keywords, promotional text, support URL).
+- Per mobile platform: tooling tasks that _produce_ screenshots —
+  typically a fastlane Snapfile / Fastfile, a UITest / instrumentation
+  test harness, and optional organizer / uploader scripts. These write
+  **source files** (`.swift`, `.kt`, `.rb`, `.sh`) and may iterate
+  over locales and devices internally. One task per source file.
 - **Per platform × per locale × per required device class** (iPhone
   6.7" + 6.5" + 5.5" for iOS; phone + 7" tablet + 10" tablet for
-  Android): one screenshot task. If 5 locales × 3 devices = 15
-  screenshot tasks per platform. The weak model MUST emit all of
-  them, not a catch-all "generate screenshots" task.
+  Android): one screenshot **capture** task. The File field is the
+  concrete image path (e.g.
+  `fastlane/screenshots/en-US/iphone-6.5-inch/1_feature.png`), NOT a
+  source file. The precise-change names exactly one locale and one
+  device; the test asserts visual-diff against a baseline for that
+  specific file. 5 locales × 3 devices = **15 capture tasks per
+  platform, not a catch-all "generate screenshots" task**. These
+  appear alongside the tooling tasks in the same file.
 - One task for privacy nutrition labels (iOS) / data safety form
   (Android).
 - One task for signing + distribution (certificates, provisioning
   profiles, keystore, upload to TestFlight / Play internal track).
 - One task for App Store Connect / Play Console metadata upload.
+
+### Screenshot task shape — tooling vs. capture
+
+A tooling task looks like this:
+
+```markdown
+## T2 · Fastlane Snapfile (Android)
+- **Change type:** create-new
+- **File:** `fastlane/Snapfile`
+- **Signature:** fastlane snapshot config
+- **Precise change:** Declare `devices [pixel_7, pixel_tablet_7in, pixel_tablet_10in]`, `languages %w[en-US es-ES fr-FR de-DE ja-JP]`, `output_directory './fastlane/screenshots'`, `scheme 'StorageCleanerUITests'`.
+- **Acceptance:**
+  - `bundle exec fastlane snapshot` loads this Snapfile without errors.
+  - `devices` list has exactly 3 entries.
+  - `languages` list has exactly 5 entries.
+- **Test:** `bundle exec fastlane snapshot --verify_only` exits 0.
+- **Depends on:** none
+```
+
+A capture task looks like this:
+
+```markdown
+## T6 · Screenshot — en-US phone, frame 1 (Android)
+- **Change type:** create-new
+- **File:** `fastlane/screenshots/en-US/pixel_7/1_dashboard.png`
+- **Signature:** 1440×3088 PNG asset captured from `DashboardUITest.testFirstLaunch`
+- **Precise change:** Run `bundle exec fastlane snapshot --devices pixel_7 --languages en-US --only_testing StorageCleanerUITests/DashboardUITest/testFirstLaunch`. Fastlane writes the PNG to the File path above.
+- **Acceptance:**
+  - File exists at the exact File path above.
+  - PNG dimensions are 1440×3088 (Pixel 7).
+  - Visible text in the screenshot is English ("Dashboard", "Free space").
+- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/pixel_7/1_dashboard.png` — checks path exists, dimensions, and visual-diff against `baselines/en-US/pixel_7/1_dashboard.png`.
+- **Depends on:** T2 (Snapfile), T3 (DashboardUITest)
+```
+
+The capture task MUST name one specific image file path and one
+specific locale / device pair. Do not parameterise; do not batch;
+do not describe a loop. The validator's collapse detector fires on
+**capture** tasks (File is an image extension) that describe
+"each/all/every/multiple" devices or locales. Tooling tasks are
+exempt because their File is a source file.
 
 ## Settings, debug menu & dev UX
 

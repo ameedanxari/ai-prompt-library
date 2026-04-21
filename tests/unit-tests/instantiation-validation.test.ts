@@ -610,6 +610,163 @@ describe('validator — user-story linkage', () => {
     }
   });
 
+  it('does NOT flag a screenshot tooling task (source file, iterates internally)', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-tooling-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-android-screenshots.md'),
+        [
+          '# Tasks — Android screenshots',
+          '',
+          '## T1 · Fastlane Snapfile (Android screenshot driver)',
+          '- **Closes user story:** As a release engineer, I want a reusable snapshot config, so that every locale and device combination captures the same frames.',
+          '- **Change type:** create-new',
+          '- **File:** `fastlane/Snapfile`',
+          '- **Signature:** fastlane snapshot config',
+          '- **Precise change:** Declare devices, languages, and output_directory. Snapfile iterates across all supported locales and all required device classes at capture time; each iteration writes one PNG.',
+          '- **Acceptance:**',
+          '  - `bundle exec fastlane snapshot --verify_only` exits 0.',
+          '  - File `fastlane/Snapfile` contains `devices [` and `languages [` declarations.',
+          '  - `languages` list length matches the 5 brief-keyword locales.',
+          '- **Test:** `bundle exec fastlane snapshot --verify_only`',
+          '- **Estimated LOC delta:** +20',
+          '- **Depends on:** none',
+          '',
+          '## T2 · en-US Pixel 7 dashboard screenshot (Android)',
+          '- **Closes user story:** As a reviewer, I want the English Pixel 7 dashboard screenshot, so that I can approve the Play listing for en-US.',
+          '- **Change type:** create-new',
+          '- **File:** `fastlane/screenshots/en-US/pixel_7/1_dashboard.png`',
+          '- **Signature:** 1440x3088 PNG captured from DashboardUITest.testFirstLaunch',
+          '- **Precise change:** Run `bundle exec fastlane snapshot --devices pixel_7 --languages en-US --only_testing StorageCleanerUITests/DashboardUITest/testFirstLaunch`. Writes the PNG to the File path above.',
+          '- **Acceptance:**',
+          '  - File `fastlane/screenshots/en-US/pixel_7/1_dashboard.png` exists.',
+          '  - PNG dimensions are 1440x3088.',
+          '  - OCR of the image contains the English strings "Dashboard" and "Free space".',
+          '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/pixel_7/1_dashboard.png`',
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** T1 (Snapfile drives the capture)',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n\nNo new external services required.\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+        encoding: 'utf8',
+      });
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a screenshot CAPTURE task (image File) that collapses across locales', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-capture-collapse-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-ios-screenshots.md'),
+        [
+          '# Tasks — iOS screenshots',
+          '',
+          '## T1 · Multi-locale iPhone screenshot',
+          '- **Closes user story:** As a reviewer, I want screenshots, so that I can approve the iOS listing.',
+          '- **Change type:** create-new',
+          '- **File:** `fastlane/screenshots/en-US/iphone-6.5/1_feature.png`',
+          '- **Signature:** 1284x2778 PNG',
+          '- **Precise change:** Capture the feature screenshot for each locale (en-US, es-ES, fr-FR, de-DE, ja-JP) on the iPhone 6.5" device class.',
+          '- **Acceptance:**',
+          '  - File exists at the declared path.',
+          '  - PNG dimensions match iPhone 6.5".',
+          '  - Text is localised.',
+          '- **Test:** `./scripts/verify-shot.sh fastlane/screenshots/en-US/iphone-6.5/1_feature.png`',
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** none',
+          '',
+        ].join('\n'),
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/capture task collapses|per locale|per device/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a screenshot task file that has only tooling and zero capture tasks', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-no-captures-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-android-screenshots.md'),
+        [
+          '# Tasks — Android screenshots',
+          '',
+          '## T1 · Fastlane Snapfile',
+          '- **Closes user story:** As a release engineer, I want a snapshot config, so that captures are reproducible.',
+          '- **Change type:** create-new',
+          '- **File:** `fastlane/Snapfile`',
+          '- **Signature:** fastlane config',
+          '- **Precise change:** Declare devices and languages in the Snapfile.',
+          '- **Acceptance:**',
+          '  - `fastlane snapshot --verify_only` exits 0.',
+          '  - Snapfile declares three devices.',
+          '  - Snapfile declares five languages.',
+          '- **Test:** `bundle exec fastlane snapshot --verify_only`',
+          '- **Estimated LOC delta:** +20',
+          '- **Depends on:** none',
+          '',
+          '## T2 · Screenshot organizer script',
+          '- **Closes user story:** As a release engineer, I want outputs organised by locale, so that uploads work.',
+          '- **Change type:** create-new',
+          '- **File:** `tools/app-store/organize.sh`',
+          '- **Signature:** bash organiser',
+          '- **Precise change:** Read output_directory from Snapfile; group files by locale; move to fastlane/metadata structure.',
+          '- **Acceptance:**',
+          '  - `tools/app-store/organize.sh` exits 0 on a sample tree.',
+          '  - Files are grouped under per-locale directories.',
+          '  - Script writes a summary to stdout.',
+          '- **Test:** `bats tools/app-store/organize.bats`',
+          '- **Estimated LOC delta:** +40',
+          '- **Depends on:** T1 (Snapfile defines output_directory)',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n\nNo new external services required.\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/no capture tasks/i);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects an app-icon task that collapses across platforms or locales', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-icon-'));
     try {
