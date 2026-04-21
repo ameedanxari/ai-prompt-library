@@ -34,6 +34,12 @@ TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(te
 USER_STORY_MARKER='^\s*[-*]?\s*\*\*Closes user story:\*\*'
 USER_STORY_WELL_FORMED='\*\*Closes user story:\*\*\s+As (a|an)\s+.+,\s+I want\s+.+,\s+so that\s+.+'
 
+# Schema required-field markers (post Phase 6a schema alignment).
+# Every task must carry Change type + Test. The validator counts task
+# headings (## T<n> or ## R<n>) vs these field markers.
+CHANGE_TYPE_MARKER='^\s*[-*]?\s*\*\*Change type:\*\*'
+TEST_MARKER='^\s*[-*]?\s*\*\*Test:\*\*'
+
 # Screenshot-collapse detector. A single task that says it creates
 # screenshots for multiple device sizes OR multiple locales at once
 # violates the baseline-task-shapes "per locale × per device" rule.
@@ -246,6 +252,22 @@ for f in "${files[@]}"; do
   story_markers=$(grep -cE "$USER_STORY_MARKER" "$f" || true)
   if [ "$task_headings" -gt 0 ] && [ "$story_markers" -lt "$task_headings" ]; then
     echo "❌ $f: $((task_headings - story_markers)) task(s) missing **Closes user story:** line"
+    fail=1
+  fi
+
+  # 5a. Every task must carry **Change type:** (Phase 6a schema).
+  change_type_markers=$(grep -cE "$CHANGE_TYPE_MARKER" "$f" || true)
+  if [ "$task_headings" -gt 0 ] && [ "$change_type_markers" -lt "$task_headings" ]; then
+    echo "❌ $f: $((task_headings - change_type_markers)) task(s) missing **Change type:** line"
+    echo "   Required: **Change type:** create-new | modify-existing | delete | refactor"
+    fail=1
+  fi
+
+  # 5b. Every task must carry **Test:** (Phase 6a schema).
+  test_markers=$(grep -cE "$TEST_MARKER" "$f" || true)
+  if [ "$task_headings" -gt 0 ] && [ "$test_markers" -lt "$task_headings" ]; then
+    echo "❌ $f: $((task_headings - test_markers)) task(s) missing **Test:** line"
+    echo "   Required: **Test:** <path to test> OR <command> — names the verifier"
     fail=1
   fi
   # Every Closes user story that IS present must be well-formed.

@@ -281,13 +281,23 @@ device class" for App Store Release Prep). These rules are non-optional
 — a weak model cannot substitute one omnibus task for the required
 breakdown.
 
-Each task has:
+Each task has (this schema is aligned with `audit-and-remediate.md` Step 3):
 
 - `id` — short slug, unique within the feature
 - `objective` — one sentence, imperative verb, names the concrete outcome
-- `file_path` — exact absolute-from-repo path (e.g. `src/auth/signup.ts`)
+- `change_type` — `create-new` | `modify-existing` | `delete` | `refactor`
+- `file_path` — **exactly ONE** absolute-from-repo path (e.g.
+  `src/auth/signup.ts`). No trailing `/` (not a directory). No
+  parentheticals like `(multiple files)`. If a change truly spans N
+  files, emit N tasks — one per file.
 - `function_signature` — exact signature
   (e.g. `async function signup(req: SignupReq): Promise<SignupRes>`)
+- `precise_change` — a concrete delta, not a category of work. Name the
+  function added, the config key set, the import inserted. Good:
+  "Add `export function signup(req: SignupReq): Promise<SignupRes>`
+  that hashes with argon2id, checks email uniqueness, and returns a
+  signed JWT." Bad: "Implement signup handler." If you can't state the
+  delta concretely in 1–2 sentences, split the task.
 - `api_shape` — when applicable, request + response JSON shapes with real field
   names and types
 - `acceptance_criteria` — 3 or more bulleted list items (each line
@@ -295,29 +305,51 @@ Each task has:
   commas. The validator counts indented bullets and rejects tasks
   with fewer than 3. See the "Acceptance criteria — good vs. bad"
   block below for the exact shape.
+- `test` — the test that will prove the fix, by exact path (create-new
+  OK). If the test is an existing command (e.g. `npm test -- tasks-foo`),
+  state the command AND the specific test name(s) that will assert the
+  behaviour. Every task must ship with a named test.
 - `estimated_loc` — range (e.g. `40–80`)
-- `depends_on` — task ids, or `none`
+- `depends_on` — task ids, or `none`. If not `none`, include a one-line
+  reason explaining why the dependency is code-level (shared symbol,
+  required config, etc.) — not a narrative/logical ordering.
 
 **Output format:**
 
 ```markdown
 # Tasks — <Feature Name>
 
-## T1 · <objective>
+## T1 · Signup endpoint handler
 - **Closes user story:** As a new user, I want to register with email
   and password, so that I can access the app under my own account.
+- **Change type:** create-new
 - **File:** `src/auth/signup.ts`
 - **Signature:** `async function signup(req: SignupReq): Promise<SignupRes>`
+- **Precise change:** Add `export async function signup(req: SignupReq):
+  Promise<SignupRes>` that validates email format via zod schema,
+  hashes password with argon2id (memoryCost 19456, timeCost 2), inserts
+  a row into the `users` table, creates a `sessions` row with
+  `expires_at = now() + 7 days`, and returns `{ userId, token }` where
+  `token` is a JWT signed with `process.env.JWT_SECRET`.
 - **API shape:**
   - Request: `{ email: string, password: string }`
-  - Response: `{ userId: string, token: string }`
+  - Response (201): `{ userId: string, token: string, expiresAt: string }`
+  - Error (400): `{ error: "VALIDATION", issues: {field, message}[] }`
+  - Error (409): `{ error: "EMAIL_TAKEN" }`
 - **Acceptance:**
-  - Valid email+password returns 201 with token
-  - Duplicate email returns 409
-  - Password < 8 chars returns 400
-  - Token decodes to userId via JWT verify
-- **Estimated LOC:** 40–80
-- **Depends on:** none
+  - `POST /auth/signup` with valid body returns 201 and a JSON body
+    matching the Response shape above (assert via supertest).
+  - Duplicate email returns 409; no second row inserted into `users`
+    (assert row count before vs after).
+  - Password < 8 chars returns 400 with `issues[0].field === "password"`.
+  - Token returned by a successful signup decodes via
+    `jwt.verify(token, process.env.JWT_SECRET)` to `{ sub: userId, sid }`.
+- **Test:** `src/auth/signup.test.ts` (new) — suite exercising the four
+  acceptance bullets above; run via `npm test -- src/auth/signup.test.ts`.
+- **Estimated LOC:** 60–100
+- **Depends on:** T0 (users + sessions schema), T2 (password hash util).
+  Reason: T1 writes a row with `password_hash` produced by T2's helper;
+  T0's migration must exist so the `users` table is present.
 ```
 
 ### Acceptance criteria — good vs. bad

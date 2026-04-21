@@ -345,6 +345,28 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/per locale.*per (required )?device/i);
   });
 
+  it('drill-down task schema is aligned with audit-and-remediate (Phase 6a)', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    // Phase 6a schema alignment — drill-down must require the same
+    // fields as audit-and-remediate: Change type, Precise change, Test.
+    expect(body).toMatch(/`change_type`/);
+    expect(body).toMatch(/`precise_change`/);
+    expect(body).toMatch(/`test`/);
+    // Change-type enum values spelled out.
+    expect(body).toMatch(/create-new.*modify-existing.*delete.*refactor/);
+    // Precise change must require a concrete delta, not a category of work.
+    expect(body.toLowerCase()).toMatch(
+      /concrete delta|not a category of work/,
+    );
+    // Test field must require a named test.
+    expect(body.toLowerCase()).toMatch(/every task must ship with a named test/);
+    // File field must say "exactly ONE" (prevents multi-file collapse).
+    expect(body).toMatch(/\*\*exactly ONE\*\*/);
+  });
+
   it('drill-down and audit-remediate both require closes_user_story', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),

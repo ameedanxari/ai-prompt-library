@@ -300,6 +300,7 @@ describe('validator — clean fixture passes', () => {
         [
           '## T1 · x',
           '- **Closes user story:** As a user, I want x, so that y.',
+          '- **Change type:** create-new',
           '- **File:** `src/a.ts`',
           '- **Precise change:** add function.',
           '- **Acceptance:**',
@@ -823,6 +824,84 @@ describe('validator — user-story linkage', () => {
       expect(out).toMatch(/As a <role>, I want <outcome>, so that <value>/);
       expect(out).toMatch(/Example:/);
       expect(out).toMatch(/NOT 'As the'/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a task missing **Change type:**', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nochange-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-nochange.md'),
+        [
+          '## R1 · x',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing \*\*Change type:\*\*/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a task missing **Test:**', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-notest-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-notest.md'),
+        [
+          '## R1 · x',
+          '- **Closes user story:** As a dev, I want x, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: pass\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing \*\*Test:\*\*/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
