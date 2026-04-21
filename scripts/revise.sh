@@ -49,8 +49,11 @@ REPORT="$TARGET_DIR/revise-report.md"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
 # Run validator, capture both exit code and output.
+# Tell the validator not to check revise-report.md's existing gate
+# value — we are computing the NEW gate value from the other checks.
+# Reading the old value creates a circular fail (see validator 0a).
 VAL_OUT_FILE=$(mktemp)
-"$VALIDATOR" "$TARGET_DIR" > "$VAL_OUT_FILE" 2>&1
+VALIDATOR_SKIP_GATE_CHECK=1 "$VALIDATOR" "$TARGET_DIR" > "$VAL_OUT_FILE" 2>&1
 VAL_EXIT=$?
 
 if [ "$VAL_EXIT" -eq 0 ]; then

@@ -114,6 +114,12 @@ done
 # 0a. revise-report.md must be the canonical script output, not a
 # hand-written narrative. The canonical form starts with a YAML
 # frontmatter block (--- on line 1) and contains executor_gate: pass.
+#
+# When invoked from revise.sh itself (VALIDATOR_SKIP_GATE_CHECK=1),
+# skip the executor_gate value check — revise.sh is computing the NEW
+# gate value from the other checks, so reading the OLD value creates
+# a circular dependency (old=fail causes new=fail forever). Still
+# enforce the canonical-form (line 1 == "---") check though.
 if [ -f "$TARGET_DIR/revise-report.md" ]; then
   first_line=$(head -n 1 "$TARGET_DIR/revise-report.md")
   if [ "$first_line" != "---" ]; then
@@ -123,8 +129,8 @@ if [ -f "$TARGET_DIR/revise-report.md" ]; then
     echo "       bash scripts/revise.sh prompts/outputs/current"
     echo "   Delete the current file and re-run the script."
     fail=1
-  else
-    # Canonical — check executor_gate.
+  elif [ "${VALIDATOR_SKIP_GATE_CHECK:-0}" != "1" ]; then
+    # Canonical — check executor_gate (skip when revise.sh is the caller).
     head -n 30 "$TARGET_DIR/revise-report.md" > /tmp/revise-head.$$
     if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" /tmp/revise-head.$$; then
       :  # passes — continue

@@ -286,6 +286,115 @@ describe('validator — clean fixture passes', () => {
     }
   });
 
+  it('revise.sh converges from a prior fail state to pass on clean plan', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-converge-'));
+    const REVISE = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
+    try {
+      // One feature, one matching tasks file — a clean plan.
+      fs.writeFileSync(
+        path.join(sandbox, 'features-auth.md'),
+        ['# Features — Auth', '', '## Sign up', 'x', ''].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-sign-up.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      // Seed a stale revise-report with executor_gate: fail. Without the
+      // env-flag fix this would make revise.sh rewrite it as fail forever.
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        [
+          '---',
+          'executor_gate: fail',
+          'failing_files: ["tasks-sign-up.md"]',
+          '---',
+          '',
+          'old report body',
+          '',
+        ].join('\n'),
+      );
+
+      const out = execSync(`bash "${REVISE}" "${sandbox}"`, {
+        encoding: 'utf8',
+      });
+      expect(out).toMatch(/revise gate: pass/);
+
+      const body = fs.readFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        'utf8',
+      );
+      expect(body).toMatch(/executor_gate:\s*pass/);
+      expect(body).toMatch(/failing_files:\s*\[\]/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('standalone validator still flags revise-report.md with executor_gate: fail', () => {
+    // The env-flag gate-check bypass must NOT leak to direct callers —
+    // executor preflight / standalone CI runs must still see fail.
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-standalone-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-auth.md'),
+        ['# Features — Auth', '', '## Sign up', 'x', ''].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-sign-up.md'),
+        [
+          '## T1 · x',
+          '- **Closes user story:** As a user, I want x, so that y.',
+          '- **File:** `src/a.ts`',
+          '- **Precise change:** add function.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/a.test.ts`',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'revise-report.md'),
+        '---\nexecutor_gate: fail\n---\n',
+      );
+      let out = '';
+      let code = 0;
+      try {
+        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
+          encoding: 'utf8',
+        });
+      } catch (e) {
+        const err = e as { stdout?: Buffer; status?: number };
+        out = err.stdout?.toString() ?? '';
+        code = err.status ?? 0;
+      }
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/executor_gate is not 'pass'/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a revise-report.md with executor_gate: fail', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-gatefail-'));
     try {
