@@ -167,8 +167,14 @@ npm test
 
 The suite includes property-based tests over all 266 modules, integration
 tests for the library's internal structure, and the instantiation
-validator. 4 tests are known-failing against the Template Architecture
-Guard (pre-existing, unrelated to the new engine).
+validator. 944 tests pass; 4 are known-failing against the Template
+Architecture Guard (pre-existing, unrelated to the new engine).
+
+Before cutting a new release tag, also run the acceptance probe —
+see [`docs/acceptance-probe.md`](docs/acceptance-probe.md). Unit
+tests cover the mechanical gates; the probe covers the top-level
+claim that a low-end model can ship end-to-end from a one-paragraph
+brief.
 
 ---
 
