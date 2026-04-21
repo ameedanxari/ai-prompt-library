@@ -61,9 +61,9 @@ point, and restart.
 
 | Step | Input context | Output |
 |---|---|---|
-| **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) |
+| **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) **AND** `brief-keywords.md` (every distinctive brief keyword mapped to `covered` or `out-of-scope` with the epic/reason) |
 | **2 — Expand epic** | one epic block + optional `project-context.md` + ≤1 module | `features-<epic>.md` (6–10 features per epic) |
-| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 template | `tasks-<feature>.md` (atomic tasks — real file paths, signatures, API shapes) |
+| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 template | `tasks-<feature>.md` (atomic tasks — each names **exactly one** real file path, function signature, `change_type` (`create-new` / `edit-existing` / `delete`), `precise_change`, ≥3 verifiable acceptance bullets, a named `Test`, and a `Depends on` line with reason) |
 
 ### Gap-closure: audit-and-remediate.md
 
@@ -146,13 +146,14 @@ Under `prompts/outputs/current/`:
 |---|---|
 | `project-context.md` | external-input-handler (when external material exists) |
 | `epics.md` | drill-down Step 1 (greenfield only) |
+| `brief-keywords.md` | drill-down Step 1 (greenfield only; required companion to `epics.md`) |
 | `features-<epic>.md` | drill-down Step 2 |
 | `external-accounts.md` | drill-down Step 2.5 / audit-remediate Step 3.5 |
 | `tasks-<feature>.md` | drill-down Step 3 |
 | `audit-report.md` | audit-remediate Step 1 (gap-closure only) |
 | `gap-list.md` | audit-remediate Step 2 |
 | `remediation-<gap>.md` | audit-remediate Step 3 |
-| `revise-report.md` | revise-outputs |
+| `revise-report.md` | `scripts/revise.sh` (writes YAML frontmatter; never hand-write) |
 | `execution-log.md` | executor (includes YAML handoff envelope) |
 
 Each step runs in a **fresh context**. Do not carry the previous step's full
@@ -185,14 +186,23 @@ artifact forward; load only the specific slice the current step is expanding.
    `bash scripts/validate-instantiation.sh` before declaring tasks ready.
    Any match against forbidden patterns means regenerate the offending file.
 
-6. **Do not stop between the handler and Step 1, or between engine steps.**
-   After the external-input-handler writes `project-context.md`, proceed
-   immediately to Step 1. After Step 1 writes `epics.md`, proceed to
-   Step 2. After Step 2 writes all `features-*.md`, proceed to Step 3.
-   Do not ask the user "should I continue?" — the engine is designed to
-   run end-to-end in one session.
+6. **Check the progress script between Step 3 task-file writes.** Run
+   `bash scripts/step3-progress.sh prompts/outputs/current` after each
+   `tasks-<feature>.md` is written. It prints a checklist of every
+   declared feature marked `- [x]` (tasks file on disk) or `- [ ]` (still
+   missing). Do NOT advance past Step 3 while any `- [ ]` remains, and
+   do NOT rely on your own memory of which files you've written — the
+   disk is the source of truth.
 
-7. **Reset when the user asks, OR when stale markers appear.** Two
+7. **Do not stop between the handler and Step 1, or between engine steps.**
+   After the external-input-handler writes `project-context.md`, proceed
+   immediately to Step 1. After Step 1 writes `epics.md` **and**
+   `brief-keywords.md`, proceed to Step 2. After Step 2 writes all
+   `features-*.md`, proceed to Step 3. Do not ask the user "should I
+   continue?" — the engine is designed to run end-to-end in one
+   session.
+
+8. **Reset when the user asks, OR when stale markers appear.** Two
    independent triggers, both hard:
    - **Explicit user request** (unconditional): if the user's prompt
      contains "force reset", "reset", "re-integrate", "start fresh",

@@ -120,10 +120,11 @@ After a successful run, `prompts/outputs/current/` contains:
 |---|---|---|
 | `project-context.md` | external-input-handler (if you dropped files in `working_copy/`) | Extracted entities, roles, flows, constraints |
 | `epics.md` | drill-down Step 1 | 5–7 feature epics + ~12 production-readiness baseline epics |
+| `brief-keywords.md` | drill-down Step 1 | Distinctive keywords from your brief mapped to epics or scoped out — prevents silent dropout of specific requirements |
 | `features-<epic>.md` | drill-down Step 2 | One per epic, with data models and API contracts |
 | `external-accounts.md` | drill-down Step 2.5 | Every third-party service + signup URL + env vars (your to-do list) |
-| `tasks-<feature>.md` | drill-down Step 3 | Atomic tasks — real file paths, signatures, acceptance criteria |
-| `revise-report.md` | revise gate | Coverage + schema check results (`executor_gate: pass` means execution is cleared) |
+| `tasks-<feature>.md` | drill-down Step 3 | Atomic tasks — real file paths, signatures, acceptance criteria, named test, change type |
+| `revise-report.md` | `scripts/revise.sh` (revise gate) | Coverage + schema check results. `executor_gate: pass` means execution is cleared. `scripts/step3-progress.sh` is the in-progress checklist the agent runs between task-file generations. |
 | `execution-log.md` | executor | YAML handoff envelope + per-task journal |
 
 You generally don't need to read these. The agent's final summary
