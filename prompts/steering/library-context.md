@@ -40,14 +40,31 @@ disk) or `- [ ]` (still needed). Do NOT advance to the next stage
 while any `- [ ]` remains. Do NOT track completion in memory — the
 script is the source of truth.
 
-## Mechanical fixes — use the helpers, don't hand-edit
+## Finalize — the ONLY way to say "Step 3 is complete"
 
-When `revise.sh` fails on mechanical / schema violations you can often
-fix them in one shot with a helper script instead of batch-editing
-files:
+When you believe all `tasks-*.md` files are written, run this **exact
+one command** before telling the user you are done:
+
+```bash
+bash .ai-prompts/scripts/finalize.sh prompts/outputs/current
+```
+
+It chains the mechanical auto-fixers, runs the Revise Gate, writes a
+canonical `revise-report.md`, and prints `executor_gate: pass` or
+`fail`. You are NOT allowed to declare the drill-down complete unless
+the last line printed is `✅ executor_gate: pass`. If it prints `fail`,
+open `revise-report.md`, regenerate each file listed in
+`failing_files:` via the engine (one feature at a time, never
+hand-edit), and re-run `finalize.sh`.
+
+Never hand-write `revise-report.md` — it is machine-produced and
+tamper-checked (`revised_at` freshness + non-empty check arrays).
+
+## Mechanical helpers (called by finalize.sh, can also be run alone)
 
 ```bash
 # Missing comma before "so that" in Closes-user-story lines.
+# (Invoked automatically by finalize.sh.)
 bash .ai-prompts/scripts/fix-user-stories.sh prompts/outputs/current
 
 # App-store screenshot matrix (15+ capture tasks per platform).
@@ -60,9 +77,7 @@ bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
     --target prompts/outputs/current --platform android --app-name <Name>
 ```
 
-After running any helper, re-run `bash .ai-prompts/scripts/revise.sh
-prompts/outputs/current` to refresh the gate. Never hand-write
-`revise-report.md` — it is machine-produced and tamper-checked.
+After running any helper, re-run `finalize.sh` to refresh the gate.
 
 ## Execute-signal guard — do not ask for preference
 

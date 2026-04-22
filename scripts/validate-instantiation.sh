@@ -107,10 +107,17 @@ fi
 # 0. Required-companion-files check. When plan files exist, two more files
 # MUST also exist in the same directory — skipping them is a structural
 # defect that blocks execution regardless of per-task validity.
+#
+# When VALIDATOR_SKIP_GATE_CHECK=1 (revise.sh is the caller), we skip the
+# revise-report.md presence check: revise.sh is about to write the file
+# from the aggregated validator result, so demanding it exist first is a
+# bootstrap paradox.
 required_companions=(
   "$TARGET_DIR/external-accounts.md"
-  "$TARGET_DIR/revise-report.md"
 )
+if [ "${VALIDATOR_SKIP_GATE_CHECK:-0}" != "1" ]; then
+  required_companions+=("$TARGET_DIR/revise-report.md")
+fi
 for rc in "${required_companions[@]}"; do
   if [ ! -f "$rc" ]; then
     echo "❌ missing required companion: $rc"

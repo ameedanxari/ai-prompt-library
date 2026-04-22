@@ -112,20 +112,38 @@ check, a steering rule, a script) rather than prose guidance.
 
 ### Added — Tests
 
-- 752 passing tests, 0 failing (property-based over all modules,
+- 757 passing tests, 0 failing (property-based over all modules,
   integration, unit tests over the instantiation validator,
-  orchestrator schema tests, helper scripts).
+  orchestrator schema tests, helper scripts, finalize wrapper).
 - 141 unit tests specifically over `validate-instantiation.sh`.
+- `scripts/finalize.sh` — the mandatory one-command finisher for
+  drill-down Step 3. Chains `fix-user-stories.sh` + `revise.sh`,
+  writes the canonical `revise-report.md`, and exits with the
+  gate verdict. Agents cannot declare the drill-down complete
+  without seeing `executor_gate: pass` from this script. Closes
+  the field-test failure where weak models skipped the Revise
+  Gate entirely and declared "Successfully completed" on invalid
+  plans.
 - `scripts/fix-user-stories.sh` — mechanical auto-fixer for the
   common "missing comma before 'so that'" pattern in
-  Closes-user-story lines. Idempotent. Referenced from the
-  validator's error message so agents find it automatically.
+  Closes-user-story lines. Idempotent. Invoked by finalize.sh;
+  also referenced from the validator's error message.
 - `scripts/scaffold-screenshot-captures.sh` — generates the full
   app-store screenshot task matrix (2 tooling + N locales × M
   devices captures) with the canonical task schema pre-filled.
-  Closes the persistent field-test failure where weak models can't
-  expand the locale × device matrix by hand. Referenced from the
-  validator error, steering, and baseline-task-shapes.md.
+  Closes the persistent field-test failure where weak models
+  can't expand the locale × device matrix by hand.
+- Validator bootstrap fix: on first Step 3 completion the
+  validator no longer insists that `revise-report.md` already
+  exists when called through revise.sh — revise.sh is the very
+  thing that creates it, so the old requirement was a
+  bootstrap paradox that forced every first-run gate to fail.
+- ADR pattern for genuinely N/A baseline epics added to
+  `baseline-task-shapes.md`. Local-only apps now have a
+  principled way to declare admin-rbac or infrastructure-as-code
+  not-applicable: a single ADR task under `docs/adr/NNN-*.md`
+  with Context / Decision / Alternatives / Consequences — not
+  a stub `NoAdminPortal.kt` Kotlin object.
 
 ### Removed
 

@@ -93,12 +93,13 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/menu/);
     expect(body.toLowerCase()).toMatch(/forbidden|do not produce|do not emit/);
     // Keeps the policy short — steering should not bloat.
-    // Cap: 120 → 135 when the mechanical-fixes helper block was added
-    // (fix-user-stories + scaffold-screenshot-captures). Any new guard
-    // must still fit within a tight budget; bumping again requires a
-    // clear reason.
+    // Cap bumped alongside each added guard:
+    //   90 → 120 (progress-checklist guard)
+    //   120 → 135 (mechanical-fixes helper block)
+    //   135 → 150 (finalize.sh mandate)
+    // Any future bump requires a clear reason.
     const lineCount = body.split('\n').length;
-    expect(lineCount).toBeLessThan(135);
+    expect(lineCount).toBeLessThan(150);
   });
 
   it('audit-remediate Step 5 delegates to steering guard (no duplicated list)', () => {
@@ -172,7 +173,7 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/never hand-write|machine-produced/);
   });
 
-  it('engines point at bash scripts/revise.sh as the concrete revise command', () => {
+  it('engines point at a concrete revise-gate command (finalize.sh or revise.sh)', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),
       'utf8',
@@ -181,7 +182,9 @@ describe('active orchestrators', () => {
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
-    expect(drill).toMatch(/bash scripts\/revise\.sh/);
+    // drill-down engine now names finalize.sh as the single command
+    // (it wraps revise.sh + mechanical auto-fixers).
+    expect(drill).toMatch(/bash scripts\/(finalize|revise)\.sh/);
     expect(audit).toMatch(/bash scripts\/revise\.sh/);
     // Must tell the agent NOT to hand-edit files — regenerate via engine.
     expect(drill.toLowerCase()).toMatch(
@@ -404,9 +407,11 @@ describe('active orchestrators', () => {
     expect(reviseIdx).toBeGreaterThan(-1);
     expect(handoffIdx).toBeGreaterThan(-1);
     expect(reviseIdx).toBeLessThan(handoffIdx);
-    // Revise gate must be flagged MANDATORY and use the concrete command.
+    // Revise gate must be flagged MANDATORY and use a concrete command.
     expect(body).toMatch(/Revise Gate \(MANDATORY/);
-    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    // finalize.sh is the preferred one-command wrapper; revise.sh is
+    // also acceptable since finalize.sh wraps it.
+    expect(body).toMatch(/bash scripts\/(finalize|revise)\.sh/);
     // Revise must name executor_gate states.
     expect(body).toMatch(/executor_gate: fail/);
   });

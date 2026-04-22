@@ -545,8 +545,20 @@ task files AND you do NOT hand-write `revise-report.md`. You run
 exactly one shell command:
 
 ```bash
-bash scripts/revise.sh prompts/outputs/current
+bash scripts/finalize.sh prompts/outputs/current
 ```
+
+This wrapper:
+1. Applies the mechanical auto-fixers (`fix-user-stories.sh`) so that
+   trivial patterns like "missing comma before 'so that'" never block
+   the gate.
+2. Runs the Revise Gate (`revise.sh`), which wraps the instantiation
+   validator and always writes
+   `prompts/outputs/current/revise-report.md` with frontmatter that
+   names every failing file.
+3. Surfaces the gate verdict (`executor_gate: pass` or `fail`) and the
+   next action. **You cannot declare the drill-down complete without
+   running this and seeing `pass`.**
 
 **`revise-report.md` is a canonical machine-produced artifact.** It
 starts with a YAML frontmatter block (`---` on line 1) that the
@@ -554,17 +566,13 @@ validator and the executor both read. A hand-written narrative
 markdown file named `revise-report.md` is detected by the validator
 as "not the canonical form" and rejected. Do not produce one.
 
-This wraps the instantiation validator and always writes
-`prompts/outputs/current/revise-report.md` with frontmatter that names
-every failing file.
-
 Exit codes:
 - `0` → `executor_gate: pass`. All schema + coverage checks passed.
   Proceed to handoff.
 - non-zero → `executor_gate: fail`. The report's `failing_files:` list
   names every file to regenerate. Pick ONE file at a time, regenerate
   it via Step 3 scoped to that single feature, then re-run
-  `bash scripts/revise.sh prompts/outputs/current`. Repeat until
+  `bash scripts/finalize.sh prompts/outputs/current`. Repeat until
   exit 0.
 
 Do NOT try to fix failures by reading each tasks file in sequence and
