@@ -152,6 +152,8 @@ preference menu — you already authorised the run.
 | `scripts/validate-instantiation.sh` | Mechanical validator. Refuses to pass on template leaks, schema violations, missing companions, missing brief-keyword coverage, or failing revise gate. |
 | `scripts/revise.sh` | Wraps the validator and writes `revise-report.md` with YAML frontmatter. Canonical producer — never hand-write the report. |
 | `scripts/step3-progress.sh` | Disk-derived checklist of features vs. task files. Engine consults between task-file writes to avoid jumping stages on memory. |
+| `scripts/fix-user-stories.sh` | Auto-fixer for the mechanical "missing comma before 'so that'" pattern in `Closes user story` lines. Idempotent. |
+| `scripts/scaffold-screenshot-captures.sh` | Generates the full app-store screenshot task matrix (2 tooling + N locales × M devices captures) with canonical schema pre-filled, so weak models don't have to expand the matrix by hand. |
 | `scripts/reset-integration.sh` | Force-reset for consumer projects (purges stale state, refreshes steering, rewrites `AGENTS.md`). |
 | `docs/optional/` | Load-on-demand safeguard docs. |
 | `docs/rewrite-history/` | Historical reports from the rewrite. |

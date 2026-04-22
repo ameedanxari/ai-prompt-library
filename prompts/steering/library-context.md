@@ -49,6 +49,15 @@ files:
 ```bash
 # Missing comma before "so that" in Closes-user-story lines.
 bash .ai-prompts/scripts/fix-user-stories.sh prompts/outputs/current
+
+# App-store screenshot matrix (15+ capture tasks per platform).
+# Generates tasks-screenshots-<platform>.md with 2 tooling tasks +
+# N locales × M devices capture tasks pre-filled with the canonical
+# schema. You only fill in the UITest class / method per frame.
+bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
+    --target prompts/outputs/current --platform ios --app-name <Name>
+bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
+    --target prompts/outputs/current --platform android --app-name <Name>
 ```
 
 After running any helper, re-run `bash .ai-prompts/scripts/revise.sh

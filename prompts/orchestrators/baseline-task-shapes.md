@@ -137,6 +137,11 @@ epic / gap targets one of the topics below.
   specific file. 5 locales × 3 devices = **15 capture tasks per
   platform, not a catch-all "generate screenshots" task**. These
   appear alongside the tooling tasks in the same file.
+  **Use the scaffolder instead of writing these by hand.** Run
+  `scripts/scaffold-screenshot-captures.sh --target <dir> --platform
+  ios --app-name <Name>` (and again with `--platform android`) to
+  generate the full matrix with the canonical schema pre-filled; you
+  only fill in each task's UITest class / method / expected text.
 - One task for privacy nutrition labels (iOS) / data safety form
   (Android).
 - One task for signing + distribution (certificates, provisioning

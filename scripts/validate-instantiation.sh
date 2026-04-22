@@ -639,6 +639,9 @@ for f in "${files[@]}"; do
       echo "   describes one locale × one device combination. Add one capture"
       echo "   task per locale × per required device class alongside any"
       echo "   tooling tasks. See baseline-task-shapes.md §App-store prep."
+      echo "   Tip: generate the full locale × device matrix in one shot:"
+      echo "       bash scripts/scaffold-screenshot-captures.sh \\"
+      echo "            --target $TARGET_DIR --platform <ios|android> --app-name <AppName>"
       fail=1
     fi
   fi

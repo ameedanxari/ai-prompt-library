@@ -93,10 +93,12 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/menu/);
     expect(body.toLowerCase()).toMatch(/forbidden|do not produce|do not emit/);
     // Keeps the policy short — steering should not bloat.
-    // Cap bumped to 120 when the progress-checklist guard was added;
-    // any new guard must fit within a tight budget.
+    // Cap: 120 → 135 when the mechanical-fixes helper block was added
+    // (fix-user-stories + scaffold-screenshot-captures). Any new guard
+    // must still fit within a tight budget; bumping again requires a
+    // clear reason.
     const lineCount = body.split('\n').length;
-    expect(lineCount).toBeLessThan(120);
+    expect(lineCount).toBeLessThan(135);
   });
 
   it('audit-remediate Step 5 delegates to steering guard (no duplicated list)', () => {

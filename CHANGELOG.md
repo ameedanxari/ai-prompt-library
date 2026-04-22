@@ -112,10 +112,20 @@ check, a steering rule, a script) rather than prose guidance.
 
 ### Added — Tests
 
-- 735 passing tests, 0 failing (property-based over all modules,
+- 752 passing tests, 0 failing (property-based over all modules,
   integration, unit tests over the instantiation validator,
-  orchestrator schema tests).
+  orchestrator schema tests, helper scripts).
 - 141 unit tests specifically over `validate-instantiation.sh`.
+- `scripts/fix-user-stories.sh` — mechanical auto-fixer for the
+  common "missing comma before 'so that'" pattern in
+  Closes-user-story lines. Idempotent. Referenced from the
+  validator's error message so agents find it automatically.
+- `scripts/scaffold-screenshot-captures.sh` — generates the full
+  app-store screenshot task matrix (2 tooling + N locales × M
+  devices captures) with the canonical task schema pre-filled.
+  Closes the persistent field-test failure where weak models can't
+  expand the locale × device matrix by hand. Referenced from the
+  validator error, steering, and baseline-task-shapes.md.
 
 ### Removed
 
