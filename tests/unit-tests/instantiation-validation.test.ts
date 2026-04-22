@@ -1529,6 +1529,290 @@ describe('validator — user-story linkage', () => {
   });
 });
 
+describe('validator — orphan tasks and baseline coverage', () => {
+  function runValidator(sandbox: string): { out: string; code: number } {
+    try {
+      return {
+        out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
+        code: 0,
+      };
+    } catch (e) {
+      const err = e as { stdout?: Buffer; status?: number };
+      return {
+        out: err.stdout?.toString() ?? '',
+        code: err.status ?? 0,
+      };
+    }
+  }
+
+  function minimalGoodTask(): string {
+    return [
+      '## T1 · x',
+      '- **Closes user story:** As a user, I want x, so that y.',
+      '- **Change type:** create-new',
+      '- **File:** `src/a.ts`',
+      '- **Precise change:** add function.',
+      '- **Acceptance:**',
+      '  - A present.',
+      '  - B present.',
+      '  - C present.',
+      '- **Test:** `src/a.test.ts`',
+      '',
+    ].join('\n');
+  }
+
+  it('rejects orphan tasks files whose slug has no declared feature', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-orphan-'));
+    try {
+      // Declare only "alpha" but produce tasks for "alpha" AND "beta".
+      // "beta" is the orphan — no feature heading.
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## alpha\nx\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'tasks-alpha.md'), minimalGoodTask());
+      fs.writeFileSync(path.join(sandbox, 'tasks-beta.md'), minimalGoodTask());
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/tasks-<slug>\.md file\(s\) have no matching feature heading/);
+      expect(out).toMatch(/tasks-beta\.md/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('tolerates scaffolded screenshot task files even without a matching feature', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-scaffold-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## alpha\nx\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'tasks-alpha.md'), minimalGoodTask());
+      // The two scaffolder output files — no matching feature heading,
+      // but accepted by policy.
+      const scaffoldedBody = [
+        '# Tasks — Screenshots (ios)',
+        '',
+        '## T1 · Fastlane config for ios',
+        '- **Closes user story:** As the app, I need a snapshot config, so that captures are consistent.',
+        '- **Change type:** create-new',
+        '- **File:** `fastlane/Snapfile`',
+        '- **Signature:** fastlane snapshot configuration',
+        '- **Precise change:** declare devices and languages.',
+        '- **Acceptance:**',
+        '  - A present.',
+        '  - B present.',
+        '  - C present.',
+        '- **Test:** `bundle exec fastlane snapshot --verify_only`',
+        '- **Depends on:** none',
+        '',
+        '## T2 · Screenshot — en-US / iphone-6.7-inch / dashboard',
+        '- **Closes user story:** As the app, I need a en-US iphone-6.7-inch dashboard screenshot, so that the en-US listing shows localised content.',
+        '- **Change type:** create-new',
+        '- **File:** `fastlane/screenshots/en-US/iphone-6.7-inch/2_dashboard.png`',
+        '- **Signature:** PNG asset',
+        '- **Precise change:** run snapshot.',
+        '- **Acceptance:**',
+        '  - A present.',
+        '  - B present.',
+        '  - C present.',
+        '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/2_dashboard.png`',
+        '- **Depends on:** T1 (Snapfile)',
+        '',
+      ].join('\n');
+      fs.writeFileSync(path.join(sandbox, 'tasks-screenshots-ios.md'), scaffoldedBody);
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an app-store features file missing screenshot / icon / signing / privacy-label coverage', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-baseline-'));
+    try {
+      // An app-store-release-prep features file that only mentions
+      // launch screen, description, privacy URL, bundle ID — exactly the
+      // StorageCleaner field-test gaming pattern.
+      fs.writeFileSync(
+        path.join(sandbox, 'features-app-store-release-prep.md'),
+        [
+          '# Features — App store release prep',
+          '',
+          '## Launch screen design',
+          'x',
+          '',
+          '## Store description writing',
+          'x',
+          '',
+          '## Privacy policy URL',
+          'x',
+          '',
+          '## Bundle ID configuration',
+          'x',
+          '',
+        ].join('\n'),
+      );
+      // Give each declared feature a tasks file so the forward
+      // coverage check passes — the baseline-keyword check is what we
+      // want to see fire here.
+      for (const slug of [
+        'launch-screen-design',
+        'store-description-writing',
+        'privacy-policy-url',
+        'bundle-id-configuration',
+      ]) {
+        fs.writeFileSync(path.join(sandbox, `tasks-${slug}.md`), minimalGoodTask());
+      }
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/baseline coverage: App Store Release Prep is missing required features/);
+      expect(out).toMatch(/- screenshot/);
+      expect(out).toMatch(/- icon/);
+      expect(out).toMatch(/- signing/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts an app-store features file that covers all required keyword families', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-baseline-ok-'));
+    try {
+      // A realistic features file — the "screenshots" topic splits into
+      // per-platform feature headings whose slugs match the scaffolder's
+      // tasks-screenshots-<platform>.md output filenames.
+      fs.writeFileSync(
+        path.join(sandbox, 'features-app-store-release-prep.md'),
+        [
+          '# Features — App store release prep',
+          '',
+          '## Store listing description and metadata',
+          'x',
+          '',
+          '## App icon adaptive assets',
+          'x',
+          '',
+          '## Screenshots android',
+          'x',
+          '',
+          '## Screenshots ios',
+          'x',
+          '',
+          '## Privacy nutrition labels / data safety form',
+          'x',
+          '',
+          '## Signing and distribution keystore provisioning testflight play internal',
+          'x',
+          '',
+        ].join('\n'),
+      );
+      // Non-screenshot tasks use the minimal-good body; screenshot files
+      // are the canonical per-platform scaffolder shape with one capture.
+      const screenshotBody = [
+        '## T1 · Screenshot — en-US / iphone / dashboard',
+        '- **Closes user story:** As the app, I need an en-US screenshot, so that the iOS listing shows localised content.',
+        '- **Change type:** create-new',
+        '- **File:** `fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`',
+        '- **Signature:** PNG asset',
+        '- **Precise change:** run snapshot.',
+        '- **Acceptance:**',
+        '  - A present.',
+        '  - B present.',
+        '  - C present.',
+        '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`',
+        '- **Depends on:** none',
+        '',
+      ].join('\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-store-listing-description-and-metadata.md'),
+        minimalGoodTask(),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-app-icon-adaptive-assets.md'),
+        minimalGoodTask(),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-screenshots-android.md'),
+        screenshotBody.replace(/iphone-6\.7-inch/g, 'pixel_7'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-screenshots-ios.md'),
+        screenshotBody,
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-privacy-nutrition-labels-data-safety-form.md'),
+        minimalGoodTask(),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-signing-and-distribution-keystore-provisioning-testflight-play-internal.md'),
+        minimalGoodTask(),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a privacy-pii features file missing consent / delete / pii-classification', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-priv-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-privacy-pii-compliance.md'),
+        [
+          '# Features — Privacy, PII & compliance',
+          '',
+          '## Data export option',
+          'x',
+          '',
+          '## Privacy policy statement',
+          'x',
+          '',
+        ].join('\n'),
+      );
+      for (const slug of ['data-export-option', 'privacy-policy-statement']) {
+        fs.writeFileSync(path.join(sandbox, `tasks-${slug}.md`), minimalGoodTask());
+      }
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/Privacy, PII & compliance is missing required features/);
+      expect(out).toMatch(/- consent/);
+      expect(out).toMatch(/- delet/);
+      expect(out).toMatch(/- pii/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('validator — rejects quality violations', () => {
   type Case = { name: string; body: string; pattern: RegExp };
 

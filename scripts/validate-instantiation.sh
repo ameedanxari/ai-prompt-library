@@ -101,6 +101,44 @@ if [ ${#feature_files[@]} -gt 0 ]; then
     echo "   matching tasks file. Regenerate via the engine, not by hand."
     fail=1
   fi
+
+  # 0b-ii. Reverse check — orphan tasks files. A tasks-<slug>.md whose
+  # slug does not appear as a feature heading in any features-*.md is a
+  # defect: the model either (a) wrote a task file for a feature that
+  # was deleted from the features list to game the gate, or (b) named
+  # the file with a slug that doesn't match a declared feature. Both
+  # cases break traceability — without a feature to trace back to, the
+  # executor has no epic → feature → task chain.
+  # Tolerated exceptions:
+  #  - tasks-screenshots-{ios,android}.md emitted by
+  #    scripts/scaffold-screenshot-captures.sh are accepted even if no
+  #    matching feature heading exists, because the scaffolder output
+  #    is canonical platform-split and the App Store Release Prep epic
+  #    is expected to expand into these platform variants.
+  orphan=$(comm -13 "$declared" "$produced")
+  # Filter tolerated scaffolder output.
+  if [ -n "$orphan" ]; then
+    orphan=$(printf "%s\n" "$orphan" | awk '
+      /^screenshots-(ios|android)$/ { next }
+      /^screenshot-captures-(ios|android)$/ { next }
+      { print }
+    ')
+  fi
+  if [ -n "$orphan" ]; then
+    orphan_count=$(printf "%s\n" "$orphan" | wc -l | tr -d ' ')
+    echo "❌ coverage: $orphan_count tasks-<slug>.md file(s) have no matching feature heading"
+    echo "   Either the feature was deleted from the features file to game"
+    echo "   the gate, or the tasks file is mis-named. Fix by:"
+    echo "     - restoring the feature heading in the appropriate"
+    echo "       features-<epic>.md file (preferred if the work is real), OR"
+    echo "     - deleting the orphan tasks file (if the work is genuinely"
+    echo "       out of scope — but then also remove the feature from the"
+    echo "       epic and document why in an ADR)."
+    echo "   Orphan task files:"
+    printf "%s\n" "$orphan" | sed 's/^/   - tasks-/;s/$/.md/'
+    fail=1
+  fi
+
   rm -f "$declared" "$produced"
 fi
 
@@ -128,6 +166,97 @@ for rc in "${required_companions[@]}"; do
     fail=1
   fi
 done
+
+# 0c-ii. Baseline feature-coverage — catches the "delete features to
+# game the gate" pattern. For each baseline-epic features file, check
+# that the minimum required feature keywords from baseline-task-shapes.md
+# are present. These keyword families are intentionally forgiving:
+# they accept any reasonable naming the model might pick. A baseline
+# epic that truly doesn't apply to the project must declare so via an
+# ADR task (see baseline-task-shapes.md §"When a baseline epic is
+# genuinely N/A"), not by silently dropping features.
+check_baseline_keywords() {
+  # $1 = features-<slug>.md path
+  # $2 = baseline label (for error messages)
+  # $3 = ERE pattern; one required-keyword family per line (separated by |)
+  local f="$1" label="$2" patterns="$3"
+  [ -f "$f" ] || return 0
+  # Concatenate feature headings into a lowercase blob for keyword search.
+  local blob
+  blob=$(grep -E "^## " "$f" | tr '[:upper:]' '[:lower:]')
+  local missing=""
+  while IFS= read -r pat; do
+    [ -z "$pat" ] && continue
+    # Each pattern is an ERE. If none of the feature headings match, flag.
+    if ! printf "%s\n" "$blob" | grep -qE "$pat"; then
+      # Extract a readable label — strip leading "(" and take everything
+      # up to the first "|" or ")". E.g. "(screenshot)" → "screenshot";
+      # "(sign|distribut|…)" → "sign".
+      local desc
+      desc=$(echo "$pat" | sed -E 's/^\(//; s/[|)].*//' | head -c 60)
+      [ -z "$desc" ] && desc="$pat"
+      missing="$missing\n     - $desc  (pattern: $pat)"
+    fi
+  done <<< "$patterns"
+  if [ -n "$missing" ]; then
+    echo "❌ baseline coverage: $label is missing required features"
+    echo "   Declared features in $(basename "$f") do not cover these topics:"
+    printf "%b\n" "$missing"
+    echo "   Restore the missing feature headings (the tasks file for each"
+    echo "   will need to follow). See baseline-task-shapes.md §$label."
+    echo "   If the whole baseline is genuinely N/A for this project,"
+    echo "   declare it via a single ADR task under docs/adr/ — do NOT"
+    echo "   silently drop required features one by one."
+    fail=1
+  fi
+}
+
+# The required-keyword families. Each line is an ERE that any ONE
+# feature heading in the epic's features file must match.
+check_baseline_keywords \
+  "$TARGET_DIR/features-app-store-release-prep.md" \
+  "App Store Release Prep" \
+  "$(cat <<'EOF'
+(description|listing|copy|metadata)
+(screenshot)
+(icon|adaptive)
+(privacy.+(label|nutrition|safety)|(label|nutrition|safety).+privacy)
+(signing|signed|distribut|provision|keystore|testflight|play.*intern|app.*connect)
+EOF
+)"
+
+check_baseline_keywords \
+  "$TARGET_DIR/features-privacy-pii-compliance.md" \
+  "Privacy, PII & compliance" \
+  "$(cat <<'EOF'
+(consent)
+(export)
+(delet)
+(pii|classif)
+EOF
+)"
+
+check_baseline_keywords \
+  "$TARGET_DIR/features-testing-qa.md" \
+  "Testing & QA" \
+  "$(cat <<'EOF'
+(unit)
+(integrat)
+(ui.*test|e2e|acceptance)
+(coverage)
+EOF
+)"
+
+check_baseline_keywords \
+  "$TARGET_DIR/features-ci-cd-release.md" \
+  "CI/CD & release" \
+  "$(cat <<'EOF'
+(workflow|actions|pipeline)
+(lint)
+(test)
+(version|release|semver)
+EOF
+)"
 
 # 0d. Greenfield-only: brief-keywords.md must exist alongside epics.md.
 # This is the Phase 6c brief-coverage gate. Audit-and-remediate flows
@@ -600,14 +729,20 @@ for f in "${files[@]}"; do
   fi
 
   # 6b. Screenshot completeness check.
-  # If the file name or any task title mentions screenshot work, the
-  # file must contain at least one CAPTURE task (File path ending in
-  # an image extension). A file of tooling-only tasks cannot satisfy
-  # the app-store baseline by itself.
+  # If the file is specifically a screenshot-capture task file, it must
+  # contain at least one CAPTURE task (File path ending in an image
+  # extension). Tooling-only files of that topic fail this check.
+  #
+  # Scope is intentionally narrow: only filenames containing
+  # "screenshot" or task titles containing "screenshot" / "app icon"
+  # trigger the check. Other app-store topics (listing copy, store
+  # metadata, app-icon generation as a build-time asset pipeline) do
+  # not automatically need PNG File fields — they may be text, scripts,
+  # or SVG-to-PNG generators.
   fname_lower=$(echo "$f" | tr 'A-Z' 'a-z')
   needs_captures=0
   case "$fname_lower" in
-    *screenshot*|*app-store*|*store-listing*|*store-metadata*|*app-icon*)
+    *screenshot*)
       needs_captures=1
       ;;
   esac
