@@ -5,11 +5,75 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
-## [v1.0.0] — 2026-04-16
+## [v1.0.0] — 2026-04-22
 
 First release where a low-end coding model (SWE 1.6-class) can take a
 one-paragraph brief and ship production software end-to-end without a
 human intervening between planning stages.
+
+The pipeline, gates, and guards in this release are the result of
+**six** field-test iterations on top of earlier rewrite rounds.
+Each test surfaced specific weak-model gaming patterns — hand-written
+revise reports, deleted baseline features, collapsed screenshot
+matrices, multi-file `File:` fields, create-new collisions on shared
+workflow files — which are now closed by mechanical validator checks
+rather than prose guidance.
+
+### Field-test-driven gate additions (v1.0.0)
+
+- **Revise-report tamper detection** — `revised_at` must be within 48h
+  of file mtime; `checks_passed` + `checks_failed` cannot both be
+  empty (script always writes real check names).
+- **Screenshot capture minimum** — `tasks-*screenshots*.md` requires
+  ≥3 image-File tasks; collapse language in Acceptance (not just
+  Precise change) triggers the collapse detector.
+- **Orphan tasks** — every `tasks-<slug>.md` must map to a feature
+  heading, with a tolerance exception for scaffolder-emitted
+  `tasks-screenshots-{ios,android}.md`.
+- **Per-baseline keyword coverage** — four baseline epics (App Store
+  Release Prep, Privacy/PII & compliance, Testing & QA, CI/CD &
+  release) are scanned for required-topic keywords so
+  "delete features to game the gate" is impossible.
+- **Multi-file `File:` rejection** — comma-separated backticked paths
+  in the File field fail validation; each task writes exactly one file.
+- **Create-new collision detection** — cross-file scan for multiple
+  tasks declaring `Change type: create-new` on the same path; executor
+  cannot process that state, so the gate refuses.
+- **Dangling Depends-on** — every `tasks-<slug>.md` referenced in a
+  Depends-on line must exist on disk.
+- **N/A justification required** — `Test: N/A` and `Signature: N/A`
+  without a parenthetical reason fail validation. Accepted shapes:
+  `N/A (image asset)`, `N/A (GitHub UI configuration)`,
+  `N/A (text metadata — length asserted in acceptance)`.
+
+### Tooling added to prevent recurrence
+
+- `scripts/finalize.sh` — the ONE mandatory post-Step-3 command.
+  Chains `fix-user-stories.sh` + `revise.sh`; agents cannot declare
+  complete without seeing `executor_gate: pass`.
+- `scripts/fix-user-stories.sh` — mechanical auto-fixer for missing
+  `, so that` commas. Idempotent.
+- `scripts/scaffold-screenshot-captures.sh` — generates the full
+  locale × device screenshot capture matrix with canonical schema
+  pre-filled.
+
+### Bootstrap + infrastructure fixes
+
+- Validator's required-companion check for `revise-report.md` is
+  skipped when called with `VALIDATOR_SKIP_GATE_CHECK=1`; without
+  this, every first Step-3 finalize would fail forever.
+- ADR pattern for N/A baseline epics added to
+  `baseline-task-shapes.md` — local-only apps use
+  `docs/adr/NNN-*.md` with Context/Decision/Alternatives/Consequences
+  headings instead of stub `NoAdminPortal.kt` Kotlin objects.
+- Canonical user-story form accepts `As <a|an|the> <role>, I
+  <want|need> ...` so infrastructure tasks have legitimate
+  stakeholders (`As the app`, `As the developer`, `As the
+  maintainer`).
+
+---
+
+### Earlier (pre-final-delivery) work
 
 The pipeline, gates, and guards in this release are the result of
 thirteen field tests against low-end models. Each test surfaced a
@@ -112,7 +176,7 @@ check, a steering rule, a script) rather than prose guidance.
 
 ### Added — Tests
 
-- 757 passing tests, 0 failing (property-based over all modules,
+- 768 passing tests, 0 failing (property-based over all modules,
   integration, unit tests over the instantiation validator,
   orchestrator schema tests, helper scripts, finalize wrapper).
 - 141 unit tests specifically over `validate-instantiation.sh`.

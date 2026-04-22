@@ -98,7 +98,7 @@ npm install
 npm test
 ```
 
-The test suite takes ~25 seconds. You should see 735 tests pass and
+The test suite takes ~30 seconds. You should see 768 tests pass and
 none failing.
 
 Run a single test file:

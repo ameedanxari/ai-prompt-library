@@ -1552,18 +1552,23 @@ describe('validator — orphan tasks and baseline coverage', () => {
     }
   }
 
-  function minimalGoodTask(): string {
+  // Canonical shape for a minimal passing task. Takes an optional
+  // path so callers building multi-task fixtures avoid the
+  // create-new-collision trap (every task writing to `src/a.ts`).
+  function minimalGoodTask(path?: string): string {
+    const p = path ?? `src/a-${Math.random().toString(36).slice(2, 8)}.ts`;
+    const testPath = p.replace(/\.ts$/, '.test.ts');
     return [
       '## T1 · x',
       '- **Closes user story:** As a user, I want x, so that y.',
       '- **Change type:** create-new',
-      '- **File:** `src/a.ts`',
+      `- **File:** \`${p}\``,
       '- **Precise change:** add function.',
       '- **Acceptance:**',
       '  - A present.',
       '  - B present.',
       '  - C present.',
-      '- **Test:** `src/a.test.ts`',
+      `- **Test:** \`${testPath}\``,
       '',
     ].join('\n');
   }
@@ -1844,6 +1849,244 @@ describe('validator — orphan tasks and baseline coverage', () => {
       expect(out).toMatch(/- consent/);
       expect(out).toMatch(/- delet/);
       expect(out).toMatch(/- pii/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('validator — final-delivery quality checks', () => {
+  function runValidator(sandbox: string): { out: string; code: number } {
+    try {
+      return {
+        out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
+        code: 0,
+      };
+    } catch (e) {
+      const err = e as { stdout?: Buffer; status?: number };
+      return {
+        out: err.stdout?.toString() ?? '',
+        code: err.status ?? 0,
+      };
+    }
+  }
+
+  function passingCompanions(dir: string) {
+    fs.writeFileSync(path.join(dir, 'external-accounts.md'), '# External Accounts Required\n');
+    fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
+  }
+
+  it('rejects a File field with two backticked paths', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-multi-file-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## bundle ids\nx\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-bundle-ids.md'),
+        [
+          '## T1 · configure bundle ids',
+          '- **Closes user story:** As a user, I want the app to build, so that I can run it.',
+          '- **Change type:** create-new',
+          '- **File:** `android/app/build.gradle.kts`, `ios/Cleaner/Config.xcconfig`',
+          '- **Precise change:** set applicationId and bundle identifier.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `./gradlew assembleDebug`',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/File: field names more than one file path/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a Depends-on reference to a non-existent tasks-*.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-dangling-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## alpha\nx\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-alpha.md'),
+        [
+          '## T1 · alpha',
+          '- **Closes user story:** As a user, I want alpha, so that y.',
+          '- **Change type:** create-new',
+          '- **File:** `src/alpha.ts`',
+          '- **Precise change:** add alpha().',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** `src/alpha.test.ts`',
+          '- **Depends on:** T1 from tasks-beta-missing.md (needed for alpha init)',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/Depends on:\*\* references tasks-\*\.md file\(s\) that do not exist/);
+      expect(out).toMatch(/tasks-beta-missing\.md/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects two tasks declaring Change type: create-new on the same file', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-collision-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## one\nx\n\n## two\nx\n',
+      );
+      const taskAt = (file: string, story: string) =>
+        [
+          `## T1 · ${story}`,
+          `- **Closes user story:** As a user, I want ${story}, so that y.`,
+          '- **Change type:** create-new',
+          `- **File:** \`${file}\``,
+          `- **Precise change:** ${story}.`,
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          `- **Test:** \`${file.replace(/\.ts$/, '.test.ts')}\``,
+          '',
+        ].join('\n');
+      // Two tasks both claim create-new on the same file.
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-one.md'),
+        taskAt('.github/workflows/ci.yml', 'android build step'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-two.md'),
+        taskAt('.github/workflows/ci.yml', 'ios build step'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/create-new collision/);
+      expect(out).toMatch(/\.github\/workflows\/ci\.yml \(x2\)/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts one create-new + one modify-existing on the same file', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-collision-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## seed\nx\n\n## extend\nx\n',
+      );
+      const taskAt = (file: string, story: string, changeType: string, depends: string) =>
+        [
+          `## T1 · ${story}`,
+          `- **Closes user story:** As a user, I want ${story}, so that y.`,
+          `- **Change type:** ${changeType}`,
+          `- **File:** \`${file}\``,
+          `- **Precise change:** ${story}.`,
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          `- **Test:** \`${file.replace(/\.ts$/, '.test.ts')}\``,
+          `- **Depends on:** ${depends}`,
+          '',
+        ].join('\n');
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-seed.md'),
+        taskAt('.github/workflows/ci.yml', 'pipeline scaffold', 'create-new', 'none'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-extend.md'),
+        taskAt(
+          '.github/workflows/ci.yml',
+          'android build step',
+          'modify-existing',
+          'T1 from tasks-seed.md (Snapfile drives the add)',
+        ),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a bare Test: N/A without a parenthetical reason', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-na-bare-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## bare-na\nx\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-bare-na.md'),
+        [
+          '## T1 · ci workflow',
+          '- **Closes user story:** As the developer, I want CI to run, so that merges are verified.',
+          '- **Change type:** create-new',
+          '- **File:** `.github/workflows/ci.yml`',
+          '- **Signature:** N/A',
+          '- **Precise change:** declare the workflow.',
+          '- **Acceptance:**',
+          '  - A present.',
+          '  - B present.',
+          '  - C present.',
+          '- **Test:** N/A',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/N\/A in Test: or Signature: must include a parenthetical reason/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts N/A (image asset) — parenthetical reason present', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-na-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'features-x.md'),
+        '# Features — X\n\n## app icon\nx\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-app-icon.md'),
+        [
+          '## T1 · 1024x1024 marketing icon',
+          '- **Closes user story:** As the app, I need the 1024x1024 marketing icon, so that the App Store listing displays the brand.',
+          '- **Change type:** create-new',
+          '- **File:** `ios/Cleaner/Assets.xcassets/AppIcon.appiconset/marketing.png`',
+          '- **Signature:** N/A (image asset)',
+          '- **Precise change:** export the master brand PNG at 1024x1024 for the App Store marketing slot.',
+          '- **Acceptance:**',
+          '  - File exists at the path above.',
+          '  - PNG dimensions are exactly 1024x1024.',
+          '  - Has no alpha channel (App Store requirement).',
+          '- **Test:** N/A (image asset — dimensions asserted in acceptance)',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

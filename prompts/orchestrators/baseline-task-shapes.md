@@ -15,6 +15,39 @@ epic / gap targets one of the topics below.
 
 ---
 
+## Universal task-shape invariants (apply to every baseline and feature)
+
+Learned from six field tests. These rules are **mechanically enforced**
+by `scripts/validate-instantiation.sh`; violating them fails the gate.
+
+1. **One File field = exactly one file path.** No comma-separated list,
+   no two backticked paths in one field. If a change spans two files,
+   split into two tasks. Example of rejected:
+   `**File:** \`android/app/build.gradle.kts\`, \`ios/Cleaner/Config.xcconfig\``
+2. **Only one task per File may declare `Change type: create-new`.**
+   If several tasks all edit the same `.github/workflows/ci.yml` or
+   `android/app/build.gradle.kts`, exactly one is the creator
+   (`create-new`) and every other is `modify-existing` with an
+   explicit `Depends on: <creator task>` entry. The validator rejects
+   "six tasks create the same file" outright.
+3. **Every `Depends on: tasks-X.md` reference must resolve to an
+   actual file on disk.** Referencing the features file name by
+   mistake (`tasks-progress-tracking-resume.md` when it's a
+   *features* file) fails the gate.
+4. **`Test: N/A` and `Signature: N/A` require a parenthetical reason.**
+   Accepted: `N/A (image asset)`, `N/A (GitHub UI configuration)`,
+   `N/A (text metadata — length asserted in acceptance)`. Rejected:
+   bare `N/A`, empty `N/A ()`. Before using N/A, check whether a real
+   verifier is feasible: `actionlint` for GitHub workflows,
+   `bash -n` for shell scripts, `gh api` for repo settings,
+   `wc -c` for metadata length.
+5. **Use `scripts/scaffold-screenshot-captures.sh`** to emit the
+   screenshot matrix — do not hand-write 15 near-identical tasks.
+6. **Run `bash scripts/finalize.sh prompts/outputs/current`** as the
+   ONLY post-Step-3 action. Do not hand-write `revise-report.md`.
+
+---
+
 ## Identity, auth & onboarding
 
 - At least one task per supported platform for each of: sign up, sign

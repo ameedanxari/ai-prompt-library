@@ -478,6 +478,34 @@ for f in "${files[@]}"; do
     fail=1
   fi
 
+  # 3b. File field with comma-separated backticked paths — another
+  # one-task-per-file violation. Field test #6 surfaced 5 tasks like:
+  #     **File:** `android/app/build.gradle.kts`, `ios/Cleaner/Config.xcconfig`
+  # which read as "one task writes to two files" — exactly what check 3
+  # intends to reject. Check 3's pattern missed it because the model
+  # used real paths separated by ", ` " rather than the phrase
+  # "(multiple files)". Explicit detection here.
+  multi_backtick=$(awk '
+    /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ || /^[[:space:]]*-[[:space:]]*File:/ {
+      # Count backticked tokens on this line.
+      s = $0
+      count = 0
+      while (match(s, /`[^`]+`/)) {
+        count++
+        s = substr(s, RSTART + RLENGTH)
+      }
+      if (count > 1) printf "%d:%s\n", NR, $0
+    }
+  ' "$f")
+  if [ -n "$multi_backtick" ]; then
+    echo "❌ $f: File: field names more than one file path"
+    printf "%s\n" "$multi_backtick" | sed 's/^/   /'
+    echo "   Each task MUST write to exactly one file. Split this task"
+    echo "   into N tasks, one per file, each with its own acceptance"
+    echo "   criteria and test."
+    fail=1
+  fi
+
   # 4. Tautological acceptance bullets.
   if grep -niE "$TAUTOLOGIES" "$f" >/dev/null 2>&1; then
     echo "❌ $f: tautological acceptance criteria (nothing meaningful asserted)"
@@ -546,6 +574,42 @@ for f in "${files[@]}"; do
     fail=1
   fi
 
+  # 5b-ii. N/A justification — a bare "Test: N/A" / "Signature: N/A"
+  # without a parenthetical reason is an escape hatch. Field test #6
+  # showed ~13% of tasks dropped the Test field this way even when a
+  # real verifier was feasible (actionlint for workflows, bash -n for
+  # scripts, gh api for branch-protection, wc -c for metadata sizes).
+  # Acceptable: "N/A (image asset)", "N/A (GitHub UI configuration)",
+  # "N/A (text metadata, length-validated in acceptance)".
+  # Rejected:   "N/A", "N/A (CI/CD)" is too vague — must mention WHY
+  # a runnable test is impossible, not just WHAT the task is.
+  bad_na=$(awk '
+    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*$/ {
+      printf "%d:%s\n", NR, $0
+      next
+    }
+    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*$/ {
+      # already handled
+      next
+    }
+    # Also flag N/A followed by a non-parenthetical token, or an
+    # empty parenthetical.
+    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*\([[:space:]]*\)[[:space:]]*$/ {
+      printf "%d:%s\n", NR, $0
+    }
+  ' "$f")
+  if [ -n "$bad_na" ]; then
+    echo "❌ $f: N/A in Test: or Signature: must include a parenthetical reason"
+    printf "%s\n" "$bad_na" | sed 's/^/   /'
+    echo "   Accepted: N/A (image asset), N/A (GitHub UI configuration),"
+    echo "             N/A (text metadata — size-validated in acceptance)."
+    echo "   Rejected: bare N/A, empty \"N/A ()\" — must say WHY a runnable"
+    echo "   verifier is impossible. Most CI/CD workflows can be tested via"
+    echo "   \`actionlint\`, shell scripts via \`bash -n\`, metadata via length"
+    echo "   assertions. Reach for a real test first, N/A second."
+    fail=1
+  fi
+
   # 5c. `Depends on:` must be either `none` or carry a reason (Phase 6b).
   # A bare task-id list like "T1, T2" is a schema violation — invented
   # ordering without justification is what broke the MenuMaker run.
@@ -569,6 +633,39 @@ for f in "${files[@]}"; do
     echo "$bad_depends" | sed 's/^/     /'
     fail=1
   fi
+
+  # 5c-ii. Every `tasks-<slug>.md` referenced in a Depends-on line must
+  # exist on disk. Field test #6 surfaced a task that depended on
+  # `tasks-progress-tracking-resume.md` — which was the *features* file
+  # name, not a tasks file. The executor would have blocked on that
+  # chain forever. Collect every backticked-or-bare tasks-<slug>.md
+  # reference; flag any that don't resolve.
+  dangling_depends=$(awk -v dir="$TARGET_DIR" '
+    /^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*/ {
+      line = $0
+      while (match(line, /tasks-[a-z0-9][a-z0-9-]*\.md/)) {
+        token = substr(line, RSTART, RLENGTH)
+        if (!seen[token]++) refs[token] = NR
+        line = substr(line, RSTART + RLENGTH)
+      }
+    }
+    END {
+      for (t in refs) {
+        cmd = "test -f " dir "/" t
+        if (system(cmd) != 0) printf "%d:%s\n", refs[t], t
+      }
+    }
+  ' "$f")
+  if [ -n "$dangling_depends" ]; then
+    echo "❌ $f: **Depends on:** references tasks-*.md file(s) that do not exist"
+    printf "%s\n" "$dangling_depends" | sed 's/^/   /'
+    echo "   The referenced task files do not exist in $TARGET_DIR."
+    echo "   Common cause: referencing the features file name"
+    echo "   (features-<epic>.md) by mistake, or a task file that was"
+    echo "   renamed. Fix the reference or generate the missing file."
+    fail=1
+  fi
+
   # Every Closes user story that IS present must be well-formed.
   if grep -E "$USER_STORY_MARKER" "$f" >/dev/null 2>&1; then
     if ! grep -E "$USER_STORY_WELL_FORMED" "$f" >/dev/null 2>&1; then
@@ -819,6 +916,81 @@ for f in "${files[@]}"; do
     fi
   fi
 done
+
+# 7. Cross-file create-new collision detector. If N tasks across all
+# tasks-*.md declare **Change type: create-new** for the same File,
+# only one of them can actually do so — the executor will error the
+# moment the second task tries to create an already-existing file.
+# This was field-test #6's most severe defect: 6 tasks all claimed
+# create-new for `.github/workflows/ci.yml`, 7 for
+# `android/app/build.gradle.kts`, 5 for
+# `ios/Cleaner/Cleaner.xcodeproj/project.pbxproj`. The correct shape
+# is ONE create-new plus N-1 modify-existing, with Depends-on chained
+# so the creator runs first.
+if [ ${#files[@]} -gt 0 ]; then
+  # Build a tab-separated inventory: <file> <task-title> <File path> <Change type>.
+  # One row per task section.
+  inventory=$(mktemp)
+  for tf in "${files[@]}"; do
+    awk -v src="$(basename "$tf")" '
+      function emit() {
+        if (have_file && have_change) {
+          printf "%s\t%s\t%s\t%s\n", src, title, cur_file, cur_change
+        }
+        have_file = 0; have_change = 0
+        cur_file = ""; cur_change = ""
+      }
+      /^## / {
+        emit()
+        title = $0
+        sub(/^## */, "", title)
+        next
+      }
+      /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ {
+        if (match($0, /`[^`]+`/)) {
+          cur_file = substr($0, RSTART + 1, RLENGTH - 2)
+          have_file = 1
+        }
+      }
+      /^[[:space:]]*-[[:space:]]*\*\*Change type:\*\*/ {
+        ct = $0
+        sub(/.*Change type:\*\*[[:space:]]*/, "", ct)
+        sub(/[[:space:]].*$/, "", ct)
+        cur_change = ct
+        have_change = 1
+      }
+      END { emit() }
+    ' "$tf"
+  done > "$inventory"
+
+  # Group rows where Change type = create-new by File path; count.
+  collision_report=$(awk -F'\t' '
+    $4 == "create-new" {
+      creators[$3] = creators[$3] "\n   - " $1 " · " $2
+      counts[$3]++
+    }
+    END {
+      for (f in counts) {
+        if (counts[f] > 1) {
+          printf "%s (x%d):%s\n", f, counts[f], creators[f]
+        }
+      }
+    }
+  ' "$inventory" | sort)
+  rm -f "$inventory"
+  if [ -n "$collision_report" ]; then
+    echo "❌ create-new collision: multiple tasks declare 'Change type: create-new' for the same file"
+    printf "%s\n" "$collision_report" | sed 's/^/   /'
+    echo "   Only ONE task can create-new a given file. The rest must be"
+    echo "   'Change type: modify-existing' and should Depends-on the"
+    echo "   creator task so the executor runs them in order."
+    echo "   Example: one 'github-actions-pipeline-setup' task creates"
+    echo "   .github/workflows/ci.yml; subsequent android-build-step /"
+    echo "   ios-build-step / lint-step tasks modify-existing the file"
+    echo "   and depend on the setup task."
+    fail=1
+  fi
+fi
 
 if [ $fail -eq 0 ]; then
   echo "✅ all engine outputs are fully instantiated"
