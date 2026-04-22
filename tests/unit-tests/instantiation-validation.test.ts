@@ -93,7 +93,7 @@ describe('validator — clean fixture passes', () => {
         path.join(sandbox, 'revise-report.md'),
         [
           '---',
-          'revised_at: 2026-04-20T00:00:00Z',
+          `revised_at: ${new Date().toISOString().replace(/\.\d{3}Z$/, 'Z')}`,
           'engine: audit-and-remediate',
           'checks_run: [C3, C4, C6, C7, C8]',
           'checks_passed: [C3, C4, C6, C7, C8]',

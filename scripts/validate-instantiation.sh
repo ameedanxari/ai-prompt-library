@@ -445,6 +445,8 @@ for f in "${files[@]}"; do
       echo "   Required: **Closes user story:** As <a|an|the> <role>, I <want|need> <outcome>, so that <value>."
       echo "   Example:  **Closes user story:** As a user, I want to sign up with email, so that I can save my preferences."
       echo "   Rules:    start with 'As a', 'As an', or 'As the' (infrastructure tasks may use 'As the app' / 'As the developer' / 'As the maintainer'). Use 'I want' or 'I need'. Include the two commas."
+      echo "   Tip:      the common \"missing comma before 'so that'\" case is mechanically fixable — run:"
+      echo "               bash scripts/fix-user-stories.sh $TARGET_DIR"
       echo "   Offending lines:"
       echo "$bad_stories" | sed 's/^/     /'
       fail=1

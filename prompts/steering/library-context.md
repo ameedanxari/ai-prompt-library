@@ -40,6 +40,21 @@ disk) or `- [ ]` (still needed). Do NOT advance to the next stage
 while any `- [ ]` remains. Do NOT track completion in memory — the
 script is the source of truth.
 
+## Mechanical fixes — use the helpers, don't hand-edit
+
+When `revise.sh` fails on mechanical / schema violations you can often
+fix them in one shot with a helper script instead of batch-editing
+files:
+
+```bash
+# Missing comma before "so that" in Closes-user-story lines.
+bash .ai-prompts/scripts/fix-user-stories.sh prompts/outputs/current
+```
+
+After running any helper, re-run `bash .ai-prompts/scripts/revise.sh
+prompts/outputs/current` to refresh the gate. Never hand-write
+`revise-report.md` — it is machine-produced and tamper-checked.
+
 ## Execute-signal guard — do not ask for preference
 
 If the user's prompt contains any of these words (case-insensitive),
