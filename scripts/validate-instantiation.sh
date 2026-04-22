@@ -695,10 +695,22 @@ for f in "${files[@]}"; do
       l = tolower(line)
       return (l ~ /\*\*file:\*\*/ || l ~ /^[[:space:]]*-[[:space:]]*file:/)
     }
-    function is_collapse_precise(line) {
+    function is_collapse_text(line) {
+      # Collapse language anywhere within a task section body.
+      # Matches phrases like "each device", "all locales", "multiple
+      # device sizes", "every language", plus the equally-common
+      # list-of-axes pattern ("iPhone 6.7\", 6.5\", 5.5\"" or
+      # "phone and tablet sizes" — five+ screenshots per size, etc.).
       l = tolower(line)
-      if (l !~ /precise change/) return 0
-      return (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform)/)
+      if (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform|form factor)/) return 1
+      # "for each size", "for each locale", "for each device" are the
+      # giveaway forms in Acceptance bullets.
+      if (l ~ /for each (size|locale|language|device|platform)/) return 1
+      # "at least N screenshots are provided" without a specific path
+      # is also a collapse signal — it promises N artefacts without
+      # splitting them into tasks.
+      if (l ~ /at least [0-9]+ screenshots? (are|is) (provided|generated|created|captured)/) return 1
+      return 0
     }
     /^## / {
       if (in_sec && matched && captures_image) {
@@ -712,7 +724,11 @@ for f in "${files[@]}"; do
     }
     {
       if (in_sec) {
-        if (is_collapse_precise($0)) matched = 1
+        # Scan BOTH precise-change and acceptance bullets. Previously
+        # we only looked at precise-change; models worked around it by
+        # collapsing in acceptance ("At least 5 screenshots are
+        # provided for each device size").
+        if (is_collapse_text($0)) matched = 1
         if (is_file_field($0) && is_image_file_line($0)) captures_image = 1
       }
     }
@@ -781,6 +797,21 @@ for f in "${files[@]}"; do
       echo "   describes one locale × one device combination. Add one capture"
       echo "   task per locale × per required device class alongside any"
       echo "   tooling tasks. See baseline-task-shapes.md §App-store prep."
+      echo "   Tip: generate the full locale × device matrix in one shot:"
+      echo "       bash scripts/scaffold-screenshot-captures.sh \\"
+      echo "            --target $TARGET_DIR --platform <ios|android> --app-name <AppName>"
+      fail=1
+    elif case "$fname_lower" in *screenshots*) true ;; *) false ;; esac && [ "$capture_count" -lt 3 ]; then
+      # A file specifically named tasks-*screenshots*.md with only 1-2
+      # image-File tasks is effectively a collapsed "generate all" task
+      # with a single token path. Even the smallest real matrix
+      # (2 locales × 2 devices = 4) produces more. Baseline requires
+      # per-locale × per-device, so <3 is always wrong.
+      echo "❌ $f: screenshot task file has only $capture_count capture task(s) — too few"
+      echo "   A screenshot-capture file must carry one task per locale × per"
+      echo "   device class. Even a minimal matrix (2 locales × 2 devices) has"
+      echo "   4 tasks. This file has $capture_count. That is almost certainly a"
+      echo "   single collapsed task with a token path, not the full matrix."
       echo "   Tip: generate the full locale × device matrix in one shot:"
       echo "       bash scripts/scaffold-screenshot-captures.sh \\"
       echo "            --target $TARGET_DIR --platform <ios|android> --app-name <AppName>"

@@ -770,6 +770,24 @@ describe('validator — user-story linkage', () => {
   it('does NOT flag a screenshot tooling task (source file, iterates internally)', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-tooling-'));
     try {
+      const capture = (num: number, locale: string, device: string, frame: string) =>
+        [
+          `## T${num} · ${locale} ${device} ${frame} screenshot (Android)`,
+          `- **Closes user story:** As a reviewer, I want the ${locale} ${device} ${frame} screenshot, so that I can approve the Play listing for ${locale}.`,
+          '- **Change type:** create-new',
+          `- **File:** \`fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\``,
+          `- **Signature:** PNG captured from ${frame}UITest.testFirstLaunch`,
+          `- **Precise change:** Run \`bundle exec fastlane snapshot --devices ${device} --languages ${locale} --only_testing AppUITests/${frame}UITest/testFirstLaunch\`. Writes the PNG to the File path above.`,
+          '- **Acceptance:**',
+          `  - File \`fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\` exists.`,
+          '  - PNG dimensions match device form factor.',
+          `  - OCR contains ${locale}-localised strings for the ${frame} screen.`,
+          `- **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\``,
+          '- **Estimated LOC delta:** +0',
+          '- **Depends on:** T1 (Snapfile drives the capture)',
+          '',
+        ].join('\n');
+
       fs.writeFileSync(
         path.join(sandbox, 'tasks-android-screenshots.md'),
         [
@@ -789,20 +807,9 @@ describe('validator — user-story linkage', () => {
           '- **Estimated LOC delta:** +20',
           '- **Depends on:** none',
           '',
-          '## T2 · en-US Pixel 7 dashboard screenshot (Android)',
-          '- **Closes user story:** As a reviewer, I want the English Pixel 7 dashboard screenshot, so that I can approve the Play listing for en-US.',
-          '- **Change type:** create-new',
-          '- **File:** `fastlane/screenshots/en-US/pixel_7/1_dashboard.png`',
-          '- **Signature:** 1440x3088 PNG captured from DashboardUITest.testFirstLaunch',
-          '- **Precise change:** Run `bundle exec fastlane snapshot --devices pixel_7 --languages en-US --only_testing StorageCleanerUITests/DashboardUITest/testFirstLaunch`. Writes the PNG to the File path above.',
-          '- **Acceptance:**',
-          '  - File `fastlane/screenshots/en-US/pixel_7/1_dashboard.png` exists.',
-          '  - PNG dimensions are 1440x3088.',
-          '  - OCR of the image contains the English strings "Dashboard" and "Free space".',
-          '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/pixel_7/1_dashboard.png`',
-          '- **Estimated LOC delta:** +0',
-          '- **Depends on:** T1 (Snapfile drives the capture)',
-          '',
+          capture(2, 'en-US', 'pixel_7', 'dashboard'),
+          capture(3, 'es-ES', 'pixel_7', 'dashboard'),
+          capture(4, 'fr-FR', 'pixel_7', 'dashboard'),
         ].join('\n'),
       );
       fs.writeFileSync(
@@ -1617,12 +1624,38 @@ describe('validator — orphan tasks and baseline coverage', () => {
         '- **Change type:** create-new',
         '- **File:** `fastlane/screenshots/en-US/iphone-6.7-inch/2_dashboard.png`',
         '- **Signature:** PNG asset',
-        '- **Precise change:** run snapshot.',
+        '- **Precise change:** run snapshot scoped to en-US and iphone-6.7-inch.',
         '- **Acceptance:**',
         '  - A present.',
         '  - B present.',
         '  - C present.',
         '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/2_dashboard.png`',
+        '- **Depends on:** T1 (Snapfile)',
+        '',
+        '## T3 · Screenshot — es-ES / iphone-6.7-inch / dashboard',
+        '- **Closes user story:** As the app, I need a es-ES iphone-6.7-inch dashboard screenshot, so that the es-ES listing shows localised content.',
+        '- **Change type:** create-new',
+        '- **File:** `fastlane/screenshots/es-ES/iphone-6.7-inch/3_dashboard.png`',
+        '- **Signature:** PNG asset',
+        '- **Precise change:** run snapshot scoped to es-ES and iphone-6.7-inch.',
+        '- **Acceptance:**',
+        '  - A present.',
+        '  - B present.',
+        '  - C present.',
+        '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/es-ES/iphone-6.7-inch/3_dashboard.png`',
+        '- **Depends on:** T1 (Snapfile)',
+        '',
+        '## T4 · Screenshot — fr-FR / iphone-6.7-inch / dashboard',
+        '- **Closes user story:** As the app, I need a fr-FR iphone-6.7-inch dashboard screenshot, so that the fr-FR listing shows localised content.',
+        '- **Change type:** create-new',
+        '- **File:** `fastlane/screenshots/fr-FR/iphone-6.7-inch/4_dashboard.png`',
+        '- **Signature:** PNG asset',
+        '- **Precise change:** run snapshot scoped to fr-FR and iphone-6.7-inch.',
+        '- **Acceptance:**',
+        '  - A present.',
+        '  - B present.',
+        '  - C present.',
+        '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/fr-FR/iphone-6.7-inch/4_dashboard.png`',
         '- **Depends on:** T1 (Snapfile)',
         '',
       ].join('\n');
@@ -1724,22 +1757,26 @@ describe('validator — orphan tasks and baseline coverage', () => {
         ].join('\n'),
       );
       // Non-screenshot tasks use the minimal-good body; screenshot files
-      // are the canonical per-platform scaffolder shape with one capture.
-      const screenshotBody = [
-        '## T1 · Screenshot — en-US / iphone / dashboard',
-        '- **Closes user story:** As the app, I need an en-US screenshot, so that the iOS listing shows localised content.',
-        '- **Change type:** create-new',
-        '- **File:** `fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`',
-        '- **Signature:** PNG asset',
-        '- **Precise change:** run snapshot.',
-        '- **Acceptance:**',
-        '  - A present.',
-        '  - B present.',
-        '  - C present.',
-        '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`',
-        '- **Depends on:** none',
-        '',
-      ].join('\n');
+      // carry 3+ canonical captures (the validator's minimum).
+      const screenshotBody = ((devicePath: string) => {
+        const cap = (num: number, locale: string) =>
+          [
+            `## T${num} · Screenshot — ${locale} / ${devicePath} / dashboard`,
+            `- **Closes user story:** As the app, I need a ${locale} screenshot, so that the listing shows localised content.`,
+            '- **Change type:** create-new',
+            `- **File:** \`fastlane/screenshots/${locale}/${devicePath}/${num}_dashboard.png\``,
+            '- **Signature:** PNG asset',
+            `- **Precise change:** run snapshot scoped to ${locale} and ${devicePath}.`,
+            '- **Acceptance:**',
+            '  - A present.',
+            '  - B present.',
+            '  - C present.',
+            `- **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${devicePath}/${num}_dashboard.png\``,
+            '- **Depends on:** none',
+            '',
+          ].join('\n');
+        return [cap(1, 'en-US'), cap(2, 'es-ES'), cap(3, 'fr-FR')].join('\n');
+      });
       fs.writeFileSync(
         path.join(sandbox, 'tasks-store-listing-description-and-metadata.md'),
         minimalGoodTask(),
@@ -1750,11 +1787,11 @@ describe('validator — orphan tasks and baseline coverage', () => {
       );
       fs.writeFileSync(
         path.join(sandbox, 'tasks-screenshots-android.md'),
-        screenshotBody.replace(/iphone-6\.7-inch/g, 'pixel_7'),
+        screenshotBody('pixel_7'),
       );
       fs.writeFileSync(
         path.join(sandbox, 'tasks-screenshots-ios.md'),
-        screenshotBody,
+        screenshotBody('iphone-6.7-inch'),
       );
       fs.writeFileSync(
         path.join(sandbox, 'tasks-privacy-nutrition-labels-data-safety-form.md'),
