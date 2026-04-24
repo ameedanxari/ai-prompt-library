@@ -5,6 +5,94 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — executor-side safeguards
+
+Field test on a StorageCleaner (native Android + iOS) brief exposed
+three failure modes that the existing gates did not catch. The plan
+was well-formed and the revise gate cleared, but the executor (SWE
+1.6-class) still produced an unbuildable tree while reporting 167/167
+tasks "done". This release adds three after-planning gates that close
+the holes the previous gates were not in a position to see.
+
+### Added — `scripts/build-path-ledger.sh`
+
+Derives `prompts/outputs/current/path-ledger.md` from every
+`**File:**` field in the plan. Refuses to pass when:
+
+- **Collision A** — two tasks claim the same path (e.g. one task's
+  `create-new` clashes with another's under the same file).
+- **Collision B** — the same source-code basename is declared in two
+  different directories of the same architectural role (e.g.
+  `filter/AgeFilter.kt` + `filters/AgeFilter.kt`). Asset paths and
+  legitimate `models/Foo.kt` + `services/Foo.kt` pairs are not flagged.
+
+The executor is now required to consult the ledger before writing any
+source file. That prevents the field-tested "executor invents
+`filters/` partway through the run" failure mode, which produced 67
+duplicate class files in the StorageCleaner run.
+
+Wired into `finalize.sh` so the ledger is always fresh when the revise
+gate clears, and into `drill-down-engine.md` Step 3 wrap-up prose.
+
+### Added — `scripts/build-gate.sh`
+
+After-each-task compile-only gate. Auto-detects every buildable stack
+at the project root (Gradle, xcodebuild, Node/TypeScript, Python, Go)
+and runs each stack's cheapest compile check. Exits 0 when every
+detected stack compiles, 1 when any fails, 2 when no buildable stack
+is found or a required tool is missing.
+
+For Node projects, prefers project-declared `npm run typecheck` or
+`npm run build` over bare `tsc --noEmit`, so projects that rely on
+transpile-time type-checking (vitest, esbuild) are not forced into
+strict-tsc without their consent.
+
+The executor now runs the gate after each task. A task with a passing
+unit test but a failing whole-project compile is `failed`, not `done`.
+This is the single largest piece of leverage uncovered by the field
+test — syntax errors, duplicate top-level declarations, and broken
+imports all land under it.
+
+### Added — `scripts/validate-execution-envelope.sh`
+
+Honest-handoff gate. The executor cannot set `next_task: null` unless
+every plan `T<n>/R<n>` either:
+
+1. Has a file on disk at its declared `**File:**` path, OR
+2. Is listed in the envelope's `blocked_tasks` / `failed_tasks` /
+   `deferred_tasks`, with a matching journal entry.
+
+Any task failing both is a "silent skip" — the executor produced no
+file for it and did not report why. The script writes
+`envelope-report.md` listing each silent skip with the slug and
+declared path, grouped for easy remediation. This directly addresses
+the StorageCleaner run's 374-task silent skip, where the envelope
+reported 167/167 done while ~70% of planned files had never been
+written.
+
+### Changed — `scripts/finalize.sh`
+
+Now a 3-step wrapper: auto-fixers → path ledger → revise gate. A
+clean revise gate is promoted to `fail` when the ledger surfaces plan
+collisions, so duplicate-path bugs do not slip past to the executor.
+
+### Changed — library self-typecheck
+
+Introduced `tsconfig.typecheck.json` and `npm run typecheck` (scoped
+to `src/**` so pre-existing test-file type noise does not block the
+gate the library itself dogfoods). Fixed one pre-existing `any` /
+indexed-access error in `src/commerce-template-validator.ts` so
+`build-gate.sh .` is green on the library's own repo.
+
+### Notes
+
+The library still does not enforce an app-shell preflight (Android
+manifest + `res/` + launcher activity; iOS non-template root view);
+integration tasks after per-file tasks; or a visible-output review
+phase. Those remain planned extensions — the three gates shipped here
+are the ones that would have prevented ~70% of the StorageCleaner
+run's failures on their own.
+
 ## [v1.0.0] — 2026-04-22
 
 First release where a low-end coding model (SWE 1.6-class) can take a

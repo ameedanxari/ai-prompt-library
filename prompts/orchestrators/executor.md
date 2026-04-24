@@ -65,10 +65,38 @@ On top of the entry-point + this file, load:
    `prompts/outputs/current/epics.md` (greenfield) — for ordering.
 2. `prompts/outputs/current/execution-log.md` if it exists — resume
    point.
+3. `prompts/outputs/current/path-ledger.md` — the authoritative list of
+   every file path the plan owns. Keep this open (or re-read on demand)
+   before every file write. If `finalize.sh` wrote the ledger as part
+   of the gate, it is up to date; if it is missing, run
+   `bash .ai-prompts/scripts/build-path-ledger.sh prompts/outputs/current`
+   yourself before the first task write.
 
 Do NOT load every remediation/task file at startup. Load each one only
 when you are about to execute its tasks. Isolation discipline from the
 planning engines carries over here.
+
+### Canonical-paths contract
+
+Before writing ANY source file, check that the path you are about to
+write appears verbatim in `path-ledger.md`. The ledger enforces one
+canonical path per concept and is the reason field-tested weak models
+produce duplicate trees (`filter/` vs `filters/`, `classifier/` vs
+`scanner/`, `Settings/` vs `Storage/`). If your intended path is not
+in the ledger:
+
+1. Look for a close variant (same basename, singular vs plural, or
+   sibling directory). If one IS in the ledger, that is the canonical
+   path — use it.
+2. If nothing close is in the ledger, STOP. Do not invent a path. The
+   plan does not declare it. Either open the source `tasks-*.md` to
+   confirm the declared path matches what the ledger recorded, or
+   regenerate the task via drill-down-engine Step 3 so the plan names
+   the path you need.
+
+Never write a source file to a path that is not in the ledger. Weak
+models that diverge here produce duplicate classes that break the
+build and cause the same test file to pass twice.
 
 ## Output artifact: execution-log.md
 
@@ -165,16 +193,51 @@ repeat:
       if R<n> status is already `done` in execution-log.md: skip
       if R<n>'s Depends on lists a task not yet `done`: skip (deferred)
       execute R<n>:
+        0. Check R<n>'s **File:** path is listed in path-ledger.md.
+           If not, STOP — see "Canonical-paths contract" above.
         1. Apply the Precise change to the named File.
         2. Run the named Test command.
-        3. Evaluate each Acceptance bullet: pass/fail.
-        4. Append a log entry.
+        3. Run the build-green gate (see below). If it fails, this
+           task is `failed` — do NOT mark done.
+        4. Evaluate each Acceptance bullet: pass/fail.
+        5. Append a log entry.
       if status != `done`:
         surface the blocker to the user and stop this gap.
         move to next gap (do NOT retry blocked tasks without user input).
     after gap: run broader regression check (see below).
-  when all gaps processed: produce summary (see below).
+  when all gaps processed: run the honest-handoff gate (see below)
+    and only then produce the summary.
 ```
+
+### Build-green gate (after every task)
+
+A test passing on a newly-created file does not prove the whole
+project still builds. The library ships `build-gate.sh` to catch the
+failure mode where a task's unit test compiles fine but the rest of
+the codebase — imports, duplicate top-level declarations, manifest
+merges, schema files — is now broken.
+
+```bash
+bash .ai-prompts/scripts/build-gate.sh
+```
+
+This auto-detects Gradle, xcodebuild, Node/TypeScript, Python, and Go
+stacks at the project root and runs each stack's cheapest compile-only
+check. Exit codes:
+
+- `0` → every detected stack compiled cleanly. Mark the task done
+  and append the log entry.
+- `1` → at least one stack fails to compile. The task is `failed`.
+  Do NOT append a done entry. Either undo the change and log the
+  task as `failed` with the specific compile error, or fix the break
+  inside the same task loop before logging. Do not move to the next
+  task until the build is green.
+- `2` → no buildable stack detected OR required tool missing from
+  PATH. Surface this to the user; it usually means the executor was
+  invoked outside a real project tree.
+
+If the gate blames a path that is not in `path-ledger.md`, that is a
+canonical-paths violation — re-read the contract above.
 
 ### Broader regression check after each gap
 
@@ -218,6 +281,38 @@ Stop the loop and report when any of the following is true:
   probably wrong for this codebase; re-audit).
 - The user interrupted.
 
+## Honest-handoff gate (MANDATORY before setting `next_task: null`)
+
+Before declaring a run complete — that is, before setting `next_task:
+null` in the envelope — run:
+
+```bash
+bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
+```
+
+This script reads every `tasks-*.md` / `remediation-*.md`, extracts
+the `**File:**` path declared by each T<n>/R<n>, and checks that
+either (a) the file exists on disk under the project root, OR (b) the
+task id is listed in `blocked_tasks` / `failed_tasks` /
+`deferred_tasks` in the envelope. Any task that fails BOTH is a
+"silent skip" — the executor produced no file for it and did not
+explain why.
+
+Exit codes:
+- `0` → every plan task is accounted for. `next_task: null` is
+  permitted. Produce the final summary.
+- `1` → silent skips detected. `envelope-report.md` lists each skipped
+  task's id and declared path. Do NOT set `next_task: null`. For each
+  listed row, either execute the task now or add it to
+  `blocked_tasks` / `failed_tasks` / `deferred_tasks` with a one-line
+  reason and a matching journal entry.
+
+Field tests repeatedly produced an envelope reporting
+`next_task: null` with 167/167 done while ~70% of planned files were
+never written. This gate exists specifically to catch that — a weak
+model cannot declare a run complete without accounting for every task
+in the plan.
+
 ## Report format (final output to user)
 
 ```
@@ -246,5 +341,11 @@ Next step options:
   this orchestrator executes (gap-closure).
 - `prompts/orchestrators/drill-down-engine.md` — produces the plan for
   greenfield builds; same execution semantics apply.
-- `scripts/validate-instantiation.sh` — the gate this orchestrator
-  refuses to run without.
+- `scripts/validate-instantiation.sh` — the preflight gate this
+  orchestrator refuses to run without.
+- `scripts/build-path-ledger.sh` — emits the canonical-paths ledger
+  the executor must consult before writing any source file.
+- `scripts/build-gate.sh` — the after-each-task build-green gate.
+- `scripts/validate-execution-envelope.sh` — the honest-handoff gate
+  that refuses `next_task: null` when files are missing without a
+  blocked/failed/deferred entry.

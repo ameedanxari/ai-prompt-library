@@ -91,6 +91,28 @@ reasoned `Depends on`, or a failing `executor_gate` are present. The
 executor's preflight runs this same validator and refuses to start on
 a red gate.
 
+**Executor-side safeguards** (added after a field test on a
+StorageCleaner build uncovered three failure modes the planning gates
+could not see):
+
+- **Canonical-paths ledger** (`scripts/build-path-ledger.sh`) — emits
+  `path-ledger.md` alongside `revise-report.md`. The executor reads
+  it before every file write; if the path it is about to create is
+  not in the ledger, it stops rather than invent a new folder tree.
+  Catches the "`filter/` vs `filters/`" duplicate-class pattern at
+  plan time rather than compile time.
+- **Build-green gate** (`scripts/build-gate.sh`) — runs a cheap
+  whole-project compile check after every task (`:app:compileDebugKotlin`,
+  `xcodebuild build`, `npm run typecheck` / `tsc --noEmit`,
+  `py_compile`, `go build`). A task whose unit test passes but whose
+  change breaks the project compile is `failed`, not `done`.
+- **Honest handoff envelope** (`scripts/validate-execution-envelope.sh`)
+  — checks every plan `T<n>/R<n>` against both the disk and the
+  envelope's `blocked`/`failed`/`deferred` lists before allowing
+  `next_task: null`. Any task with no file on disk and no excuse is a
+  silent skip; the executor cannot declare the run complete until
+  each one is either executed or explicitly marked.
+
 **Stage guard during Step 3:** `scripts/step3-progress.sh` scans the
 features files on disk and lists every feature with `[x]` (tasks file
 present) or `[ ]` (still missing). The engine consults it between
@@ -152,7 +174,10 @@ preference menu — you already authorised the run.
 | `scripts/validate-instantiation.sh` | Mechanical validator. Refuses to pass on template leaks, schema violations, missing companions, missing brief-keyword coverage, or failing revise gate. |
 | `scripts/revise.sh` | Wraps the validator and writes `revise-report.md` with YAML frontmatter. Canonical producer — never hand-write the report. |
 | `scripts/step3-progress.sh` | Disk-derived checklist of features vs. task files. Engine consults between task-file writes to avoid jumping stages on memory. |
-| `scripts/finalize.sh` | **Mandatory post-Step-3 command.** Chains `fix-user-stories.sh` + `revise.sh` and surfaces the gate verdict. Agents cannot declare the drill-down complete without seeing `executor_gate: pass` from this script. |
+| `scripts/finalize.sh` | **Mandatory post-Step-3 command.** Chains `fix-user-stories.sh` + `build-path-ledger.sh` + `revise.sh` and surfaces the gate verdict. Agents cannot declare the drill-down complete without seeing `executor_gate: pass` from this script. |
+| `scripts/build-path-ledger.sh` | Emits `path-ledger.md` — the one authoritative list of every `**File:**` path the plan owns. Detects collisions (same path under two tasks; same source basename under two directories of the same role). Executor consults before writing any source file. |
+| `scripts/build-gate.sh` | After-each-task compile gate. Auto-detects Gradle / xcodebuild / Node / Python / Go and runs the cheapest compile-only check for each. Stops a task from being marked done when its unit test passes but the whole project stops compiling. |
+| `scripts/validate-execution-envelope.sh` | Honest-handoff gate. Refuses `next_task: null` when plan tasks have no file on disk and no entry in `blocked_tasks` / `failed_tasks` / `deferred_tasks`. Catches silent skips. |
 | `scripts/fix-user-stories.sh` | Auto-fixer for the mechanical "missing comma before 'so that'" pattern in `Closes user story` lines. Idempotent. |
 | `scripts/scaffold-screenshot-captures.sh` | Generates the full app-store screenshot task matrix (2 tooling + N locales × M devices captures) with canonical schema pre-filled, so weak models don't have to expand the matrix by hand. |
 | `scripts/reset-integration.sh` | Force-reset for consumer projects (purges stale state, refreshes steering, rewrites `AGENTS.md`). |
@@ -170,7 +195,7 @@ npm test
 
 The suite includes property-based tests over every module, integration
 tests for the library's internal structure, and the instantiation
-validator. 768 tests pass, 0 failing.
+validator. 789 tests pass, 0 failing.
 
 Before cutting a new release tag, also run the acceptance probe —
 see [`docs/acceptance-probe.md`](docs/acceptance-probe.md). Unit

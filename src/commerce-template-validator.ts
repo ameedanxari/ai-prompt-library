@@ -494,7 +494,7 @@ export class CommerceTemplateValidator {
     };
 
     // Analyze each template
-    Object.keys(templates).forEach(key => {
+    (Object.keys(templates) as Array<keyof typeof templates>).forEach(key => {
       const template = templates[key];
       template.hasTypeScriptInterfaces = this.hasTypeScriptInterfaces(template.content);
       template.hasImplementationExamples = this.hasImplementationExamples(template.content);

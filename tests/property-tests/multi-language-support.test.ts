@@ -25,7 +25,7 @@ const REQUIRED_SECTIONS = [
   'Performance Features'
 ];
 
-const LANGUAGE_SPECIFIC_KEYWORDS = {
+const LANGUAGE_SPECIFIC_KEYWORDS: Record<string, string[]> = {
   'rust-systems-programming.md': [
     'rust', 'cargo', 'ownership', 'borrowing', 'tokio', 'async', 'await',
     'memory safety', 'zero-cost abstractions', 'webassembly', 'simd', 'concurrency'

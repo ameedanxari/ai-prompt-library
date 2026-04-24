@@ -39,14 +39,32 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
-echo "Step 1/2 — apply mechanical auto-fixers"
+echo "Step 1/3 — apply mechanical auto-fixers"
 echo "----------------------------------------"
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
-echo "Step 2/2 — run the Revise Gate"
+echo "Step 2/3 — build the canonical-paths ledger"
+echo "-------------------------------------------"
+# Emit path-ledger.md so the executor has an authoritative list of
+# every File: path the plan owns. Non-fatal: ledger collisions are
+# also caught by the revise gate (it surfaces them under failing_files).
+ledger_status=0
+bash "$SCRIPT_DIR/build-path-ledger.sh" "$TARGET_DIR" || ledger_status=$?
+echo ""
+echo "Step 3/3 — run the Revise Gate"
 echo "------------------------------"
 gate_status=0
 bash "$SCRIPT_DIR/revise.sh" "$TARGET_DIR" || gate_status=$?
+
+# Ledger collisions also block the executor. Promote a clean revise
+# gate to fail if the ledger is dirty — catching it here is cheaper
+# than surfacing duplicate source files mid-execution.
+if [ $gate_status -eq 0 ] && [ $ledger_status -ne 0 ]; then
+  gate_status=$ledger_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but path-ledger.sh found collisions;"
+  echo "   promoting overall gate to fail. Open path-ledger.md."
+fi
 
 echo ""
 echo "=== finalize: done ==="

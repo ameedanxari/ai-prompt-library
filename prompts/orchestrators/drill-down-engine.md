@@ -552,11 +552,16 @@ This wrapper:
 1. Applies the mechanical auto-fixers (`fix-user-stories.sh`) so that
    trivial patterns like "missing comma before 'so that'" never block
    the gate.
-2. Runs the Revise Gate (`revise.sh`), which wraps the instantiation
+2. Builds the canonical-paths ledger (`build-path-ledger.sh`) — emits
+   `path-ledger.md` and refuses to pass if the plan declares the same
+   path under two tasks or the same source-code basename under two
+   directories of the same architectural role (the field-tested
+   cause of duplicate-class builds).
+3. Runs the Revise Gate (`revise.sh`), which wraps the instantiation
    validator and always writes
    `prompts/outputs/current/revise-report.md` with frontmatter that
    names every failing file.
-3. Surfaces the gate verdict (`executor_gate: pass` or `fail`) and the
+4. Surfaces the gate verdict (`executor_gate: pass` or `fail`) and the
    next action. **You cannot declare the drill-down complete without
    running this and seeing `pass`.**
 
