@@ -11,9 +11,9 @@ project in, and paste exactly this:
 ```
 Hey AI — set up a new project for me using the AI Prompt Library.
 
-Do ALL of the following, in order, without stopping between steps and
-without asking me "shall I continue?" between steps. Only pause at the
-single question in step 4. If a step is already done, skip it.
+Do the following, in order. At each checkpoint (marked ⏸), stop and
+show me a summary of what was just completed, then wait for me to say
+"Continue" before proceeding. If a step is already done, skip it.
 
 1. Initialize git if needed. If ".git/" does not exist in this folder,
    run: git init
@@ -28,7 +28,7 @@ single question in step 4. If a step is already done, skip it.
    the template, and wires steering files for whichever IDE I'm using:
      bash .ai-prompts/scripts/bootstrap-project-integration.sh
 
-4. Ask me exactly ONE question, then wait for my answer:
+4. ⏸ Ask me exactly ONE question, then wait for my answer:
 
      "In a paragraph (or less), what do you want to build?
       Be as vague or specific as you like — 'a music app like Spotify
@@ -48,40 +48,48 @@ single question in step 4. If a step is already done, skip it.
    exists and has files, the engine will read them as authoritative
    reference material (designs, mockups, specs, brand). If not, skip.
 
-6. Run the library end-to-end. Read .ai-prompts/prompts/AGENTS.md and
+6. Run the PLANNING phase. Read .ai-prompts/prompts/AGENTS.md and
    .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md, then
-   follow the entry point's routing. This will automatically:
-   - Pick Greenfield mode (drill-down engine).
-   - Produce prompts/outputs/current/epics.md — feature epics PLUS a
-     production-readiness baseline (auth, admin/RBAC, observability,
-     i18n/RTL, theming/whitelabel, a11y, tests, CI/CD, infra, app-store
-     release prep, settings/debug, privacy/PII).
-   - Expand each epic into features-*.md (one per platform where
-     applicable — web, Android, iOS).
-   - Roll up external services into external-accounts.md (which
-     third-party accounts I need to sign up for, sign-up URLs, env
-     vars, free-tier notes).
-   - Expand each feature into atomic tasks-*.md (each task names a
-     real file, a real function signature, and ≥3 verifiable
-     acceptance criteria).
-   - Run the instantiation validator.
-   - Run the revise gate — nine coverage checks against
-     baseline-task-shapes rules. Produces revise-report.md with
-     executor_gate: pass|fail. If fail, regenerates the offending
-     file once; if still failing, stops and tells me exactly what is
-     wrong.
-   - Chain into the executor, which runs the preflight gate, then
-     writes actual code under src/, backend/, frontend/, android/,
-     ios/, infrastructure/, etc. Runs tests, appends per-task entries
-     to execution-log.md with a YAML handoff envelope at the top (so
-     any future session can pick up without re-planning).
+   follow the entry point's routing. The engine will:
 
-   Do NOT stop between any of these steps. Do NOT ask for confirmation.
-   Only stop if a hard blocker appears (external credentials needed,
-   ambiguous requirement that needs my decision, or a test regression
-   after a gap closes).
+   a. ⏸ Generate epics — feature epics from my brief PLUS a
+      production-readiness baseline. Show me the epics and wait.
+   b. ⏸ Expand each epic into features — with data models, API
+      contracts, and external services. Show me a summary and wait.
+   c. ⏸ Expand each feature into atomic task prompts — each task
+      is a complete, standalone instruction for an AI to implement
+      one piece of the project. Show me progress after each epic’s
+      worth of tasks and wait.
+   d. ⏸ Run the revise gate. Report the result and STOP.
 
-7. When everything is done, report to me:
+   The output of planning is a checklist of high-quality task prompts
+   under prompts/outputs/current/tasks-*.md. Each prompt contains the
+   exact file to create, the exact function signature to write, what
+   the code must do, and 3+ testable acceptance criteria.
+
+   Only stop planning if a hard blocker appears (ambiguous requirement
+   that needs my decision, or the revise gate fails).
+
+7. Run the EXECUTION phase (only after I approve the plan). When I
+   say "Execute" or "Continue" after the planning summary:
+
+   Read .ai-prompts/prompts/orchestrators/executor.md and execute
+   each task prompt one at a time:
+   - Read the task prompt from tasks-*.md.
+   - Write the actual code as instructed by the prompt.
+   - Run the test specified in the prompt.
+   - Log the result in execution-log.md.
+   - ⏸ Report what was done (file, test result, acceptance) and wait.
+
+   This is the task checklist. Each task gets ticked off as it
+   completes. If I say "Continue 5", run 5 tasks before the next
+   checkpoint.
+
+   Only stop execution if: a test regression appears, 3+ tasks
+   block consecutively, external credentials are needed, or I
+   interrupt.
+
+8. When everything is done, report to me:
    - Every file under prompts/outputs/current/ with a one-line purpose.
      Expect: project-context.md (optional), epics.md, features-*.md,
      external-accounts.md, tasks-*.md, revise-report.md,
@@ -106,11 +114,19 @@ Start now.
 1. The agent runs shell commands for ~10 seconds — setup.
 2. The agent asks you **one** question: "What do you want to build?"
 3. Answer in a sentence or a paragraph. Vague is fine.
-4. The agent works for a while — anywhere from 20 minutes to several
-   hours depending on scope and which model is running it. You can walk
-   away; it won't need you again unless it hits a real blocker.
-5. When it's done, the agent tells you how to run the app, how to run
-   the tests, and what external accounts/keys (if any) you still need.
+4. The agent starts the **planning phase** and stops at each
+   checkpoint (⏸) to show you what it produced:
+   - Epics → Features → Task prompts → Revise gate.
+   - Say "Continue" at each checkpoint to advance.
+   - If something looks wrong, give feedback and the agent adjusts.
+5. After the revise gate passes, the agent shows you the full task
+   checklist and asks you to say "Execute" to begin building.
+6. The agent enters the **execution phase**, implementing one task
+   at a time. After each task it shows you the result and waits.
+   Say "Continue" to advance, or "Continue 5" to batch.
+7. If the IDE closes or context runs out, start a new session and
+   say "Continue where you left off" — the agent picks up from
+   `execution-log.md`.
 
 ## Expected output layout
 
@@ -148,16 +164,22 @@ smaller in scope and you want the library to skip some of that, open
 Then tell the agent to continue — it will re-read `MY_PROJECT.md` and
 apply your restrictions.
 
-## If something goes wrong mid-run
+## If something goes wrong mid-run, or you need to resume
 
-Paste this second prompt and the agent will pick up where it left off:
+Paste this and the agent will pick up where it left off:
 
 ```
 Continue where you left off. Read .ai-prompts/prompts/AGENTS.md and
 .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first. The
 entry point will detect current state from prompts/outputs/current/
-and execution-log.md. Do not ask me "shall I continue?" — just continue.
+and execution-log.md. Resume from the last checkpoint.
 ```
+
+The agent will:
+- If still in planning: resume task file generation from the progress
+  script and present the next checkpoint.
+- If in execution: read the `next_task` from `execution-log.md` and
+  continue implementing from there.
 
 ## If you want to start completely fresh
 

@@ -160,39 +160,74 @@ richer and verifiable. If the IDE tries to produce its own spec files,
 ignore that and write to `prompts/outputs/current/` per the engine's
 rules.
 
-### E. Execute the chosen engine (no pausing)
+### E. Execute the chosen engine (checkpoint-driven)
 
-Run the engine end-to-end. Do NOT stop between steps. Do NOT say
-"Step 1 complete, shall I proceed?". Proceed.
+Run the engine following its internal checkpoint protocol. Each engine
+defines explicit **⏸ CHECKPOINT** points where you STOP, present a
+summary of what was just completed, and **wait for the user to say
+"Continue"** before proceeding.
+
+**Checkpoint protocol (applies to all engines):**
+
+At each ⏸ CHECKPOINT, present to the user:
+1. What was just completed (step name + key outputs).
+2. Current progress (e.g. "Step 2 of 3", "15 / 42 task files").
+3. What comes next.
+4. A clear prompt: `"Say **Continue** to proceed, or give feedback."`
+
+Then STOP and wait. Do NOT auto-advance past a checkpoint. Do NOT say
+"I'll continue" or "proceeding to...". The user drives the pace.
+
+If the user provides feedback at a checkpoint, incorporate it into
+the relevant outputs before advancing.
+
+If the user says "Continue N" (e.g. "Continue 3"), run N checkpoints
+before the next stop.
 
 Each engine runs its own internal pipeline:
 
-- **drill-down-engine.md**: Seed → Expand epics → Roll up external
-  services → Atomize tasks → Validate → Revise → Hand off.
-- **audit-and-remediate.md**: Audit → Gap list → Remediation → Roll up
-  external services → Validate → Revise → Chain to executor.
+- **drill-down-engine.md**: Seed ⏸ → Expand epics ⏸ → Atomize tasks
+  (⏸ per epic) → Revise ⏸ → **HARD STOP** (planning complete).
+- **audit-and-remediate.md**: Audit → Gap list ⏸ → Remediation → Roll
+  up external services → Validate → Revise ⏸ → **HARD STOP**.
 
 The Revise gate (inside each engine) is non-optional. It runs every
 time. If `revise-report.md` reports `executor_gate: fail`, the engine
 stops and surfaces `remaining_issues` — do not attempt to continue.
 
 The only valid stop points are:
+- A ⏸ CHECKPOINT defined by the engine.
 - A hard stop condition in the engine trips (placeholder remains,
-  acceptance criteria insufficient, file path doesn't exist for a
-  remediation task, etc.) — report to user with the specific file.
+  acceptance criteria insufficient, etc.) — report to user.
 - The revise gate fails — report `remaining_issues` to the user.
-- All gates pass AND the user's ask was planning-only → stop after
-  listing written files.
-- All gates pass AND the user's ask included execute-signal words →
-  hand off to `executor.md` (the engines do this themselves).
+- **HARD STOP** at the end of planning — wait for user to say
+  "Execute" before transitioning to the executor.
 
-### F. Executor (invoked by the engines when user asked to execute)
+### F. Executor (invoked only when user explicitly authorizes)
 
-The engines hand off to `executor.md` directly — the entry point does
-not re-invoke it. The executor reads the plan from
-`prompts/outputs/current/`, maintains `execution-log.md` (with YAML
-handoff envelope), and stops on regressions, 3+ consecutive blockers,
-or user interrupt.
+The engines present a **HARD STOP** when planning is complete. The
+user must say "Execute" or "Continue" to authorize the transition.
+Do NOT auto-invoke the executor based on execute-signal words in the
+original prompt — the planning phase always completes first with user
+review.
+
+Once authorized, read `prompts/orchestrators/executor.md`. The
+executor processes tasks one at a time, with a ⏸ CHECKPOINT after
+each task. It maintains `execution-log.md` (with YAML handoff
+envelope) and stops on regressions, 3+ consecutive blockers, or user
+interrupt.
+
+**Resumability:** If the IDE closes or context is exhausted mid-run,
+the user can start a new session and say:
+
+```
+Continue where you left off. Read .ai-prompts/prompts/AGENTS.md and
+.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
+```
+
+The entry point will detect current state from
+`prompts/outputs/current/` and `execution-log.md` and resume from the
+last checkpoint.
 
 ## What NOT to auto-load
 
@@ -220,7 +255,7 @@ or user interrupt.
    paths, function signatures, and API shapes — never template filenames
    or `.ai-prompts/prompts/` paths.
 
-## Example session (typical flow)
+## Example session (typical flow with checkpoints)
 
 ```
 User: "A todo app with user auth and team workspaces"
@@ -229,13 +264,41 @@ Agent loads: ai-agent-entry-point.md, drill-down-engine.md   (2 files)
 Agent checks: working_copy/ empty → skip external handler
 Agent checks: project-context.md missing → skip precedence load
 Agent runs: drill-down-engine Step 1 (seed)
-  → writes prompts/outputs/current/epics.md (5–7 epics, <500 tokens)
+  → writes prompts/outputs/current/epics.md (5 feature + 12 baseline)
+  → writes prompts/outputs/current/brief-keywords.md
+⏸ CHECKPOINT: shows epics to user, waits for "Continue"
+
+User: "Continue"
+
 Agent runs: Step 2 per epic (fresh context each)
   → writes features-<epic>.md per epic
-Agent runs: Step 3 per feature (fresh context each)
-  → writes tasks-<feature>.md per feature
-Agent runs: bash scripts/validate-instantiation.sh
-  → ✅ all task outputs are fully instantiated
+  → writes external-accounts.md
+⏸ CHECKPOINT: shows feature summary, waits for "Continue"
+
+User: "Continue"
+
+Agent runs: Step 3 for first epic's features
+  → writes tasks-<feature>.md per feature in epic 1
+⏸ CHECKPOINT: shows progress (e.g. 8/42 task files), waits
+
+User: "Continue"
+
+[...repeats per epic...]
+
+Agent runs: Revise gate
+  → executor_gate: pass
+⏸ HARD STOP: shows planning summary + task checklist, waits
+
+User: "Execute"
+
+Agent reads: executor.md
+Agent runs: first task from tasks-*.md
+  → writes code, runs test, logs result
+⏸ CHECKPOINT: shows task result, waits for "Continue"
+
+User: "Continue"
+
+[...repeats per task...]
 ```
 
 ## Example session (with external material)
@@ -249,8 +312,23 @@ Agent runs: external-input-handler
   → writes prompts/outputs/current/project-context.md
 Agent runs: drill-down-engine Step 1 loading project-context.md first
   → epics reflect real screen names, real entities from the mockups
-Agent runs: Steps 2–3 per epic/feature (project-context.md loaded in each)
-Agent runs: validate-instantiation.sh
+⏸ CHECKPOINT: shows epics, waits for "Continue"
+
+[...same checkpoint flow as above...]
+```
+
+## Example session (resuming after context exhaustion)
+
+```
+User: "Continue where you left off"
+
+Agent loads: ai-agent-entry-point.md
+Agent detects: execution-log.md exists with next_task: E15.T1
+Agent routes: Mode 2 (execute existing plan)
+Agent reads: executor.md
+Agent resumes: from E15.T1
+  → implements task, logs result
+⏸ CHECKPOINT: shows result, waits for "Continue"
 ```
 
 ## Scope

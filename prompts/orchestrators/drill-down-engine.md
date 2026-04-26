@@ -180,8 +180,22 @@ Aim for 5–15 keywords.
 The validator checks this file exists and that every keyword row has
 both Status and "Covered by / reason" non-empty.
 
-**After writing — continue immediately to Step 2.** Do not stop, do not ask
-the user for confirmation. The epics file you just wrote is Step 2's input.
+### ⏸ CHECKPOINT — Epics review
+
+After writing `epics.md` and `brief-keywords.md`, **STOP and present the
+epics to the user**. Show:
+
+1. The list of feature epics (names + one-line goals).
+2. The list of baseline epics (names only — note which were included vs.
+   restricted).
+3. The brief-keywords coverage table.
+4. The line: `"Planning progress: Step 1 of 3 complete. Say **Continue** to
+   expand these epics into features, or give feedback to adjust."`
+
+**Wait for the user to say "Continue" (or provide feedback).** If feedback
+is given, regenerate `epics.md` incorporating the feedback, then present
+again. When the user says "Continue", proceed to Step 2.
+
 Step 2 expands every epic — feature AND baseline — into features; do not
 selectively skip baseline epics.
 
@@ -233,12 +247,36 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 **Write to:** `prompts/outputs/current/features-<epic-slug>.md`
 
 **After each epic's features are written, continue to the next epic.** Once
-all epics have been expanded (one `features-*.md` per epic), continue
-immediately to Step 2.5 (roll-up) — do not stop.
+all epics have been expanded (one `features-*.md` per epic), run Step 2.5
+(external services roll-up) automatically, then present the checkpoint.
 
 ---
 
 ## STEP 2.5 — Roll up external services manifest
+
+(Content unchanged — see below.)
+
+### ⏸ CHECKPOINT — Features review
+
+After writing all `features-*.md` files and `external-accounts.md`,
+**STOP and present a summary to the user**. Show:
+
+1. Number of feature files written, grouped by epic.
+2. Total feature count across all epics.
+3. External services summary (count + names, or "none required").
+4. The line: `"Planning progress: Step 2 of 3 complete. N features across
+   M epics are ready for task expansion. Say **Continue** to generate
+   atomic task prompts, or give feedback to adjust."`
+
+**Wait for the user to say "Continue".** When confirmed, proceed to
+Step 3.
+
+---
+
+_(Step 2.5 content follows — the roll-up runs automatically before the
+checkpoint above.)_
+
+### Roll up external services manifest (runs automatically as part of Step 2)
 
 After every `features-*.md` is written, scan each file's
 `external_services` sections and aggregate them into one file:
@@ -285,8 +323,6 @@ single line: "No external services required — the project runs with
 local-only dependencies." The file must always exist so downstream
 consumers (README generator, executor's env-var check, CI setup) can
 rely on its presence.
-
-**After writing, continue immediately to Step 3.**
 
 ---
 
@@ -404,27 +440,19 @@ Each task has (this schema is aligned with `audit-and-remediate.md` Step 3):
 
 ### Acceptance criteria — good vs. bad
 
-**BAD — one sentence / paragraph. Validator counts 0 bullets:**
-```markdown
-- **Acceptance:** The signup endpoint returns 201 on success and
-  rejects invalid emails and weak passwords with 400.
-```
+**❌ BAD — one sentence / paragraph (Validator counts 0 bullets):**
+> - **Acceptance:** The signup endpoint returns 201 on success and rejects invalid emails and weak passwords with 400.
 
-**BAD — a single bullet. Validator counts 1 bullet, rejects as <3:**
-```markdown
-- **Acceptance:**
-  - Returns 201 on success; 400 on invalid email; 400 on weak password.
-```
+**❌ BAD — a single bullet (Validator counts 1 bullet, rejects as <3):**
+> - **Acceptance:**
+>   - Returns 201 on success; 400 on invalid email; 400 on weak password.
 
-**BAD — 2 bullets. Validator counts 2 bullets, rejects as <3:**
-```markdown
-- **Acceptance:**
-  - Valid email+password returns 201.
-  - Invalid input returns 400.
-```
+**❌ BAD — 2 bullets (Validator counts 2 bullets, rejects as <3):**
+> - **Acceptance:**
+>   - Valid email+password returns 201.
+>   - Invalid input returns 400.
 
-**GOOD — 3+ independently testable bullets, each verifiable by one
-command or one read:**
+**✅ GOOD — 3+ independently testable bullets, each verifiable by one command or one read:**
 ```markdown
 - **Acceptance:**
   - Valid email+password returns 201 with a token in the response body.
@@ -439,8 +467,8 @@ commas or semicolons does not count as separate bullets.
 
 **Write to:** `prompts/outputs/current/tasks-<feature-slug>.md`
 
-**After each feature's tasks are written, continue to the next feature.**
-Only stop when every feature across every epic has a `tasks-*.md` file.
+**After each feature's tasks are written, continue to the next feature
+within the current epic.**
 
 ### Step 3 progress tracking (MANDATORY — run between every task file)
 
@@ -475,7 +503,9 @@ Exit codes:
 5. Re-run the progress script. Confirm the item flipped to `- [x]`.
 6. If unchanged, the slug you used doesn't match. Delete the file
    you just wrote and use the canonical name from the checklist.
-7. Repeat until exit 0.
+7. **After completing all features for one epic**, present the
+   checkpoint (see below).
+8. Repeat until exit 0.
 
 **Do NOT advance to the Revise Gate while the progress script exits 1.**
 The Revise Gate will fail on coverage gaps and tell you the same
@@ -487,25 +517,97 @@ the library has observed across every field test: agent writes 20-30
 files, loses track, skips ahead. The progress script exists to keep
 you honest between writes.
 
+### ⏸ CHECKPOINT — Task generation progress (after each epic)
+
+After writing task files for all features in one epic, **STOP and
+present progress to the user**. Show:
+
+1. The epic just completed (name).
+2. Number of task files written for this epic.
+3. Overall progress from the progress script (`N / M (P%)`).
+4. The line: `"Task generation progress: [epic name] complete.
+   Overall: N / M task files written (P%). Say **Continue** to
+   proceed to the next epic, or give feedback."`
+
+**Wait for the user to say "Continue".** This checkpoint is what
+prevents the rush-and-hallucinate failure mode. The model gets a
+fresh context window for each epic's worth of tasks, ensuring
+each task prompt receives the full attention it deserves.
+
+### Self-contained prompt test (MANDATORY quality gate per task)
+
+Each `tasks-*.md` file is a **standalone implementation prompt**. An AI
+opening this file in a fresh context, with zero knowledge of the
+project, must be able to implement the task without reading any other
+file from this library. That is the entire purpose of the planning
+phase.
+
+**Before writing each task, ask yourself:** "If I gave this task entry
+to a different AI model that has never seen MY_PROJECT.md, the epics,
+or the features — could it write the correct code?" If the answer is
+no, the task is too vague.
+
+A task prompt passes the self-contained test when it specifies:
+- The exact file path to create or modify
+- The exact function/class/struct signature to write
+- What the code must DO (precise_change: concrete logic, not a
+  category of work)
+- What platform APIs, libraries, or frameworks to use
+- What the inputs and outputs look like (types, shapes)
+- 3+ independently testable acceptance criteria
+- The exact test file path and command to verify
+
+**ANTI-PATTERNS from field tests (these are all real failures):**
+
+**❌ BAD — tautological acceptance criteria (DO NOT EMIT THIS)**
+> - **Acceptance:**
+>   - The file exists at the declared path.
+>   - The implementation stores data locally.
+>   - The named test command passes.
+
+These criteria prove nothing. They say "the file exists" and "a test
+passes" — they don't describe WHAT the code does. An empty file with
+a trivially passing test satisfies all three. **Reject any task whose
+acceptance criteria describe file existence or test passage rather
+than functional behavior.**
+
+**❌ BAD — vague precise_change (DO NOT EMIT THIS)**
+> - **Precise change:** Add filter predicates for older-than months and minimum byte size with deterministic local evaluation.
+
+This doesn't say HOW to filter (what API to query, what data to
+compare, what the input/output shapes are). It's a restatement of
+the feature name, not an implementation instruction.
+
+**✅ GOOD — concrete, implementable precise_change**
+```markdown
+- **Precise change:** Add `fun filterByAge(assets: List<MediaAsset>,
+  olderThanMonths: Int): List<MediaAsset>` that queries each asset's
+  `dateAdded` from `MediaStore.Images.Media.DATE_ADDED`, computes
+  the age in months from `System.currentTimeMillis()`, and returns
+  only assets older than the threshold. Add `fun filterBySize(assets:
+  List<MediaAsset>, minBytes: Long): List<MediaAsset>` that reads
+  `MediaStore.Images.Media.SIZE` and returns assets exceeding the
+  threshold.
+```
+
 ### Dissolution: good vs. bad
 
-**BAD — retains template reference and placeholders:**
-```markdown
-## T1 · Implement signup per auth-oauth.md
-- **File:** `.ai-prompts/prompts/modules/feature-patterns/auth-oauth.md`
-- **Signature:** `async function {{signupHandler}}(req, res)`
-- **Acceptance:**
-  - Follows the pattern described in the template
-  - Uses the standard auth flow
-  - Tests pass
-- **LOC:** medium
-```
+**❌ BAD — retains template reference and placeholders (DO NOT EMIT THIS)**
+> ## T1 · Implement signup per auth-oauth.md
+> - **File:** `.ai-prompts/prompts/modules/feature-patterns/auth-oauth.md`
+> - **Signature:** `async function {{signupHandler}}(req, res)`
+> - **Acceptance:**
+>   - Follows the pattern described in the template
+>   - Uses the standard auth flow
+>   - Tests pass
+> - **LOC:** medium
+
 Reasons this fails: (1) mentions the template filename; (2) points at
 `.ai-prompts/prompts/...`; (3) uses a `{{placeholder}}`; (4) acceptance
 criteria are not independently testable ("tests pass" is tautological);
 (5) LOC is not a range.
 
-**GOOD — dissolved into project-specific content:**
+**✅ GOOD — dissolved into project-specific content**
 ```markdown
 ## T1 · Signup endpoint handler
 - **File:** `src/auth/signup.ts`
@@ -530,7 +632,10 @@ Do **not** declare tasks ready if any of these are true:
 - Any placeholder pattern remains (`{{...}}`, `<TBD>`, `[project name]`).
 - A task's `file_path` is a directory or does not look like a file path.
 - A task lists fewer than 3 acceptance criteria.
-- A task's `acceptance_criteria` all reduce to "tests pass" or "works".
+- A task's `acceptance_criteria` all reduce to "tests pass", "file
+  exists", or "works" — criteria must describe **functional behavior**.
+- A task's `precise_change` is a restatement of the objective (e.g.
+  "implement X" where X is the task name) rather than a concrete delta.
 - Two tasks in the same feature name the same file + same function.
 
 If any stop condition trips, regenerate the offending task(s) before the
@@ -586,17 +691,33 @@ don't exist. The validator knows exactly what is wrong; the report
 tells you which files and why. Regenerate from the engine, do not
 hand-edit.
 
-## Handing off to an implementer (only when revise gate passes)
+## ⏸ HARD STOP — Planning complete
 
-Once validation and revise both pass, a task file is self-contained: a
-weak model can open one `tasks-<feature>.md`, pick one task (`T1`, `T2`,
-…), and implement it without reading any other file in this library.
-That is the whole point — the expansion work happens here so the
-implementation context stays tiny.
+Once validation and revise both pass, the planning phase is **done**.
+A task file is self-contained: a fresh AI context can open one
+`tasks-<feature>.md`, pick one task (`T1`, `T2`, …), and implement it
+without reading any other file in this library. That is the whole
+point — the expansion work happens here so the implementation context
+stays tiny.
 
-If the user's original prompt carried execute-signal words (see the
-same list as `audit-and-remediate.md` Step 5), hand off IMMEDIATELY to
-`prompts/orchestrators/executor.md`. Do not wait for confirmation.
+**STOP and present the planning summary to the user.** Show:
+
+1. Total epics, features, and task files generated.
+2. Revise gate result (`executor_gate: pass`).
+3. The task checklist — every `tasks-*.md` file name with a `[ ]`
+   checkbox (these will be ticked off during execution).
+4. External accounts needed (from `external-accounts.md`), if any.
+5. The line: `"✅ Planning phase complete. N task prompts are ready
+   for execution. Say **Execute** to begin implementing tasks one by
+   one, or review the task files under prompts/outputs/current/
+   first."`
+
+**Wait for the user to say "Execute" or "Continue".** Do NOT
+automatically hand off to the executor. The user must explicitly
+authorize the transition from planning to execution.
+
+When the user confirms, read and follow
+`prompts/orchestrators/executor.md`.
 
 ## See also
 

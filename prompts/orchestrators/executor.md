@@ -201,6 +201,7 @@ repeat:
            task is `failed` — do NOT mark done.
         4. Evaluate each Acceptance bullet: pass/fail.
         5. Append a log entry.
+        6. Present the ⏸ CHECKPOINT (see below).
       if status != `done`:
         surface the blocker to the user and stop this gap.
         move to next gap (do NOT retry blocked tasks without user input).
@@ -208,6 +209,34 @@ repeat:
   when all gaps processed: run the honest-handoff gate (see below)
     and only then produce the summary.
 ```
+
+### ⏸ CHECKPOINT — After each task
+
+After executing each task and appending its log entry, **STOP and
+present the result to the user**. Show:
+
+1. **Task ID and objective** (e.g. `E1.T1 · Signup endpoint handler`).
+2. **File written/modified** and a one-line summary of the change.
+3. **Test result** (pass / fail / error).
+4. **Acceptance results** — each bullet with ✅ or ❌.
+5. **Status** (done / blocked / failed).
+6. **Overall progress** — `N / M tasks complete (P%)`.
+   Include counts: `done: X, blocked: Y, failed: Z, remaining: W`.
+7. If status is `done`:
+   `"Task complete. Say **Continue** to proceed to the next task."`
+   If status is `blocked` or `failed`:
+   `"Task [status]. [One-line explanation]. Say **Continue** to skip
+   to the next task, or provide guidance."`
+
+**Wait for the user to say "Continue".** Do NOT auto-advance.
+
+If the user says "Continue N" (e.g. "Continue 5"), execute N tasks
+before the next checkpoint. Each task still gets a log entry, but
+only the last one triggers the visible checkpoint. This is useful
+for straightforward tasks where the user doesn't need per-task review.
+
+If context is exhausted before the user responds, the next session
+can resume from `execution-log.md`'s `next_task` field.
 
 ### Build-green gate (after every task)
 

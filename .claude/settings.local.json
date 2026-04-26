@@ -1,0 +1,43 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(wc -l /Users/macintosh/Documents/Projects/DPROMPT/prompts/orchestrators/*.md)",
+      "Bash(wc -l /Users/macintosh/Documents/Projects/DPROMPT/prompts/stages/*.md)",
+      "Bash(wc -l /Users/macintosh/Documents/Projects/DPROMPT/prompts/steering/*.md)",
+      "Bash(ls -la android/app/src/main/)",
+      "Bash(find android *)",
+      "Bash(find ios *)",
+      "Bash(./gradlew :app:assembleDebug)",
+      "Bash(npm test *)",
+      "Bash(mkdir -p /tmp/ledger-test-empty)",
+      "Bash(bash scripts/build-path-ledger.sh /tmp/ledger-test-empty)",
+      "Bash(echo \"exit: $?\")",
+      "Bash(rm -rf /tmp/ledger-test-empty)",
+      "Bash(mkdir -p /tmp/ledger-test-ok)",
+      "Bash(mkdir -p /tmp/ledger-clean)",
+      "Bash(cat)",
+      "Bash(bash scripts/build-path-ledger.sh /tmp/ledger-clean)",
+      "Read(//tmp/ledger-clean/**)",
+      "Bash(mkdir -p /tmp/ledger-collide-a)",
+      "Bash(bash scripts/build-path-ledger.sh /Users/macintosh/Documents/Projects/StorageCleaner/prompts/outputs/current)",
+      "Bash(bash scripts/build-path-ledger.sh /tmp/ledger-collide-b-2)",
+      "Bash(grep -cE '^\\\\| `' /Users/macintosh/Documents/Projects/StorageCleaner/prompts/outputs/current/path-ledger.md)",
+      "Bash(awk '/^### Same path/,/^###|^##/' /Users/macintosh/Documents/Projects/StorageCleaner/prompts/outputs/current/path-ledger.md)",
+      "Bash(awk '/^### Same basename/,/^\\\\*\\\\*Fix/' /Users/macintosh/Documents/Projects/StorageCleaner/prompts/outputs/current/path-ledger.md)",
+      "Bash(chmod +x scripts/build-gate.sh)",
+      "Bash(mkdir -p /tmp/bg-empty)",
+      "Bash(bash scripts/build-gate.sh /tmp/bg-empty)",
+      "Bash(rm -rf /tmp/bg-empty)",
+      "Bash(bash scripts/build-gate.sh .)",
+      "Bash(npx tsc *)",
+      "Bash(git stash *)",
+      "Bash(awk -F':' '/error TS/{print $1}')",
+      "Bash(awk '{print $1}')",
+      "Bash(awk -F'/' '{print $1}')",
+      "Bash(npm run *)",
+      "Bash(chmod +x scripts/validate-execution-envelope.sh)",
+      "Bash(bash scripts/validate-execution-envelope.sh /Users/macintosh/Documents/Projects/StorageCleaner/prompts/outputs/current /Users/macintosh/Documents/Projects/StorageCleaner)",
+      "Bash(npx vitest *)"
+    ]
+  }
+}
