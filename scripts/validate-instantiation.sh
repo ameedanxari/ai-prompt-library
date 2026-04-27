@@ -24,7 +24,7 @@ GLOBAL_PATTERNS=(
 FILE_LINE_DIR_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*`[^`]+/`'
 FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|all)\b'
 
-# Tautological acceptance criteria — acceptance that just says "works",
+# Empty or generic prompt — acceptance that just says "works",
 # "tests pass", "no errors", etc. We look at bullet points under an
 # **Acceptance:** header.
 TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?\s*$'
