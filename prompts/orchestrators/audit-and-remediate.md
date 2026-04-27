@@ -161,117 +161,118 @@ Do not ask the user to pick a subset.
 
 ---
 
-## STEP 3 — Remediation tasks (per gap, fresh context each)
+## STEP 3 — Generate implementation prompts (per gap)
 
 For each gap `G<n>` in the gap list, start a **fresh context** containing
 only:
 - The single gap block from `gap-list.md`.
 - The slice of `audit-report.md` for the affected component(s).
 - `project-context.md`.
-- At most one module from `prompts/modules/` chosen via
+- **Exactly ONE module** from `prompts/modules/` chosen via
   `prompts/orchestrators/module-selection-index.md` based on gap intent
   (consult the "Ops / Readiness" section for production-readiness gaps).
+  **You MUST load a module.** It provides the concrete patterns and
+  best practices needed to fix the gap correctly.
 - If the gap maps to a baseline topic (auth, admin/RBAC, observability,
   localization, theming, accessibility, testing, CI/CD, IaC, app-store
   prep, settings/debug, privacy/PII), ALSO load
   `prompts/orchestrators/baseline-task-shapes.md` for the per-topic
-  rules. They override any weaker defaults.
+  rules.
 
-**Produce:** atomic remediation tasks. Each task MUST name:
-- **Closes user story** — one line phrased as
-  `As a <role>, I want <outcome>, so that <value>`. Must trace back to
-  a user-visible behaviour in the audit (or to a baseline concern like
-  "As an operator, I want error alerts, so that I can respond to
-  production incidents"). An orphan task is a schema violation.
-- **Exactly ONE** file path. Not a directory (no trailing `/`). Not a
-  group like "multiple files" or "several test files". If the change
-  really spans N files, emit N tasks — one per file.
-- For `modify-existing` change types, the file path MUST exist in the
-  repo at the time of writing.
-- The precise change to make — a concrete delta, not a category of
-  work. Good: "Add `socket.io` dependency to the `dependencies` object
-  in `backend/package.json`, version `^4.7.0`." Bad: "Review test
-  failures and fix assertion errors." If you cannot state the delta in
-  one or two sentences of concrete terms, split the task.
-- Concrete acceptance criteria — each bullet must be independently
-  verifiable by running a command or reading a file. Forbidden bullets:
-  "tests pass", "it works", "no errors", "functional", "successful".
-- The test that will prove the fix, by exact path (create-new OK). If
-  the test is an existing command (e.g. `npm test`), state the command
-  AND the specific test name(s) that will assert the fix.
-- Estimated LOC delta.
-- Dependencies on other remediation tasks, with a one-line reason (see
-  dependency rules below).
+**Produce:** a verbose, self-contained implementation prompt.
+This prompt must contain enough detail that an AI could fix the gap
+without seeing the original audit report.
+
+The output MUST NOT contain template filenames or placeholder tokens.
+
+### Prompt file structure
+
+Adapt the sections to the specific remediation, but follow this general
+structure:
 
 ```markdown
-# Remediation — <Gap Slug>
+# Remediation Prompt — <Gap Name>
+
+_Closes gap:_ G1 · <slug>
+
+## Context
+<Summary of the gap from the audit and what needs fixing.>
+
+## What to build
+<One-paragraph summary of the end-to-end fix.>
+
+## Implementation guidance
+
+<The core of the prompt. Dissolve the loaded module into concrete
+instructions for the project. Include:>
+
+### <Subsection per major concern>
+- Algorithms, configuration patterns, thresholds (from module)
+- Code patterns adapted to the project's language/framework
+- Exact file paths to modify (must exist in repo) or create
+- Precise changes (concrete deltas, not "fix the bug")
+
+### Testing approach
+- What to test and how
+- Concrete acceptance criteria
+- Exact commands to run
+
+### What NOT to do
+- Common mistakes the module warns about
+- Things to avoid touching
+```
+
+**Example — remediating a missing Xcode target:**
+
+```markdown
+# Remediation Prompt — MenuMaker Customer Target
 
 _Closes gap:_ G1 · ios-xcode-target-setup
 
-## R1 · Add MenuMaker-Customer app target to the Xcode project
-- **Closes user story:** As a Customer using an iPhone, I want a
-  dedicated customer app on my device, so that I only see customer
-  features and can install it from the App Store.
-- **Change type:** modify-existing
-- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
+## Context
+The iOS project currently lacks a dedicated target for the Customer app,
+violating the multi-app architecture. This must be added to the Xcode
+project so it can be built and deployed independently.
+
+## What to build
+Add a `MenuMaker-Customer` target to `project.pbxproj` linked to the
+shared core and containing the customer-specific source files.
+
+## Implementation guidance
+
+### Target Configuration
+- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj` (modify existing)
 - **Precise change:** In the `PBXProject` `targets` array, add one new
   `PBXNativeTarget` with name `MenuMaker-Customer`, product type
   `com.apple.product-type.application`, bundle identifier
-  `com.creatrixe.MenuMaker.customer`. Link the `MenuMakerCore` static
-  library target (create in R0 if absent) and add all source files
-  currently under `ios/MenuMaker/Customer/` to the new target's
-  `PBXSourcesBuildPhase`.
-- **Acceptance:**
-  - `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build` exits 0.
-  - `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Customer/Info.plist` prints `com.creatrixe.MenuMaker.customer`.
-  - `grep -c "MenuMaker-Customer" ios/MenuMaker.xcodeproj/project.pbxproj` is ≥ 4 (target definition + build phases).
-- **Test:** `ios/scripts/ci-customer-build.sh` (new) — exec the xcodebuild
-  command above; exit non-zero on failure.
-- **Estimated LOC delta:** +120 / -0
-- **Depends on:** none
+  `com.creatrixe.MenuMaker.customer`.
+- Link the `MenuMakerCore` static library target (create if absent)
+  and add all source files currently under `ios/MenuMaker/Customer/`
+  to the new target's `PBXSourcesBuildPhase`.
 
-## R2 · Add MenuMaker-Business app target to the Xcode project
-- **Change type:** modify-existing
-- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
-- **Precise change:** Same pattern as R1, name `MenuMaker-Business`,
-  bundle id `com.creatrixe.MenuMaker.business`, source files under
-  `ios/MenuMaker/Business/`.
-- **Acceptance:**
-  - `xcodebuild -scheme MenuMaker-Business -destination 'generic/platform=iOS' -configuration Debug build` exits 0.
-  - `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Business/Info.plist` prints `com.creatrixe.MenuMaker.business`.
-- **Test:** `ios/scripts/ci-business-build.sh` (new).
-- **Estimated LOC delta:** +120 / -0
+### Testing approach
+Run the following commands to verify:
+- `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build` must exit 0.
+- `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Customer/Info.plist` must print `com.creatrixe.MenuMaker.customer`.
+
+### Dependencies
 - **Depends on:** none
-  _(Independent of R1 — different target; both write to the same file but
-  non-overlapping sections.)_
 ```
-
-### Dependency rules (same as the gap list)
-
-- `Depends on: RN` is valid ONLY if this task's acceptance cannot be met
-  without RN's code change in place (shared symbol, migration, new
-  config key, etc.).
-- Sharing a file is NOT a dependency if the edits don't overlap. Two
-  tasks editing different sections of `project.pbxproj` are independent.
-- Provide a one-line reason in parentheses after `Depends on:` whenever
-  it is not `none`.
 
 ### Hard stop conditions
 
-Do not declare the remediation ready if any of these are true:
-- The File: field ends with `/`, contains `(multiple files ...)`, or
-  names more than one path.
-- For `modify-existing`, the named file does not exist in the repo at
-  the time of writing.
+Do not declare the remediation prompt ready if any of these are true:
+- The prompt does not specify which files to touch.
+- For modify-existing changes, the named files do not exist in the
+  repo at the time of writing.
 - Any acceptance bullet is `tests pass`, `it works`, `no errors`,
   `functional`, `successful`, or similar tautology.
 - The precise change is a category of work, not a concrete delta.
-- No test is named.
-- A task references a module path that does not exist on disk.
-- `Depends on: RN` lacks a one-line reason.
-- `Closes user story` is missing, or does not use the
-  `As a ... I want ... so that ...` form, or refers to a role / outcome
-  absent from the audit / gap description.
+- The prompt is under 50 lines — it's almost certainly too thin to
+  prevent hallucination.
+- A prompt contains no implementation guidance from the loaded module
+  (no patterns, no formulas, no code examples).
+- A prompt references a module path that does not exist on disk.
 
 **Write to:** `prompts/outputs/current/remediation-<gap-slug>.md`.
 
