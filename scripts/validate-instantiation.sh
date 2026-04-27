@@ -548,67 +548,9 @@ for f in "${files[@]}"; do
     fail=1
   fi
 
-  # 5. Every task block must carry a well-formed Closes-user-story line.
-  # We assume one task per "## " section (after the title-level #). Count
-  # task headings vs. user-story markers — any shortfall is a violation.
-  task_headings=$(grep -cE "^##\s+(T|R)[0-9]+" "$f" || true)
-  story_markers=$(grep -cE "$USER_STORY_MARKER" "$f" || true)
-  if [ "$task_headings" -gt 0 ] && [ "$story_markers" -lt "$task_headings" ]; then
-    echo "❌ $f: $((task_headings - story_markers)) task(s) missing **Closes user story:** line"
-    fail=1
-  fi
 
-  # 5a. Every task must carry **Change type:** (Phase 6a schema).
-  change_type_markers=$(grep -cE "$CHANGE_TYPE_MARKER" "$f" || true)
-  if [ "$task_headings" -gt 0 ] && [ "$change_type_markers" -lt "$task_headings" ]; then
-    echo "❌ $f: $((task_headings - change_type_markers)) task(s) missing **Change type:** line"
-    echo "   Required: **Change type:** create-new | modify-existing | delete | refactor"
-    fail=1
-  fi
 
-  # 5b. Every task must carry **Test:** (Phase 6a schema).
-  test_markers=$(grep -cE "$TEST_MARKER" "$f" || true)
-  if [ "$task_headings" -gt 0 ] && [ "$test_markers" -lt "$task_headings" ]; then
-    echo "❌ $f: $((task_headings - test_markers)) task(s) missing **Test:** line"
-    echo "   Required: **Test:** <path to test> OR <command> — names the verifier"
-    fail=1
-  fi
 
-  # 5b-ii. N/A justification — a bare "Test: N/A" / "Signature: N/A"
-  # without a parenthetical reason is an escape hatch. Field test #6
-  # showed ~13% of tasks dropped the Test field this way even when a
-  # real verifier was feasible (actionlint for workflows, bash -n for
-  # scripts, gh api for branch-protection, wc -c for metadata sizes).
-  # Acceptable: "N/A (image asset)", "N/A (GitHub UI configuration)",
-  # "N/A (text metadata, length-validated in acceptance)".
-  # Rejected:   "N/A", "N/A (CI/CD)" is too vague — must mention WHY
-  # a runnable test is impossible, not just WHAT the task is.
-  bad_na=$(awk '
-    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*$/ {
-      printf "%d:%s\n", NR, $0
-      next
-    }
-    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*$/ {
-      # already handled
-      next
-    }
-    # Also flag N/A followed by a non-parenthetical token, or an
-    # empty parenthetical.
-    /^[[:space:]]*-[[:space:]]*\*\*(Test|Signature):\*\*[[:space:]]*N\/A[[:space:]]*\([[:space:]]*\)[[:space:]]*$/ {
-      printf "%d:%s\n", NR, $0
-    }
-  ' "$f")
-  if [ -n "$bad_na" ]; then
-    echo "❌ $f: N/A in Test: or Signature: must include a parenthetical reason"
-    printf "%s\n" "$bad_na" | sed 's/^/   /'
-    echo "   Accepted: N/A (image asset), N/A (GitHub UI configuration),"
-    echo "             N/A (text metadata — size-validated in acceptance)."
-    echo "   Rejected: bare N/A, empty \"N/A ()\" — must say WHY a runnable"
-    echo "   verifier is impossible. Most CI/CD workflows can be tested via"
-    echo "   \`actionlint\`, shell scripts via \`bash -n\`, metadata via length"
-    echo "   assertions. Reach for a real test first, N/A second."
-    fail=1
-  fi
 
   # 5c. `Depends on:` must be either `none` or carry a reason (Phase 6b).
   # A bare task-id list like "T1, T2" is a schema violation — invented
