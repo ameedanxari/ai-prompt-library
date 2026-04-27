@@ -1,9 +1,10 @@
 # Executor Orchestrator
 
-Executes the remediation plan produced by `audit-and-remediate.md` (or
-the task plan produced by `drill-down-engine.md`). Turns plan files
-under `prompts/outputs/current/` into real code changes, test runs, and
-a durable progress log.
+Executes the implementation prompts produced by `drill-down-engine.md`
+(or the remediation plan from `audit-and-remediate.md`). Each prompt
+file under `prompts/outputs/current/` is a self-contained implementation
+guide. The executor picks the next prompt, feeds it to the AI, verifies
+the result, and logs progress.
 
 ## When to use
 
@@ -184,56 +185,55 @@ envelope is the source of truth for "where we are".
 
 ```
 repeat:
-  read gap-list.md (or epics.md)
-  for each gap/epic in severity + dependency order:
-    if every R<n> in this gap has status `done` in execution-log.md:
-      continue  // gap is closed
-    read remediation-<gap>.md  (fresh context per gap)
-    for each task R<n> in this gap:
-      if R<n> status is already `done` in execution-log.md: skip
-      if R<n>'s Depends on lists a task not yet `done`: skip (deferred)
-      execute R<n>:
-        0. Check R<n>'s **File:** path is listed in path-ledger.md.
-           If not, STOP — see "Canonical-paths contract" above.
-        1. Apply the Precise change to the named File.
-        2. Run the named Test command.
-        3. Run the build-green gate (see below). If it fails, this
-           task is `failed` — do NOT mark done.
-        4. Evaluate each Acceptance bullet: pass/fail.
+  read epics.md (or gap-list.md)
+  for each epic in dependency order:
+    if every prompt in this epic is `done` in execution-log.md:
+      continue  // epic is complete
+    for each tasks-<feature>.md in this epic:
+      if already `done` in execution-log.md: skip
+      execute the prompt:
+        1. Read the full contents of tasks-<feature>.md.
+           This IS the implementation prompt — it contains all the
+           context, guidance, patterns, and constraints the AI needs.
+        2. Implement the feature as described in the prompt.
+           The prompt is self-contained: treat it the same way you
+           would if a user had copy-pasted it into a fresh chat.
+        3. Run the build-green gate (see below). If it fails,
+           the prompt is `failed` — do NOT mark done.
+        4. Verify the implementation matches the prompt's guidance.
         5. Append a log entry.
         6. Present the ⏸ CHECKPOINT (see below).
       if status != `done`:
-        surface the blocker to the user and stop this gap.
-        move to next gap (do NOT retry blocked tasks without user input).
-    after gap: run broader regression check (see below).
-  when all gaps processed: run the honest-handoff gate (see below)
+        surface the blocker to the user and stop this epic.
+        move to next epic (do NOT retry without user input).
+    after epic: run broader regression check (see below).
+  when all epics processed: run the honest-handoff gate (see below)
     and only then produce the summary.
 ```
 
-### ⏸ CHECKPOINT — After each task
+### ⏸ CHECKPOINT — After each prompt
 
-After executing each task and appending its log entry, **STOP and
+After executing each prompt and appending its log entry, **STOP and
 present the result to the user**. Show:
 
-1. **Task ID and objective** (e.g. `E1.T1 · Signup endpoint handler`).
-2. **File written/modified** and a one-line summary of the change.
-3. **Test result** (pass / fail / error).
-4. **Acceptance results** — each bullet with ✅ or ❌.
+1. **Prompt file** (e.g. `tasks-signup-endpoint.md`).
+2. **What was built** — one-paragraph summary of the implementation.
+3. **Files created/modified** — list of all files touched.
+4. **Build result** (green / red / error).
 5. **Status** (done / blocked / failed).
-6. **Overall progress** — `N / M tasks complete (P%)`.
+6. **Overall progress** — `N / M prompts complete (P%)`.
    Include counts: `done: X, blocked: Y, failed: Z, remaining: W`.
 7. If status is `done`:
-   `"Task complete. Say **Continue** to proceed to the next task."`
+   `"Prompt complete. Say **Continue** to proceed to the next prompt."`
    If status is `blocked` or `failed`:
-   `"Task [status]. [One-line explanation]. Say **Continue** to skip
-   to the next task, or provide guidance."`
+   `"Prompt [status]. [One-line explanation]. Say **Continue** to skip
+   to the next prompt, or provide guidance."`
 
 **Wait for the user to say "Continue".** Do NOT auto-advance.
 
-If the user says "Continue N" (e.g. "Continue 5"), execute N tasks
-before the next checkpoint. Each task still gets a log entry, but
-only the last one triggers the visible checkpoint. This is useful
-for straightforward tasks where the user doesn't need per-task review.
+If the user says "Continue N" (e.g. "Continue 5"), execute N prompts
+before the next checkpoint. Each prompt still gets a log entry, but
+only the last one triggers the visible checkpoint.
 
 If context is exhausted before the user responds, the next session
 can resume from `execution-log.md`'s `next_task` field.
@@ -276,29 +276,26 @@ project has (`npm test`, `./gradlew test`, `swift test`, `pytest`, etc.
 command). If that suite was green before this gap and is red after,
 pause, surface the regression, and do not proceed to the next gap.
 
-## Task execution rules
+## Prompt execution rules
 
-1. **One file, one change.** The plan specifies exactly one file per
-   task. Do not edit additional files unless a test failure reveals a
-   missing prerequisite — in which case, stop and log the discovery
-   rather than opportunistically editing.
+1. **The prompt IS the instruction.** Each `tasks-*.md` file contains
+   everything the AI needs to implement one use case. Read and follow
+   it as if a user had pasted it into chat. Do not hallucinate beyond
+   what the prompt specifies.
 
-2. **Run the named test, not a substitute.** If the plan says run
-   `backend/tests/websocket/test-order-events.test.ts`, run that file
-   (e.g. `npm test -- backend/tests/websocket/test-order-events.test.ts`).
-   Don't substitute the full test suite for a targeted test; both
-   happen, but at different phases (task vs. post-gap regression).
+2. **One prompt = one atomic deliverable.** A prompt may span multiple
+   files — that is expected. The scope is one end-to-end use case,
+   not one file.
 
-3. **Acceptance bullets are binary.** For each bullet, you either met
-   it with an observable action or you didn't. No "mostly met."
+3. **Follow the prompt's testing approach.** If the prompt describes
+   specific tests to write or commands to run, do exactly that.
 
-4. **Stop on the first API mismatch / missing prerequisite / external
-   blocker.** Do not attempt to fabricate APIs that don't exist. Do not
-   rewrite the plan on the fly. Log it as `blocked` and move on to the
-   next gap, then surface the collected blockers at the end.
+4. **Stop on the first missing prerequisite or blocker.** Do not
+   fabricate APIs or dependencies that don't exist. Log as `blocked`
+   and move on to the next prompt, surfacing blockers at the end.
 
-5. **Never skip the test.** If the test cannot be run (environment
-   missing, simulator absent, credentials unavailable), the task is
+5. **Never skip verification.** If the build gate or tests cannot run
+   (environment missing, credentials unavailable), the prompt is
    `blocked`, not `done`.
 
 ## When to stop

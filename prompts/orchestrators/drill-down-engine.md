@@ -207,9 +207,11 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 - The single epic block (its name, goal, acceptance, complexity)
 - `project-context.md` if it exists
-- At most ONE module from `prompts/modules/` chosen via
+- **Exactly ONE module** from `prompts/modules/` chosen via
   `prompts/orchestrators/module-selection-index.md` (intent → single module
-  path). If no entry matches, skip module loading — do not guess.
+  path). **You MUST load a module** — it provides the patterns and best
+  practices that inform how features are structured. If no entry matches
+  (rare), note why but still produce high-quality features.
 
 **Do NOT load:** other epics, other modules, stage files, other templates.
 
@@ -326,144 +328,174 @@ rely on its presence.
 
 ---
 
-## STEP 3 — Expand each feature to atomic tasks (one context per feature)
+## STEP 3 — Generate implementation prompts (one per feature)
 
-For each feature in Step 2's output, start a **fresh context** containing only:
+Each feature becomes a **verbose, self-contained implementation prompt**
+— a file that any AI model can open in a fresh context and use to build
+that feature end-to-end. This is the library's core deliverable.
 
-- The single feature block (name, description, data model, API contract, deps)
+### What a prompt file IS
+
+The generated prompt file is **the actual input** that will be fed to
+an AI to implement the feature. A user should be able to copy its
+contents, paste them into any AI chat, and get a correct implementation.
+The library's orchestration scaffolding automates this — the executor
+reads the task list, picks the next prompt file, and feeds it to the
+AI — but the result must be the same either way.
+
+### One prompt = one atomic end-to-end use case
+
+A prompt covers everything needed to deliver one cohesive use case:
+writing the login API and securing it, building the contrast checker and
+wiring it to the design tokens, etc. This may span multiple files and
+classes. The constraint is **not** one-file-per-prompt but rather:
+keep the prompt small enough that context limits don't degrade quality,
+yet verbose enough that the AI cannot hallucinate the implementation.
+
+### Module loading is MANDATORY
+
+For each feature, start a **fresh context** containing:
+
+- The single feature block (name, description, data model, API contract)
 - `project-context.md` if it exists
-- At most ONE module from `prompts/modules/` selected via
-  `prompts/orchestrators/module-selection-index.md` (same rule as
-  Step 2). Do NOT load from `prompts/templates/` — that directory
-  contains waterfall-era legacy content and is not indexed.
+- **Exactly ONE module** from `prompts/modules/` selected via
+  `prompts/orchestrators/module-selection-index.md`. **You MUST load a
+  module.** The module IS the source of the prompt's quality — it
+  contains the patterns, code examples, security considerations, and
+  testing approaches that make this library's output better than what
+  an AI would hallucinate from scratch.
 
-**Do NOT load:** other features, other templates, epics, stage files.
+If the module-selection-index has no matching entry for this feature,
+state why at the top of the prompt file — but this should be rare.
+Most features map to at least one module. Do NOT skip module loading
+as a shortcut.
 
-**Dissolution rule:** read the selected template, extract the applicable
-patterns, then **rewrite everything in project-specific terms**. The output
-MUST NOT contain:
-- Template filenames (e.g. `auth-oauth.md`)
-- Placeholder tokens (`{{variable}}`, `<TBD>`, `[project name]`)
-- Paths beginning with `.ai-prompts/prompts/` or referring to the template source
-- Generic function names (`implement_auth`, `create_thing`)
+Do NOT load from `prompts/templates/` (waterfall-era legacy).
+Do NOT load other features, other modules, epics, or stage files.
 
-**Produce:** atomic tasks — one task = one file × one function (or one focused
-edit). Each task MUST name:
-- `closes_user_story` — the user story this task closes, phrased as
-  `As <a|an|the> <role>, I <want|need> <outcome>, so that <value>`.
-  For user-facing work use "As a user, I want …" (or "a new user",
-  "an admin", etc.). For infrastructure / platform work that has no
-  direct end-user — data models, build config, debug menus, test
-  harnesses — use "As the app", "As the developer", or "As the
-  maintainer". The validator accepts those as legitimate stakeholders.
-  MUST trace back to an epic goal or a feature description. An orphan
-  task (no user story) is a schema violation.
+### How to derive a prompt from a module
 
-If the parent epic is a **baseline** epic (per Step 1's two-group
-output), consult
-`prompts/orchestrators/baseline-task-shapes.md` for extra schema rules
-that apply to that topic (e.g. "one screenshot task per locale × per
-device class" for App Store Release Prep). These rules are non-optional
-— a weak model cannot substitute one omnibus task for the required
-breakdown.
+1. **Read the module.** Understand its patterns, interfaces, code
+   examples, testing strategies, security considerations.
+2. **Select the applicable parts.** Not everything in the module applies
+   to every project. Pick the patterns relevant to this feature and
+   this project's platform/stack.
+3. **Rewrite in project-specific terms.** The module uses generic names
+   and placeholder shapes. Replace them with the actual project's
+   entities, file paths, technology choices, and architecture.
+4. **Add project context.** Include the app name, platform, relevant
+   constraints from `project-context.md`, and how this feature fits
+   into the broader product.
+5. **Produce a self-contained prompt.** The result must contain enough
+   detail that an AI with zero prior knowledge of the project can
+   implement the feature correctly.
 
-Each task has (this schema is aligned with `audit-and-remediate.md` Step 3):
+The output MUST NOT contain template filenames, placeholder tokens
+(`{{var}}`, `<TBD>`, `[project name]`), paths beginning with
+`.ai-prompts/prompts/`, or generic function names like
+`implement_auth`.
 
-- `id` — short slug, unique within the feature
-- `objective` — one sentence, imperative verb, names the concrete outcome
-- `change_type` — `create-new` | `modify-existing` | `delete` | `refactor`
-- `file_path` — **exactly ONE** absolute-from-repo path (e.g.
-  `src/auth/signup.ts`). No trailing `/` (not a directory). No
-  parentheticals like `(multiple files)`. If a change truly spans N
-  files, emit N tasks — one per file.
-- `function_signature` — exact signature
-  (e.g. `async function signup(req: SignupReq): Promise<SignupRes>`)
-- `precise_change` — a concrete delta, not a category of work. Name the
-  function added, the config key set, the import inserted. Good:
-  "Add `export function signup(req: SignupReq): Promise<SignupRes>`
-  that hashes with argon2id, checks email uniqueness, and returns a
-  signed JWT." Bad: "Implement signup handler." If you can't state the
-  delta concretely in 1–2 sentences, split the task.
-- `api_shape` — when applicable, request + response JSON shapes with real field
-  names and types
-- `acceptance_criteria` — 3 or more bulleted list items (each line
-  starts with `  - `). Not a paragraph. Not one sentence broken by
-  commas. The validator counts indented bullets and rejects tasks
-  with fewer than 3. See the "Acceptance criteria — good vs. bad"
-  block below for the exact shape.
-- `test` — the test that will prove the fix, by exact path (create-new
-  OK). If the test is an existing command (e.g. `npm test -- tasks-foo`),
-  state the command AND the specific test name(s) that will assert the
-  behaviour. Every task must ship with a named test.
-- `estimated_loc` — range (e.g. `40–80`)
-- `depends_on` — task ids, or `none`. If not `none`, include a one-line
-  reason explaining why the dependency is code-level (shared symbol,
-  required config, etc.) — not a narrative/logical ordering.
+If the parent epic is a **baseline** epic, also consult
+`prompts/orchestrators/baseline-task-shapes.md` for additional rules.
 
-**Output format:**
+### Prompt file structure
+
+Each prompt file follows this general structure. It is NOT a rigid
+schema — adapt the sections to what the use case needs. The goal is
+a verbose, unambiguous implementation guide, not a filled-in form.
 
 ```markdown
-# Tasks — <Feature Name>
+# Prompt — <Feature Name> for <Project Name>
 
-## T1 · Signup endpoint handler
-- **Closes user story:** As a new user, I want to register with email
-  and password, so that I can access the app under my own account.
-- **Change type:** create-new
-- **File:** `src/auth/signup.ts`
-- **Signature:** `async function signup(req: SignupReq): Promise<SignupRes>`
-- **Precise change:** Add `export async function signup(req: SignupReq):
-  Promise<SignupRes>` that validates email format via zod schema,
-  hashes password with argon2id (memoryCost 19456, timeCost 2), inserts
-  a row into the `users` table, creates a `sessions` row with
-  `expires_at = now() + 7 days`, and returns `{ userId, token }` where
-  `token` is a JWT signed with `process.env.JWT_SECRET`.
-- **API shape:**
-  - Request: `{ email: string, password: string }`
-  - Response (201): `{ userId: string, token: string, expiresAt: string }`
-  - Error (400): `{ error: "VALIDATION", issues: {field, message}[] }`
-  - Error (409): `{ error: "EMAIL_TAKEN" }`
-- **Acceptance:**
-  - `POST /auth/signup` with valid body returns 201 and a JSON body
-    matching the Response shape above (assert via supertest).
-  - Duplicate email returns 409; no second row inserted into `users`
-    (assert row count before vs after).
-  - Password < 8 chars returns 400 with `issues[0].field === "password"`.
-  - Token returned by a successful signup decodes via
-    `jwt.verify(token, process.env.JWT_SECRET)` to `{ sub: userId, sid }`.
-- **Test:** `src/auth/signup.test.ts` (new) — suite exercising the four
-  acceptance bullets above; run via `npm test -- src/auth/signup.test.ts`.
-- **Estimated LOC:** 60–100
-- **Depends on:** T0 (users + sessions schema), T2 (password hash util).
-  Reason: T1 writes a row with `password_hash` produced by T2's helper;
-  T0's migration must exist so the `users` table is present.
+## Context
+<What the app is, what platform, how this feature fits in.>
+
+## What to build
+<One-paragraph summary of the end-to-end deliverable.>
+
+## Implementation guidance
+
+<The core of the prompt. This is where module content is dissolved
+into project-specific instructions. Include:>
+
+### <Subsection per major concern>
+- Algorithms, formulas, thresholds (from the module)
+- Code patterns adapted to the project's language/framework
+- Data models with real field names for THIS project
+- API contracts with real endpoints and shapes
+- Security considerations specific to this feature
+- Error handling and edge cases
+
+### Testing approach
+- What to test and how
+- Known reference values for calibration
+- Edge cases to cover
+
+### What NOT to do
+- Common mistakes the module warns about
+- Project-specific constraints (e.g., no network calls for offline apps)
 ```
 
-### Acceptance criteria — good vs. bad
+**Example — a prompt derived from the accessibility-compliance module:**
 
-**❌ BAD — one sentence / paragraph (Validator counts 0 bullets):**
-> - **Acceptance:** The signup endpoint returns 201 on success and rejects invalid emails and weak passwords with 400.
-
-**❌ BAD — a single bullet (Validator counts 1 bullet, rejects as <3):**
-> - **Acceptance:**
->   - Returns 201 on success; 400 on invalid email; 400 on weak password.
-
-**❌ BAD — 2 bullets (Validator counts 2 bullets, rejects as <3):**
-> - **Acceptance:**
->   - Valid email+password returns 201.
->   - Invalid input returns 400.
-
-**✅ GOOD — 3+ independently testable bullets, each verifiable by one command or one read:**
 ```markdown
-- **Acceptance:**
-  - Valid email+password returns 201 with a token in the response body.
-  - Duplicate email returns 409; no second users row is inserted.
-  - Password shorter than 8 chars returns 400 with field "password".
-  - Token decodes to user id via `jwt.verify(token, JWT_SECRET)`.
+# Prompt — Contrast Audit for ClearSpace AI
+
+## Context
+
+ClearSpace AI is a privacy-first Android/iOS storage cleaner. This
+prompt covers implementing WCAG 2.1 AA contrast compliance for the
+app's design token system. All processing is local — no network calls.
+
+## What to build
+
+A contrast checking system that validates all design token
+foreground/background pairs meet WCAG AA ratios, with a test suite
+that catches regressions when tokens change.
+
+## Implementation guidance
+
+### Contrast ratio calculation (WCAG 2.1)
+
+Use the relative luminance formula:
+- Linearize each sRGB channel: if C ≤ 0.04045, C_lin = C / 12.92;
+  else C_lin = ((C + 0.055) / 1.055) ^ 2.4
+- L = 0.2126 * R_lin + 0.7152 * G_lin + 0.0722 * B_lin
+- Ratio = (L_lighter + 0.05) / (L_darker + 0.05)
+
+### Thresholds
+- Normal text (< 18sp or < 14sp bold): ratio ≥ 4.5 (AA)
+- Large text (≥ 18sp or ≥ 14sp bold): ratio ≥ 3.0 (AA)
+- UI components and graphical objects: ratio ≥ 3.0
+
+### Android implementation (Kotlin)
+Create `ContrastChecker` in the accessibility package with:
+- `fun calculateContrastRatio(fg: Color, bg: Color): Double`
+- `fun meetsAA(ratio: Double, isLargeText: Boolean): Boolean`
+
+### Design token validation
+Walk the app's `DesignTokens` and check each semantic pair:
+surface/onSurface, primary/onPrimary, error/onError — both light
+and dark themes.
+
+### Testing approach
+Parameterized test loading every token pair from both themes.
+Reference values for calibration:
+- Black on White = 21.0:1
+- #757575 on White ≈ 4.6:1 (passes AA normal)
+- #9E9E9E on White ≈ 3.2:1 (fails AA normal, passes AA large)
+
+### What NOT to do
+- Do not hardcode color values — read from the token source
+- Do not skip dark mode — both themes must be validated
+- Do not add network calls or analytics reporting
 ```
 
-Each bullet starts with `  - ` (two spaces, hyphen, space). The
-validator's awk script counts only those lines; inline text with
-commas or semicolons does not count as separate bullets.
+Notice: the prompt carries the WCAG formula, the threshold constants,
+the testing calibration values, and the platform-specific patterns
+directly from the `accessibility-compliance.md` module — but rewritten
+for this specific project. That is the library's value: turning generic
+best-practice modules into project-specific, executable prompts.
 
 **Write to:** `prompts/outputs/current/tasks-<feature-slug>.md`
 
@@ -534,112 +566,87 @@ prevents the rush-and-hallucinate failure mode. The model gets a
 fresh context window for each epic's worth of tasks, ensuring
 each task prompt receives the full attention it deserves.
 
-### Self-contained prompt test (MANDATORY quality gate per task)
+### Self-contained prompt test (MANDATORY quality gate per prompt)
 
-Each `tasks-*.md` file is a **standalone implementation prompt**. An AI
-opening this file in a fresh context, with zero knowledge of the
-project, must be able to implement the task without reading any other
-file from this library. That is the entire purpose of the planning
-phase.
+Each prompt file must pass the **copy-paste test**: if a user copies
+its contents into a fresh AI chat with zero project context, the AI
+must be able to implement the feature correctly. That is the entire
+purpose of the planning phase.
 
-**Before writing each task, ask yourself:** "If I gave this task entry
-to a different AI model that has never seen MY_PROJECT.md, the epics,
-or the features — could it write the correct code?" If the answer is
-no, the task is too vague.
+**Before writing each prompt, ask yourself:** "Does this prompt contain
+enough implementation detail — patterns, formulas, data shapes, testing
+approaches — that an AI cannot hallucinate a wrong implementation?"
 
-A task prompt passes the self-contained test when it specifies:
-- The exact file path to create or modify
-- The exact function/class/struct signature to write
-- What the code must DO (precise_change: concrete logic, not a
-  category of work)
-- What platform APIs, libraries, or frameworks to use
-- What the inputs and outputs look like (types, shapes)
-- 3+ independently testable acceptance criteria
-- The exact test file path and command to verify
+A prompt passes the self-contained test when it includes:
+- **Context:** what the project is, what platform, how this feature fits
+- **Concrete implementation guidance** derived from the loaded module
+  (not vague instructions like "implement the feature")
+- **Code patterns** adapted to the project's language and framework
+- **Testing approach** with specific verification strategies
+- **Constraints** (what NOT to do, edge cases, security considerations)
+- **Enough verbosity** that the AI is guided, not left to guess.
+  Typical prompt length: 150–400 lines. Under 50 lines is almost
+  certainly too thin.
 
-**ANTI-PATTERNS from field tests (these are all real failures):**
+### Anti-patterns (DO NOT produce prompts like these)
 
-**❌ BAD — tautological acceptance criteria (DO NOT EMIT THIS)**
+**❌ BAD — hollow task card (the StorageCleaner failure)**
+> ## T1 · Contrast Audit
+> - **File:** `scripts/check-contrast-tokens.js`
+> - **Signature:** `function checkContrastTokens(rootDir)`
+> - **Precise change:** Add a token-level contrast verifier.
 > - **Acceptance:**
 >   - The file exists at the declared path.
 >   - The implementation stores data locally.
 >   - The named test command passes.
 
-These criteria prove nothing. They say "the file exists" and "a test
-passes" — they don't describe WHAT the code does. An empty file with
-a trivially passing test satisfies all three. **Reject any task whose
-acceptance criteria describe file existence or test passage rather
-than functional behavior.**
+This is 15 lines. It contains zero module-derived content — no WCAG
+formula, no thresholds, no testing calibration values. An AI receiving
+this will hallucinate everything. This is what happens when the module
+is not loaded.
 
-**❌ BAD — vague precise_change (DO NOT EMIT THIS)**
-> - **Precise change:** Add filter predicates for older-than months and minimum byte size with deterministic local evaluation.
+**❌ BAD — generic instructions with no module content**
+> ## What to build
+> Implement contrast checking for the app's color system.
+> Make sure it follows WCAG guidelines.
+> Write tests to verify.
 
-This doesn't say HOW to filter (what API to query, what data to
-compare, what the input/output shapes are). It's a restatement of
-the feature name, not an implementation instruction.
+This is a restatement of the feature name, not an implementation guide.
+"Follows WCAG guidelines" gives the AI nothing — which guidelines?
+Which ratios? Which formula? The module has all of this; use it.
 
-**✅ GOOD — concrete, implementable precise_change**
-```markdown
-- **Precise change:** Add `fun filterByAge(assets: List<MediaAsset>,
-  olderThanMonths: Int): List<MediaAsset>` that queries each asset's
-  `dateAdded` from `MediaStore.Images.Media.DATE_ADDED`, computes
-  the age in months from `System.currentTimeMillis()`, and returns
-  only assets older than the threshold. Add `fun filterBySize(assets:
-  List<MediaAsset>, minBytes: Long): List<MediaAsset>` that reads
-  `MediaStore.Images.Media.SIZE` and returns assets exceeding the
-  threshold.
-```
+**❌ BAD — retains template references**
+> Implement contrast checking per the patterns in
+> `accessibility-compliance.md`. Use the `ContrastResult` interface
+> from `.ai-prompts/prompts/modules/accessibility/`.
 
-### Dissolution: good vs. bad
+References to library paths and module filenames must not appear in
+the output. The module's content should be dissolved INTO the prompt.
 
-**❌ BAD — retains template reference and placeholders (DO NOT EMIT THIS)**
-> ## T1 · Implement signup per auth-oauth.md
-> - **File:** `.ai-prompts/prompts/modules/feature-patterns/auth-oauth.md`
-> - **Signature:** `async function {{signupHandler}}(req, res)`
-> - **Acceptance:**
->   - Follows the pattern described in the template
->   - Uses the standard auth flow
->   - Tests pass
-> - **LOC:** medium
+**✅ GOOD — verbose, module-derived, project-specific**
 
-Reasons this fails: (1) mentions the template filename; (2) points at
-`.ai-prompts/prompts/...`; (3) uses a `{{placeholder}}`; (4) acceptance
-criteria are not independently testable ("tests pass" is tautological);
-(5) LOC is not a range.
-
-**✅ GOOD — dissolved into project-specific content**
-```markdown
-## T1 · Signup endpoint handler
-- **File:** `src/auth/signup.ts`
-- **Signature:** `export async function signup(req: SignupReq): Promise<SignupRes>`
-- **API shape:**
-  - Request: `{ email: string, password: string }`
-  - Response (201): `{ userId: string, token: string, expiresAt: string }`
-  - Error (409): `{ error: "EMAIL_TAKEN" }`
-- **Acceptance:**
-  - Rejects password < 8 chars with HTTP 400
-  - Duplicate email returns 409 without a timing side-channel
-  - On success returns a JWT whose `sub` is the new user id
-- **Estimated LOC:** 60–100
-- **Depends on:** T0 (schema), T2 (password hash util)
-```
-Concrete paths, real signatures, checkable acceptance — no template trace.
+See the Contrast Audit example in "Prompt file structure" above.
+It carries the WCAG formula, threshold constants, function signatures,
+testing calibration values, and platform-specific patterns from the
+module — all rewritten for the specific project.
 
 ### Stop conditions (before proceeding past Step 3)
 
-Do **not** declare tasks ready if any of these are true:
+Do **not** declare prompts ready if any of these are true:
 - The output contains `.ai-prompts/prompts/` anywhere.
 - Any placeholder pattern remains (`{{...}}`, `<TBD>`, `[project name]`).
-- A task's `file_path` is a directory or does not look like a file path.
-- A task lists fewer than 3 acceptance criteria.
-- A task's `acceptance_criteria` all reduce to "tests pass", "file
-  exists", or "works" — criteria must describe **functional behavior**.
-- A task's `precise_change` is a restatement of the objective (e.g.
-  "implement X" where X is the task name) rather than a concrete delta.
-- Two tasks in the same feature name the same file + same function.
+- A prompt file is under 50 lines — it's almost certainly too thin to
+  prevent hallucination.
+- A prompt contains no implementation guidance from the loaded module
+  (no patterns, no formulas, no code examples, no testing approaches).
+- A prompt is a restatement of the feature name rather than a
+  concrete implementation guide (e.g. "implement X" where X is the
+  feature name).
+- A prompt could describe any project — it's not specific to THIS
+  project's entities, platform, or architecture.
 
-If any stop condition trips, regenerate the offending task(s) before the
-validation gate below.
+If any stop condition trips, reload the module and regenerate the
+prompt before the validation gate below.
 
 ---
 
@@ -694,23 +701,22 @@ hand-edit.
 ## ⏸ HARD STOP — Planning complete
 
 Once validation and revise both pass, the planning phase is **done**.
-A task file is self-contained: a fresh AI context can open one
-`tasks-<feature>.md`, pick one task (`T1`, `T2`, …), and implement it
-without reading any other file in this library. That is the whole
-point — the expansion work happens here so the implementation context
-stays tiny.
+Each prompt file is self-contained: a user can copy its contents into
+any AI chat and get a correct implementation. The orchestration
+scaffolding automates this — the executor picks prompts from the task
+list and feeds them to the AI — but the result is the same either way.
 
 **STOP and present the planning summary to the user.** Show:
 
-1. Total epics, features, and task files generated.
+1. Total epics, features, and prompt files generated.
 2. Revise gate result (`executor_gate: pass`).
-3. The task checklist — every `tasks-*.md` file name with a `[ ]`
+3. The task list — every `tasks-*.md` file name with a `[ ]`
    checkbox (these will be ticked off during execution).
 4. External accounts needed (from `external-accounts.md`), if any.
-5. The line: `"✅ Planning phase complete. N task prompts are ready
-   for execution. Say **Execute** to begin implementing tasks one by
-   one, or review the task files under prompts/outputs/current/
-   first."`
+5. The line: `"✅ Planning phase complete. N implementation prompts
+   are ready for execution. Say **Execute** to begin implementing
+   one by one, or review the prompt files under
+   prompts/outputs/current/ first."`
 
 **Wait for the user to say "Execute" or "Continue".** Do NOT
 automatically hand off to the executor. The user must explicitly
