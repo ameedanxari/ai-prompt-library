@@ -253,36 +253,9 @@ Each feature has:
 **Write to:** `prompts/outputs/current/features-<epic-slug>.md`
 
 **After each epic's features are written, continue to the next epic.** Once
-all epics have been expanded (one `features-*.md` per epic), run Step 2.5
-(external services roll-up) automatically, then present the checkpoint.
+all epics have been expanded (one `features-*.md` per epic), you must run the external services roll-up before presenting the checkpoint.
 
----
-
-## STEP 2.5 — Roll up external services manifest
-
-(Content unchanged — see below.)
-
-### ⏸ CHECKPOINT — Features review
-
-After writing all `features-*.md` files and `external-accounts.md`,
-**STOP and present a summary to the user**. Show:
-
-1. Number of feature files written, grouped by epic.
-2. Total feature count across all epics.
-3. External services summary (count + names, or "none required").
-4. The line: `"Planning progress: Step 2 of 3 complete. N features across
-   M epics are ready for task expansion. Say **Continue** to generate
-   atomic task prompts, or give feedback to adjust."`
-
-**Wait for the user to say "Continue".** When confirmed, proceed to
-Step 3.
-
----
-
-_(Step 2.5 content follows — the roll-up runs automatically before the
-checkpoint above.)_
-
-### Roll up external services manifest (runs automatically as part of Step 2)
+### Roll up external services manifest (Final action of Step 2)
 
 After every `features-*.md` is written, scan each file's
 `external_services` sections and aggregate them into one file:
@@ -329,6 +302,23 @@ single line: "No external services required — the project runs with
 local-only dependencies." The file must always exist so downstream
 consumers (README generator, executor's env-var check, CI setup) can
 rely on its presence.
+
+---
+
+### ⏸ CHECKPOINT — Features review
+
+After writing all `features-*.md` files AND `external-accounts.md`,
+**STOP and present a summary to the user**. Show:
+
+1. Number of feature files written, grouped by epic.
+2. Total feature count across all epics.
+3. External services summary (count + names, or "none required").
+4. The line: `"Planning progress: Step 2 of 3 complete. N features across
+   M epics are ready for task expansion. Say **Continue** to generate
+   atomic task prompts, or give feedback to adjust."`
+
+**Wait for the user to say "Continue".** When confirmed, proceed to
+Step 3.
 
 ---
 
