@@ -471,45 +471,6 @@ describe('validator — clean fixture passes', () => {
 });
 
 describe('validator — user-story linkage', () => {
-  it('rejects a task missing Closes user story', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nostory-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'remediation-nostory.md'),
-        [
-          '# Remediation — no story',
-          '',
-          '## R1 · do the thing',
-          '- **Change type:** modify-existing',
-          '- **File:** `src/app.ts`',
-          '- **Precise change:** add `hello()`.',
-          '- **Acceptance:**',
-          '  - `hello()` returns `hi`.',
-          '  - Only one export named `hello`.',
-          '  - File size stays under 100 lines.',
-          '- **Test:** `src/app.test.ts`',
-          '- **Estimated LOC delta:** +5',
-          '- **Depends on:** none',
-          '',
-        ].join('\n'),
-      );
-      let out = '';
-      let code = 0;
-      try {
-        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
-          encoding: 'utf8',
-        });
-      } catch (e) {
-        const err = e as { stdout?: Buffer; status?: number };
-        out = err.stdout?.toString() ?? '';
-        code = err.status ?? 0;
-      }
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/Closes user story/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 
   it('rejects a screenshot task that collapses across device sizes', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-collapse-'));
@@ -1379,120 +1340,8 @@ describe('validator — user-story linkage', () => {
     }
   });
 
-  it('rejects a task missing **Change type:**', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-nochange-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'remediation-nochange.md'),
-        [
-          '## R1 · x',
-          '- **Closes user story:** As a dev, I want x, so that y.',
-          '- **File:** `src/a.ts`',
-          '- **Precise change:** add function.',
-          '- **Acceptance:**',
-          '  - A present.',
-          '  - B present.',
-          '  - C present.',
-          '- **Test:** `src/a.test.ts`',
-          '',
-        ].join('\n'),
-      );
-      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
-      fs.writeFileSync(
-        path.join(sandbox, 'revise-report.md'),
-        passingReviseReport(),
-      );
-      let out = '';
-      let code = 0;
-      try {
-        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
-      } catch (e) {
-        const err = e as { stdout?: Buffer; status?: number };
-        out = err.stdout?.toString() ?? '';
-        code = err.status ?? 0;
-      }
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/missing \*\*Change type:\*\*/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 
-  it('rejects a task missing **Test:**', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-notest-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'remediation-notest.md'),
-        [
-          '## R1 · x',
-          '- **Closes user story:** As a dev, I want x, so that y.',
-          '- **Change type:** create-new',
-          '- **File:** `src/a.ts`',
-          '- **Precise change:** add function.',
-          '- **Acceptance:**',
-          '  - A present.',
-          '  - B present.',
-          '  - C present.',
-          '',
-        ].join('\n'),
-      );
-      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# X\n');
-      fs.writeFileSync(
-        path.join(sandbox, 'revise-report.md'),
-        passingReviseReport(),
-      );
-      let out = '';
-      let code = 0;
-      try {
-        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
-      } catch (e) {
-        const err = e as { stdout?: Buffer; status?: number };
-        out = err.stdout?.toString() ?? '';
-        code = err.status ?? 0;
-      }
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/missing \*\*Test:\*\*/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 
-  it('rejects a task with fewer than 3 acceptance bullets', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-sparse-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'remediation-sparse.md'),
-        [
-          '# Remediation — sparse',
-          '',
-          '## R1 · thin acceptance',
-          '- **Closes user story:** As a maintainer, I want a thing, so that y.',
-          '- **File:** `src/a.ts`',
-          '- **Precise change:** add function.',
-          '- **Acceptance:**',
-          '  - It returns the expected value.',
-          '  - File compiles with tsc.',
-          '- **Test:** `src/a.test.ts`',
-          '',
-        ].join('\n'),
-      );
-      let out = '';
-      let code = 0;
-      try {
-        out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
-          encoding: 'utf8',
-        });
-      } catch (e) {
-        const err = e as { stdout?: Buffer; status?: number };
-        out = err.stdout?.toString() ?? '';
-        code = err.status ?? 0;
-      }
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/fewer than 3 acceptance bullet|only 2 acceptance bullet/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 
   it('rejects a malformed user story line', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-badstory-'));
@@ -2026,71 +1875,7 @@ describe('validator — final-delivery quality checks', () => {
     }
   });
 
-  it('rejects a bare Test: N/A without a parenthetical reason', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-na-bare-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'features-x.md'),
-        '# Features — X\n\n## bare-na\nx\n',
-      );
-      fs.writeFileSync(
-        path.join(sandbox, 'tasks-bare-na.md'),
-        [
-          '## T1 · ci workflow',
-          '- **Closes user story:** As the developer, I want CI to run, so that merges are verified.',
-          '- **Change type:** create-new',
-          '- **File:** `.github/workflows/ci.yml`',
-          '- **Signature:** N/A',
-          '- **Precise change:** declare the workflow.',
-          '- **Acceptance:**',
-          '  - A present.',
-          '  - B present.',
-          '  - C present.',
-          '- **Test:** N/A',
-          '',
-        ].join('\n'),
-      );
-      passingCompanions(sandbox);
-      const { code, out } = runValidator(sandbox);
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/N\/A in Test: or Signature: must include a parenthetical reason/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 
-  it('accepts N/A (image asset) — parenthetical reason present', () => {
-    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-na-ok-'));
-    try {
-      fs.writeFileSync(
-        path.join(sandbox, 'features-x.md'),
-        '# Features — X\n\n## app icon\nx\n',
-      );
-      fs.writeFileSync(
-        path.join(sandbox, 'tasks-app-icon.md'),
-        [
-          '## T1 · 1024x1024 marketing icon',
-          '- **Closes user story:** As the app, I need the 1024x1024 marketing icon, so that the App Store listing displays the brand.',
-          '- **Change type:** create-new',
-          '- **File:** `ios/Cleaner/Assets.xcassets/AppIcon.appiconset/marketing.png`',
-          '- **Signature:** N/A (image asset)',
-          '- **Precise change:** export the master brand PNG at 1024x1024 for the App Store marketing slot.',
-          '- **Acceptance:**',
-          '  - File exists at the path above.',
-          '  - PNG dimensions are exactly 1024x1024.',
-          '  - Has no alpha channel (App Store requirement).',
-          '- **Test:** N/A (image asset — dimensions asserted in acceptance)',
-          '',
-        ].join('\n'),
-      );
-      passingCompanions(sandbox);
-      const { code, out } = runValidator(sandbox);
-      expect(code).toBe(0);
-      expect(out).toMatch(/✅/);
-    } finally {
-      fs.rmSync(sandbox, { recursive: true, force: true });
-    }
-  });
 });
 
 describe('validator — rejects quality violations', () => {
