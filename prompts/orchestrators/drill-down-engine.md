@@ -206,8 +206,8 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 - The single epic block (its name, goal, acceptance, complexity)
 - `project-context.md` if it exists
-- **Exactly ONE module** from `prompts/modules/` chosen via
-  `prompts/orchestrators/module-selection-index.md` (intent → single module
+- **Exactly ONE module** from `.ai-prompts/prompts/modules/` chosen via
+  `.ai-prompts/prompts/orchestrators/module-selection-index.md` (intent → single module
   path). **You MUST load a module** — it provides the patterns and best
   practices that inform how features are structured. If no entry matches
   (rare), note why but still produce high-quality features.
@@ -352,8 +352,8 @@ For each feature, start a **fresh context** containing:
 
 - The single feature block (name, description, data model, API contract)
 - `project-context.md` if it exists
-- **Exactly ONE module** from `prompts/modules/` selected via
-  `prompts/orchestrators/module-selection-index.md`. **You MUST load a
+- **Exactly ONE module** from `.ai-prompts/prompts/modules/` selected via
+  `.ai-prompts/prompts/orchestrators/module-selection-index.md`. **You MUST load a
   module.** The module IS the source of the prompt's quality — it
   contains the patterns, code examples, security considerations, and
   testing approaches that make this library's output better than what
@@ -364,7 +364,7 @@ state why at the top of the prompt file — but this should be rare.
 Most features map to at least one module. Do NOT skip module loading
 as a shortcut.
 
-Do NOT load from `prompts/templates/` (waterfall-era legacy).
+Do NOT load from `.ai-prompts/prompts/templates/` (waterfall-era legacy).
 Do NOT load other features, other modules, epics, or stage files.
 
 ### How to derive a prompt from a module
@@ -390,7 +390,7 @@ The output MUST NOT contain template filenames, placeholder tokens
 `implement_auth`.
 
 If the parent epic is a **baseline** epic, also consult
-`prompts/orchestrators/baseline-task-shapes.md` for additional rules.
+`.ai-prompts/prompts/orchestrators/baseline-task-shapes.md` for additional rules.
 
 ### Prompt file structure
 
@@ -505,7 +505,7 @@ done. To prevent this, the library ships a progress script that is
 the single source of truth for "what still needs to be written":
 
 ```bash
-bash scripts/step3-progress.sh prompts/outputs/current
+bash .ai-prompts/scripts/step3-progress.sh prompts/outputs/current
 ```
 
 Output: a markdown checklist, grouped by epic, with one line per
@@ -651,7 +651,7 @@ task files AND you do NOT hand-write `revise-report.md`. You run
 exactly one shell command:
 
 ```bash
-bash scripts/finalize.sh prompts/outputs/current
+bash .ai-prompts/scripts/finalize.sh prompts/outputs/current
 ```
 
 This wrapper:
@@ -683,7 +683,7 @@ Exit codes:
 - non-zero → `executor_gate: fail`. The report's `failing_files:` list
   names every file to regenerate. Pick ONE file at a time, regenerate
   it via Step 3 scoped to that single feature, then re-run
-  `bash scripts/finalize.sh prompts/outputs/current`. Repeat until
+  `bash .ai-prompts/scripts/finalize.sh prompts/outputs/current`. Repeat until
   exit 0.
 
 Do NOT try to fix failures by reading each tasks file in sequence and
@@ -717,13 +717,13 @@ automatically hand off to the executor. The user must explicitly
 authorize the transition from planning to execution.
 
 When the user confirms, read and follow
-`prompts/orchestrators/executor.md`.
+`.ai-prompts/prompts/orchestrators/executor.md`.
 
 ## See also
 
-- `prompts/orchestrators/ai-agent-entry-point.md` — the entry point that
+- `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — the entry point that
   routes to this engine.
-- `prompts/orchestrators/external-input-handler.md` — handles design / spec /
+- `.ai-prompts/prompts/orchestrators/external-input-handler.md` — handles design / spec /
   code inputs upstream of Step 1.
-- `prompts/orchestrators/module-selection-index.md` — intent → single
+- `.ai-prompts/prompts/orchestrators/module-selection-index.md` — intent → single
   module path mapping for Steps 2 and 3.

@@ -168,15 +168,15 @@ only:
 - The single gap block from `gap-list.md`.
 - The slice of `audit-report.md` for the affected component(s).
 - `project-context.md`.
-- **Exactly ONE module** from `prompts/modules/` chosen via
-  `prompts/orchestrators/module-selection-index.md` based on gap intent
+- **Exactly ONE module** from `.ai-prompts/prompts/modules/` chosen via
+  `.ai-prompts/prompts/orchestrators/module-selection-index.md` based on gap intent
   (consult the "Ops / Readiness" section for production-readiness gaps).
   **You MUST load a module.** It provides the concrete patterns and
   best practices needed to fix the gap correctly.
 - If the gap maps to a baseline topic (auth, admin/RBAC, observability,
   localization, theming, accessibility, testing, CI/CD, IaC, app-store
   prep, settings/debug, privacy/PII), ALSO load
-  `prompts/orchestrators/baseline-task-shapes.md` for the per-topic
+  `.ai-prompts/prompts/orchestrators/baseline-task-shapes.md` for the per-topic
   rules.
 
 **Produce:** a verbose, self-contained implementation prompt.
@@ -321,7 +321,7 @@ Run the instantiation validator, which will scan every `remediation-*.md`
 and every other file under `prompts/outputs/current/`:
 
 ```bash
-bash scripts/validate-instantiation.sh
+bash .ai-prompts/scripts/validate-instantiation.sh
 ```
 
 Report the validator's output, then print a one-line summary:
@@ -339,7 +339,7 @@ Report the validator's output, then print a one-line summary:
 After Step 4 writes the last `remediation-*.md`, run exactly:
 
 ```bash
-bash scripts/revise.sh prompts/outputs/current
+bash .ai-prompts/scripts/revise.sh prompts/outputs/current
 ```
 
 **`revise-report.md` is a canonical machine-produced artifact.** Line 1
@@ -355,7 +355,7 @@ Exit codes:
 - `0` → `executor_gate: pass`. Continue to Step 5.
 - non-zero → `executor_gate: fail`. Read the report's `failing_files:`
   list, regenerate each offending `remediation-<gap>.md` via Step 3
-  scoped to that single gap, then re-run `bash scripts/revise.sh
+  scoped to that single gap, then re-run `bash .ai-prompts/scripts/revise.sh
   prompts/outputs/current`. Repeat until exit 0.
 
 Do NOT hand-edit individual tasks to patch symptoms. Regenerate via
@@ -384,7 +384,7 @@ The **execute-signal guard** lives in
 that authorise end-to-end execution. Apply it here:
 
 - If any execute-signal word is present in the user's original prompt,
-  invoke `prompts/orchestrators/executor.md` immediately. The executor
+  invoke `.ai-prompts/prompts/orchestrators/executor.md` immediately. The executor
   will run its own preflight gate against `prompts/outputs/current/`;
   you do not need to re-validate.
 - If none are present and the ask was planning-oriented ("review",
@@ -408,7 +408,7 @@ to mirror outputs there.
 
 ## See also
 
-- `prompts/orchestrators/ai-agent-entry-point.md` — routing (mode selection).
-- `prompts/orchestrators/drill-down-engine.md` — greenfield expansion (alternative to this flow).
-- `prompts/orchestrators/external-input-handler.md` — runs first when external material exists.
-- `prompts/orchestrators/module-selection-index.md` — intent → module lookup (see Ops / Readiness section).
+- `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — routing (mode selection).
+- `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — greenfield expansion (alternative to this flow).
+- `.ai-prompts/prompts/orchestrators/external-input-handler.md` — runs first when external material exists.
+- `.ai-prompts/prompts/orchestrators/module-selection-index.md` — intent → module lookup (see Ops / Readiness section).
