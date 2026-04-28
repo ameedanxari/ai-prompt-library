@@ -52,11 +52,10 @@ prompts/outputs/current/
 
 ### Produce two groups of epics
 
-**(a) Feature epics** — the user's brief turned into 4–6 epics that capture
-what makes this product *this product*. Each epic covers a primary user
+**(a) Feature epics** — the user's brief turned into a variable number of epics based strictly on the project's actual size and needs. Each epic covers a primary user
 capability. Examples: for a music app → "Playback engine", "Library &
 playlists", "Discovery & recommendations"; for a marketplace → "Product
-catalog", "Checkout", "Order fulfilment".
+catalog", "Checkout", "Order fulfilment". Do NOT artificially invent epics just to hit a specific count.
 
 **(b) Production-readiness baseline epics** — a fixed set that MUST also be
 emitted unless the user's `MY_PROJECT.md` **Restrict** section explicitly
@@ -215,7 +214,12 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 **Do NOT load:** other epics, other modules, stage files, other templates.
 
-**Produce:** 6–10 features per epic. Each feature has:
+**Produce:** A variable number of features strictly governed by the epic's `Complexity` attribute (S, M, L). Do NOT artificially inflate the count to hit a quota.
+- **Small (S) Epics:** 1 to 2 features max.
+- **Medium (M) Epics:** 3 to 5 features max.
+- **Large (L) Epics:** 4 to 6 features max.
+
+Each feature has:
 - `name` — noun-phrase, unique within the epic
 - `description` — one-sentence purpose
 - `data_model` — concrete entity/field list (real field names, types)
