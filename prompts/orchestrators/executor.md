@@ -23,7 +23,7 @@ hard gates — you cannot "explain them away" or work around them by
 writing task entries anyway. Your first action on invocation is:
 
 ```bash
-bash scripts/revise.sh prompts/outputs/current
+bash .ai-prompts/scripts/revise.sh prompts/outputs/current
 ```
 
 This command runs the full instantiation validator and writes a fresh
@@ -45,7 +45,7 @@ Act on the exit code:
   - Missing or failing `revise-report.md` → the revise gate caught a
     violation. Regenerate the offending `tasks-*.md` /
     `remediation-*.md` via the engine's Step 3, then re-invoke
-    `bash scripts/revise.sh` until exit 0.
+    `bash .ai-prompts/scripts/revise.sh` until exit 0.
 
 This gate exists because field tests repeatedly showed weak models
 treating Steps 3.5/4.5 as optional and starting the executor on an

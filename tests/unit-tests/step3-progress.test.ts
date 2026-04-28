@@ -124,7 +124,7 @@ describe('integration with engine + steering + revise', () => {
       ),
       'utf8',
     );
-    expect(body).toMatch(/bash scripts\/step3-progress\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/step3-progress\.sh/);
     expect(body).toMatch(/Do NOT advance to the Revise Gate/);
   });
 

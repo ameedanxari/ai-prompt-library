@@ -43,7 +43,7 @@ by `scripts/validate-instantiation.sh`; violating them fails the gate.
    `wc -c` for metadata length.
 5. **Use `scripts/scaffold-screenshot-captures.sh`** to emit the
    screenshot matrix — do not hand-write 15 near-identical tasks.
-6. **Run `bash scripts/finalize.sh prompts/outputs/current`** as the
+6. **Run `bash .ai-prompts/scripts/finalize.sh prompts/outputs/current`** as the
    ONLY post-Step-3 action. Do not hand-write `revise-report.md`.
 
 ---

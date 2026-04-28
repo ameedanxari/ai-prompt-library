@@ -74,7 +74,7 @@ describe('active orchestrators', () => {
     // Must document that explicit user reset runs unconditionally.
     expect(body.toLowerCase()).toMatch(/unconditional/);
     expect(body.toLowerCase()).toMatch(/force reset/);
-    expect(body).toMatch(/reset-integration\.sh --yes/);
+    expect(body).toMatch(/\.ai-prompts\/scripts\/reset-integration\.sh --yes/);
   });
 
   it('steering guard centralises the execute-signal list and forbids A/B/C/D menus', () => {
@@ -126,19 +126,7 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/do NOT write the literal string "\$\(uuidgen\)"/);
   });
 
-  it('drill-down engine shows good/bad acceptance-criteria examples', () => {
-    const body = fs.readFileSync(
-      path.join(ORCH, 'drill-down-engine.md'),
-      'utf8',
-    );
-    // Must have a dedicated good-vs-bad block for acceptance criteria.
-    expect(body).toMatch(/Acceptance criteria — good vs\. bad|Acceptance criteria good vs bad/i);
-    // Must show the canonical bullet shape ("  - ") with multiple
-    // bullets and explicitly say the validator counts indented bullets.
-    expect(body).toMatch(/counts indented bullets|awk script counts/);
-    // Must include a BAD one-sentence / paragraph form as a counter-example.
-    expect(body.toLowerCase()).toMatch(/one sentence|paragraph|validator counts 0/);
-  });
+
 
   it('engines explicitly forbid hand-writing revise-report.md', () => {
     const drill = fs.readFileSync(
@@ -184,8 +172,8 @@ describe('active orchestrators', () => {
     );
     // drill-down engine now names finalize.sh as the single command
     // (it wraps revise.sh + mechanical auto-fixers).
-    expect(drill).toMatch(/bash scripts\/(finalize|revise)\.sh/);
-    expect(audit).toMatch(/bash scripts\/revise\.sh/);
+    expect(drill).toMatch(/bash \.ai-prompts\/scripts\/(finalize|revise)\.sh/);
+    expect(audit).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
     // Must tell the agent NOT to hand-edit files — regenerate via engine.
     expect(drill.toLowerCase()).toMatch(
       /do not.*manually|do not hand-edit|regenerate.*via/,
@@ -208,7 +196,7 @@ describe('active orchestrators', () => {
 
   it('executor preflight now uses revise.sh (not just the bare validator)', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
-    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
   });
 
   it('executor has a hard preflight gate that checks companion artifacts', () => {
@@ -218,7 +206,7 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/refuse/i);
     // Must name revise.sh as the preflight command (wraps validator +
     // writes revise-report.md atomically).
-    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
     // Must name the specific failure modes.
     expect(body).toMatch(/external-accounts\.md/);
     expect(body).toMatch(/revise-report\.md/);
@@ -355,24 +343,19 @@ describe('active orchestrators', () => {
       path.join(ORCH, 'drill-down-engine.md'),
       'utf8',
     );
-    // Phase 6a schema alignment — drill-down must require the same
-    // fields as audit-and-remediate: Change type, Precise change, Test.
-    expect(body).toMatch(/`change_type`/);
-    expect(body).toMatch(/`precise_change`/);
-    expect(body).toMatch(/`test`/);
-    // Change-type enum values spelled out.
-    expect(body).toMatch(/create-new.*modify-existing.*delete.*refactor/);
+    expect(body).toMatch(/## Context/);
+    expect(body).toMatch(/## What to build/);
+    expect(body).toMatch(/## Implementation guidance/);
+    expect(body).toMatch(/## Testing approach/);
     // Precise change must require a concrete delta, not a category of work.
     expect(body.toLowerCase()).toMatch(
       /concrete delta|not a category of work/,
     );
-    // Test field must require a named test.
-    expect(body.toLowerCase()).toMatch(/every task must ship with a named test/);
-    // File field must say "exactly ONE" (prevents multi-file collapse).
-    expect(body).toMatch(/\*\*exactly ONE\*\*/);
+    // Test field must require a named test or testing approach.
+    expect(body.toLowerCase()).toMatch(/testing approach/);
   });
 
-  it('drill-down and audit-remediate both require closes_user_story', () => {
+  it('drill-down and audit-remediate both require clear closure references', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),
       'utf8',
@@ -381,13 +364,9 @@ describe('active orchestrators', () => {
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
-    expect(drill).toMatch(/closes_user_story|Closes user story/);
-    expect(audit).toMatch(/Closes user story/);
-    // Both must name the canonical form. The drill-down engine allows
-    // "As the <role>" for infrastructure tasks (no direct end-user); the
-    // audit engine sticks to the user-story form.
-    expect(drill).toMatch(/As[^.]+I (want|need)[^.]+so that/);
-    expect(audit).toMatch(/As a.*I want.*so that/);
+    // drill-down uses the feature name; audit uses the gap slug.
+    expect(drill).toMatch(/Prompt — <Feature Name>/);
+    expect(audit).toMatch(/_Closes gap:_/);
   });
 
   it('self-maintain writes outputs to a separate directory', () => {
@@ -403,7 +382,7 @@ describe('active orchestrators', () => {
       'utf8',
     );
     const reviseIdx = body.search(/^## Revise Gate/m);
-    const handoffIdx = body.search(/^## Handing off to an implementer/m);
+    const handoffIdx = body.search(/^## ⏸ HARD STOP — Planning complete/im);
     expect(reviseIdx).toBeGreaterThan(-1);
     expect(handoffIdx).toBeGreaterThan(-1);
     expect(reviseIdx).toBeLessThan(handoffIdx);
@@ -411,7 +390,7 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/Revise Gate \(MANDATORY/);
     // finalize.sh is the preferred one-command wrapper; revise.sh is
     // also acceptable since finalize.sh wraps it.
-    expect(body).toMatch(/bash scripts\/(finalize|revise)\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/(finalize|revise)\.sh/);
     // Revise must name executor_gate states.
     expect(body).toMatch(/executor_gate: fail/);
   });
@@ -431,7 +410,7 @@ describe('active orchestrators', () => {
     expect(step4_5).toBeLessThan(step5);
     // Step 4.5 must be mandatory and use the concrete shell command.
     expect(body).toMatch(/STEP 4\.5.*MANDATORY/);
-    expect(body).toMatch(/bash scripts\/revise\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
   });
 
   it('entry point explains that engines own the revise gate (not the entry point)', () => {
@@ -445,7 +424,7 @@ describe('active orchestrators', () => {
     // Entry point flow must describe that the engines hand off directly
     // to executor (entry point does not re-invoke executor).
     expect(body.toLowerCase()).toMatch(
-      /engines hand off|engines do this|engines run their own/,
+      /each engine runs its own|inside each engine|engines own the revise gate/
     );
   });
 

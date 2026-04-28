@@ -127,7 +127,7 @@ written to disk, you MUST immediately continue with:
 3. Write `prompts/outputs/current/epics.md`.
 4. Continue to Step 2 (one epic at a time) and Step 3 (one feature at a time)
    without pausing between them.
-5. After Step 3, run `bash scripts/validate-instantiation.sh` and report the
+5. After Step 3, run `bash .ai-prompts/scripts/validate-instantiation.sh` and report the
    full result to the user.
 
 Do NOT tell the user "extraction complete, ready for next step" and wait.

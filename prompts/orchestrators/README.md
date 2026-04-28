@@ -25,4 +25,4 @@ gates, error recovery, COVE, A/B testing, parallel execution, self-
 healing, intelligent caching, template composition, etc.). Those have
 all been removed. If you encounter a consumer project whose
 `AGENTS.md` still references any of those files, run
-`bash scripts/reset-integration.sh --yes` from that project's root.
+`bash .ai-prompts/scripts/reset-integration.sh --yes` from that project's root.

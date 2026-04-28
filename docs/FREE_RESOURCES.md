@@ -97,7 +97,7 @@ If you are a beginner, follow this path to build your project for free:
 | Phase | Tool | Purpose |
 | :--- | :--- | :--- |
 | **1. Ideation** | [ChatGPT](https://chatgpt.com) | Refine your 3-sentence brief into a core concept. |
-| **2. Specs** | [Google AI Studio](https://aistudio.google.com) | Run the **01-04 Stages** from this library to get a full spec. |
+| **2. Specs** | [Google AI Studio](https://aistudio.google.com) | Run the **drill-down engine** from this library to get a full spec. |
 | **3. Implementation**| [Trae](https://trae.ai) or [Kiro](https://kiro.ai) | Use "Builder Mode" to generate the code from the spec. |
 | **4. Database** | [Supabase](https://supabase.com) | Free Postgres database + Auth + Storage. |
 | **5. Deployment** | [Vercel](https://vercel.com) | Host your web app for free on a `.vercel.app` subdomain. |

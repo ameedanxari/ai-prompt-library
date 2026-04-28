@@ -8,16 +8,16 @@ If anything elsewhere in this repo contradicts this file, this file wins.
 
 ## The only flow you need
 
-1. Read `prompts/orchestrators/ai-agent-entry-point.md` (the entry point).
-2. Read `prompts/orchestrators/drill-down-engine.md` (the greenfield engine).
+1. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` (the entry point).
+2. Read `.ai-prompts/prompts/orchestrators/drill-down-engine.md` (the greenfield engine).
 3. The entry point selects one of four modes:
    - **Trivial** — one-file edit. Skip engines, just do the work.
    - **Execute** — a validated plan (`remediation-*.md` or `tasks-*.md`)
      already exists and the user says "fix", "implement", "execute",
-     "do the work". Use `prompts/orchestrators/executor.md`.
+     "do the work". Use `.ai-prompts/prompts/orchestrators/executor.md`.
    - **Gap-closure** — user has an existing codebase and asks to
      "review", "audit", "fix gaps", "productionize", or similar. Use
-     `prompts/orchestrators/audit-and-remediate.md`. Its Step 5
+     `.ai-prompts/prompts/orchestrators/audit-and-remediate.md`. Its Step 5
      **mandatorily** chains into Execute mode when the user's ask
      contains any execute signal ("fix", "implement", "close the
      gaps", "write the tests", etc.). Do NOT treat the chain as
@@ -25,7 +25,7 @@ If anything elsewhere in this repo contradicts this file, this file wins.
    - **Greenfield** — user is building something new. Use the drill-down
      engine.
 4. If external material is present (designs/specs/existing code), read
-   `prompts/orchestrators/external-input-handler.md` first. It produces
+   `.ai-prompts/prompts/orchestrators/external-input-handler.md` first. It produces
    `prompts/outputs/current/project-context.md` and hands off to the
    selected engine.
 5. Write outputs to `prompts/outputs/current/`.
@@ -63,7 +63,7 @@ point, and restart.
 |---|---|---|
 | **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) **AND** `brief-keywords.md` (every distinctive brief keyword mapped to `covered` or `out-of-scope` with the epic/reason) |
 | **2 — Expand epic** | one epic block + optional `project-context.md` + ≤1 module | `features-<epic>.md` (6–10 features per epic) |
-| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 template | `tasks-<feature>.md` (atomic tasks — each names **exactly one** real file path, function signature, `change_type` (`create-new` / `edit-existing` / `delete`), `precise_change`, ≥3 verifiable acceptance bullets, a named `Test`, and a `Depends on` line with reason) |
+| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 module | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from a module) |
 
 ### Gap-closure: audit-and-remediate.md
 
@@ -71,7 +71,7 @@ point, and restart.
 |---|---|---|
 | **1 — Component audit** | 5–10 key files per component + `project-context.md` | `audit-report.md` (≤ 300 lines, factual, per component) |
 | **2 — Gap list** | `audit-report.md` | `gap-list.md` (ordered by severity, with blocking deps) |
-| **3 — Remediation per gap** | one gap + relevant audit slice + ≤1 module | `remediation-<gap>.md` (atomic tasks naming real existing files) |
+| **3 — Remediation per gap** | one gap + relevant audit slice + ≤1 module | `remediation-<gap>.md` (verbose implementation prompts following the same self-contained schema as greenfield tasks) |
 
 ### Execute: executor.md
 
@@ -96,8 +96,8 @@ Both files are **machine-produced**. Their first line is always `---`
 (YAML frontmatter fence). The validator rejects narrative look-alikes
 as "not the canonical form" and refuses to let the executor start.
 
-- `revise-report.md` → produced by `scripts/revise.sh prompts/outputs/current`.
-- `execution-log.md` → produced by the executor (`executor.md`), one
+- `revise-report.md` → produced by `.ai-prompts/scripts/revise.sh prompts/outputs/current`.
+- `execution-log.md` → produced by the executor (`.ai-prompts/prompts/orchestrators/executor.md`), one
   YAML envelope + one journal entry per task.
 
 If you are tempted to write either file by hand as a narrative summary,
@@ -183,11 +183,11 @@ artifact forward; load only the specific slice the current step is expanding.
    features/tasks.
 
 5. **Run validation after Step 3.** Run
-   `bash scripts/validate-instantiation.sh` before declaring tasks ready.
+   `bash .ai-prompts/scripts/validate-instantiation.sh` before declaring tasks ready.
    Any match against forbidden patterns means regenerate the offending file.
 
 6. **Check the progress script between Step 3 task-file writes.** Run
-   `bash scripts/step3-progress.sh prompts/outputs/current` after each
+   `bash .ai-prompts/scripts/step3-progress.sh prompts/outputs/current` after each
    `tasks-<feature>.md` is written. It prints a checklist of every
    declared feature marked `- [x]` (tasks file on disk) or `- [ ]` (still
    missing). Do NOT advance past Step 3 while any `- [ ]` remains, and

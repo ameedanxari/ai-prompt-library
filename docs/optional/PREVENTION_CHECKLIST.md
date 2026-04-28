@@ -15,7 +15,7 @@ This checklist MUST be completed before making ANY modifications to the AI Promp
 
 ### **2. Current State Analysis**
 - [ ] I have run `npm test` to check system health
-- [ ] Current test success rate: ___/598 tests passing (must be 100%)
+- [ ] Current test success rate: ___/783 tests passing (must be 100%)
 - [ ] I have checked `git status` for uncommitted changes
 
 ### **3. Impact Assessment**
@@ -31,7 +31,7 @@ This checklist MUST be completed before making ANY modifications to the AI Promp
 - You don't understand what TypeScript files in `src/` do (they're test validators)
 - You haven't run tests to see current system state
 - You're planning to delete files without proving they're unused
-- Current test success rate is below 100% (all 598 tests must pass)
+- Current test success rate is below 100% (all 783 tests must pass)
 
 ---
 
@@ -54,9 +54,9 @@ This checklist MUST be completed before making ANY modifications to the AI Promp
 Before proceeding:
 
 ```bash
-# 1. Activate Change Impact Guard
-echo "🛡️ Activating Change Impact Guard..."
-# Follow prompts/orchestrators/change-impact-guard.md
+# 1. Baseline Validation
+echo "🛡️ Running test suite..."
+npm test
 
 # 2. Record Baseline
 npm test > baseline_tests.log 2>&1
@@ -72,7 +72,7 @@ echo "💾 Rollback point created"
 ## **🎯 Success Criteria**
 
 Changes are successful only if:
-- [ ] Test success rate maintained or improved (100% - all 598 tests passing)
+- [ ] Test success rate maintained or improved (100% - all 783 tests passing)
 - [ ] No critical functionality broken
 - [ ] Architecture consistency maintained
 - [ ] All safeguards remain functional

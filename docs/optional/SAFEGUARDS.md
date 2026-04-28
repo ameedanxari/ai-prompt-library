@@ -2,199 +2,97 @@
 
 ## 🛡️ **Overview**
 
-The AI Prompt Library includes a comprehensive safeguard system that prevents destructive changes and ensures best practices across all usage scenarios. This system operates at three levels:
-
-- **🔒 Level 1**: Mandatory safeguards (cannot be bypassed)
-- **⚠️ Level 2**: Strong warnings (explicit override required)  
-- **💡 Level 3**: Best practice reminders (informational)
+The AI Prompt Library includes a multi-layered safeguard system that prevents hallucination, ensures architecture compliance, and maintains state across AI agent sessions. These safeguards are "mechanical" — they rely on shell scripts and validators rather than just prose instructions.
 
 ---
 
-## **🔒 Level 1: Mandatory Safeguards**
+## **1. Planning Safeguards**
 
-### **Change Impact Guard**
-**Purpose**: Prevent destructive changes through mandatory impact assessment
-**Location**: `prompts/orchestrators/change-impact-guard.md`
-**Triggers**: Any modification to library files
+### **Brief-Keyword Coverage Gate**
+**Purpose**: Prevents the AI from silently dropping user requirements during expansion.
+**Location**: `drill-down-engine.md` Step 1.
+**Output**: `brief-keywords.md`.
+**Enforcement**: The engine refuses to advance to Step 2 if any distinctive keyword from the brief is not explicitly mapped to an epic or marked as out-of-scope.
 
-**Key Protections**:
-- Mandatory test baseline validation (≥590 tests passing)
-- File purpose validation before deletion
-- Architecture preservation enforcement
-- Rollback planning requirement
+### **Complexity-Based Scaling**
+**Purpose**: Prevents "quota-based" hallucination (e.g., inventing 10 features for a simple epic just to hit a hardcoded count).
+**Location**: `drill-down-engine.md` Step 2.
+**Mechanism**: Scaling logic based on complexity tiers (S: 1-2, M: 3-5, L: 4-6 features).
 
-### **Implementation Enforcement**
-**Purpose**: Ensure AI agents use generated design artifacts during implementation
-**Location**: `prompts/orchestrators/implementation-enforcement-orchestrator.md`
-**Triggers**: User requests implementation ("start implementation", "build", etc.)
-
-**Key Protections**:
-- Validates design artifacts exist before implementation
-- Forces task-by-task execution following specifications
-- Prevents context drift and unauthorized additions
-- Tracks progress with enforcement monitoring
-
-### **Self-Healing Monitor**
-**Purpose**: Continuous system health monitoring and automatic recovery
-**Location**: `prompts/orchestrators/self-healing-monitor.md`
-**Triggers**: Continuous monitoring, regression detection
-
-**Key Protections**:
-- Real-time test success rate monitoring
-- Missing critical file detection
-- Automatic recovery from common failures
-- Learning system that updates prevention rules
+### **Module-Loading Mandate**
+**Purpose**: Ensures generated tasks contain high-quality, pattern-driven guidance rather than generic AI guesses.
+**Location**: `module-selection-index.md` consulted by all engines.
+**Enforcement**: Orchestrators require loading exactly ONE module per expansion context.
 
 ---
 
-## **⚠️ Level 2: Strong Warnings**
+## **2. Validation Safeguards (The Gates)**
 
-### **Commit Quality Gate**
-**Purpose**: Ensure production-ready commits
-**Location**: `COMMIT_GUIDELINES.md`, `.husky/pre-commit`
-**Triggers**: Git commits
+### **Instantiation Validator**
+**Purpose**: Prevents common AI failures (placeholders, template references, multi-file collapse).
+**Location**: `.ai-prompts/scripts/validate-instantiation.sh`.
+**Triggers**: Manually by orchestrators or automatically by the Revise script.
 
-**Validations**:
-- No debugging artifacts (TODO, FIXME, DEBUG, TEMP, XXX)
-- No empty files
-- No temporary files (.tmp, .bak, etc.)
-- Proper commit message format
-- Test success maintained
+### **Revise Gate (MANDATORY)**
+**Purpose**: Canonical check set (C1-C9) that validates a complete plan before execution.
+**Location**: `.ai-prompts/scripts/revise.sh`.
+**Output**: `revise-report.md`.
+**Enforcement**: The executor refuses to start if `revise-report.md` shows `executor_gate: fail`.
 
-### **Phase Clarification**
-**Purpose**: Prevent misinterpretation of completed design stages
-**Location**: `prompts/orchestrators/phase-clarification-orchestrator.md`
-**Triggers**: Stage completion, implementation requests
-
-**Education Points**:
-- Completed stages are blueprints, not finished work
-- Design phase creates plans, implementation phase builds code
-- Specifications must be followed during implementation
+### **Progress Checklist Guard**
+**Purpose**: Ensures all features are expanded before the planning phase is declared complete.
+**Location**: `.ai-prompts/scripts/step3-progress.sh`.
+**Mechanism**: Groups disk state by epic and provides a checklist of missing task files.
 
 ---
 
-## **💡 Level 3: Best Practice Reminders**
+## **3. Execution Safeguards**
 
-### **Token Optimization**
-**Purpose**: Optimize AI token usage
-**Location**: `prompts/orchestrators/context-optimization-orchestrator.md`
-**Triggers**: Large content generation
+### **Preflight Gate**
+**Purpose**: Verifies plan integrity before the first line of code is written.
+**Location**: `executor.md`.
+**Checks**: Existence of `external-accounts.md`, `revise-report.md` (must be `pass`), and completeness of `tasks-*.md`.
 
-### **Documentation Traceability**
-**Purpose**: Maintain complete project documentation
-**Location**: `prompts/orchestrators/documentation-traceability-orchestrator.md`
-**Triggers**: Project completion, handoff
+### **YAML Handoff Envelope**
+**Purpose**: Ensures cross-session continuity without context drift.
+**Location**: `execution-log.md`.
+**Mechanism**: Stores `last_completed_task`, `next_task`, and `test_suite_state` in a machine-parseable header.
 
----
-
-## **🎯 Usage Scenarios**
-
-### **Library Development**
-When working on the AI Prompt Library itself:
-
-1. **MANDATORY**: Read `PREVENTION_CHECKLIST.md` before any changes
-2. **MANDATORY**: Follow `COMMIT_GUIDELINES.md` before commits
-3. **AUTOMATIC**: Pre-commit hooks validate changes
-4. **CONTINUOUS**: Self-healing monitor protects system
-
-### **Project Integration (Submodule)**
-When using the library in projects:
-
-1. **AUTOMATIC**: AI Agent Entry Point routes all requests
-2. **ENFORCED**: Implementation enforcement when building
-3. **GUIDED**: Phase clarification during development
-4. **PROTECTED**: State management across sessions
-
-### **Team Collaboration**
-When multiple developers use the library:
-
-1. **STANDARDIZED**: Consistent safeguards across team
-2. **DOCUMENTED**: Clear guidelines in project README
-3. **AUTOMATED**: CI/CD integration for validation
-4. **RECOVERABLE**: Emergency procedures for issues
+### **Hard Stop Conditions**
+**Purpose**: Prevents agents from "looping" or making things worse when stuck.
+**Triggers**: 3+ consecutive blocked tasks, test regressions since last green, or missing external credentials.
 
 ---
 
-## **🔧 Integration Points**
+## **4. Integration Safeguards**
 
 ### **AI Agent Entry Point**
-**File**: `prompts/orchestrators/ai-agent-entry-point.md`
-**Purpose**: Single entry point that activates all relevant safeguards
+**Purpose**: Prevents the agent from starting in the wrong mode or ignoring existing project context.
+**Location**: `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`.
 
-Every AI agent interaction should start with:
-```markdown
-I'll analyze your request and route it optimally using the AI Prompt Library system.
-
-*Invoking AI Agent Entry Point from prompts/orchestrators/ai-agent-entry-point.md...*
-```
-
-### **Steering Files**
-**Location**: `prompts/steering/`
-**Purpose**: Guide AI agents in specific tools (Kiro, Cursor, Windsurf)
-
-- `architecture-guard.md`: Prevents breaking existing functionality
-- `library-context.md`: Provides library structure understanding
-- `change-review.md`: Guides safe change review process
-
-### **Pre-commit Hooks**
-**Location**: `.husky/pre-commit`
-**Purpose**: Automated validation before commits
-
-- Runs full test suite
-- Checks for debugging artifacts
-- Validates file types and sizes
-- Prevents accidental commits of temporary files
+### **Steering Guards**
+**Location**: `.ai-prompts/prompts/steering/`.
+**Protections**: 
+- `architecture-guard.md`: Prevents breaking existing functionality.
+- `library-context.md`: Forbids A/B preference menus and provides the canonical execute-signal list.
 
 ---
 
-## **📊 Monitoring & Status**
+## **🔧 Utility Scripts**
 
-### **Health Check Command**
-```bash
-# Check safeguard system status
-npm run safeguard-status
-```
-
-### **Emergency Recovery**
-```bash
-# Restore safeguards if compromised
-npm run safeguard-recovery
-```
-
-### **Status Indicators**
-- ✅ **All Safeguards Active**: System fully protected
-- ⚠️ **Partial Protection**: Some safeguards disabled/missing
-- ❌ **Protection Compromised**: Critical safeguards failed
+| Command | Purpose |
+|---|---|
+| `bash .ai-prompts/scripts/reset-integration.sh` | Purges stale state and refreshes steering. |
+| `bash .ai-prompts/scripts/finalize.sh` | One-command wrapper for auto-fixers + revise gate. |
+| `bash .ai-prompts/scripts/validate-instantiation.sh` | Direct access to the schema validator. |
 
 ---
 
-## **🚀 Quick Start**
+## **🚀 Status Indicators**
 
-### **For AI Agents**
-1. Always use AI Agent Entry Point for any request
-2. Never bypass mandatory safeguards
-3. Follow implementation enforcement when building
-4. Respect phase semantics (completed = blueprint ready)
+Look for these in `prompts/outputs/current/`:
 
-### **For Developers**
-1. Read `PREVENTION_CHECKLIST.md` before library changes
-2. Follow `COMMIT_GUIDELINES.md` for all commits
-3. Use proper entry points when working with AI agents
-4. Monitor safeguard status regularly
-
-### **For Teams**
-1. Ensure all team members understand safeguard system
-2. Set up CI/CD integration for automated validation
-3. Document project-specific safeguard configurations
-4. Establish emergency recovery procedures
-
----
-
-## **📚 Related Documentation**
-
-- **[PREVENTION_CHECKLIST.md](../PREVENTION_CHECKLIST.md)**: Mandatory checklist for library changes
-- **[COMMIT_GUIDELINES.md](../COMMIT_GUIDELINES.md)**: Commit quality standards
-- **[prompts/orchestrators/README.md](../prompts/orchestrators/README.md)**: Orchestrator system overview
-- **[prompts/steering/README.md](../prompts/steering/README.md)**: AI tool integration guides
-
-This safeguard system ensures AI Prompt Library best practices are consistently applied across all usage scenarios while preventing the types of issues that led to its creation.
+- ✅ `revise-report.md` → `executor_gate: pass` (Ready to build)
+- ❌ `revise-report.md` → `executor_gate: fail` (Regeneration required)
+- ⏸ `execution-log.md` → `next_task: <path>` (In progress)
+- 🔴 `execution-log.md` → `regressions_since_green: [path]` (Stop and fix)

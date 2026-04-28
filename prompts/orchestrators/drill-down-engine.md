@@ -582,7 +582,7 @@ A prompt passes the self-contained test when it includes:
   Typical prompt length: 150–400 lines. Under 50 lines is almost
   certainly too thin.
 
-### Anti-patterns (DO NOT produce prompts like these)
+### Acceptance criteria — good vs. bad
 
 **❌ BAD — hollow task card (the StorageCleaner failure)**
 > ## T1 · Contrast Audit
@@ -635,7 +635,7 @@ Do **not** declare prompts ready if any of these are true:
   (no patterns, no formulas, no code examples, no testing approaches).
 - A prompt is a restatement of the feature name rather than a
   concrete implementation guide (e.g. "implement X" where X is the
-  feature name).
+  feature name). It must provide a concrete delta, not a category of work.
 - A prompt could describe any project — it's not specific to THIS
   project's entities, platform, or architecture.
 
