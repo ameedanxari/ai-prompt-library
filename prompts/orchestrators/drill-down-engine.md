@@ -188,12 +188,16 @@ epics to the user**. Show:
 2. The list of baseline epics (names only — note which were included vs.
    restricted).
 3. The brief-keywords coverage table.
-4. The line: `"Planning progress: Step 1 of 3 complete. Say **Continue** to
-   expand these epics into features, or give feedback to adjust."`
+4. The line: "Planning progress: Step 1 of 3 complete. Say **Continue** to
+   expand these epics into features, or give feedback to adjust.
+   **Recommended:** Start a NEW CHAT for the next step to ensure a fresh
+   context window for expansion."
 
 **Wait for the user to say "Continue" (or provide feedback).** If feedback
 is given, regenerate `epics.md` incorporating the feedback, then present
 again. When the user says "Continue", proceed to Step 2.
+
+**Context Note:** If you continue in the same chat instead of a new one, you **MUST** re-load `project-context.md` and `epics.md` from disk before starting Step 2. If the chat history is long, ask the user: *"I see we are continuing in this chat. To ensure maximum precision for Step 2, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
 
 Step 2 expands every epic — feature AND baseline — into features; do not
 selectively skip baseline epics.
@@ -313,12 +317,16 @@ After writing all `features-*.md` files AND `external-accounts.md`,
 1. Number of feature files written, grouped by epic.
 2. Total feature count across all epics.
 3. External services summary (count + names, or "none required").
-4. The line: `"Planning progress: Step 2 of 3 complete. N features across
+4. The line: "Planning progress: Step 2 of 3 complete. N features across
    M epics are ready for task expansion. Say **Continue** to generate
-   atomic task prompts, or give feedback to adjust."`
+   atomic task prompts, or give feedback to adjust.
+   **Recommended:** Start a NEW CHAT for the next step to ensure a fresh
+   context window for expansion."
 
 **Wait for the user to say "Continue".** When confirmed, proceed to
 Step 3.
+
+**Context Note:** If you continue in the same chat instead of a new one, you **MUST** re-load `project-context.md`, `epics.md`, and every `features-*.md` from disk before starting Step 3. If the chat history is long, ask the user: *"I see we are continuing in this chat. To ensure maximum precision for Step 3, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
 
 ---
 

@@ -97,8 +97,29 @@ Both files are **machine-produced**. Their first line is always `---`
 as "not the canonical form" and refuses to let the executor start.
 
 - `revise-report.md` → produced by `.ai-prompts/scripts/revise.sh prompts/outputs/current`.
-- `execution-log.md` → produced by the executor (`.ai-prompts/prompts/orchestrators/executor.md`), one
-  YAML envelope + one journal entry per task.
+- `execution-log.md` → produced by the executor (`.ai-prompts/prompts/orchestrators/executor.md`), one entry per task.
+
+---
+
+## Context Management & Continuity
+
+### The "New Chat" Recommendation
+To ensure maximum attention to detail and prevent context overflow (which leads to shallow planning or hallucinations), it is **strongly recommended** to start a **NEW CHAT** for each major transition:
+- Between Step 1 and Step 2 of the Drill-Down Engine.
+- Between Step 2 and Step 3 of the Drill-Down Engine.
+- Between Step 3 and the Executor (planning to execution).
+- For every new "Epic" during Step 3 task generation.
+
+A fresh context window ensures the model focuses entirely on the single slice of work it is expanding, without being weighed down by the history of prior steps.
+
+### Mandatory Re-load on Continuity
+If you continue in the same chat, or resume a session:
+1. **You MUST re-read the relevant project files from disk** (e.g., `project-context.md`, `epics.md`, the specific `features-*.md`). Do NOT rely on your previous context or memory of those files, as context-compaction/summarization can distort details.
+2. **Explicit User Override:** If you detect you are continuing in a long chat history, ask the user: *"I see we are continuing in this chat. To ensure maximum precision, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
+
+Following this protocol prevents the "shallow task card" failure mode and ensures every implementation prompt carries the full weight of its source module.
+
+---
 
 If you are tempted to write either file by hand as a narrative summary,
 stop. The summary the user wants is what `scripts/revise.sh` already

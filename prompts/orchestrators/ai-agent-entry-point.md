@@ -229,6 +229,18 @@ The entry point will detect current state from
 `prompts/outputs/current/` and `execution-log.md` and resume from the
 last checkpoint.
 
+## Context Management & Continuity
+
+### The "New Chat" Recommendation
+For complex projects, starting a **NEW CHAT** for each major planning or execution step is the most reliable way to avoid context-compaction artifacts and hallucinations.
+
+### Mandatory Re-load on Continuity
+If you are continuing an existing session or resuming work:
+1. **You MUST re-read all relevant project files from disk.** Do not rely on previous context or history.
+2. **Explicit Override:** If continuing in a long chat history, ask the user: *"I see we are continuing in this chat. To ensure maximum precision for this next step, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
+
+This protocol ensures every implementation prompt and every code change is based on the current, accurate state of the repository.
+
 ## What NOT to auto-load
 
 | File / group | Load when |

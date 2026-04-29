@@ -42,6 +42,14 @@ Same as the drill-down engine:
 - Per-component audits load only that component's top-level files.
 - Remediation expansion loads only the single gap + ≤1 module.
 
+### The "New Chat" Recommendation
+To ensure maximum attention to detail and prevent context overflow, it is **recommended** to start a **NEW CHAT** for each major transition:
+- After the Audit Report (Step 1) is generated.
+- Before starting remediation expansion (Step 3).
+- Before handoff to the executor.
+
+**Mandatory Re-load on Continuity:** If you continue in the same chat instead of a new one, you **MUST** re-load `project-context.md`, `audit-report.md`, and `gap-list.md` from disk before starting remediation. If the chat history is long, ask the user: *"I see we are continuing in this chat. To ensure maximum precision, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
+
 ---
 
 ## STEP 1 — Component audit (runs once, per-component)
