@@ -88,8 +88,8 @@ If `MY_PROJECT.md` lists external material or the project already has
 source code, also load:
 4. `.ai-prompts/prompts/orchestrators/external-input-handler.md`
 
-Do NOT auto-load anything under `.ai-prompts/prompts/stages/` or any
-orchestrator other than the three above.
+Do NOT auto-load anything else under `.ai-prompts/prompts/orchestrators/` 
+without following the entry-point routing.
 
 After the handler finishes, proceed IMMEDIATELY to Step 1 of the engine
 without waiting for the user. Between engine steps, continue automatically.

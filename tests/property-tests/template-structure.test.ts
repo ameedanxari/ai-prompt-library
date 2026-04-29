@@ -13,7 +13,7 @@ import { join } from 'path';
  */
 
 describe('Property-Based Tests: Template Structure Validation', () => {
-  const templatePath = join(process.cwd(), 'prompts/templates/user-input-template.md');
+  const templatePath = join(process.cwd(), 'MY_PROJECT.md.template');
 
   it('Property 1: Template Structure Completeness - validates template has required structure', () => {
     // Property-based test with 100+ iterations

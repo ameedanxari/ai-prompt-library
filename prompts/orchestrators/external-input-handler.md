@@ -19,10 +19,7 @@ If none of these apply, skip this orchestrator and go straight to
 
 This orchestrator runs in **its own context**. Load ONLY the external
 material the user provided. Do NOT load:
-- Stage files (deprecated waterfall under `prompts/stages/`)
-- Modules from `prompts/modules/`
-- Anything under `prompts/templates/` — that directory is waterfall-era
-  legacy content, not indexed by the v1.0 engine
+- Modules from `prompts/modules/` (except one relevant to the current task)
 - The drill-down engine file
 - Any steering files
 

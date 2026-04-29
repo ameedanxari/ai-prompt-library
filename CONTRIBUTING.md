@@ -77,9 +77,6 @@ blocked on documentation drift.
   writes its outputs. It is per-project, not part of the library.
 - `prompts/outputs/self-maintain/**` — this is where the library's
   self-maintain mode writes. Also per-run, not committed content.
-- `prompts/stages/**` — deprecated waterfall, retained only so old
-  tests pass. Adding to it is actively harmful.
-- Any file with a `DEPRECATED — DO NOT AUTO-LOAD` banner.
 - Canonical-artifact producers — `revise-report.md` and
   `execution-log.md` are machine-produced. Don't "clean up" their
   YAML frontmatter by hand.
@@ -98,7 +95,7 @@ npm install
 npm test
 ```
 
-The test suite takes ~30 seconds. You should see 768 tests pass and
+The test suite takes ~30 seconds. You should see over 700 tests pass and
 none failing.
 
 Run a single test file:

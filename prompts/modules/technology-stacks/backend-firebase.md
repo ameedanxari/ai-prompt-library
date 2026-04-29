@@ -29,16 +29,6 @@ Provide production-ready implementation guidance for Firebase backend architectu
 4. Use role claims + rule checks for least-privilege access boundaries.
 5. Add emulator-backed contract/integration tests and staged rollout controls.
 
-## Example Prompt Block Usage
-```markdown
-## Prompt Blocks Applied
-- `.ai-prompts/prompts/templates/task-prompt-template.md`
-- `.ai-prompts/prompts/templates/implementation-prompt-generation.md`
-- `.ai-prompts/prompts/modules/technology-stacks/backend-firebase.md`
-- `.ai-prompts/prompts/modules/integration/service-integration.md`
-- `.ai-prompts/prompts/modules/integration/webhook-systems.md`
-- `.ai-prompts/prompts/stages/stage-06-implementation/platform-agnostic.md`
-```
 
 ## Validation Expectations
 - `firebase emulators:exec --only firestore \"npm test\"`

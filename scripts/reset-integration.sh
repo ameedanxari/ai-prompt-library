@@ -117,10 +117,9 @@ If the user has provided designs / specs / existing code under `working_copy/`
 or references existing code in `MY_PROJECT.md`, also load:
 4. `.ai-prompts/prompts/orchestrators/external-input-handler.md`
 
-Do NOT auto-load anything else under `.ai-prompts/prompts/stages/` or
-`.ai-prompts/prompts/orchestrators/` — the only active orchestrators are the
-three above (plus `module-selection-index.md`, which is consulted but not
-loaded into session context at startup).
+Do NOT auto-load anything else under `.ai-prompts/prompts/orchestrators/` 
+without following the entry-point routing. The core active files are 
+the ones above plus `module-selection-index.md` (consulted as needed).
 
 After the external-input-handler finishes (if it ran), proceed IMMEDIATELY
 to Step 1 of the drill-down engine without waiting for user confirmation.

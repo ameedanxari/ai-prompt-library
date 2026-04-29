@@ -129,8 +129,8 @@ bash .ai-prompts/scripts/reset-integration.sh --yes
 
 ## Do NOT auto-load
 
-- `.ai-prompts/prompts/stages/**` — deprecated waterfall, kept only so old tests pass.
-- Any orchestrator under `.ai-prompts/prompts/orchestrators/` except the four above.
+- Any orchestrator under `.ai-prompts/prompts/orchestrators/` without 
+  following the entry-point routing.
 - `.ai-prompts/docs/optional/` — safeguard docs, on-demand only.
 - The full module catalog — the engine loads one module at a time during expansion.
 

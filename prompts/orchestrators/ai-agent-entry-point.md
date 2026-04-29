@@ -246,10 +246,7 @@ This protocol ensures every implementation prompt and every code change is based
 | File / group | Load when |
 |---|---|
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | User explicitly asks for safeguard / commit-policy / change-impact guidance |
-| `prompts/stages/**` | Never. The stage pipeline is superseded by the drill-down engine. |
-| `prompts/orchestrators/stage-pipeline-orchestrator.md` | Never auto-load |
-| `prompts/orchestrators/auto-setup-orchestrator.md` | Only on first-run project setup |
-| Other orchestrators under `prompts/orchestrators/` | Only when their specific capability is requested |
+| Other orchestrators under `prompts/orchestrators/` | Only via the entry-point routing logic |
 | Full module catalog `prompts/modules/**` | Never all at once. The drill-down engine loads at most one module per expansion context. |
 
 ## Rules of engagement

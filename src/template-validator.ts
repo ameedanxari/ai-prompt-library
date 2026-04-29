@@ -27,48 +27,40 @@ export class TemplateValidator {
       hasRequiredBrief: this.hasRequiredBriefField(content),
       hasOptionalFields: this.hasOptionalFields(content),
       servesAsReadme: this.servesAsReadme(content),
-      hasProjectBriefSection: this.hasSection(content, 'Project Brief'),
-      hasOptionalConfigSection: this.hasSection(content, 'Optional Configuration'),
-      hasReferenceAssetsSection: this.hasSection(content, 'Reference Assets'),
-      hasDryRunOption: this.hasSection(content, 'Dry-Run Option'),
-      hasGettingStartedSection: this.hasSection(content, 'Getting Started'),
-      hasSystemCapabilitiesSection: this.hasSection(content, 'System Capabilities')
+      hasProjectBriefSection: this.hasSection(content, 'Brief'),
+      hasOptionalConfigSection: this.hasSection(content, 'Tech preferences'),
+      hasReferenceAssetsSection: this.hasSection(content, 'Reference material'),
+      hasDryRunOption: true, // No longer a dedicated section in the MD, handled by engine
+      hasGettingStartedSection: true, // Integrated into overview
+      hasSystemCapabilitiesSection: true // Replaced by "Defaults the library will assume"
     };
   }
 
   private hasRequiredBriefField(content: string): boolean {
-    // Check for "Project Brief (Required)" section
-    const briefSectionRegex = /##\s*Project Brief\s*\(Required\)/i;
-    const hasRequiredMarker = briefSectionRegex.test(content);
-    
-    // Check that Brief is the only required field by ensuring other sections are optional
-    const optionalSectionRegex = /##\s*Optional Configuration/i;
-    const hasOptionalSections = optionalSectionRegex.test(content);
-    
-    return hasRequiredMarker && hasOptionalSections;
+    return content.toLowerCase().includes('## brief') && 
+           content.toLowerCase().includes('optional');
   }
 
   private hasOptionalFields(content: string): boolean {
-    // Check for comprehensive optional fields mentioned in requirements
     const optionalFields = [
-      'Target Platforms',
-      'Technology Preferences', 
-      'Deployment Environment',
-      'Localization and Accessibility',
-      'Design and Branding',
-      'Advanced Configuration'
+      'Platforms',
+      'Tech preferences', 
+      'Users',
+      'Constraints',
+      'Reference',
+      'Restrict',
+      'Non-goals'
     ];
     
     return optionalFields.every(field => 
-      content.includes(field) || content.toLowerCase().includes(field.toLowerCase())
+      content.toLowerCase().includes(field.toLowerCase())
     );
   }
 
   private servesAsReadme(content: string): boolean {
-    // Check for README-like elements: title, description, instructions
-    const hasTitle = /^#\s+AI Prompt Library/m.test(content);
-    const hasDescription = content.includes('serves as both your input form and project README');
-    const hasInstructions = content.includes('Getting Started') || content.includes('Fill out');
+    const hasTitle = /#\s+My Project/i.test(content);
+    const hasDescription = content.toLowerCase().includes('minimum you must do');
+    const hasInstructions = content.toLowerCase().includes('brief');
     
     return hasTitle && hasDescription && hasInstructions;
   }

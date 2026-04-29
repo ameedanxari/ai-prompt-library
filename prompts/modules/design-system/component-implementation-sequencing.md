@@ -15,10 +15,10 @@ When the drill-down engine (or any orchestrator) uses this template:
 
 
 ## Purpose
-Enforce reusable design-system implementation before screen-level feature work in Stage 06 task planning and prompt generation.
+Enforce reusable design-system implementation before screen-level feature work in Step 3 (Tasks) planning and task generation.
 
 ## When to Use
-- Stage 06 task generation for any UI surface (`mobile`, `web`, `admin`).
+- Step 3 (Tasks) task generation for any UI surface (`mobile`, `web`, `admin`).
 - Any request that introduces new screens or major UI refactors.
 
 ## Hard Rules
@@ -34,9 +34,5 @@ Enforce reusable design-system implementation before screen-level feature work i
 ## Required Output Impacts
 - `prompts/outputs/task-lists/*-tasks.md` include explicit design-system foundation tasks per UI surface.
 - `prompts/outputs/implementation-prompts/*.md` include concrete design-system references and component usage constraints.
-- `prompts/outputs/specifications/prompt-usage-log.md` records this module when Stage 06 generates UI task tracks.
+- `prompts/outputs/specifications/prompt-usage-log.md` records this module when Step 3 (Tasks) generates UI task tracks.
 
-## Prompt Blocks Applied
-- `.ai-prompts/prompts/modules/design-system/component-implementation-sequencing.md`
-- `.ai-prompts/prompts/templates/task-generation.md`
-- `.ai-prompts/prompts/stages/stage-06-implementation/platform-agnostic.md`

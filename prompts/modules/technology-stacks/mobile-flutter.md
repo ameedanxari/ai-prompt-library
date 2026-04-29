@@ -45,15 +45,6 @@ lib/
     admin_support/
 ```
 
-## Example Prompt Block Usage
-```markdown
-## Prompt Blocks Applied
-- `.ai-prompts/prompts/templates/task-prompt-template.md`
-- `.ai-prompts/prompts/templates/implementation-prompt-generation.md`
-- `.ai-prompts/prompts/modules/technology-stacks/mobile-flutter.md`
-- `.ai-prompts/prompts/modules/design-system/component-system.md`
-- `.ai-prompts/prompts/stages/stage-06-implementation/mobile.md`
-```
 
 ## Validation Expectations
 - `flutter analyze`

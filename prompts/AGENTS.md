@@ -41,17 +41,16 @@ drill-down engine). In gap-closure mode, add one more read
 
 | Path / group | Status | Load when |
 |---|---|---|
-| `prompts/stages/**` | **Deprecated waterfall.** Retained only so old tests pass. | Never. |
-| `prompts/orchestrators/*.md` (all except the 4 active ones) | **Deprecated.** Each has a `DEPRECATED — DO NOT AUTO-LOAD` banner. | Only if the user explicitly names the file. |
+| `prompts/orchestrators/*.md` | **Active Engine Assets.** | Follow the entry-point routing. |
 | `.kiro/specs/`, `.cursor/plans/`, or other IDE-native spec workflows | Do NOT let the IDE's default spec workflow override our engine. Write to `prompts/outputs/current/` regardless of IDE. | Never. |
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | Optional | Only if user asks about safeguards/commit policy. |
 | `docs/archive/` | Historical | Never. |
 | `prompts/modules/**` (252 template files across 29 categories) | Load one at a time, during engine Step 2 or Step 3 only. | Never all at once. |
 | `README.md`, `QUICK_START.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `prompts/README.md`, `docs/acceptance-probe.md` | Human-facing docs. | Never as steering. |
 
-If a weak model finds itself reading any legacy orchestrator, stage file, or
-long-form README during routing, it is off-track. Stop, return to the entry
-point, and restart.
+If a weak model finds itself reading any legacy file or long-form README 
+during routing, it is off-track. Stop, return to the entry point, and 
+restart.
 
 ---
 
@@ -274,8 +273,7 @@ Do not invent one.
   `NEXT_ACTION.md`.
 - **"Reset" / "Start over"** → delete `prompts/outputs/current/*` and
   re-run from Step 1.
-- **"Use Stage X"** → the user is invoking the legacy flow explicitly. Honor
-  it, but warn them once that the default flow is the drill-down engine.
+- **"Use Stage X"** → inform the user that the waterfall stages have been fully deprecated and removed in v1.0. Direct them to use the drill-down engine (Greenfield mode).
 - **Commit-policy / safeguard / pre-commit questions** → load
   `docs/optional/` on demand.
 
