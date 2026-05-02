@@ -107,7 +107,7 @@ Use when BOTH of these are true:
   `scripts/validate-instantiation.sh`.
 - The user's ask signals execution, not re-planning: "fix", "implement",
   "execute", "run the plan", "do the work", "build it", "ship", "close
-  the gaps", "write the tests", "make it pass".
+  the gaps", "write the tests", "make it pass", "continue", "next task".
 
 Route to `prompts/orchestrators/executor.md`. Do NOT re-run the audit
 — a plan already exists. The executor will resume from

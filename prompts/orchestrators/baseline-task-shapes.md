@@ -24,6 +24,9 @@ by `scripts/validate-instantiation.sh`; violating them fails the gate.
    no two backticked paths in one field. If a change spans two files,
    split into two tasks. Example of rejected:
    `**File:** \`android/app/build.gradle.kts\`, \`ios/Cleaner/Config.xcconfig\``
+   **Exception:** Cross-platform pipe-separated paths (see rule 7 below)
+   are permitted because they represent the SAME logical file on two
+   platforms — not two unrelated files.
 2. **Only one task per File may declare `Change type: create-new`.**
    If several tasks all edit the same `.github/workflows/ci.yml` or
    `android/app/build.gradle.kts`, exactly one is the creator
@@ -45,8 +48,32 @@ by `scripts/validate-instantiation.sh`; violating them fails the gate.
    screenshot matrix — do not hand-write 15 near-identical tasks.
 6. **Run `bash .ai-prompts/scripts/finalize.sh prompts/outputs/current`** as the
    ONLY post-Step-3 action. Do not hand-write `revise-report.md`.
+7. **Cross-platform File: field format.** When a project targets
+   multiple platforms (e.g. iOS + Android), dual-platform tasks MUST
+   use the pipe separator to declare both paths in one File: field:
+   `**File:** \`ios/path/Foo.swift\` | \`android/path/Foo.kt\``
+   This is NOT a violation of rule 1 — the pipe represents the same
+   logical component on two platforms. The path ledger
+   (`build-path-ledger.sh`) splits on `|` and registers both paths.
+   Files that are inherently single-platform (`.xcprivacy`, `fastlane/`,
+   `.github/workflows/`, `AndroidManifest.xml`) are exempt.
+8. **All 6 metadata fields are mandatory.** Every task file MUST
+   carry: `Closes user story`, `Change type`, `File`, `Depends on`,
+   `Test`, and `Estimated LOC`. The validator enforces this as a
+   hard gate — files missing any field will fail.
 
 ---
+
+## Native Project Initialization (Mobile)
+
+If the project targets native iOS or Android (not React Native/Expo), do **not** instruct the executor to use a CLI tool (e.g., `xcodebuild`, `android init`) to scaffold the project, and do not attempt to write raw `.xcodeproj` or `build.gradle.kts` files from scratch.
+
+Instead, emit a task to copy the generic project templates provided in the library:
+- **File:** `ios/AppTemplate.xcodeproj/project.pbxproj` | `android/app/build.gradle.kts`
+- **Precise change:**
+  1. Copy the entire `project-templates/ios` directory to `ios/` and/or `project-templates/android` to `android/`.
+  2. Perform a deep find-and-replace to rename `AppTemplate` and `com.example.app` to the actual project's name and bundle ID.
+  3. Rename the directories (e.g. `AppTemplate.xcodeproj` to `<ProjectName>.xcodeproj`) to match.
 
 ## Identity, auth & onboarding
 

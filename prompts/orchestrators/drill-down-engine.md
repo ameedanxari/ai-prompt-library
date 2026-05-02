@@ -191,7 +191,8 @@ epics to the user**. Show:
 4. The line: "Planning progress: Step 1 of 3 complete. Say **Continue** to
    expand these epics into features, or give feedback to adjust.
    **Recommended:** Start a NEW CHAT for the next step to ensure a fresh
-   context window for expansion."
+   context window for expansion. If you start a new chat, paste this exactly:
+   **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"
 
 **Wait for the user to say "Continue" (or provide feedback).** If feedback
 is given, regenerate `epics.md` incorporating the feedback, then present
@@ -321,7 +322,8 @@ After writing all `features-*.md` files AND `external-accounts.md`,
    M epics are ready for task expansion. Say **Continue** to generate
    atomic task prompts, or give feedback to adjust.
    **Recommended:** Start a NEW CHAT for the next step to ensure a fresh
-   context window for expansion."
+   context window for expansion. If you start a new chat, paste this exactly:
+   **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"
 
 **Wait for the user to say "Continue".** When confirmed, proceed to
 Step 3.
@@ -652,6 +654,63 @@ prompt before the validation gate below.
 
 ---
 
+## STEP 3.7 — Schema Alignment & Dependency Pass (MANDATORY)
+
+Step 3 prioritized **creative density** (narrative implementation prompts). Step 3.7 now adds the **mechanical skeleton** required for the automated engine to track progress and execute in the correct order. This is a dedicated "cleanup" phase performed after all 78+ task files are written.
+
+**Do NOT skip this phase.** Without it, the Revise Gate will fail on missing metadata, and the Executor will not know the build order.
+
+### Instructions for the Schema Alignment Pass:
+
+1. **Load all `tasks-*.md` files** from `prompts/outputs/current/`.
+2. **Read the Narrative Implementation Guidance** in each file to identify:
+   - The primary **File** path being modified or created.
+   - The **Change type** (`create-new` or `modify-existing`).
+   - The **User Story** it fulfills (e.g., "As a user, I want...").
+   - The **Dependencies** (which other `tasks-*.md` files must exist before this code can be written).
+3. **Inject the Metadata Block** at the top of each file, immediately following the H1 title. Use the strict Markdown bullet format:
+
+```markdown
+# Prompt — <Feature Name> for <Project Name>
+
+- **Closes user story:** As a <role>, I <want/need> <action>, so that <value>.
+- **Change type:** <create-new | modify-existing>
+- **File:** `<ios_path>` | `<android_path>`
+- **Depends on:** <tasks-other-feature.md | none> (reason if not none)
+- **Test:** <command or manual steps to verify>
+- **Estimated LOC:** <+N | -N | ~N>
+```
+
+4. **ALL 6 FIELDS ARE MANDATORY.** The validator (`validate-instantiation.sh`) will reject any task file missing even one field. Do not omit `Estimated LOC:` or `Test:` — both are required by the executor.
+
+5. **Cross-Platform File Paths (MANDATORY for multi-platform projects):**
+   Read the `_Project platforms:_` line in `epics.md`. If the project targets both iOS and Android (or any two platforms), then every task that contains platform-specific source code MUST include paths for BOTH platforms in the `File:` field, separated by a pipe `|`:
+
+   ```markdown
+   - **File:** `ios/StorageCleaner/Services/ML/Foo.swift` | `android/app/src/main/java/com/creatrixe/storagecleaner/service/ml/Foo.kt`
+   ```
+
+   **Exempt from cross-platform paths** (single-platform or shared files only):
+   - CI/CD configs: `.github/workflows/`, `fastlane/`
+   - iOS-only configs: `.xcprivacy`, `.plist`, `.xcodeproj`
+   - Android-only configs: `AndroidManifest.xml`
+   - Documentation: `docs/`, `README`
+   - Linting: `.swiftlint.yml`, `detekt.yml`
+
+   **Failure pattern from StorageCleaner:** 69 of 78 dual-platform files were generated with iOS-only paths. The Android path was never extracted from the narrative — even though every task file contained both Swift and Kotlin code blocks with explicit `// android/app/src/main/java/...` comments. The engine must read BOTH code blocks and emit BOTH paths.
+
+6. **Verify Platform Parity:** Ensure every task has distinct metadata and code blocks for all project platforms (e.g., separate sections for iOS and Android).
+
+7. **Fix Dependencies:** Ensure the dependency graph is acyclic. Each `Depends on:` entry must reference an actual `tasks-*.md` file that exists on disk — not a features file, not a made-up name. The validator checks this mechanically (check 5c-ii).
+
+8. **DAG Validation:** After injecting all metadata, the `Depends on:` graph MUST be a DAG (Directed Acyclic Graph). The validator runs Kahn's algorithm to detect cycles. A cycle means the executor would deadlock. Fix cycles by removing or reversing one dependency in the chain.
+
+**Perform this pass in a single context window** (or segmented by epic) to maintain global awareness of the project's file structure and dependency graph.
+
+
+---
+
+
 ## Revise Gate (MANDATORY — run one command, then act on the result)
 
 After Step 3 writes the last `tasks-*.md`, you do NOT manually inspect
@@ -718,7 +777,9 @@ list and feeds them to the AI — but the result is the same either way.
 5. The line: `"✅ Planning phase complete. N implementation prompts
    are ready for execution. Say **Execute** to begin implementing
    one by one, or review the prompt files under
-   prompts/outputs/current/ first."`
+   prompts/outputs/current/ first.
+   **Recommended:** Start a NEW CHAT for execution to ensure a fresh context window. If you start a new chat, paste this exactly:
+   **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"`
 
 **Wait for the user to say "Execute" or "Continue".** Do NOT
 automatically hand off to the executor. The user must explicitly

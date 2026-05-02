@@ -224,10 +224,10 @@ present the result to the user**. Show:
 6. **Overall progress** — `N / M prompts complete (P%)`.
    Include counts: `done: X, blocked: Y, failed: Z, remaining: W`.
 7. If status is `done`:
-   `"Prompt complete. Say **Continue** to proceed to the next prompt."`
+   `"Prompt complete. Say **Continue** to proceed to the next prompt. If starting a new chat, paste exactly: **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"`
    If status is `blocked` or `failed`:
    `"Prompt [status]. [One-line explanation]. Say **Continue** to skip
-   to the next prompt, or provide guidance."`
+   to the next prompt, or provide guidance. If starting a new chat, paste exactly: **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"`
 
 **Wait for the user to say "Continue".** Do NOT auto-advance.
 

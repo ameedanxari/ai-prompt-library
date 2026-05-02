@@ -39,6 +39,9 @@ USER_STORY_WELL_FORMED='\*\*Closes user story:\*\*\s+As (a|an|the)\s+.+,\s+I (wa
 # headings (## T<n> or ## R<n>) vs these field markers.
 CHANGE_TYPE_MARKER='^\s*[-*]?\s*\*\*Change type:\*\*'
 TEST_MARKER='^\s*[-*]?\s*\*\*Test:\*\*'
+FILE_MARKER='^\s*[-*]?\s*\*\*File:\*\*'
+DEPENDS_MARKER='^\s*[-*]?\s*\*\*Depends on:\*\*'
+LOC_MARKER='^\s*[-*]?\s*\*\*Estimated LOC:\*\*'
 
 # Depends-on must carry a Reason when not `none`. Both engines require
 # this to prevent invented ordering between unrelated tasks.
@@ -485,8 +488,17 @@ for f in "${files[@]}"; do
   # intends to reject. Check 3's pattern missed it because the model
   # used real paths separated by ", ` " rather than the phrase
   # "(multiple files)". Explicit detection here.
+  #
+  # Phase 7 exemption: pipe-separated cross-platform paths
+  # (`ios/path` | `android/path`) are the canonical format for
+  # dual-platform tasks and are NOT a multi-file violation. The pipe
+  # represents the SAME logical component on two platforms. Skip
+  # detection when exactly 2 backticked paths are separated by " | ".
   multi_backtick=$(awk '
     /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ || /^[[:space:]]*-[[:space:]]*File:/ {
+      # If the line uses the pipe separator for cross-platform paths,
+      # exempt it from the multi-backtick check.
+      if ($0 ~ /`[^`]+`[[:space:]]*\|[[:space:]]*`[^`]+`/) next
       # Count backticked tokens on this line.
       s = $0
       count = 0
@@ -503,6 +515,9 @@ for f in "${files[@]}"; do
     echo "   Each task MUST write to exactly one file. Split this task"
     echo "   into N tasks, one per file, each with its own acceptance"
     echo "   criteria and test."
+    echo "   Note: cross-platform paths using the pipe separator"
+    echo "   (\`ios/path\` | \`android/path\`) are allowed — they represent"
+    echo "   the same logical file on two platforms."
     fail=1
   fi
 
@@ -514,9 +529,72 @@ for f in "${files[@]}"; do
   fi
 
 
+  # 5. Metadata completeness check (Phase 7 — StorageCleaner field test).
+  # Every task file must carry ALL 6 required metadata fields. Missing fields
+  # were the #1 schema-alignment defect: 9 of 78 files shipped without any
+  # metadata, and the engine never caught it because each field was checked
+  # in isolation but the "all present" invariant was never enforced.
+  missing_fields=""
+  grep -qE "$USER_STORY_MARKER" "$f"     || missing_fields="$missing_fields Closes-user-story"
+  grep -qE "$CHANGE_TYPE_MARKER" "$f"    || missing_fields="$missing_fields Change-type"
+  grep -qE "$FILE_MARKER" "$f"           || missing_fields="$missing_fields File"
+  grep -qE "$DEPENDS_MARKER" "$f"        || missing_fields="$missing_fields Depends-on"
+  grep -qE "$TEST_MARKER" "$f"           || missing_fields="$missing_fields Test"
+  grep -qE "$LOC_MARKER" "$f"            || missing_fields="$missing_fields Estimated-LOC"
+  if [ -n "$missing_fields" ]; then
+    echo "❌ $f: missing required metadata field(s):$missing_fields"
+    echo "   Every task file MUST carry all 6 metadata fields:"
+    echo "     - **Closes user story:** As a <role>, I <want|need> <action>, so that <value>."
+    echo "     - **Change type:** <create-new | modify-existing>"
+    echo "     - **File:** \`<path>\`"
+    echo "     - **Depends on:** <tasks-other.md | none> (reason)"
+    echo "     - **Test:** <verification command or steps>"
+    echo "     - **Estimated LOC:** <+N | -N | ~N>"
+    echo "   Run the Schema Alignment Pass (schema-alignment-pass.md) to inject"
+    echo "   the missing fields from the narrative content."
+    fail=1
+  fi
 
-
-
+  # 5b. Cross-platform path check (Phase 7 — StorageCleaner field test).
+  # When the project targets multiple platforms (detected from epics.md),
+  # task files that touch app source code MUST carry paths for EACH platform
+  # using the pipe separator: `ios/path | android/path`.
+  # Files that are legitimately single-platform (xcprivacy, CI configs,
+  # Fastlane metadata) are exempted by path pattern.
+  if [ -f "$TARGET_DIR/epics.md" ]; then
+    platforms_line=$(grep -i 'project platforms' "$TARGET_DIR/epics.md" 2>/dev/null | head -n1 || true)
+    is_multiplatform=0
+    if echo "$platforms_line" | grep -qi 'android' && echo "$platforms_line" | grep -qi 'ios'; then
+      is_multiplatform=1
+    fi
+    if [ $is_multiplatform -eq 1 ]; then
+      file_line=$(grep -E "$FILE_MARKER" "$f" | head -n1 || true)
+      if [ -n "$file_line" ]; then
+        # Exempt legitimately single-target files:
+        # - CI/CD: .github/, fastlane/, .swiftlint, detekt
+        # - iOS-only: .xcprivacy, .xcassets, .xcodeproj, .plist
+        # - Android-only: AndroidManifest.xml
+        # - Shared docs: docs/, README
+        is_exempt=0
+        lower_line=$(echo "$file_line" | tr 'A-Z' 'a-z')
+        case "$lower_line" in
+          *.github/*|*fastlane/*|*.swiftlint*|*detekt*) is_exempt=1 ;;
+          *.xcprivacy*|*.plist*) is_exempt=1 ;;
+          *docs/*|*readme*) is_exempt=1 ;;
+        esac
+        # Check: non-exempt files must have the pipe separator
+        if [ $is_exempt -eq 0 ] && ! echo "$file_line" | grep -q '|'; then
+          echo "⚠️  $f: File: field has only one platform path on a multi-platform project"
+          echo "   Project targets both iOS and Android. Dual-platform task files should"
+          echo "   carry paths for both: \`ios/path\` | \`android/path\`"
+          echo "   If this file is legitimately single-platform, no action needed."
+          echo "   Current: $(echo "$file_line" | sed 's/^[[:space:]]*//')"
+          # Warn only, don't fail — some tasks are genuinely single-platform.
+          # The schema alignment pass orchestrator will handle these.
+        fi
+      fi
+    fi
+  fi
 
   # 5c. `Depends on:` must be either `none` or carry a reason (Phase 6b).
   # A bare task-id list like "T1, T2" is a schema violation — invented
@@ -824,6 +902,75 @@ for f in "${files[@]}"; do
     fi
   fi
 done
+
+# 6c. DAG cycle detection (Phase 7 — StorageCleaner field test).
+# The Depends-on graph must be a DAG. A cycle means the executor would
+# deadlock — task A waits for B, B waits for C, C waits for A. This was
+# never checked mechanically; the StorageCleaner schema alignment relied
+# on a manual Python script to verify acyclicity.
+if [ ${#files[@]} -gt 0 ]; then
+  dag_result=$(python3 -c "
+import sys, os, re
+from collections import defaultdict, deque
+
+target_dir = sys.argv[1]
+graph = {}
+for fn in os.listdir(target_dir):
+    if not fn.startswith('tasks-') or not fn.endswith('.md'):
+        continue
+    deps = []
+    with open(os.path.join(target_dir, fn)) as fh:
+        for line in fh:
+            if '**Depends on:**' in line:
+                refs = re.findall(r'tasks-[a-z0-9][a-z0-9-]*\.md', line)
+                deps.extend(refs)
+                break
+    graph[fn] = deps
+
+# Kahn's algorithm
+in_degree = defaultdict(int)
+adj = defaultdict(list)
+all_nodes = set(graph.keys())
+for node, deps in graph.items():
+    for dep in deps:
+        adj[dep].append(node)
+        in_degree[node] += 1
+        all_nodes.add(dep)
+
+queue = deque([n for n in all_nodes if in_degree[n] == 0])
+ordered = []
+while queue:
+    n = queue.popleft()
+    ordered.append(n)
+    for nb in adj[n]:
+        in_degree[nb] -= 1
+        if in_degree[nb] == 0:
+            queue.append(nb)
+
+if len(ordered) == len(all_nodes):
+    print('ok')
+else:
+    cycle_nodes = sorted(all_nodes - set(ordered))
+    print('cycle:' + ','.join(cycle_nodes))
+" "$TARGET_DIR" 2>/dev/null || echo "skip")
+
+  case "$dag_result" in
+    ok)
+      ;;
+    skip)
+      echo "⚠️  DAG cycle check skipped (python3 not available)"
+      ;;
+    cycle:*)
+      cycle_list=${dag_result#cycle:}
+      echo "❌ dependency cycle detected in Depends-on graph"
+      echo "   The following tasks form a cycle — the executor cannot determine"
+      echo "   a valid execution order:"
+      echo "$cycle_list" | tr ',' '\n' | sed 's/^/   - /'
+      echo "   Fix by removing or reversing one dependency in the cycle."
+      fail=1
+      ;;
+  esac
+fi
 
 # 7. Cross-file create-new collision detector. If N tasks across all
 # tasks-*.md declare **Change type: create-new** for the same File,

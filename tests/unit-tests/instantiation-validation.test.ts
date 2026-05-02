@@ -80,7 +80,7 @@ describe('validator — clean fixture passes', () => {
           '  - File exports exactly one symbol named `hello`.',
           '  - `tsc --noEmit` exits 0 after the edit.',
           '- **Test:** `src/app.test.ts` (new) — calls hello, asserts return.',
-          '- **Estimated LOC delta:** +5',
+          '- **Estimated LOC:** +5',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -331,6 +331,8 @@ describe('validator — clean fixture passes', () => {
           '  - B present.',
           '  - C present.',
           '- **Test:** `src/a.test.ts`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -490,7 +492,7 @@ describe('validator — user-story linkage', () => {
           '  - 6 files per size.',
           '  - Dimensions match spec.',
           '- **Test:** `ios/scripts/check.sh`',
-          '- **Estimated LOC delta:** +0',
+          '- **Estimated LOC:** +0',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -531,7 +533,7 @@ describe('validator — user-story linkage', () => {
           '  - `ios/screenshots/en/phone-2.png` file exists and is PNG format with dimensions 1290x2796px.',
           '  - `ios/screenshots/en/phone-3.png` file exists and is PNG format with dimensions 1290x2796px.',
           '- **Test:** `ios/scripts/check.sh`',
-          '- **Estimated LOC delta:** +0',
+          '- **Estimated LOC:** +0',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -572,7 +574,7 @@ describe('validator — user-story linkage', () => {
           '  - `npm test -- backend/tests/authMiddleware.test.ts` passes.',
           '  - Coverage for `backend/src/middleware/auth.ts` increases from 40% to 90%.',
           '- **Test:** `npm test -- backend/tests/authMiddleware.test.ts`',
-          '- **Estimated LOC delta:** +80',
+          '- **Estimated LOC:** +80',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -613,7 +615,7 @@ describe('validator — user-story linkage', () => {
           '  - `MediaItem.fromCursor(mockCursor)` returns an instance whose id, uri, sizeBytes, createdAt match the cursor values.',
           '  - `MediaItem` is Parcelable and round-trips through `Bundle.putParcelable` / `getParcelable` unchanged.',
           '- **Test:** `android/app/src/test/java/com/creatrixe/cleaner/data/model/MediaItemTest.kt`',
-          '- **Estimated LOC delta:** +40',
+          '- **Estimated LOC:** +40',
           '- **Depends on:** none',
           '',
           '## R2 · Wire the debug menu entry',
@@ -627,7 +629,7 @@ describe('validator — user-story linkage', () => {
           '  - Tapping it clears SharedPreferences under namespace `com.creatrixe.cleaner.local`.',
           '  - A toast announces "Local state cleared" on success.',
           '- **Test:** `android/app/src/androidTest/java/com/creatrixe/cleaner/debug/DebugMenuFragmentTest.kt`',
-          '- **Estimated LOC delta:** +22',
+          '- **Estimated LOC:** +22',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -744,7 +746,7 @@ describe('validator — user-story linkage', () => {
           '  - PNG dimensions match device form factor.',
           `  - OCR contains ${locale}-localised strings for the ${frame} screen.`,
           `- **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\``,
-          '- **Estimated LOC delta:** +0',
+          '- **Estimated LOC:** +0',
           '- **Depends on:** T1 (Snapfile drives the capture)',
           '',
         ].join('\n');
@@ -765,7 +767,7 @@ describe('validator — user-story linkage', () => {
           '  - File `fastlane/Snapfile` contains `devices [` and `languages [` declarations.',
           '  - `languages` list length matches the 5 brief-keyword locales.',
           '- **Test:** `bundle exec fastlane snapshot --verify_only`',
-          '- **Estimated LOC delta:** +20',
+          '- **Estimated LOC:** +20',
           '- **Depends on:** none',
           '',
           capture(2, 'en-US', 'pixel_7', 'dashboard'),
@@ -809,7 +811,7 @@ describe('validator — user-story linkage', () => {
           '  - PNG dimensions match iPhone 6.5".',
           '  - Text is localised.',
           '- **Test:** `./scripts/verify-shot.sh fastlane/screenshots/en-US/iphone-6.5/1_feature.png`',
-          '- **Estimated LOC delta:** +0',
+          '- **Estimated LOC:** +0',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -849,7 +851,7 @@ describe('validator — user-story linkage', () => {
           '  - Snapfile declares three devices.',
           '  - Snapfile declares five languages.',
           '- **Test:** `bundle exec fastlane snapshot --verify_only`',
-          '- **Estimated LOC delta:** +20',
+          '- **Estimated LOC:** +20',
           '- **Depends on:** none',
           '',
           '## T2 · Screenshot organizer script',
@@ -863,7 +865,7 @@ describe('validator — user-story linkage', () => {
           '  - Files are grouped under per-locale directories.',
           '  - Script writes a summary to stdout.',
           '- **Test:** `bats tools/app-store/organize.bats`',
-          '- **Estimated LOC delta:** +40',
+          '- **Estimated LOC:** +40',
           '- **Depends on:** T1 (Snapfile defines output_directory)',
           '',
         ].join('\n'),
@@ -910,7 +912,7 @@ describe('validator — user-story linkage', () => {
           '  - Sizes match platform specs.',
           '  - No placeholder images remain.',
           '- **Test:** `scripts/check-icons.sh`',
-          '- **Estimated LOC delta:** +0',
+          '- **Estimated LOC:** +0',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -1180,6 +1182,7 @@ describe('validator — user-story linkage', () => {
           '  - C present.',
           '- **Test:** `src/a.test.ts`',
           '- **Depends on:** none',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -1230,6 +1233,7 @@ describe('validator — user-story linkage', () => {
           '  - C.',
           '- **Test:** `src/a.test.ts`',
           '- **Depends on:** none',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -1284,6 +1288,7 @@ describe('validator — user-story linkage', () => {
           // Depends on with just a task id and no reason — the exact
           // shape of invented ordering the MenuMaker run produced.
           '- **Depends on:** T0',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -1325,6 +1330,7 @@ describe('validator — user-story linkage', () => {
           '  - C present.',
           '- **Test:** `src/a.test.ts`',
           '- **Depends on:** T0 (requires the schema from T0 to exist)',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -1361,7 +1367,7 @@ describe('validator — user-story linkage', () => {
           '  - Only one export named `hello`.',
           '  - File size stays under 100 lines.',
           '- **Test:** `src/app.test.ts`',
-          '- **Estimated LOC delta:** +5',
+          '- **Estimated LOC:** +5',
           '- **Depends on:** none',
           '',
         ].join('\n'),
@@ -1418,6 +1424,8 @@ describe('validator — orphan tasks and baseline coverage', () => {
       '  - B present.',
       '  - C present.',
       `- **Test:** \`${testPath}\``,
+      '- **Depends on:** none',
+      '- **Estimated LOC:** +20',
       '',
     ].join('\n');
   }
@@ -1472,6 +1480,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
         '  - C present.',
         '- **Test:** `bundle exec fastlane snapshot --verify_only`',
         '- **Depends on:** none',
+        '- **Estimated LOC:** +0',
         '',
         '## T2 · Screenshot — en-US / iphone-6.7-inch / dashboard',
         '- **Closes user story:** As the app, I need a en-US iphone-6.7-inch dashboard screenshot, so that the en-US listing shows localised content.',
@@ -1485,6 +1494,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
         '  - C present.',
         '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/2_dashboard.png`',
         '- **Depends on:** T1 (Snapfile)',
+        '- **Estimated LOC:** +0',
         '',
         '## T3 · Screenshot — es-ES / iphone-6.7-inch / dashboard',
         '- **Closes user story:** As the app, I need a es-ES iphone-6.7-inch dashboard screenshot, so that the es-ES listing shows localised content.',
@@ -1498,6 +1508,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
         '  - C present.',
         '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/es-ES/iphone-6.7-inch/3_dashboard.png`',
         '- **Depends on:** T1 (Snapfile)',
+        '- **Estimated LOC:** +0',
         '',
         '## T4 · Screenshot — fr-FR / iphone-6.7-inch / dashboard',
         '- **Closes user story:** As the app, I need a fr-FR iphone-6.7-inch dashboard screenshot, so that the fr-FR listing shows localised content.',
@@ -1511,6 +1522,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
         '  - C present.',
         '- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/fr-FR/iphone-6.7-inch/4_dashboard.png`',
         '- **Depends on:** T1 (Snapfile)',
+        '- **Estimated LOC:** +0',
         '',
       ].join('\n');
       fs.writeFileSync(path.join(sandbox, 'tasks-screenshots-ios.md'), scaffoldedBody);
@@ -1627,6 +1639,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
             '  - C present.',
             `- **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${devicePath}/${num}_dashboard.png\``,
             '- **Depends on:** none',
+            '- **Estimated LOC:** +0',
             '',
           ].join('\n');
         return [cap(1, 'en-US'), cap(2, 'es-ES'), cap(3, 'fr-FR')].join('\n');
@@ -1778,6 +1791,7 @@ describe('validator — final-delivery quality checks', () => {
           '  - C present.',
           '- **Test:** `src/alpha.test.ts`',
           '- **Depends on:** T1 from tasks-beta-missing.md (needed for alpha init)',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
@@ -1810,6 +1824,8 @@ describe('validator — final-delivery quality checks', () => {
           '  - B present.',
           '  - C present.',
           `- **Test:** \`${file.replace(/\.ts$/, '.test.ts')}\``,
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n');
       // Two tasks both claim create-new on the same file.
@@ -1851,6 +1867,7 @@ describe('validator — final-delivery quality checks', () => {
           '  - C present.',
           `- **Test:** \`${file.replace(/\.ts$/, '.test.ts')}\``,
           `- **Depends on:** ${depends}`,
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n');
       fs.writeFileSync(

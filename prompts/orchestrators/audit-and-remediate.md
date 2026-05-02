@@ -48,6 +48,9 @@ To ensure maximum attention to detail and prevent context overflow, it is **reco
 - Before starting remediation expansion (Step 3).
 - Before handoff to the executor.
 
+If you start a new chat, paste this exactly:
+**Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**
+
 **Mandatory Re-load on Continuity:** If you continue in the same chat instead of a new one, you **MUST** re-load `project-context.md`, `audit-report.md`, and `gap-list.md` from disk before starting remediation. If the chat history is long, ask the user: *"I see we are continuing in this chat. To ensure maximum precision, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
 
 ---

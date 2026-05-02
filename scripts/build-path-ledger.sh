@@ -80,9 +80,19 @@ for pf in "${plan_files[@]}"; do
       # support the /re/i flag, so normalise with tolower() first.
       lower = tolower(line)
       if (line == "" || lower == "n/a" || lower == "none" || lower == "tbd" || line == "—") next
-      # Skip lines that still contain spaces (bad path or prose).
-      if (line ~ /[[:space:]]/) next
-      printf("%s|%s|%s\n", slug, tid, line)
+      # Handle pipe-separated cross-platform paths (Phase 7):
+      # e.g. "ios/StorageCleaner/Foo.swift | android/app/.../Foo.kt"
+      # Split on " | " and emit one row per platform path.
+      n = split(line, parts, /[[:space:]]*\|[[:space:]]*/)
+      for (i = 1; i <= n; i++) {
+        p = parts[i]
+        # Strip any remaining leading/trailing whitespace per segment.
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", p)
+        # Skip empty segments or segments that still look like prose.
+        if (p == "") continue
+        if (p ~ /[[:space:]]/) continue
+        printf("%s|%s|%s\n", slug, tid, p)
+      }
     }
   ' "$pf" >> "$rows_file"
 done
