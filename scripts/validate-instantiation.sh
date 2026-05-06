@@ -29,6 +29,8 @@ FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|
 # **Acceptance:** header.
 TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?\s*$'
 
+HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Implementation guidance here|TODO:|TBD)'
+
 # User-story line. Each task block must contain a **Closes user story:**
 # line that uses the canonical "As a ... I want ... so that ..." form.
 USER_STORY_MARKER='^\s*[-*]?\s*\*\*Closes user story:\*\*'
@@ -518,6 +520,16 @@ for f in "${files[@]}"; do
     echo "   Note: cross-platform paths using the pipe separator"
     echo "   (\`ios/path\` | \`android/path\`) are allowed — they represent"
     echo "   the same logical file on two platforms."
+    fail=1
+  fi
+
+
+  # 4b. Hollow prompt detection.
+  if grep -niE "$HOLLOW_PROMPT_PATTERN" "$f" >/dev/null 2>&1; then
+    echo "❌ $f: hollow prompt detected (contains boilerplate placeholders)"
+    grep -niE "$HOLLOW_PROMPT_PATTERN" "$f" | sed 's/^/   /'
+    echo "   The prompt MUST contain actual, dissolved guidance from a module."
+    echo "   Do NOT bypass Step 3 module loading."
     fail=1
   fi
 
