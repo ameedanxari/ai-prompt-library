@@ -17,22 +17,42 @@ jobs:
       run: |
         echo "🔍 Checking for debugging artifacts..."
         
-        # Check for common debugging patterns
-        if grep -r "TODO\|FIXME\|DEBUG\|TEMP\|XXX" --include="*.md" --exclude-dir=".git" .; then
+        # Check tracked, active Markdown for actionable debugging markers.
+        # Use marker forms such as "TODO:" instead of broad substrings so
+        # legitimate prompt examples like DEBUG flags or TEMPERATURE constants
+        # do not fail the workflow.
+        matches=$(
+          git grep -nE '(^|[^[:alnum:]_])(TODO|FIXME|DEBUG|TEMP|XXX)[[:space:]]*(:|-)' -- \
+            '*.md' \
+            ':!docs/archive/**' \
+            ':!prompts/outputs/**' \
+            ':!prompts/working_copy/**' || true
+        )
+
+        if [ -n "$matches" ]; then
+          echo "$matches"
           echo "❌ Found debugging artifacts in commit"
           echo "Please clean up before committing to production"
           exit 1
         fi
         
         # Check for empty files
-        if find . -name "*.md" -empty -not -path "./.git/*"; then
+        empty_files=$(
+          git ls-files '*.md' | while IFS= read -r file; do
+            if [ ! -s "$file" ]; then
+              echo "$file"
+            fi
+          done
+        )
+        if [ -n "$empty_files" ]; then
+          echo "$empty_files"
           echo "❌ Found empty markdown files"
           echo "Please remove empty files before committing"
           exit 1
         fi
         
         # Check for duplicate content
-        if find . -name "*.md" -not -path "./.git/*" -exec basename {} \; | sort | uniq -d | grep -q .; then
+        if git ls-files '*.md' | sed 's#.*/##' | sort | uniq -d | grep -q .; then
           echo "⚠️ Warning: Found potential duplicate files"
         fi
         
@@ -53,8 +73,8 @@ jobs:
           exit 1
         fi
         
-        if [ ! -f "PREVENTION_CHECKLIST.md" ]; then
-          echo "❌ Missing PREVENTION_CHECKLIST.md"
+        if [ ! -f "docs/optional/PREVENTION_CHECKLIST.md" ]; then
+          echo "❌ Missing docs/optional/PREVENTION_CHECKLIST.md"
           exit 1
         fi
         
