@@ -56,6 +56,15 @@ Paths are relative to the repository root.
 | LLM integration / chatbot / AI assistant | `prompts/modules/ai-native/llm-integration.md` |
 | AI model deployment / serving | `prompts/modules/ai-native/model-serving.md` |
 | ML-driven autoscaling / workload forecasting | `prompts/modules/ai-native/predictive-scaling.md` |
+| On-device ML — iOS (Core ML, Vision, Create ML) | `prompts/modules/ai-native/on-device-ml-ios.md` |
+| On-device ML — Android (ML Kit, TensorFlow Lite, MediaPipe) | `prompts/modules/ai-native/on-device-ml-android.md` |
+
+## Mobile UX Patterns
+
+| Intent | Module |
+|---|---|
+| Swipe / gesture-based card UI (tinder-style, card stack) | `prompts/modules/feature-patterns/gesture-card-ui.md` |
+| Haptic feedback / tactile interactions | `prompts/modules/feature-patterns/haptic-feedback.md` |
 
 ## Commerce
 

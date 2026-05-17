@@ -36,13 +36,30 @@ show me a summary of what was just completed, then wait for me to say
       'a medical records system for dentists'. I'll fill in everything
       else with industry-standard defaults."
 
-   When I answer, overwrite MY_PROJECT.md: put my paragraph under the
-   "Brief (required)" section. Leave every other section of the template
-   EMPTY — the library will auto-assume the defaults documented in that
-   template (web + Android + iOS, production-readiness baseline, etc.).
+   When I answer, fully customize MY_PROJECT.md by acting as an
+   experienced product owner and solutions architect:
+
+   a. Put my paragraph under the "Brief (required)" section.
+   b. Read my brief carefully and fill in EVERY other section that
+      can be inferred. The template is a master list of possibilities —
+      your job is to compose a coherent, project-specific spec:
+      - **Platforms:** infer from the brief (e.g. "native android and
+        ios" → Android, iOS only — do NOT default to web+Android+iOS
+        when the brief specifies otherwise).
+      - **Tech preferences:** infer stack choices from the brief
+        (e.g. "on-device AI" → Core ML + ML Kit, not cloud services).
+      - **Users / roles:** infer from the product concept.
+      - **Constraints:** extract explicit and implicit constraints
+        (e.g. "no network access for user data" → privacy constraint).
+      - **Restrict:** list baseline topics that genuinely don't apply
+        to this project (e.g. Admin & RBAC for a single-user local
+        app, Infrastructure as Code for a no-backend app).
+      - **Non-goals:** infer what the product is NOT.
 
    Do NOT ask me additional questions about platforms, tech, roles,
-   constraints, or non-goals. The library infers those.
+   constraints, or non-goals. Infer them from my brief. If something
+   is genuinely ambiguous, make a sensible default and note it in the
+   file — I'll correct it at the first checkpoint if needed.
 
 5. Check whether I dropped anything into working_copy/. If that folder
    exists and has files, the engine will read them as authoritative

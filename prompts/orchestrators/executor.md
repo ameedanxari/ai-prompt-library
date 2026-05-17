@@ -77,6 +77,62 @@ Do NOT load every remediation/task file at startup. Load each one only
 when you are about to execute its tasks. Isolation discipline from the
 planning engines carries over here.
 
+## Toolchain setup (MUST run before first task — Task 0)
+
+Before writing any application code, the executor MUST ensure the
+development environment is ready. This is the equivalent of onboarding
+a new developer to the project.
+
+### Step 1: Scaffold from project templates
+
+The library includes starter project templates under
+`.ai-prompts/project-templates/`. For native mobile projects:
+
+1. **Copy template to project root** if the target directory doesn't
+   exist yet:
+   - iOS: copy `.ai-prompts/project-templates/ios/` → `ios/`
+   - Android: copy `.ai-prompts/project-templates/android/` → `android/`
+2. **Rename and customize** the template:
+   - Replace `AppTemplate` / `com.example.app` with the actual project
+     name and bundle ID from `MY_PROJECT.md`.
+   - Rename directories to match (e.g. `AppTemplate.xcodeproj` →
+     `<ProjectName>.xcodeproj`).
+3. **Verify the scaffold builds** by running `build-gate.sh`. If the
+   template builds clean, the project has a working baseline.
+
+### Step 2: Detect and verify toolchain
+
+Identify required build tools from the plan and verify availability:
+
+| Platform | Required | Check command |
+|----------|----------|--------------|
+| iOS | Xcode + xcodebuild | `xcodebuild -version` |
+| Android | Android SDK + Gradle | `./gradlew --version` (from android/) |
+| Web (Node) | Node.js + npm | `node --version && npm --version` |
+| Python | Python + pip | `python3 --version` |
+| Go | Go compiler | `go version` |
+
+If a required tool is missing:
+1. **Report to the user** with exact installation steps (e.g. "Install
+   Xcode from the Mac App Store" or "Install Android Studio and
+   configure ANDROID_HOME").
+2. **Log as a prerequisite** in `execution-log.md` with status
+   `blocked` and a clear one-line action for the user.
+3. **Do NOT proceed** with tasks that require the missing tool.
+
+### Step 3: Generate dev setup script
+
+Create an idempotent setup script at `scripts/dev-setup.sh` (or
+`scripts/dev-setup.bat` for Windows) that:
+- Installs project dependencies (`npm install`, `pod install`, etc.)
+- Sets up the database if needed
+- Seeds fixtures / test data
+- Verifies the build compiles clean
+- Prints a "Ready to develop" message with the start command
+
+This script is also the onboarding path for future developers joining
+the project. Log the creation in `execution-log.md` as Task 0.
+
 ### Canonical-paths contract
 
 Before writing ANY source file, check that the path you are about to
@@ -114,24 +170,23 @@ plan_source: audit-and-remediate | drill-down-engine
 started_at: <ISO 8601 — e.g. 2026-04-19T22:45:03Z>
 updated_at: <ISO 8601 — set on every task completion>
 platforms: [web, android, ios]   # from MY_PROJECT.md or inferred
-last_completed_task: G1.R3        # or E1.T3; null if none yet
-next_task: G1.R4                   # computed from dependency graph
-blocked_tasks: [G2.R1, G5.R7]
+last_completed_task: tasks-signup.md  # filename of the last completed prompt; null if none yet
+next_task: tasks-login.md              # computed from dependency graph
+blocked_tasks: [tasks-stripe.md]
 failed_tasks: []
-deferred_tasks: [G3.R2]            # waiting on a dependency
+deferred_tasks: [tasks-dashboard.md]   # waiting on a dependency
 test_suite_state: green | red | unknown
-regressions_since_green: []        # task ids that introduced red
+regressions_since_green: []            # prompt filenames that introduced red
 external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
 ---
 
 # Execution Log
 
-## G1 · <gap-slug>  (or E1 · <epic-slug>)
+## <Epic or Gap Name>
 
-### R1 · <task objective>   — <status>
+### `tasks-<feature>.md` (or `remediation-<gap>.md`) — <status>
 - **Attempted:** <timestamp>
-- **Change made:** <one-line diff summary — which files, what function,
-  what delta>
+- **Change made:** <one-line diff summary — which files, what function, what delta>
 - **Test run:** `<exact command>`
 - **Test result:** pass | fail | error
 - **Acceptance verified:**
@@ -139,10 +194,9 @@ external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
   - ❌ <bullet from plan — not met, with one-line reason>
 - **Status:** done | blocked | deferred | failed
 - **Notes:** <one sentence; only if status is not `done`>
-- **Session:** <session_id> (which session completed this task — lets a
-  future agent reconstruct order across multiple sessions)
+- **Session:** <session_id> (which session completed this task — lets a future agent reconstruct order across multiple sessions)
 
-### R2 · ...
+### `tasks-<next-feature>.md` ...
 ```
 
 ### Handoff envelope — maintenance rules
@@ -186,13 +240,13 @@ envelope is the source of truth for "where we are".
 ```
 repeat:
   read epics.md (or gap-list.md)
-  for each epic in dependency order:
-    if every prompt in this epic is `done` in execution-log.md:
-      continue  // epic is complete
-    for each tasks-<feature>.md in this epic:
+  for each epic (or gap) in dependency order:
+    if every prompt in this epic/gap is `done` in execution-log.md:
+      continue  // complete
+    for each prompt file (`tasks-<feature>.md` or `remediation-<gap>.md`) in this epic/gap:
       if already `done` in execution-log.md: skip
       execute the prompt:
-        1. Read the full contents of tasks-<feature>.md.
+        1. Read the full contents of the chosen prompt file.
            This IS the implementation prompt — it contains all the
            context, guidance, patterns, and constraints the AI needs.
         2. Implement the feature as described in the prompt.
@@ -231,12 +285,7 @@ present the result to the user**. Show:
 
 **Wait for the user to say "Continue".** Do NOT auto-advance.
 
-If the user says "Continue N" (e.g. "Continue 5"), execute N prompts
-before the next checkpoint. Each prompt still gets a log entry, but
-only the last one triggers the visible checkpoint.
-
-If context is exhausted before the user responds, the next session
-can resume from `execution-log.md`'s `next_task` field.
+Do **NOT** attempt to execute multiple prompts in one turn or suggest a "Continue N" loop. Context overflow is the primary cause of AI steering off-track and hallucinating code. After executing one prompt, updating the codebase, and writing the status to `execution-log.md`, you must fully stop and strongly recommend the user start a new chat for the next task.
 
 ### Build-green gate (after every task)
 

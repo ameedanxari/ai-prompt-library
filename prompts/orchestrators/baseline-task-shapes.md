@@ -97,6 +97,11 @@ Instead, emit a task to copy the generic project templates provided in the libra
 
 ## Observability
 
+Adapt to the project's constraints. The goal is: can the team
+diagnose crashes, performance issues, and user-facing errors? The
+specific tools depend on whether the app has network access.
+
+**Standard (app has network / backend):**
 - Structured logging task that names the library (pino, winston,
   structlog, os_log, Timber, etc.), the log level taxonomy, and the
   destination (stdout / file / service).
@@ -107,6 +112,21 @@ Instead, emit a task to copy the generic project templates provided in the libra
   count, error rate, p50/p95/p99 latency, active sessions).
 - At least one alert routing task (PagerDuty / Slack / email) with
   the specific threshold.
+
+**Local-only / no-network apps (adapt, don't skip):**
+- Structured local logging task using platform-native facilities
+  (os_log + OSLogStore on iOS, Timber + logcat on Android), with
+  log-level taxonomy and local log rotation strategy.
+- Crash reporting via platform-native services: Apple crash reports
+  (Xcode Organizer) on iOS, Android Vitals (Play Console) on
+  Android. These require no runtime network access from the app —
+  the OS handles crash report delivery.
+- Local diagnostics screen (in debug menu) showing recent logs,
+  storage metrics, and app health indicators the user or developer
+  can inspect without network.
+- Performance profiling using Instruments (iOS) and Android Profiler
+  (Android) — task should set up launch arguments and build configs
+  to enable profiling in debug builds.
 
 ## Localization & RTL
 
@@ -178,54 +198,22 @@ Instead, emit a task to copy the generic project templates provided in the libra
   Vault, or environment-file strategy for local dev).
 - One task for DNS + TLS.
 
-## When a baseline epic is genuinely N/A (e.g. admin-rbac for a local-only app)
+## When a baseline topic is not applicable
 
-Some baseline epics do not apply to every project. A local-only
-offline app does not have an admin console to secure. A purely
-client-side tool does not have cloud infrastructure to codify. You
-still need to **document the decision** — but the output must be a
-real artefact, not a stub.
+Some baseline topics do not apply to every project. A local-only
+offline app does not need an admin console. A client-side tool with
+no backend does not need Infrastructure as Code.
 
-**Wrong pattern (hand-wave):**
+**The correct approach: exclude the topic from the plan entirely.**
+Do not emit placeholder epics, stub source files, or ADR tasks just
+to have "something to do." The library is a superset of all
+production concerns — the engine's job is to compose what is relevant
+and leave out what isn't. If a topic is excluded, it simply does not
+appear in `epics.md` or any downstream artifacts.
 
-```markdown
-## T1 · No admin portal implementation
-- **Closes user story:** Not applicable - this is a local-only app...
-- **File:** `android/app/.../admin/NoAdminPortal.kt`
-- **Signature:** `object NoAdminPortal { val description: String = "…" }`
-- **Precise change:** Add object as placeholder to document the decision.
-- **Acceptance:**
-  - Object exists with description.
-- **Test:** assert the description property exists.
-```
-
-This fails multiple validator checks (non-canonical user story, <3
-acceptance bullets) and produces a Kotlin file with one string
-constant — zero value.
-
-**Right pattern (Architecture Decision Record):**
-
-```markdown
-## T1 · ADR — admin-rbac is not applicable for StorageCleaner
-- **Closes user story:** As the maintainer, I need a durable record of why the admin-rbac baseline is declared N/A, so that a future reviewer or SBOM auditor can see the decision and its constraints.
-- **Change type:** create-new
-- **File:** `docs/adr/001-no-admin-portal.md`
-- **Signature:** Markdown ADR — `# 001 · No admin portal` / `## Context` / `## Decision` / `## Alternatives` / `## Consequences`
-- **Precise change:** Write an ADR that captures (a) the context (local-only offline app, no backend, no accounts, no moderation duties), (b) the decision (the admin-rbac baseline is declared N/A for v1), (c) alternatives considered (in-app owner PIN, web portal) and why rejected, (d) consequences (if the product adds multi-user features, this ADR must be revisited and the admin-rbac epic re-activated).
-- **Acceptance:**
-  - `docs/adr/001-no-admin-portal.md` exists.
-  - The file contains `## Context`, `## Decision`, `## Alternatives`, `## Consequences` headings.
-  - Each section is non-empty and names at least one concrete constraint or choice.
-- **Test:** `[ -f docs/adr/001-no-admin-portal.md ] && grep -qE '## (Context|Decision|Alternatives|Consequences)' docs/adr/001-no-admin-portal.md`
-- **Estimated LOC:** +40 (markdown)
-- **Depends on:** none
-```
-
-Rules for N/A baseline epics:
-1. One ADR task per declared-N/A baseline. The File is `docs/adr/NNN-<slug>.md`.
-2. Use the four-heading ADR shape (Context / Decision / Alternatives / Consequences).
-3. The Closes user story names the maintainer as stakeholder ("As the maintainer, I need a durable record…"). The decision itself is the outcome; the value is future-auditability.
-4. Do **not** generate a stub source file under `src/` / `android/` / `ios/` just to have "something to do".
+The decision to exclude is captured implicitly by its absence from
+`epics.md` and can be cross-referenced against the `brief-keywords.md`
+file, which documents what was scoped in and what was scoped out.
 
 ## App Store Release Prep (mobile only)
 

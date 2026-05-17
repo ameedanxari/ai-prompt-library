@@ -22,6 +22,17 @@ project grows. Each step loads only what it needs; nothing else.
 4. **Concrete over abstract** — every task names real files, real functions,
    real API shapes. Generic "implement auth" is rejected.
 
+## Resumption & State Detection
+
+Before starting or continuing work, you **MUST** read the contents of `prompts/outputs/current/` to determine the current state of the planning phase:
+
+1. **If `epics.md` is missing:** The planning phase has not started. Start with **Step 1 (Seed)**.
+2. **If `epics.md` exists but `features-*.md` are missing:** Step 1 is complete. Proceed to **Step 2 (Expansion)**.
+3. **If `features-*.md` exist but some `tasks-*.md` are missing:** Step 2 is complete. Run `bash scripts/step3-progress.sh` to see exactly which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
+4. **If all `tasks-*.md` exist but `revise-report.md` is missing or outdated:** Step 3 is complete. Proceed to **Step 4 (Validate)** and then **Step 4.5 (Revise)**.
+
+Rely on the files on disk, NOT your context history, to decide which step to execute.
+
 ## Inputs
 
 - **User brief** — freeform description of what to build (required).
@@ -57,31 +68,45 @@ capability. Examples: for a music app → "Playback engine", "Library &
 playlists", "Discovery & recommendations"; for a marketplace → "Product
 catalog", "Checkout", "Order fulfilment". Do NOT artificially invent epics just to hit a specific count.
 
-**(b) Production-readiness baseline epics** — a fixed set that MUST also be
-emitted unless the user's `MY_PROJECT.md` **Restrict** section explicitly
-lists them as excluded. This enforces the library's "assume maximum
-completeness" vision: a weak model cannot forget production concerns
-because the engine always surfaces them.
+**(b) Production-readiness baseline epics** — selected from the master list
+below based on what is **actually relevant** to this project. The library
+is a superset of all production concerns. Your job as a solutions
+architect is to **compose what is relevant and leave out what isn't.**
 
-Emit each baseline epic below UNLESS `MY_PROJECT.md` **Restrict** names it:
+For each baseline topic below, include it as an epic ONLY IF it serves
+the product's end user or is required for the product to go live.
+If a topic is genuinely not applicable (e.g. Admin & RBAC for a local-only
+single-user app, or Infrastructure as Code for an app with no backend),
+**exclude it entirely** — do not emit stub epics or placeholder tasks.
+The library's goal is a production-grade product, not paperwork.
 
-| Baseline epic | Covers |
-|---|---|
-| Identity, auth & onboarding | Sign up / sign in / OAuth / password reset / email verification / biometric on mobile / first-run onboarding tour / consent capture. |
-| Admin & RBAC | Admin portal, role-based permissions, impersonation / audit, account lifecycle, user management. |
-| Observability | Structured logging, metrics, error tracking (e.g. Sentry), uptime / alerting, distributed tracing, log → AI feedback loop. |
-| Localization & RTL | i18n framework, string extraction, RTL + LTR layouts, locale negotiation, date/number formatting, per-locale app store assets. |
-| Theming & whitelabel | Design-token architecture, dark + light mode, brand swap without code changes, theme preview in debug menu. |
-| Accessibility | WCAG 2.1 AA pass across web + mobile; screen-reader labels; keyboard nav; reduced-motion; minimum touch target sizes. |
-| Testing & QA | Unit + integration + UI + E2E + visual regression; mocked + deterministic data; coverage thresholds; test data factories. |
-| CI/CD & release | GitHub Actions (or equivalent) pipeline: lint → test → build → deploy; branch protection; semantic versioning; release notes. |
-| Infrastructure as code | Terraform / Pulumi / similar; prefer free-tier / freemium managed services for MVP; staging + production environments. |
-| App store release prep | For each mobile platform: icons, launch screens, screenshots per locale, store descriptions, privacy nutrition labels, TestFlight / Play internal track, signing + distribution. |
-| Settings, debug menu & dev UX | User-facing settings; developer debug menu (API endpoint switch, feature flags, mock-data toggle, localization preview, theme preview); one-command dev setup script. |
-| Privacy, PII & compliance | Consent flows, data export / deletion (GDPR / CCPA), age gating, restricted content controls, PII classification + minimization, cookie policy. |
+Also respect `MY_PROJECT.md` **Restrict** — any topic listed there is
+explicitly excluded by the user.
 
-Platform default: **web + Android + iOS** unless `MY_PROJECT.md`
-**Platforms** is filled in. If it is, use only those platforms.
+**Adaptation rule:** When a baseline topic applies but its standard
+form conflicts with project constraints (e.g. Observability for a
+no-network app), adapt the epic to fit: use platform-native alternatives
+(Apple crash reporting + Android Vitals instead of Sentry), local-only
+logging instead of cloud services, etc. The golden question is:
+"Does this serve the end user and help the product go live?"
+
+| Baseline topic | Covers | When to include |
+|---|---|---|
+| Identity, auth & onboarding | Sign up / sign in / OAuth / password reset / email verification / biometric on mobile / first-run onboarding tour / consent capture. | Include if the app has user accounts or needs onboarding. For local-only apps, include only onboarding + consent. |
+| Admin & RBAC | Admin portal, role-based permissions, impersonation / audit, account lifecycle, user management. | Include only if the app has multiple user roles or a backend. |
+| Observability | Structured logging, metrics, error tracking, crash reporting. | Always include — but adapt to project constraints. No-network apps use platform-native crash reporting (Apple crash reports, Android Vitals) and local structured logging. |
+| Localization & RTL | i18n framework, string extraction, RTL + LTR layouts, locale negotiation, date/number formatting, per-locale app store assets. | Include for any user-facing app. |
+| Theming & whitelabel | Design-token architecture, dark + light mode, brand swap without code changes, theme preview in debug menu. | Include for any user-facing app. |
+| Accessibility | WCAG 2.1 AA pass across web + mobile; screen-reader labels; keyboard nav; reduced-motion; minimum touch target sizes. | Always include. |
+| Testing & QA | Unit + integration + UI + E2E + visual regression; mocked + deterministic data; coverage thresholds; test data factories. | Always include. |
+| CI/CD & release | GitHub Actions (or equivalent) pipeline: lint → test → build → deploy; branch protection; semantic versioning; release notes. | Always include. |
+| Infrastructure as code | Terraform / Pulumi / similar; prefer free-tier / freemium managed services for MVP; staging + production environments. | Include only if the app has cloud infrastructure. |
+| App store release prep | For each mobile platform: icons, launch screens, screenshots per locale, store descriptions, privacy nutrition labels, TestFlight / Play internal track, signing + distribution. | Include for any mobile app. |
+| Settings, debug menu & dev UX | User-facing settings; developer debug menu (feature flags, mock-data toggle, theme preview); one-command dev setup script. | Always include. |
+| Privacy, PII & compliance | Consent flows, data export / deletion (GDPR / CCPA), age gating, PII classification + minimization. | Always include — scope varies by project. |
+
+Platform: use whatever `MY_PROJECT.md` **Platforms** specifies. The
+agent should have already filled this in from the brief during setup.
 
 ### Per-epic schema
 
@@ -211,30 +236,46 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 - The single epic block (its name, goal, acceptance, complexity)
 - `project-context.md` if it exists
-- **Exactly ONE module** from `.ai-prompts/prompts/modules/` chosen via
-  `.ai-prompts/prompts/orchestrators/module-selection-index.md` (intent → single module
-  path). **You MUST load a module** — it provides the patterns and best
-  practices that inform how features are structured. If no entry matches
-  (rare), note why but still produce high-quality features.
+- **One or more modules** from `.ai-prompts/prompts/modules/` chosen via
+  `.ai-prompts/prompts/orchestrators/module-selection-index.md` (intent → module
+  path). Load as many modules as needed to properly inform the epic's
+  features — e.g. a dual-platform swipe UI epic may need both
+  `ios-ui-ux-patterns.md` and `kotlin-android-development.md`. The goal
+  is to produce high-quality features that serve the end user, not to
+  satisfy an artificial one-module constraint.
 
-**Do NOT load:** other epics, other modules, stage files, other templates.
+  If the module-selection-index has no matching entry for a needed
+  capability, write a high-quality feature specification from first
+  principles and note the gap — the library should be extended to
+  cover it in future.
 
-**Produce:** A variable number of features strictly governed by the epic's `Complexity` attribute (S, M, L). Do NOT artificially inflate the count to hit a quota.
-- **Small (S) Epics:** 1 to 2 features max.
-- **Medium (M) Epics:** 3 to 5 features max.
-- **Large (L) Epics:** 4 to 6 features max.
+**Do NOT load:** other epics, stage files, or legacy templates.
+
+**Produce:** Features as needed to deliver the epic's functionality. The
+number is driven by the product's actual needs, not an artificial quota.
+Use the epic's complexity as a rough guide — a Small epic typically needs
+1–3 features, Medium 3–6, Large 4–8 — but the real question is: "Does
+this set of features deliver what the end user needs from this epic?"
 
 Each feature has:
 - `name` — noun-phrase, unique within the epic
 - `description` — one-sentence purpose
-- `data_model` — concrete entity/field list (real field names, types)
-- `api_contract` — concrete endpoints: `METHOD /path → request/response shape`
+- `user_stories` — 1–3 user stories in "As a [role], I want [action], so that [value]" format. These are the anchor points that define what success looks like for this feature from the end user's perspective.
+- `data_model` — entity/field list (real field names, types). At this
+  stage these are **architectural guidelines** — the holistic view of
+  how entities interact across features. Concrete file paths come later
+  in Step 3.7 once all features are known and DRY/SOLID principles can
+  be applied across the whole project.
+- `api_contract` — endpoints: `METHOD /path → request/response shape`
   (omit if the feature has no API surface; note why)
 - `dependencies` — other features this depends on (by name), or `none`
 - `external_services` — third-party services this feature requires, if
   any. Each entry: service name + signup URL + env vars needed + brief
   role in the feature. Use `none` if the feature needs no external
   service. See Step 2.5 for how these roll up.
+- `constraints` — any project-specific constraints that affect how this
+  feature must be built (e.g. "no network access", "on-device only",
+  "must work offline")
 
 **Output format:**
 
@@ -356,26 +397,27 @@ classes. The constraint is **not** one-file-per-prompt but rather:
 keep the prompt small enough that context limits don't degrade quality,
 yet verbose enough that the AI cannot hallucinate the implementation.
 
-### Module loading is MANDATORY
+### Module loading
 
 For each feature, start a **fresh context** containing:
 
 - The single feature block (name, description, data model, API contract)
 - `project-context.md` if it exists
-- **Exactly ONE module** from `.ai-prompts/prompts/modules/` selected via
-  `.ai-prompts/prompts/orchestrators/module-selection-index.md`. **You MUST load a
-  module.** The module IS the source of the prompt's quality — it
-  contains the patterns, code examples, security considerations, and
-  testing approaches that make this library's output better than what
-  an AI would hallucinate from scratch.
+- **One or more modules** from `.ai-prompts/prompts/modules/` selected via
+  `.ai-prompts/prompts/orchestrators/module-selection-index.md`. Modules ARE
+  the source of the prompt's quality — they contain the patterns, code
+  examples, security considerations, and testing approaches that make
+  this library's output better than what an AI would produce from
+  scratch. Load as many as the feature requires for quality.
 
 If the module-selection-index has no matching entry for this feature,
-state why at the top of the prompt file — but this should be rare.
-Most features map to at least one module. Do NOT skip module loading
-as a shortcut.
+write a high-quality prompt from first principles. The library is a
+master set of common use cases — when a use case is missing (e.g.
+on-device ML, gesture-based UIs), produce the best prompt you can and
+note the gap so the library can be extended.
 
 Do NOT load from `.ai-prompts/prompts/templates/` (waterfall-era legacy).
-Do NOT load other features, other modules, epics, or stage files.
+Do NOT load other features, epics, or stage files.
 
 ### How to derive a prompt from a module
 
