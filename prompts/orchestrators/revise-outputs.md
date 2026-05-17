@@ -112,7 +112,8 @@ substring-based and non-strict; apply common sense:
 | Localization & RTL | `localization`, `i18n`, `translation`, `locale`, `rtl`, `multi-language` |
 | Theming & Whitelabel | `theme`, `theming`, `whitelabel`, `white-label`, `dark-mode`, `design-token` |
 | Accessibility | `accessibility`, `a11y`, `wcag`, `screen-reader` |
-| Identity, auth & onboarding | `auth`, `authentication`, `signup`, `signin`, `login`, `onboarding`, `oauth`, `sso`, `biometric`, `password-reset` |
+| Onboarding & consent | `onboarding`, `first-run`, `consent`, `permission-education`, `privacy-intro` |
+| Account identity | `auth`, `authentication`, `signup`, `signin`, `login`, `oauth`, `sso`, `biometric`, `password-reset`, `session-refresh`, `signout` |
 | Admin & RBAC | `admin`, `rbac`, `permission`, `role-based` |
 | Observability | `observability`, `monitoring`, `logging`, `metrics`, `tracing`, `sentry`, `error-tracking`, `crash-reporting` |
 | Testing & QA | `test-coverage`, `integration-test`, `e2e`, `unit-test`, `ui-test`, `property-test`, `chaos` |
@@ -134,7 +135,9 @@ tablet.
 
 **Common collapse violation — localization.** If the rule is "one
 task per locale" and the remediation has a single task "Translate
-strings", that is a violation. Expected: N tasks for N locales.
+strings", that is a violation. Expected: N tasks for N locales. If no
+locale is specified in `MY_PROJECT.md` or reference material, N is 1
+and the locale is the user's current locale.
 
 **Common collapse violation — platform.** If a baseline task is
 platform-specific (e.g. biometric auth) and the remediation has one
@@ -148,9 +151,11 @@ gap/feature, with the specific rule cited in the regeneration prompt.
 ### C6 — External services manifest
 
 - `external-accounts.md` MUST exist.
-- Every task that references a third-party service (by name in its
+- Every task that references a third-party service or required release
+  account (by name in its
   Precise change, e.g. "Stripe", "Firebase", "Sentry", "Twilio",
-  "AWS S3", etc.) MUST have that service appear in
+  "AWS S3", "Apple Developer Program", "App Store Connect",
+  "Google Play Console", etc.) MUST have that service/account appear in
   `external-accounts.md`.
 - Missing entries → regenerate `external-accounts.md` via Step 2.5
   (drill-down) or Step 3.5 (audit-and-remediate).

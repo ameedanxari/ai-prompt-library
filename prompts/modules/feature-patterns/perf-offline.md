@@ -17,6 +17,15 @@ When the drill-down engine (or any orchestrator) uses this template:
 ## Purpose
 This module provides comprehensive offline functionality patterns for web and mobile applications, enabling users to continue working without internet connectivity. It implements intelligent caching strategies, conflict resolution mechanisms, and seamless synchronization when connectivity is restored. The module ensures data integrity, security, and accessibility while maintaining optimal performance across all platforms.
 
+## Scope Guard
+
+Use this module when an app has offline behavior that later syncs or
+reconciles with a backend. If the product is explicitly local-only,
+no-backend, or forbids network transfer of user data, do not introduce
+sync queues, conflict resolution with a server, service workers for
+backend APIs, or network retry logic. Use the local persistence and
+progress pattern instead, and keep all state on device.
+
 ## Instructions
 
 ### When to Use This Module

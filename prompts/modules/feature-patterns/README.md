@@ -59,6 +59,8 @@ const setupDataManagement = async (resource: string) => {
 ### Data Management
 - **data-crud.md** - Create, Read, Update, Delete operations
 - **data-validation.md** - Input validation and sanitization
+- **local-persistence-progress.md** - Local-only persistence, snapshots, and resumable progress
+- **native-storage-cleanup.md** - OS-safe native phone storage and media cleanup
 
 ### User Interface Components
 - **ui-responsive.md** - Responsive design implementation

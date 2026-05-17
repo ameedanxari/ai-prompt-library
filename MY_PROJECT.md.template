@@ -21,6 +21,23 @@ library will fill in the rest._
 
 ---
 
+## Product identity (optional — canonical names and IDs)
+
+_Leave blank to let the library infer a stable product identity from
+your brief. Once filled, every downstream artifact must use these exact
+values for bundle IDs, package names, app schemes, store listings,
+screenshots, and generated project names._
+
+- **Product name**:
+- **Short name / code name**:
+- **iOS bundle ID**:
+- **Android application ID**:
+- **Web app slug**:
+- **Store listing title**:
+- **Default locale**:
+
+---
+
 ## Defaults the library will assume if you leave the rest blank
 
 Skip ahead and leave the sections below empty if any of these defaults
@@ -44,8 +61,10 @@ are fine. Only edit them if you want to **restrict** the scope or
   Fingerprint).
 - **Data storage**: PostgreSQL for relational; object storage (S3 /
   R2 / Supabase Storage) for blobs; Redis for cache + queues.
-- **Production readiness baseline** (always generated): auth +
-  admin portal + RBAC, observability (structured logs + metrics +
+- **Production readiness baseline** (generated when relevant):
+  onboarding & consent, account identity when accounts are in scope,
+  admin portal + RBAC when roles/backends are in scope, observability
+  (structured logs + metrics +
   error tracking), localization (i18n + RTL), theming (dark + light
   mode, decoupled tokens for whitelabeling), accessibility (WCAG 2.1
   AA), automated tests (unit + integration + UI + e2e), CI/CD

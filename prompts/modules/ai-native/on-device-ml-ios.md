@@ -84,6 +84,12 @@ try observation.computeDistance(&distance, to: otherObservation)
 1. **Never send user data to a server** when using this module. The primary value proposition is local processing.
 2. Ensure the app's `PrivacyInfo.xcprivacy` documents that data remains on-device.
 3. If processing the user's photo library, request `PHAuthorizationStatus` and handle the `.limited` state gracefully.
+4. For sensitive-content detection, make scanning opt-in or clearly
+   disclosed, store only local labels/confidence unless the product
+   explicitly requires more, use explainable labels, and never
+   auto-delete sensitive candidates.
+5. Use category-specific confidence thresholds and route low-confidence
+   results to manual review instead of destructive cleanup flows.
 
 ## Testing Strategy
 1. **Unit tests**: Test the service wrapper using a mock `VNImageRequestHandler` or passing known test images bundled in the test target.

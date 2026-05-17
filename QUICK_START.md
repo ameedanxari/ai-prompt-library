@@ -43,6 +43,10 @@ show me a summary of what was just completed, then wait for me to say
    b. Read my brief carefully and fill in EVERY other section that
       can be inferred. The template is a master list of possibilities —
       your job is to compose a coherent, project-specific spec:
+      - **Product identity:** infer a stable product name, short name,
+        bundle IDs / package IDs, store listing title, and default
+        locale. If I provide a bundle-id base like "use com.example",
+        apply it consistently to iOS and Android IDs.
       - **Platforms:** infer from the brief (e.g. "native android and
         ios" → Android, iOS only — do NOT default to web+Android+iOS
         when the brief specifies otherwise).

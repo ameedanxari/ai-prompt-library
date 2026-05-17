@@ -17,6 +17,15 @@ When the drill-down engine (or any orchestrator) uses this template:
 ## Purpose
 Patterns for deploying and serving AI models at scale with low latency, high throughput, and cost efficiency.
 
+## Scope Guard
+
+Use this module for server-side, remote, or shared model-serving
+infrastructure. Do not use it for privacy-first on-device features where
+the brief says local-only, no network, device AI/ML, phone media, or
+user content must never leave the device. For those cases, use the
+on-device iOS and Android ML modules instead, and keep model assets
+bundled or otherwise explicitly approved by the product requirements.
+
 ## Implementation Patterns
 
 ### Pattern 1: Model Registry and Loading
@@ -138,4 +147,3 @@ Serving Flow:
 4. Inference: `classify("Great product!")` → { sentiment: "positive", confidence: 0.95 }
 5. Log: 12ms latency
 6. Return result to client
-

@@ -14,8 +14,9 @@ project grows. Each step loads only what it needs; nothing else.
 1. **Isolation over accumulation** — each step starts from a minimal context.
    Do NOT carry forward the entire prior-step artifact; load only the specific
    slice (epic, feature) that the current step is expanding.
-2. **One template per expansion** — never load more than one module/template
-   into a single expansion context.
+2. **Relevant templates per expansion** — load the modules/templates the
+   current epic or feature genuinely needs, and no more. If the needed
+   set becomes broad, split the feature rather than diluting the context.
 3. **Dissolution over reference** — templates get dissolved into project-specific
    content. No template filenames, placeholders, or `.ai-prompts/prompts/...`
    paths may appear in output.
@@ -92,10 +93,11 @@ logging instead of cloud services, etc. The golden question is:
 
 | Baseline topic | Covers | When to include |
 |---|---|---|
-| Identity, auth & onboarding | Sign up / sign in / OAuth / password reset / email verification / biometric on mobile / first-run onboarding tour / consent capture. | Include if the app has user accounts or needs onboarding. For local-only apps, include only onboarding + consent. |
+| Onboarding & consent | First-run onboarding tour / permission education / consent capture / privacy posture explanation. | Include when the app is user-facing and needs onboarding or consent, including local-only apps. |
+| Account identity | Sign up / sign in / OAuth / password reset / email verification / session refresh / sign out / biometric unlock on mobile. | Include only if the app has user accounts, remote sessions, paid accounts, cross-device sync, protected profiles, or an explicit account requirement. Do not include for single-user local-only apps. |
 | Admin & RBAC | Admin portal, role-based permissions, impersonation / audit, account lifecycle, user management. | Include only if the app has multiple user roles or a backend. |
 | Observability | Structured logging, metrics, error tracking, crash reporting. | Always include — but adapt to project constraints. No-network apps use platform-native crash reporting (Apple crash reports, Android Vitals) and local structured logging. |
-| Localization & RTL | i18n framework, string extraction, RTL + LTR layouts, locale negotiation, date/number formatting, per-locale app store assets. | Include for any user-facing app. |
+| Localization & RTL | i18n framework, string extraction, RTL + LTR layouts, locale negotiation, date/number formatting, per-locale app store assets. | Include for any user-facing app. If the user does not specify locales, default to the user's current locale only; do not invent a broad locale set. |
 | Theming & whitelabel | Design-token architecture, dark + light mode, brand swap without code changes, theme preview in debug menu. | Include for any user-facing app. |
 | Accessibility | WCAG 2.1 AA pass across web + mobile; screen-reader labels; keyboard nav; reduced-motion; minimum touch target sizes. | Always include. |
 | Testing & QA | Unit + integration + UI + E2E + visual regression; mocked + deterministic data; coverage thresholds; test data factories. | Always include. |
@@ -142,7 +144,7 @@ _Feature epics: N · Baseline epics: M · Total: N+M_
 
 ## Baseline epics
 
-### B1. Identity, auth & onboarding
+### B1. Onboarding & consent
 - **Category:** baseline
 - **Goal:** …
 - **Acceptance:**
@@ -185,7 +187,7 @@ scoped out with a reason._
 | tinder-like swipe | covered | Feature epic "Swipe-based review interface" |
 | on-device AI/ML | covered | Feature epic "Media scanner & analyzer" — no network access |
 | sensitive content detection | covered | Smart grouping & filters — flag documents/ID cards |
-| Face ID / biometric | covered | B1 Identity, auth & onboarding |
+| Face ID / biometric | covered | B1 Account identity, if the product has accounts or a protected local vault |
 | multi-language (English, Arabic, Hindi, Tamil, Urdu) | covered | B4 Localization & RTL |
 | offline-first | out-of-scope | User said "local-only processing" — covered by privacy epic, no separate offline-sync needed |
 ```
@@ -308,6 +310,15 @@ After every `features-*.md` is written, scan each file's
 `external_services` sections and aggregate them into one file:
 `prompts/outputs/current/external-accounts.md`.
 
+This manifest includes both runtime third-party services and required
+release/distribution accounts. For mobile apps, include Apple Developer
+Program and/or Google Play Console when features or baseline tasks need
+signing, TestFlight, App Store Connect, Play internal testing, Android
+Vitals, data safety forms, privacy nutrition labels, screenshots, or
+store metadata. These accounts must also appear in app-store / Play
+release-prep tasks; `external-accounts.md` is the user's account
+checklist, not a replacement for implementation tasks.
+
 Dedupe by service name. Merge env var lists. Collect the feature names
 that use each service. For each unique service write:
 
@@ -344,11 +355,11 @@ Total services: N (F free, M freemium, P paid-only)
 
 **Write to:** `prompts/outputs/current/external-accounts.md`.
 
-If no feature declared an external service, write the file anyway with a
-single line: "No external services required — the project runs with
-local-only dependencies." The file must always exist so downstream
-consumers (README generator, executor's env-var check, CI setup) can
-rely on its presence.
+If no feature declared a runtime external service and no release account
+is required, write the file anyway with a single line: "No external
+services required — the project runs with local-only dependencies." The
+file must always exist so downstream consumers (README generator,
+executor's env-var check, CI setup) can rely on its presence.
 
 ---
 
@@ -837,5 +848,5 @@ When the user confirms, read and follow
   routes to this engine.
 - `.ai-prompts/prompts/orchestrators/external-input-handler.md` — handles design / spec /
   code inputs upstream of Step 1.
-- `.ai-prompts/prompts/orchestrators/module-selection-index.md` — intent → single
-  module path mapping for Steps 2 and 3.
+- `.ai-prompts/prompts/orchestrators/module-selection-index.md` — intent → module
+  path mapping for Steps 2 and 3.

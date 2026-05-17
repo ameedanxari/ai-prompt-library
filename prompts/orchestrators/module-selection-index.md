@@ -1,15 +1,18 @@
 # Module Selection Index
 
-Deterministic intent → single module mapping. The drill-down engine uses this
-to pick exactly one module per expansion context (Step 2 or Step 3).
+Deterministic intent → module mapping. The drill-down engine uses this
+to pick the modules needed for the current expansion context (Step 2 or
+Step 3).
 
 ## How to use
 
-1. Identify the epic or feature's primary intent.
-2. Match the intent keyword below to **one** module path.
-3. If multiple intents apply, pick the one that carries the most
-   domain-specific constraints (e.g. `healthcare/hipaa-compliance` beats
-   `security/data-encryption` for a patient records feature).
+1. Identify the epic or feature's intents.
+2. Match each relevant intent keyword below to its module path.
+3. Load as many matched modules as the current task genuinely needs.
+   Prefer the modules with the most domain-specific constraints (e.g.
+   `healthcare/hipaa-compliance` beats `security/data-encryption` for a
+   patient records feature), but do not discard a second module when it
+   carries a separate required concern.
 4. If no intent matches, skip module loading — the engine can proceed without
    one.
 
@@ -48,16 +51,23 @@ Paths are relative to the repository root.
 | Big data processing (Spark, Flink, etc.) | `prompts/modules/data-processing/big-data-processing.md` |
 | Sync across devices | `prompts/modules/integration/data-synchronization.md` |
 | Offline-first / local-first | `prompts/modules/feature-patterns/perf-offline.md` |
+| Local-only persistence / resumable progress / snapshots | `prompts/modules/feature-patterns/local-persistence-progress.md` |
+| Native phone storage cleanup / Photos / MediaStore / scoped storage | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
 
 ## AI & ML
 
 | Intent | Module |
 |---|---|
 | LLM integration / chatbot / AI assistant | `prompts/modules/ai-native/llm-integration.md` |
-| AI model deployment / serving | `prompts/modules/ai-native/model-serving.md` |
+| AI model deployment / serving (server or remote inference) | `prompts/modules/ai-native/model-serving.md` |
 | ML-driven autoscaling / workload forecasting | `prompts/modules/ai-native/predictive-scaling.md` |
 | On-device ML — iOS (Core ML, Vision, Create ML) | `prompts/modules/ai-native/on-device-ml-ios.md` |
 | On-device ML — Android (ML Kit, TensorFlow Lite, MediaPipe) | `prompts/modules/ai-native/on-device-ml-android.md` |
+
+If the brief mentions privacy, local-only processing, no network, device
+AI/ML, phone media, or on-device inference, prefer the on-device modules
+above over model serving. Use model serving only when the feature
+explicitly needs server-side or remote inference infrastructure.
 
 ## Mobile UX Patterns
 
@@ -449,8 +459,9 @@ existing codebase to production. Pick whichever is most specific to the gap.
 
 ## Rules
 
-- **Never load more than one module in a single expansion context.** If two
-  intents apply, split the feature into two features, one per intent.
+- **Load modules by need.** If two or more intents apply to the current
+  expansion, load the corresponding modules. If the module set grows because
+  the feature is too broad, split the feature into smaller features/tasks.
 - **If uncertain, skip module loading** rather than guessing. The engine can
   produce tasks from the epic/feature block alone.
 - **A path listed here might not exist on disk** for edge cases. If the

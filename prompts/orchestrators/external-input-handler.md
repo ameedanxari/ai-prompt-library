@@ -41,6 +41,15 @@ _Derived from:_
 ## Roles
 - `<role name>`: <one-line responsibility>   # every role in the system, even if one isn't mentioned in a mockup but is implied by the brief (e.g. "Admin")
 
+## Product Identity
+- **Product name:** <canonical name, if known>
+- **Short name / code name:** <short name, if known>
+- **iOS bundle ID:** <bundle ID, if known>
+- **Android application ID:** <application ID, if known>
+- **Web app slug:** <slug, if known>
+- **Store listing title:** <title, if known>
+- **Default locale:** <locale from user/material; otherwise user's current locale>
+
 ## Entities
 - `EntityName { field: type, field: type }`  # real field names only
 
@@ -68,6 +77,10 @@ Rules for each section:
 - **Roles:** every distinct user type. If `MY_PROJECT.md` lists 4 roles but
   the mockups only show 2, include all 4 and flag the missing ones in
   Open Questions.
+- **Product Identity:** keep naming and IDs stable across generated
+  project files, bundle IDs, package IDs, screenshots, store metadata,
+  and CI/release tasks. Do not invent a broad locale set; if none is
+  specified, use the user's current locale only.
 - **Entities:** pull real field names from the material. No generic `User` /
   `Thing` unless the material literally says so. Include types only when the
   material specifies them; otherwise note `type: unspecified`.
@@ -122,10 +135,8 @@ written to disk, you MUST immediately continue with:
 1. Open `prompts/orchestrators/drill-down-engine.md`.
 2. Execute **Step 1 — Seed** using `project-context.md` + the user's brief.
 3. Write `prompts/outputs/current/epics.md`.
-4. Continue to Step 2 (one epic at a time) and Step 3 (one feature at a time)
-   without pausing between them.
-5. After Step 3, run `bash .ai-prompts/scripts/validate-instantiation.sh` and report the
-   full result to the user.
+4. Stop at the Step 1 checkpoint defined by the drill-down engine and
+   wait for user review.
 
 Do NOT tell the user "extraction complete, ready for next step" and wait.
 Do NOT ask "should I proceed with Step 1?". Proceed.

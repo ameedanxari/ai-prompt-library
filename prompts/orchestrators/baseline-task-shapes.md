@@ -75,15 +75,39 @@ Instead, emit a task to copy the generic project templates provided in the libra
   2. Perform a deep find-and-replace to rename `AppTemplate` and `com.example.app` to the actual project's name and bundle ID.
   3. Rename the directories (e.g. `AppTemplate.xcodeproj` to `<ProjectName>.xcodeproj`) to match.
 
-## Identity, auth & onboarding
+## Onboarding & consent
 
-- At least one task per supported platform for each of: sign up, sign
-  in, password reset, email verification, session refresh, sign out.
-- If mobile is in scope, at least one task per mobile platform for
-  biometric auth (Face ID / Touch ID / Fingerprint).
+Use this topic for local-only apps, single-user tools, and products that
+need first-run education or consent but do not have accounts.
+
+- First-run onboarding task per supported platform that explains the
+  product's core workflow and permission needs in user-facing language.
+- Consent capture task per supported platform when the app processes
+  personal data locally, accesses sensitive OS capabilities, or relies
+  on privacy-sensitive ML.
+- Permission education task per supported platform for OS permission
+  flows (for example Photos limited access, Android scoped media
+  permissions, notifications, location, camera, contacts).
+- At least one UI test per platform asserting onboarding can be
+  completed, skipped only when permitted by product policy, and not
+  shown again after completion.
+
+## Account identity
+
+Use this topic only when the project has user accounts, remote sessions,
+paid accounts, cross-device sync, protected profiles, or an explicit
+account requirement. Do NOT apply these task shapes to single-user
+local-only apps.
+
+- At least one task per supported platform for each enabled account
+  flow: sign up, sign in, password reset, email verification, session
+  refresh, and sign out.
+- If mobile is in scope and the account or local vault is protected,
+  at least one task per mobile platform for biometric auth (Face ID /
+  Touch ID / Fingerprint).
 - At least one integration test per auth flow that exercises the
-  happy path + two failure paths (invalid credentials, account
-  locked / rate limited).
+  happy path + two failure paths (invalid credentials, account locked /
+  rate limited).
 
 ## Admin & RBAC
 
@@ -132,9 +156,11 @@ specific tools depend on whether the app has network access.
 
 - Task that introduces the i18n framework (i18next, react-intl,
   Android string resources, iOS Localizable.xcstrings, etc.) by name.
-- One task per supported locale that seeds the translation file at
-  the correct path. Locale list MUST come from `MY_PROJECT.md` or be
-  explicitly inferred.
+- One task per supported locale that seeds the translation file at the
+  correct path. Locale list MUST come from `MY_PROJECT.md`, external
+  reference material, or the user's current locale. If no locale is
+  specified, default to the user's current locale only; do not invent a
+  multi-locale set.
 - At least one task per platform that verifies RTL rendering — a
   screenshot diff test or layout assertion against Arabic/Hebrew.
 - At least one test that asserts no hard-coded English strings remain
@@ -219,6 +245,11 @@ file, which documents what was scoped in and what was scoped out.
 
 - Per mobile platform: one task for app-store listing copy (name,
   subtitle, description, keywords, promotional text, support URL).
+- Per mobile platform: one task that consumes the project's PII
+  classification and permission manifest to fill privacy nutrition
+  labels (iOS) / data safety (Android). It must enumerate every OS
+  permission, data category, tracking claim, crash-reporting path, ML
+  inference data flow, and whether data stays on device.
 - Per mobile platform: tooling tasks that _produce_ screenshots —
   typically a fastlane Snapfile / Fastfile, a UITest / instrumentation
   test harness, and optional organizer / uploader scripts. These write
@@ -231,16 +262,16 @@ file, which documents what was scoped in and what was scoped out.
   `fastlane/screenshots/en-US/iphone-6.5-inch/1_feature.png`), NOT a
   source file. The precise-change names exactly one locale and one
   device; the test asserts visual-diff against a baseline for that
-  specific file. 5 locales × 3 devices = **15 capture tasks per
-  platform, not a catch-all "generate screenshots" task**. These
-  appear alongside the tooling tasks in the same file.
+  specific file. Locale count comes from `MY_PROJECT.md`, external
+  material, or the user's current locale if unspecified. For example,
+  1 locale × 3 devices = **3 capture tasks per platform**; 5 locales ×
+  3 devices = **15 capture tasks per platform**. These appear alongside
+  the tooling tasks in the same file.
   **Use the scaffolder instead of writing these by hand.** Run
   `scripts/scaffold-screenshot-captures.sh --target <dir> --platform
   ios --app-name <Name>` (and again with `--platform android`) to
   generate the full matrix with the canonical schema pre-filled; you
   only fill in each task's UITest class / method / expected text.
-- One task for privacy nutrition labels (iOS) / data safety form
-  (Android).
 - One task for signing + distribution (certificates, provisioning
   profiles, keystore, upload to TestFlight / Play internal track).
 - One task for App Store Connect / Play Console metadata upload.

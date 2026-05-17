@@ -40,7 +40,8 @@ Same as the drill-down engine:
 - Each step runs in its own fresh context.
 - Never load the entire codebase at once.
 - Per-component audits load only that component's top-level files.
-- Remediation expansion loads only the single gap + ≤1 module.
+- Remediation expansion loads only the single gap + the modules that
+  directly apply to that gap.
 
 ## Resumption & State Detection
 
@@ -190,11 +191,13 @@ only:
 - The single gap block from `gap-list.md`.
 - The slice of `audit-report.md` for the affected component(s).
 - `project-context.md`.
-- **Exactly ONE module** from `.ai-prompts/prompts/modules/` chosen via
+- **One or more modules** from `.ai-prompts/prompts/modules/` chosen via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md` based on gap intent
   (consult the "Ops / Readiness" section for production-readiness gaps).
-  **You MUST load a module.** It provides the concrete patterns and
-  best practices needed to fix the gap correctly.
+  **You MUST load every directly relevant module.** They provide the
+  concrete patterns and best practices needed to fix the gap correctly.
+  If the needed module set is broad because the gap combines unrelated
+  concerns, split the gap/remediation rather than loading the catalog.
 - If the gap maps to a baseline topic (auth, admin/RBAC, observability,
   localization, theming, accessibility, testing, CI/CD, IaC, app-store
   prep, settings/debug, privacy/PII), ALSO load
@@ -305,9 +308,10 @@ Do not declare the remediation prompt ready if any of these are true:
 ## STEP 3.5 — External services manifest
 
 Scan every `remediation-*.md` for tasks that add, modify, or touch a
-third-party service (payment processors, auth providers, email/SMS,
-analytics, error tracking, object storage, push notification services,
-map providers, translation services, etc.).
+third-party service or required release/distribution account (payment
+processors, auth providers, email/SMS, analytics, error tracking,
+object storage, push notification services, map providers, translation
+services, Apple Developer Program, Google Play Console, etc.).
 
 Aggregate into `prompts/outputs/current/external-accounts.md` using the
 same schema as the drill-down engine's Step 2.5:
@@ -327,6 +331,13 @@ If the project's existing code already integrates a service but the
 remediation only touches a missing configuration (e.g. adding Stripe
 webhook signing), still include the service — mark it as "already
 integrated, finalising configuration" under _What it does_.
+
+For mobile apps, list Apple Developer Program and Google Play Console
+when any task depends on signing, TestFlight, App Store Connect, Play
+internal testing, Play Console Android Vitals, data safety, privacy
+nutrition labels, or store metadata. These accounts must also remain
+represented in app-store / Play release-prep tasks; the manifest is the
+user's account checklist, not a replacement for those tasks.
 
 If no remediation task introduces a new external service, write a
 single-line file: "No new external services required for this

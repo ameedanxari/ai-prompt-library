@@ -310,13 +310,14 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/omits an\s+applicable check|itself a defect/);
   });
 
-  it('baseline-task-shapes covers all twelve baseline topics', () => {
+  it('baseline-task-shapes covers all baseline topics', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'baseline-task-shapes.md'),
       'utf8',
     );
     const topics = [
-      /identity.*auth.*onboarding/i,
+      /onboarding.*consent/i,
+      /account identity/i,
       /admin.*rbac/i,
       /observability/i,
       /localization.*rtl/i,
@@ -470,7 +471,8 @@ describe('active orchestrators', () => {
     );
     // Every baseline epic must be documented by name in Step 1.
     const baselineTopics = [
-      /identity.*auth.*onboarding/i,
+      /onboarding.*consent/i,
+      /account identity/i,
       /admin.*rbac/i,
       /observability/i,
       /localization.*rtl/i,

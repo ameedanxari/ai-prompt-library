@@ -5,17 +5,20 @@
 Reusable domain-specific prompt modules. The drill-down engine and
 audit-and-remediate engine consult
 `prompts/orchestrators/module-selection-index.md`
-to pick **one** module per expansion context based on the feature's
-intent. Each module is a self-contained pattern document (400–1200
-lines) with real code examples for a specific domain.
+to pick the module set needed for the current expansion context based
+on the feature's intents. Each module is a self-contained pattern
+document with real code examples for a specific domain.
 
 ## How modules get used
 
 1. The engine identifies a feature's primary intent (e.g. "checkout
-   workflow", "GPS tracking", "leaderboards").
-2. It looks up that intent in `module-selection-index.md` and picks the
-   single best-matching module path.
-3. It loads ONLY that one module into the Step 2/3 expansion context.
+   workflow", "GPS tracking", "leaderboards"). If the feature spans
+   multiple real concerns, it identifies each relevant intent.
+2. It looks up those intents in `module-selection-index.md` and picks
+   the matching module paths.
+3. It loads only those directly relevant modules into the Step 2/3
+   expansion context. If the list grows broad, the feature should be
+   split rather than loading the catalog.
 4. The engine **dissolves** the module's patterns into project-specific
    tasks — real file paths, real function signatures, real acceptance
    criteria. The module filename never appears in the output.
@@ -58,8 +61,9 @@ See `prompts/AGENTS.md` for the full engine flow.
 
 ## Rules
 
-- **Never load more than one module** in a single expansion context.
-  If two intents apply, the feature is doing too much — split it.
+- **Load modules by need.** Multiple modules are allowed when the task
+  genuinely spans multiple concerns; a broad module list is a signal to
+  split the feature.
 - **Modules are dissolved, not referenced.** The template filename,
   placeholder tokens, and `.ai-prompts/prompts/` paths must not appear
   in engine output (enforced by `scripts/validate-instantiation.sh`).

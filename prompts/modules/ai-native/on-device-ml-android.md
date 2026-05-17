@@ -98,6 +98,15 @@ class CustomTfliteClassifier(context: Context, modelPath: String) {
 ## Security & Privacy Considerations
 1. Ensure `AndroidManifest.xml` does not require `INTERNET` permission if the app is strictly offline.
 2. If using unbundled ML Kit models, the download happens via Play Services. This *does* use the network, but only to download the model, not to send user data. Clearly document this distinction.
+3. For strict local-only products, prefer bundled ML Kit / TFLite models
+   or explicitly approved preinstalled model paths. Do not add model
+   download behavior by default.
+4. For sensitive-content detection, make scanning opt-in or clearly
+   disclosed, store only local labels/confidence unless the product
+   explicitly requires more, use explainable labels, and never
+   auto-delete sensitive candidates.
+5. Use category-specific confidence thresholds and route low-confidence
+   results to manual review instead of destructive cleanup flows.
 
 ## Testing Strategy
 1. **Unit tests**: Test the wrapper logic by mocking the ML Kit/TFLite interfaces.

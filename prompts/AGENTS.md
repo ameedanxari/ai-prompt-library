@@ -45,7 +45,7 @@ drill-down engine). In gap-closure mode, add one more read
 | `.kiro/specs/`, `.cursor/plans/`, or other IDE-native spec workflows | Do NOT let the IDE's default spec workflow override our engine. Write to `prompts/outputs/current/` regardless of IDE. | Never. |
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | Optional | Only if user asks about safeguards/commit policy. |
 | `docs/archive/` | Historical | Never. |
-| `prompts/modules/**` (252 template files across 29 categories) | Load one at a time, during engine Step 2 or Step 3 only. | Never all at once. |
+| `prompts/modules/**` (template files across 29 categories) | Load only the modules needed for the current Step 2 / Step 3 expansion context. | Never all at once. |
 | `README.md`, `QUICK_START.md`, `CHANGELOG.md`, `CONTRIBUTING.md`, `prompts/README.md`, `docs/acceptance-probe.md` | Human-facing docs. | Never as steering. |
 
 If a weak model finds itself reading any legacy file or long-form README 
@@ -61,8 +61,8 @@ restart.
 | Step | Input context | Output |
 |---|---|---|
 | **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) **AND** `brief-keywords.md` (every distinctive brief keyword mapped to `covered` or `out-of-scope` with the epic/reason) |
-| **2 — Expand epic** | one epic block + optional `project-context.md` + ≤1 module | `features-<epic>.md` (6–10 features per epic) |
-| **3 — Atomize feature** | one feature block + optional `project-context.md` + ≤1 module | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from a module) |
+| **2 — Expand epic** | one epic block + optional `project-context.md` + the modules needed for that epic | `features-<epic>.md` (6–10 features per epic) |
+| **3 — Atomize feature** | one feature block + optional `project-context.md` + the modules needed for that feature | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from modules) |
 
 ### Gap-closure: audit-and-remediate.md
 
@@ -70,7 +70,7 @@ restart.
 |---|---|---|
 | **1 — Component audit** | 5–10 key files per component + `project-context.md` | `audit-report.md` (≤ 300 lines, factual, per component) |
 | **2 — Gap list** | `audit-report.md` | `gap-list.md` (ordered by severity, with blocking deps) |
-| **3 — Remediation per gap** | one gap + relevant audit slice + ≤1 module | `remediation-<gap>.md` (verbose implementation prompts following the same self-contained schema as greenfield tasks) |
+| **3 — Remediation per gap** | one gap + relevant audit slice + the modules needed for that gap | `remediation-<gap>.md` (verbose implementation prompts following the same self-contained schema as greenfield tasks) |
 
 ### Execute: executor.md
 
@@ -146,11 +146,11 @@ the user instead.
 ### Baseline task-shape rules: baseline-task-shapes.md
 
 Consulted during Step 3 of either engine when expanding a baseline
-epic/gap. Enforces per-topic requirements (e.g. app-store prep
-requires one screenshot task per locale × per device class;
-localization requires a completeness test; theming requires a visual-
-regression test; privacy requires explicit data-export and data-
-deletion tasks).
+epic/gap. Enforces per-topic requirements (e.g. onboarding/consent is
+separate from account identity; app-store prep requires one screenshot
+task per locale × per device class; localization requires a
+completeness test; theming requires a visual-regression test; privacy
+requires explicit data-export and data-deletion tasks).
 
 ### Self-maintain: self-maintain.md
 
@@ -197,10 +197,13 @@ artifact forward; load only the specific slice the current step is expanding.
    in every conflict. Never overwrite a decision made in project-context with
    a template default.
 
-4. **Only one module per expansion context.** If Step 2 or Step 3 needs to
-   consult a module from `prompts/modules/`, load exactly one. If you need
-   two, you're expanding too many things at once — split into smaller
-   features/tasks.
+4. **Load modules by need, not by an artificial count.** Step 2 and Step 3
+   may consult multiple modules from `prompts/modules/` when the current
+   epic / feature genuinely spans several concerns (for example native
+   iOS + native Android + on-device ML + gesture UI). Keep the context
+   narrow: load only modules that directly inform the current expansion.
+   If the module list grows because the feature is doing too much, split
+   the feature into smaller features/tasks.
 
 5. **Run validation after Step 3.** Run
    `bash .ai-prompts/scripts/validate-instantiation.sh` before declaring tasks ready.
@@ -214,13 +217,15 @@ artifact forward; load only the specific slice the current step is expanding.
    do NOT rely on your own memory of which files you've written — the
    disk is the source of truth.
 
-7. **Do not stop between the handler and Step 1, or between engine steps.**
+7. **Follow the explicit checkpoint protocol.**
    After the external-input-handler writes `project-context.md`, proceed
    immediately to Step 1. After Step 1 writes `epics.md` **and**
-   `brief-keywords.md`, proceed to Step 2. After Step 2 writes all
-   `features-*.md`, proceed to Step 3. Do not ask the user "should I
-   continue?" — the engine is designed to run end-to-end in one
-   session.
+   `brief-keywords.md`, stop only at the Step 1 checkpoint defined by
+   the engine. After Step 2 writes all `features-*.md` and
+   `external-accounts.md`, stop only at the Step 2 checkpoint. During
+   Step 3, stop at the engine's task-generation checkpoints. Do not add
+   extra ad hoc prompts, and do not bypass a checkpoint that says to
+   wait for the user.
 
 8. **Reset when the user asks, OR when stale markers appear.** Two
    independent triggers, both hard:

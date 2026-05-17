@@ -247,7 +247,7 @@ This protocol ensures every implementation prompt and every code change is based
 |---|---|
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | User explicitly asks for safeguard / commit-policy / change-impact guidance |
 | Other orchestrators under `prompts/orchestrators/` | Only via the entry-point routing logic |
-| Full module catalog `prompts/modules/**` | Never all at once. The drill-down engine loads at most one module per expansion context. |
+| Full module catalog `prompts/modules/**` | Never all at once. The drill-down engine loads only the modules needed for the current expansion context. |
 
 ## Rules of engagement
 

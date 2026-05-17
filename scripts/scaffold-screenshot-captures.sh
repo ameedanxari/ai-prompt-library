@@ -19,7 +19,7 @@
 #        --target prompts/outputs/current \
 #        --platform ios \
 #        [--app-name StorageCleaner] \
-#        [--locales en-US,es-ES,fr-FR,de-DE,ja-JP] \
+#        [--locales en-US] \
 #        [--devices iphone-6.7-inch,iphone-6.5-inch,iphone-5.5-inch] \
 #        [--frames dashboard,scan-results,cleanup-confirm] \
 #        [--feature-slug screenshots-ios] \
@@ -43,7 +43,9 @@ required:
 optional:
   --app-name NAME       app name used in signatures and paths  (default: App)
   --locales LIST        comma-separated BCP-47 tags
-                        (default: en-US,es-ES,fr-FR,de-DE,ja-JP)
+                        (default: current shell locale, falling back to
+                        en-US; pass the locale list inferred from
+                        MY_PROJECT.md or reference material)
   --devices LIST        comma-separated device identifiers
                         (default for ios: iphone-6.7-inch,iphone-6.5-inch,iphone-5.5-inch)
                         (default for android: pixel_7,pixel_tablet_7in,pixel_tablet_10in)
@@ -58,7 +60,11 @@ EOF
 TARGET=""
 PLATFORM=""
 APP_NAME="App"
-LOCALES="en-US,es-ES,fr-FR,de-DE,ja-JP"
+DEFAULT_LOCALE=$(locale 2>/dev/null | awk -F= '/^LANG=/{ gsub(/"/, "", $2); sub(/\..*$/, "", $2); gsub(/_/, "-", $2); print $2; exit }')
+if [ -z "$DEFAULT_LOCALE" ] || [ "$DEFAULT_LOCALE" = "C" ] || [ "$DEFAULT_LOCALE" = "POSIX" ]; then
+  DEFAULT_LOCALE="en-US"
+fi
+LOCALES="${DEFAULT_LOCALE:-en-US}"
 DEVICES=""
 FRAMES="dashboard"
 FEATURE_SLUG=""
