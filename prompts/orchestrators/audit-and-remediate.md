@@ -42,6 +42,17 @@ Same as the drill-down engine:
 - Per-component audits load only that component's top-level files.
 - Remediation expansion loads only the single gap + ≤1 module.
 
+## Resumption & State Detection
+
+Before starting or continuing work, you **MUST** read the contents of `prompts/outputs/current/` to determine the current state of the audit:
+
+1. **If `audit-report.md` is missing:** The audit has not started. Start with **Step 1 (Component Audit)**.
+2. **If `audit-report.md` exists but `gap-list.md` is missing:** Step 1 is complete. Proceed to **Step 2 (Gap List)**.
+3. **If `gap-list.md` exists but some `remediation-*.md` are missing:** Step 2 is complete. Proceed to **Step 3 (Implementation Prompts)**.
+4. **If all `remediation-*.md` exist but `revise-report.md` is missing or outdated:** Step 3 is complete. Proceed to **Step 4 (Validate)** and then **Step 4.5 (Revise)**.
+
+Rely on the files on disk, NOT your context history, to decide which step to execute.
+
 ### The "New Chat" Recommendation
 To ensure maximum attention to detail and prevent context overflow, it is **recommended** to start a **NEW CHAT** for each major transition:
 - After the Audit Report (Step 1) is generated.

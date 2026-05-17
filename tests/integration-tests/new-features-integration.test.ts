@@ -1,7 +1,14 @@
 /**
- * Integration Tests for New Features (Tasks 19-21)
- * Tests centralized mock data, fake backend, and impact assessment templates
- * Requirements: 11.1, 11.4
+ * Integration Tests for Testing Module Features (Tasks 19-20)
+ *
+ * Guards the structural integrity and cross-referencing of the testing
+ * modules that the library uses to generate quality-assurance prompts:
+ *   - Centralized mock data (Task 19)
+ *   - Fake backend generator + debug menu integration (Task 20)
+ *
+ * NOTE: Task 21 (Impact Assessment) templates under prompts/templates/
+ * were removed in the legacy-waterfall purge (commit 375e555). Their
+ * concerns are now handled by the engine orchestrators directly.
  */
 
 import { describe, it, expect, beforeAll } from 'vitest';
@@ -44,10 +51,6 @@ class NewFeaturesIntegrationTest {
       // Fake Backend (Task 20)
       'prompts/modules/testing/fake-backend-generator.md',
       'prompts/modules/testing/debug-menu-integration.md',
-      // Impact Assessment (Task 21)
-      'prompts/templates/library-dependency-map.md',
-      'prompts/templates/library-change-assessment.md',
-      'prompts/templates/library-vision-document.md',
     ];
 
     for (const templatePath of newTemplates) {
@@ -115,18 +118,6 @@ class NewFeaturesIntegrationTest {
       {
         name: 'debug-menu-integration',
         path: 'prompts/modules/testing/debug-menu-integration.md',
-      },
-      {
-        name: 'library-dependency-map',
-        path: 'prompts/templates/library-dependency-map.md',
-      },
-      {
-        name: 'library-change-assessment',
-        path: 'prompts/templates/library-change-assessment.md',
-      },
-      {
-        name: 'library-vision-document',
-        path: 'prompts/templates/library-vision-document.md',
       },
     ];
 
@@ -285,73 +276,10 @@ class NewFeaturesIntegrationTest {
     return true;
   }
 
-  async testImpactAssessmentWorkflow(): Promise<boolean> {
-    // Verify all impact assessment templates exist and are properly structured
-    const impactTemplates = [
-      'prompts/templates/library-dependency-map.md',
-      'prompts/templates/library-change-assessment.md',
-      'prompts/templates/library-vision-document.md',
-    ];
-
-    for (const templatePath of impactTemplates) {
-      const validation = this.templateValidations.get(templatePath);
-      
-      if (!validation?.exists) {
-        throw new Error(`Impact assessment template does not exist: ${templatePath}`);
-      }
-
-      if (!validation.hasRequiredSections) {
-        const missing = [];
-        if (!validation.hasPurpose) missing.push('Purpose');
-        if (!validation.hasInstructions) missing.push('Instructions');
-        if (!validation.hasExamples) missing.push('Examples');
-        throw new Error(`Impact assessment template ${templatePath} missing sections: ${missing.join(', ')}`);
-      }
-    }
-
-    // Verify dependency map contains key concepts
-    const dependencyMapContent = await fs.readFile('prompts/templates/library-dependency-map.md', 'utf-8');
-    const dependencyMapConcepts = ['dependency', 'template', 'module', 'stage', 'cross-platform'];
-    
-    const missingDependencyConcepts = dependencyMapConcepts.filter(
-      concept => !dependencyMapContent.toLowerCase().includes(concept.toLowerCase())
-    );
-
-    if (missingDependencyConcepts.length > 0) {
-      throw new Error(`Dependency map template missing concepts: ${missingDependencyConcepts.join(', ')}`);
-    }
-
-    // Verify change assessment contains key concepts
-    const changeAssessmentContent = await fs.readFile('prompts/templates/library-change-assessment.md', 'utf-8');
-    const changeAssessmentConcepts = ['impact', 'risk', 'validation', 'regression', 'approval'];
-    
-    const missingChangeConcepts = changeAssessmentConcepts.filter(
-      concept => !changeAssessmentContent.toLowerCase().includes(concept.toLowerCase())
-    );
-
-    if (missingChangeConcepts.length > 0) {
-      throw new Error(`Change assessment template missing concepts: ${missingChangeConcepts.join(', ')}`);
-    }
-
-    // Verify vision document contains key concepts
-    const visionDocContent = await fs.readFile('prompts/templates/library-vision-document.md', 'utf-8');
-    const visionDocConcepts = ['mission', 'principle', 'rollback', 'cross-platform', 'quality'];
-    
-    const missingVisionConcepts = visionDocConcepts.filter(
-      concept => !visionDocContent.toLowerCase().includes(concept.toLowerCase())
-    );
-
-    if (missingVisionConcepts.length > 0) {
-      throw new Error(`Vision document template missing concepts: ${missingVisionConcepts.join(', ')}`);
-    }
-
-    return true;
-  }
-
-  async testCrossReferencesBetweenNewAndExistingTemplates(): Promise<boolean> {
+  async testCrossReferencesBetweenModules(): Promise<boolean> {
     const issues: string[] = [];
 
-    // Check that new templates reference existing templates appropriately
+    // Check that modules don't have broken cross-references
     for (const [templatePath, validation] of this.templateValidations) {
       if (validation.brokenReferences.length > 0) {
         issues.push(`${templatePath} has broken references: ${validation.brokenReferences.join(', ')}`);
@@ -375,15 +303,6 @@ class NewFeaturesIntegrationTest {
       if (!content.includes('mock') && !content.includes('Mock')) {
         issues.push('Fake backend should reference mock data');
       }
-    }
-
-    // Verify impact assessment templates reference each other
-    const dependencyMapContent = await fs.readFile('prompts/templates/library-dependency-map.md', 'utf-8');
-    const changeAssessmentContent = await fs.readFile('prompts/templates/library-change-assessment.md', 'utf-8');
-    
-    // Check for logical connections between impact assessment templates
-    if (!changeAssessmentContent.toLowerCase().includes('dependency')) {
-      issues.push('Change assessment should reference dependency mapping');
     }
 
     if (issues.length > 0) {
@@ -459,36 +378,6 @@ class NewFeaturesIntegrationTest {
     return true;
   }
 
-  async testImpactAssessmentWorkflowCompleteness(): Promise<boolean> {
-    // Verify the complete impact assessment workflow is documented
-    const dependencyMapContent = await fs.readFile('prompts/templates/library-dependency-map.md', 'utf-8');
-    const changeAssessmentContent = await fs.readFile('prompts/templates/library-change-assessment.md', 'utf-8');
-    const visionDocContent = await fs.readFile('prompts/templates/library-vision-document.md', 'utf-8');
-
-    // Dependency map should support automated discovery
-    if (!dependencyMapContent.toLowerCase().includes('discover') && 
-        !dependencyMapContent.toLowerCase().includes('automated')) {
-      throw new Error('Dependency map should support automated dependency discovery');
-    }
-
-    // Change assessment should include risk evaluation
-    if (!changeAssessmentContent.toLowerCase().includes('risk')) {
-      throw new Error('Change assessment should include risk evaluation');
-    }
-
-    // Vision document should include rollback procedures
-    if (!visionDocContent.toLowerCase().includes('rollback')) {
-      throw new Error('Vision document should include rollback procedures');
-    }
-
-    // Vision document should include cross-platform validation
-    if (!visionDocContent.toLowerCase().includes('cross-platform')) {
-      throw new Error('Vision document should include cross-platform validation');
-    }
-
-    return true;
-  }
-
   async testTemplateStructureConsistency(): Promise<boolean> {
     const issues: string[] = [];
 
@@ -520,7 +409,7 @@ class NewFeaturesIntegrationTest {
 }
 
 // Test Suite
-describe('New Features Integration Tests (Tasks 19-21)', () => {
+describe('Testing Module Integration Tests (Tasks 19-20)', () => {
   let testSuite: NewFeaturesIntegrationTest;
 
   beforeAll(async () => {
@@ -557,25 +446,13 @@ describe('New Features Integration Tests (Tasks 19-21)', () => {
     });
   });
 
-  describe('Impact Assessment (Task 21)', () => {
-    it('should have complete impact assessment workflow templates', async () => {
-      const result = await testSuite.testImpactAssessmentWorkflow();
+  describe('Cross-Module Integration', () => {
+    it('should have valid cross-references between testing modules', async () => {
+      const result = await testSuite.testCrossReferencesBetweenModules();
       expect(result).toBe(true);
     });
 
-    it('should have complete impact assessment workflow documentation', async () => {
-      const result = await testSuite.testImpactAssessmentWorkflowCompleteness();
-      expect(result).toBe(true);
-    });
-  });
-
-  describe('Cross-Template Integration', () => {
-    it('should have valid cross-references between new and existing templates', async () => {
-      const result = await testSuite.testCrossReferencesBetweenNewAndExistingTemplates();
-      expect(result).toBe(true);
-    });
-
-    it('should have consistent template structure across all new templates', async () => {
+    it('should have consistent template structure across all testing modules', async () => {
       const result = await testSuite.testTemplateStructureConsistency();
       expect(result).toBe(true);
     });
@@ -583,22 +460,19 @@ describe('New Features Integration Tests (Tasks 19-21)', () => {
 });
 
 // Validation Tests
-describe('New Features Validation Tests', () => {
-  it('should have all required new template files', async () => {
+describe('Testing Module Validation Tests', () => {
+  it('should have all required testing module files', async () => {
     const requiredTemplates = [
       'prompts/modules/testing/centralized-mock-data.md',
       'prompts/modules/testing/fake-backend-generator.md',
       'prompts/modules/testing/debug-menu-integration.md',
-      'prompts/templates/library-dependency-map.md',
-      'prompts/templates/library-change-assessment.md',
-      'prompts/templates/library-vision-document.md',
     ];
 
     for (const templatePath of requiredTemplates) {
       try {
         await fs.access(templatePath);
       } catch {
-        throw new Error(`Required template missing: ${templatePath}`);
+        throw new Error(`Required testing module missing: ${templatePath}`);
       }
     }
   });

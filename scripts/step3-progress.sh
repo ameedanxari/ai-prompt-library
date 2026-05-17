@@ -62,9 +62,14 @@ done_count=0
 missing_count=0
 
 # Build the checklist, grouped by epic.
+# NOTE: We write to file first, then cat, instead of piping through
+# `tee`. A pipe creates a subshell in bash, which would silently
+# discard the done_count / missing_count increments and cause the
+# script to always exit 0 — defeating its purpose as a steering guard.
+{
 echo "# Step 3 Progress"
 echo ""
-echo "_Generated from disk state; rerun this script any time._"
+echo "_Generated from disk state; last updated: $(date -u +%Y-%m-%dT%H:%M:%SZ)_"
 echo ""
 
 current_epic=""
@@ -95,8 +100,10 @@ else
   pct=0
 fi
 echo "**Progress: $done_count / $total ($pct%)**"
-echo ""
+} > "$TARGET_DIR/planning-progress.md"
+cat "$TARGET_DIR/planning-progress.md"
 
+echo ""
 rm -f "$declared_slugs_file" "$feature_rows_file" "${feature_rows_file}.sorted"
 
 if [ "$missing_count" -eq 0 ]; then

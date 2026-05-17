@@ -332,10 +332,10 @@ Agent runs: drill-down-engine Step 1 loading project-context.md first
 User: "Continue where you left off"
 
 Agent loads: ai-agent-entry-point.md
-Agent detects: execution-log.md exists with next_task: E15.T1
+Agent detects: execution-log.md exists with next_task: tasks-signup.md
 Agent routes: Mode 2 (execute existing plan)
 Agent reads: executor.md
-Agent resumes: from E15.T1
+Agent resumes: from tasks-signup.md
   → implements task, logs result
 ⏸ CHECKPOINT: shows result, waits for "Continue"
 ```

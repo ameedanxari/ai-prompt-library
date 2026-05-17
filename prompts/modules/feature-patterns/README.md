@@ -63,6 +63,8 @@ const setupDataManagement = async (resource: string) => {
 ### User Interface Components
 - **ui-responsive.md** - Responsive design implementation
 - **ui-forms.md** - Form handling and validation
+- **gesture-card-ui.md** - Swipe, drag, and card-stack UI patterns
+- **haptic-feedback.md** - Native tactile feedback for mobile interactions
 
 ### Performance & Reliability
 - **perf-offline.md** - Offline functionality and sync

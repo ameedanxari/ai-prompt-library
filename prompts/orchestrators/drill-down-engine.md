@@ -107,6 +107,7 @@ logging instead of cloud services, etc. The golden question is:
 
 Platform: use whatever `MY_PROJECT.md` **Platforms** specifies. The
 agent should have already filled this in from the brief during setup.
+If no platforms are specified, use the default platform set: web + android + ios.
 
 ### Per-epic schema
 

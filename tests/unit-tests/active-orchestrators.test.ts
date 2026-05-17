@@ -22,6 +22,7 @@ const ACTIVE = [
   'module-selection-index.md',
   'revise-outputs.md',
   'baseline-task-shapes.md',
+  'schema-alignment-pass.md',
   'self-maintain.md',
 ];
 

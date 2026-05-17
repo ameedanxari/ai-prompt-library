@@ -11,9 +11,8 @@
 # specific path. Tooling tasks (Snapfile, UITest harness) live alongside
 # them in the same file.
 #
-# This script generates that file. The model then only fills in per-frame
-# specifics (UITest class/method names, expected localised text, pixel
-# dimensions).
+# This script generates that file with concrete default test identifiers
+# and reviewable localized-copy checks for each frame.
 #
 # Usage:
 #   bash scripts/scaffold-screenshot-captures.sh \
@@ -132,6 +131,10 @@ ruby_list() {
 DEVICES_RUBY=$(ruby_list "$DEVICES")
 LOCALES_RUBY=$(ruby_list "$LOCALES")
 
+identifier_slug() {
+  printf "%s" "$1" | tr '[:upper:]' '[:lower:]' | sed -E 's/[^a-z0-9]+/_/g; s/^_+//; s/_+$//'
+}
+
 write_tooling() {
   cat <<TOOLING
 
@@ -168,18 +171,24 @@ TOOLING
 
 write_capture() {
   local num="$1" locale="$2" device="$3" frame="$4"
+  local locale_id device_id frame_id test_class test_method
+  locale_id=$(identifier_slug "$locale")
+  device_id=$(identifier_slug "$device")
+  frame_id=$(identifier_slug "$frame")
+  test_class="ScreenshotCaptureUITests"
+  test_method="test_${locale_id}_${device_id}_${frame_id}"
   cat <<CAPTURE
 
 ## T${num} · Screenshot — ${locale} / ${device} / ${frame}
 - **Closes user story:** As the app, I need a ${locale} ${device} ${frame} screenshot, so that the ${locale} app-store listing shows localised content on the ${device} form factor.
 - **Change type:** create-new
 - **File:** \`fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\`
-- **Signature:** PNG asset captured from TODO(fill in UITest class).TODO(fill in test method) in the ${locale} language snapshot
-- **Precise change:** Run \`bundle exec fastlane ${snap_subcommand} --devices ${device} --languages ${locale} --only_testing ${APP_NAME}UITests/TODO/TODO\`. Fastlane writes the PNG to the File path above. Replace each TODO with the concrete UITest class and method that renders the ${frame} screen.
+- **Signature:** PNG asset captured from ${test_class}.${test_method} in the ${locale} language snapshot
+- **Precise change:** Run \`bundle exec fastlane ${snap_subcommand} --devices ${device} --languages ${locale} --only_testing ${APP_NAME}UITests/${test_class}/${test_method}\`. Fastlane writes the PNG to the File path above after the UI test renders the ${frame} screen in ${locale}.
 - **Acceptance:**
   - File exists at \`fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\`.
   - PNG dimensions match the ${device} form factor (see the size table in \`tools/app-store/verify-screenshot.sh\`).
-  - OCR of the image contains ${locale}-localised copy for the ${frame} screen (TODO: list two or three canonical strings from the localised resource bundle).
+  - OCR of the image contains ${locale}-localised copy for the ${frame} screen, including the ${APP_NAME} app name and the ${frame} screen title from the localised resource bundle.
 - **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\`
 - **Estimated LOC:** +0
 - **Depends on:** T1 (${snap_config_name} declares devices and languages), T2 (verify-screenshot.sh is the named Test)
@@ -195,7 +204,7 @@ CAPTURE
   echo ""
   echo "_${TOTAL_CAPTURES} capture tasks + 2 tooling tasks = $(( TOTAL_CAPTURES + 2 )) total._"
   echo ""
-  echo "_Fill in each \`TODO(…)\` placeholder in the capture tasks below before running the revise gate._"
+  echo "_Review the generated test identifiers against the app's UITest naming before running the revise gate._"
 
   write_tooling
 
@@ -221,6 +230,6 @@ cat <<SUMMARY
    total tasks: $((TOTAL_CAPTURES + 2)) (2 tooling + $TOTAL_CAPTURES captures)
 
 next steps:
-  1. Open $OUTPUT_FILE and replace every TODO(...) with concrete values.
+  1. Open $OUTPUT_FILE and align generated UITest identifiers with the app if needed.
   2. Re-run: bash scripts/revise.sh $TARGET
 SUMMARY
