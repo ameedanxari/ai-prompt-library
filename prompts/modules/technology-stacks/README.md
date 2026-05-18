@@ -4,6 +4,12 @@
 
 Technology-specific modules that adapt features and architecture to different technology stacks and deployment platforms. These modules provide production-ready configurations, cost-optimized deployment strategies, and platform-specific best practices for building scalable applications across web, mobile, and backend technologies.
 
+## Modules
+
+- `tailwind-css.md` - Tailwind CSS theme/token implementation guidance for web UI.
+- `mobile-os-capability-matrix.md` - iOS/Android support, permission,
+  fallback, and store-policy mapping for OS-controlled features.
+
 ## Instructions
 
 1. **Analyze Requirements**: Review project requirements to determine appropriate technology stack

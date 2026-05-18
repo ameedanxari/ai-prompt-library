@@ -8,7 +8,7 @@ not hand-edit files here and do not commit them to a consumer project
 
 | Subdirectory | Producer | Contents |
 |---|---|---|
-| `current/` | drill-down-engine, audit-and-remediate, revise-outputs, executor | The active run's artefacts: `project-context.md`, `epics.md`, `brief-keywords.md`, `features-*.md`, `external-accounts.md`, `tasks-*.md` / `remediation-*.md`, `audit-report.md`, `gap-list.md`, `revise-report.md`, `execution-log.md`. |
+| `current/` | drill-down-engine, audit-and-remediate, revise-outputs, executor | The active run's artefacts: `project-context.md`, `epics.md`, `brief-keywords.md`, `features-*.md`, `ui-reference-source-map.md` (when greenfield UI exists), `external-accounts.md`, `tasks-*.md` / `remediation-*.md`, `audit-report.md`, `gap-list.md`, `revise-report.md`, `execution-log.md`. |
 | `self-maintain/` | self-maintain orchestrator | The library's own self-audit output. Kept separate from `current/` so a maintainer run never collides with an end-user project run. |
 | `field-tests/` (optional) | humans or consumers | Free-form observation files used as input to the self-maintain flow (`YYYY-MM-DD-run-name.md`). See `prompts/orchestrators/self-maintain.md` for the format. |
 
@@ -34,6 +34,7 @@ current/
 ├── epics.md
 ├── brief-keywords.md
 ├── features-<epic>.md          # one per epic
+├── ui-reference-source-map.md  # conditional — greenfield UI design research
 ├── external-accounts.md
 ├── tasks-<feature>.md          # one per feature
 ├── revise-report.md

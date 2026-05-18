@@ -169,9 +169,11 @@ specific tools depend on whether the app has network access.
 ## Theming & Whitelabel
 
 - Task that introduces the design-token file (CSS variables, Tailwind
-  config, iOS Color catalog, Android Material3 dynamic colors,
-  etc.) with a concrete token list (primary, secondary, surface,
-  onSurface, error, success, plus neutrals).
+  `@theme` variables or existing Tailwind config, iOS Color catalog,
+  Android Material3 dynamic colors, etc.) with a concrete token list
+  (primary, secondary, surface, onSurface, error, success, plus neutrals).
+- Existing products must extend the current token/theme source unless
+  the user explicitly requested redesign, rebrand, or a theme migration.
 - Task that implements dark-mode toggle respecting OS preference.
 - At least one visual-regression test task covering light + dark for
   at least three screens.

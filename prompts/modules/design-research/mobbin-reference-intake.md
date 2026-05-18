@@ -1,0 +1,109 @@
+# Design Research: Mobbin Reference Intake
+
+<!-- INSTANTIATION RULES
+When the drill-down engine (or any orchestrator) uses this template:
+1. Every placeholder, including {{variables}}, <TBD>, [project name], and generic
+   field/function/endpoint names, MUST be replaced with project-specific values
+   before output is written to prompts/outputs/current/.
+2. The template filename MUST NOT appear in task output. Dissolve the template
+   into concrete content; do not reference its source.
+3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
+   (validated by scripts/validate-instantiation.sh).
+4. Outputs must contain real data shapes, real endpoints, real file paths, and
+   real function signatures specific to the project.
+-->
+
+## Purpose
+
+Use Mobbin-style product references as design research input so generated
+UI tasks are grounded in mature interaction patterns while still producing
+an original interface for the current product.
+
+## Context
+
+This module applies to screen design, app flows, dashboards, onboarding,
+settings, commerce, reporting, and other user-facing surfaces. It is a
+research workflow, not a runtime dependency. If the product already has a
+visual system, existing theme, component patterns, density, navigation,
+and token usage are the primary source of truth; references may fill gaps
+but must not replace the established style without an explicit redesign
+decision.
+
+## Core Components
+
+```typescript
+interface UIReferenceSource {
+  source: "mobbin" | "figma" | "existing-product" | "screenshot" | "manual-note";
+  productOrFile: string;
+  flowOrScreen: string;
+  patternObserved: string;
+  applicableDecision: string;
+  nonCopyBoundary: string;
+}
+
+interface UIReferencePacket {
+  productSurface: "mobile" | "web" | "admin" | "desktop";
+  useCase: "dashboard" | "chart" | "app-screen" | "settings" | "onboarding" | "commerce" | "content";
+  existingStyleAuthority: boolean;
+  sources: UIReferenceSource[];
+  tokenImplications: string[];
+  componentImplications: string[];
+  interactionStates: Array<"default" | "loading" | "empty" | "error" | "disabled" | "success">;
+}
+```
+
+## Implementation Requirements
+
+1. Classify the UI request by surface and use case before writing tasks:
+   dashboard, data table, graph/chart, mobile app screen, web app screen,
+   auth/onboarding, checkout/paywall, settings/profile, content, or
+   marketing.
+2. Collect 3-5 relevant references when no canonical product design exists.
+   Each reference must explain the pattern being borrowed and the part that
+   must not be copied.
+3. For existing products, inspect current code/design files first and record
+   existing visual language as authoritative. New design work must extend the
+   current system unless the user explicitly requested redesign or rebrand.
+4. Convert references into a UI reference source map with:
+   reference source, observed pattern, product-specific decision, tokens,
+   components, interaction states, responsive behavior, and accessibility
+   implications.
+5. Do not output generic phrases like "make it beautiful" or "use modern UI".
+   Every design decision must map to a concrete layout, component, token, or
+   interaction rule.
+
+## Integration Points
+
+- `project-context.md` Design Context is loaded first and overrides generic
+  reference patterns.
+- Design-system modules convert the source map into tokens, components, and
+  screen fidelity checks.
+- Tailwind CSS modules translate decisions into theme variables and utilities
+  for web surfaces.
+
+## Security and Compliance
+
+- Do not copy screenshots, brand marks, icon sets, proprietary illustrations,
+  or exact screen composition from references.
+- Do not include private Mobbin account data, exported images, or paid-source
+  assets in generated project files.
+- Treat references as pattern evidence only; implementation must be original
+  and project-specific.
+
+## Testing Considerations
+
+- Verify each UI task contains a source map or an explicit "existing style is
+  authoritative" note.
+- Verify every UI task names components, tokens, responsive behavior, and all
+  required states: default, loading, empty, error, disabled, success.
+- For existing products, verify new UI does not introduce unrelated colors,
+  typography, spacing scales, or navigation patterns without an explicit
+  redesign decision.
+
+## Acceptance Criteria
+
+- Every UI-heavy task has design research evidence or existing-style evidence.
+- Reference patterns are translated into project-specific design decisions.
+- Existing product theming takes precedence over new inspiration.
+- The final task gives enough implementation detail to avoid ad hoc styling.
+

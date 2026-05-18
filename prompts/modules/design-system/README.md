@@ -11,6 +11,11 @@ Provide explicit prompt modules for building and enforcing a production-ready de
 - `loading-states-and-animations.md` - **[NEW]** Motion design tokens, loading indicators (spinner/shimmer/skeleton), and animations integrated with design tokens.
 - `design-to-code-validation.md` - **[NEW]** Automated verification that implementation matches design specifications.
 - `governance-and-maintenance.md` - **[NEW]** Ownership, change control, versioning, and long-term sustainability processes.
+- `dashboard-screen-patterns.md` - Dashboard shell, KPI, filter, table, and state planning for admin and analytics screens.
+- `data-visualization-system.md` - Chart/graph contracts, state handling, tokenized colors, and accessibility summaries.
+- `native-visual-effects-and-motion.md` - Platform-native material, glass,
+  depth, and motion rules for artful native UI without sacrificing
+  accessibility.
 - `screen-fidelity-audit.md` - Verifies screen output fidelity against provided mockups.
 - `component-implementation-sequencing.md` - Enforces reusable component foundation tasks before screen-level implementation.
 
@@ -46,6 +51,9 @@ When these modules are selected, they should drive:
 #[[module:design-system/loading-states-and-animations.md]]
 #[[module:design-system/design-to-code-validation.md]]
 #[[module:design-system/governance-and-maintenance.md]]
+#[[module:design-system/dashboard-screen-patterns.md]]
+#[[module:design-system/data-visualization-system.md]]
+#[[module:design-system/native-visual-effects-and-motion.md]]
 #[[module:design-system/component-implementation-sequencing.md]]
 #[[module:design-system/screen-fidelity-audit.md]]
 ```

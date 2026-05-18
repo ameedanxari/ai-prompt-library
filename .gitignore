@@ -50,3 +50,4 @@ prompts/working_copy/*
 .kiro/
 .kiro-*
 test-perf-outputs/
+docs/dry-runs/*.md

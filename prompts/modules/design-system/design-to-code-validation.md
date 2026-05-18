@@ -34,14 +34,14 @@ Create a structured audit matrix comparing design specs to implementation:
 |---|---|---|---|---|---|
 | **Colors** | primary-50 | #f5f3ff | --color-primary-50: #f5f3ff | ✓ | CSS inspection |
 | **Colors** | primary-600 | #7c3aed | designTokens.colors.primary[600] | ✓ | Code constant |
-| **Typography** | font-family | Inter | tailwind config + @import | ✓ | CSS rule |
+| **Typography** | font-family | Inter | Tailwind theme/config + @import | ✓ | CSS rule |
 | **Typography** | font-weight (heading) | 700 | className="font-bold" | ✓ | Tailwind utility |
 | **Typography** | font-size (body) | 14px | className="text-sm" | ✓ | Tailwind default |
 | **Spacing** | padding (card) | 24px | --space-lg (24px) | ✓ | CSS variable |
 | **Spacing** | gap (grid) | 16px | --space-md (16px) | ✓ | CSS variable |
 | **Radius** | card | 16px | --radius-card (16px) | ✓ | CSS variable |
 | **Shadow** | card | 0 2px 10px rgba(0,0,0,0.08) | --shadow-card match | ✓ | CSS value |
-| **Responsive** | breakpoint (md) | 768px | tailwind default | ✓ | Config |
+| **Responsive** | breakpoint (md) | 768px | Tailwind theme/config | ✓ | Config |
 | **Motion** | transition speed | 150ms | --motion-fast | ✓ | CSS variable |
 
 ### 2. Automated Validation Scripts
@@ -72,19 +72,20 @@ const path = require("path");
 **Exit on success:** `0`  
 **Exit on failure:** `1` (also run in CI/CD)
 
-#### B. Tailwind Config Validator (`scripts/validate-tailwind-config.js`)
+#### B. Tailwind Theme Validator (`scripts/validate-tailwind-theme.js`)
 
 ```bash
 #!/usr/bin/env node
 
 /**
- * Verify tailwind.config.js was generated from tokens.json
+ * Verify Tailwind theme output was generated from tokens.json
  * 
  * Checks:
- * 1. tailwind theme.extend.colors matches tokens.colors
- * 2. tailwind theme.extend.spacing matches tokens.spacing
- * 3. tailwind theme.extend.boxShadow matches tokens.shadow
- * 4. tailwind theme.extend.fontFamily matches tokens.typography
+ * 1. @theme variables or tailwind.config theme.extend.colors match tokens.colors
+ * 2. spacing variables/config match tokens.spacing
+ * 3. shadow variables/config match tokens.shadow
+ * 4. font variables/config match tokens.typography
+ * 5. existing projects keep their current Tailwind setup unless migration is explicit
  * 
  * Output: Report any divergence with suggested fixes
  */
@@ -160,8 +161,8 @@ jobs:
       - name: Validate CSS Variables
         run: yarn validate:css-variables
         
-      - name: Validate Tailwind Config
-        run: yarn validate:tailwind-config
+      - name: Validate Tailwind Theme
+        run: yarn validate:tailwind-theme
         
       - name: Lint Token Usage
         run: yarn lint -- --plugin design-tokens
@@ -190,7 +191,7 @@ jobs:
 
 # Stage 1: Validate design tokens haven't changed inconsistently
 yarn validate:css-variables
-yarn validate:tailwind-config
+yarn validate:tailwind-theme
 
 # Stage 2: Lint new component code
 yarn lint -- --plugin design-tokens -- app/src
@@ -199,7 +200,7 @@ yarn lint -- --plugin design-tokens -- app/src
 if git diff --cached --name-only | grep -q "design-tokens/tokens.json"; then
   yarn generate-tokens
   git add \
-    "apps/admin_web/tailwind.config.js" \
+    "apps/admin_web/src/core/design-tokens/theme.css" \
     "apps/admin_web/src/core/design-tokens/tokens.ts" \
     "docs/DESIGN_TOKENS.md"
 fi
@@ -302,7 +303,7 @@ Every screen-level component must include fidelity declaration:
 
 2. **Validation Scripts** (`scripts/validate-*.js`)
    - CSS variable validator
-   - Tailwind config validator
+   - Tailwind theme/config validator
    - Design token linter (ESLint plugin)
    - Visual regression detector
    - Change tracker
@@ -325,7 +326,9 @@ Every screen-level component must include fidelity declaration:
 ## Acceptance Criteria
 
 - ✅ All CSS variables match `tokens.json` values (CI validated)
-- ✅ Tailwind config auto-generated from tokens (no manual edits)
+- ✅ Tailwind theme/config auto-generated from tokens (no manual edits)
+- ✅ UI reference source map or existing-style source map is present for UI screens
+- ✅ Dashboard/chart tasks include default, loading, empty, error, disabled, and success states
 - ✅ No hardcoded color/spacing values in components (linter enforced)
 - ✅ Visual fidelity verified manually against design mockups (human review)
 - ✅ CI/CD pipeline blocks merge if validations fail

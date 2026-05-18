@@ -53,6 +53,7 @@ Paths are relative to the repository root.
 | Offline-first / local-first | `prompts/modules/feature-patterns/perf-offline.md` |
 | Local-only persistence / resumable progress / snapshots | `prompts/modules/feature-patterns/local-persistence-progress.md` |
 | Native phone storage cleanup / Photos / MediaStore / scoped storage | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
+| Native phone storage cleanup / memory cleanup / free up space OS capability matrix | `prompts/modules/technology-stacks/mobile-os-capability-matrix.md` |
 
 ## AI & ML
 
@@ -266,6 +267,18 @@ explicitly needs server-side or remote inference infrastructure.
 | Predictive analytics (forecasting, churn) | `prompts/modules/analytics/predictive-analytics.md` |
 | Privacy-preserving analytics (DP, aggregation) | `prompts/modules/analytics/privacy-analytics.md` |
 
+## Design Research & UI Planning
+
+| Intent | Module |
+|---|---|
+| Mobbin / product reference research / UI inspiration / app pattern research | `prompts/modules/design-research/mobbin-reference-intake.md` |
+| UI reference source map / greenfield design context / design research schema | `prompts/modules/design-research/ui-reference-source-map.md` |
+| Existing product UI extension / follow existing theme / preserve current styling / no redesign | `prompts/modules/design-research/mobbin-reference-intake.md` |
+| Dashboard / admin dashboard / reporting dashboard / analytics console / operational panel | `prompts/modules/design-system/dashboard-screen-patterns.md` |
+| Graph / chart / data visualization / data table with charts / KPI reporting | `prompts/modules/design-system/data-visualization-system.md` |
+| Mobile app screen / app flow / screen-level UI / web app screen / frontend screen | `prompts/modules/design-research/mobbin-reference-intake.md` |
+| Liquid glass / glassmorphism / native material surfaces / aesthetic animations | `prompts/modules/design-system/native-visual-effects-and-motion.md` |
+
 ## Performance
 
 | Intent | Module |
@@ -330,6 +343,11 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Loading states / skeletons / motion tokens | `prompts/modules/design-system/loading-states-and-animations.md` |
 | Design-to-code validation | `prompts/modules/design-system/design-to-code-validation.md` |
 | Design system governance / ownership / change control | `prompts/modules/design-system/governance-and-maintenance.md` |
+| Screen fidelity / visual QA / reference source map | `prompts/modules/design-system/screen-fidelity-audit.md` |
+| Design-system-first implementation sequencing | `prompts/modules/design-system/component-implementation-sequencing.md` |
+| Dashboard shell / KPI cards / filters / tables | `prompts/modules/design-system/dashboard-screen-patterns.md` |
+| Chart system / graph states / visualization accessibility | `prompts/modules/design-system/data-visualization-system.md` |
+| Native visual effects / liquid glass / material motion / reduced-motion fallback | `prompts/modules/design-system/native-visual-effects-and-motion.md` |
 
 ## Cross-platform parity (web + mobile)
 
@@ -384,6 +402,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Intent | Module |
 |---|---|
 | React web app | `prompts/modules/technology-stacks/web-react.md` |
+| Tailwind CSS / Tailwind theme / Tailwind UI implementation | `prompts/modules/technology-stacks/tailwind-css.md` |
 | Progressive Web App (installable, offline) | `prompts/modules/technology-stacks/progressive-web-apps.md` |
 | WebAssembly (perf-critical web features) | `prompts/modules/technology-stacks/webassembly.md` |
 
@@ -399,6 +418,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Native Android (Kotlin / Jetpack Compose) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
 | Cross-platform React Native | `prompts/modules/technology-stacks/mobile-react-native.md` |
 | Cross-platform Flutter | `prompts/modules/technology-stacks/mobile-flutter.md` |
+| Mobile OS capability matrix / OS permissions / unsupported native capability / memory cleanup constraints | `prompts/modules/technology-stacks/mobile-os-capability-matrix.md` |
 
 ### Backend
 

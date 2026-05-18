@@ -39,6 +39,7 @@ See `prompts/AGENTS.md` for the full engine flow.
 | [cross-platform](./cross-platform/README.md) | Parity matrix, shared contracts, validation across platforms |
 | [data-processing](./data-processing/README.md) | Pipelines, ingestion, quality, governance, big data |
 | [deployment](./deployment/README.md) | CI/CD, k8s, serverless, cloud, GitOps, IaC, DR, observability |
+| [design-research](./design-research/README.md) | Mobbin-style reference research and existing-product style intake |
 | [design-system](./design-system/README.md) | Tokens, component patterns, loading states, governance |
 | [desktop](./desktop/README.md) | Native OS integrations, offline-first desktop apps |
 | [enterprise-saas](./enterprise-saas/README.md) | Multi-tenancy, SSO, RBAC, billing, audit, white-label |

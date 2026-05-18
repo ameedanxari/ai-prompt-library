@@ -15,10 +15,10 @@ When the drill-down engine (or any orchestrator) uses this template:
 
 
 ## Purpose
-Establish a single-source-of-truth for design tokens and enforce synchronization across all implementation layers (Tailwind config, React constants, mobile themes, design documentation).
+Establish a single-source-of-truth for design tokens and enforce synchronization across all implementation layers (Tailwind theme variables or config, React constants, mobile themes, design documentation).
 
 ## Problem Solved
-Without this module, design tokens are manually copied to multiple locations (design HTML, tailwind.config.js, TypeScript constants, mobile theme files), creating synchronization risks and making governance impossible.
+Without this module, design tokens are manually copied to multiple locations (design HTML, Tailwind theme CSS or tailwind.config.js, TypeScript constants, mobile theme files), creating synchronization risks and making governance impossible.
 
 ## Instructions
 
@@ -59,9 +59,24 @@ Define how tokens will be extracted/compiled:
 ### 3. Generate Platform-Specific Output
 From canonical token model, generate:
 
-#### A. Tailwind Config (`tailwind.config.js`)
-- Automatically generate `theme.extend.colors`, `theme.extend.spacing`, `theme.extend.boxShadow`, `theme.extend.fontFamily`
-- Include script: `scripts/generate-tailwind-config.js` that reads token JSON and outputs valid `tailwind.config.js`
+#### A. Tailwind Theme Output (`src/core/design-tokens/theme.css` or `tailwind.config.js`)
+- For new Tailwind v4 projects, generate CSS-first theme variables:
+  ```css
+  @import "tailwindcss";
+
+  @theme {
+    --color-primary-600: #7c3aed;
+    --spacing-card: 24px;
+    --radius-card: 12px;
+    --shadow-card: 0 2px 10px rgb(0 0 0 / 0.08);
+  }
+  ```
+- For existing Tailwind projects using `tailwind.config.js`, preserve the
+  current configuration style and generate `theme.extend.colors`,
+  `theme.extend.spacing`, `theme.extend.boxShadow`, and `theme.extend.fontFamily`
+  from the same canonical tokens.
+- Include script: `scripts/generate-tailwind-theme.js` that reads token JSON
+  and writes the correct Tailwind output for the project.
 
 #### B. TypeScript Constants (`src/core/design-tokens/tokens.ts`)
 - Generate platform-specific token constants:
@@ -159,7 +174,7 @@ export function Button({ variant = "primary" }: ButtonProps) {
 
 2. **Generation Script** (`scripts/generate-design-tokens.js`)
    - Reads `tokens.json`
-   - Outputs Tailwind config, TypeScript constants, CSS variables
+   - Outputs Tailwind theme CSS or config, TypeScript constants, CSS variables
    - Idempotent and reproducible
 
 3. **Validation Script** (`scripts/validate-token-usage.js`)
@@ -179,7 +194,7 @@ export function Button({ variant = "primary" }: ButtonProps) {
 
 ## Acceptance Criteria
 - ✅ Single source of truth exists for all design tokens
-- ✅ All generated outputs (Tailwind, TS constants, CSS vars) are identical in value
+- ✅ All generated outputs (Tailwind theme/config, TS constants, CSS vars) are identical in value
 - ✅ No hardcoded color/spacing values in component library
 - ✅ CI/CD enforces token usage in all modified files
 - ✅ Token changes are automatically propagated to all platforms
@@ -194,7 +209,7 @@ When generating component implementation tasks (A-1.0, M-1.2, etc.):
 - src/core/design-tokens/tokens.json [CREATED]
 - scripts/generate-design-tokens.js [CREATED]
 - scripts/validate-token-usage.js [CREATED]
-- apps/admin_web/tailwind.config.js [GENERATED from tokens.json]
+- apps/admin_web/src/core/design-tokens/theme.css OR apps/admin_web/tailwind.config.js [GENERATED from tokens.json, depending on project setup]
 - apps/admin_web/src/core/design-tokens/tokens.ts [GENERATED]
 - .github/workflows/design-token-validation.yml [CREATED]
 
@@ -208,7 +223,7 @@ When generating component implementation tasks (A-1.0, M-1.2, etc.):
 | Token Layer | File | Platform | Format |
 |---|---|---|---|
 | Canonical | `src/core/design-tokens/tokens.json` | language-agnostic | JSON schema |
-| Web (Tailwind) | `apps/admin_web/tailwind.config.js` | Web | JavaScript object |
+| Web (Tailwind) | `apps/admin_web/src/core/design-tokens/theme.css` OR `apps/admin_web/tailwind.config.js` | Web | CSS theme variables or JavaScript object |
 | Web (React) | `apps/admin_web/src/core/design-tokens/tokens.ts` | Web | TypeScript const |
 | Web (CSS) | `apps/admin_web/src/core/design-tokens/variables.css` | Web | CSS custom properties |
 | Mobile (Flutter) | `apps/mobile_student/lib/core/theme/app_tokens.dart` | Mobile | Dart class |

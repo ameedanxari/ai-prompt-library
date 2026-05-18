@@ -23,16 +23,24 @@ Define a reusable component library aligned to the product’s mockups and inter
 3. Map each component to token usage and accessibility requirements.
 4. Document platform differences while preserving semantic parity.
 5. Produce implementation guidance that can be turned into tasks directly.
+6. For existing products, extend the current component library, density,
+   typography, navigation, and theme conventions unless the user explicitly
+   requested redesign or rebrand.
 
 ## Required Output Sections
 Ensure `design-system-component-catalog.md` includes:
 - Component inventory table
 - Variant/state matrix
+- State coverage for `default`, `loading`, `empty`, `error`, `disabled`,
+  and `success`
 - Token usage map per component
+- UI reference source map or existing-style source map
 - Interaction/accessibility notes
 - Dependencies and composition rules
 
 ## Acceptance Criteria
 - Every major screen can be composed using the cataloged components.
 - No high-priority screen depends on undefined components.
-- State behavior (loading/error/disabled/empty) is specified for core components.
+- State behavior (`default`, `loading`, `empty`, `error`, `disabled`,
+  `success`) is specified for core components.
+- Existing product components are reused before new primitives are created.

@@ -1738,6 +1738,30 @@ describe('validator — final-delivery quality checks', () => {
     fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
   }
 
+  function writeUiSourceMap(dir: string) {
+    fs.writeFileSync(
+      path.join(dir, 'ui-reference-source-map.md'),
+      [
+        '# UI Reference Source Map',
+        '',
+        '## Product Design Direction',
+        '- **Existing style authority:** no',
+        '- **Design intent:** operational dashboard UI',
+        '- **Primary surfaces:** web',
+        '- **Non-copy rule:** references are pattern inspiration only',
+        '',
+        '## Reference Map',
+        '| Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |',
+        '|---|---|---|---|---|---|---|---|---|',
+        '| Admin analytics dashboard | KPI, filter, chart, table flow | Use compact dashboard layout | Do not copy brand assets | sidebar, KPI card, filter bar, chart card, table | surface, text, border, accent | default, loading, empty, error, disabled, success | Stack cards on mobile | Keyboard and screen-reader summaries |',
+        '',
+        '## Open Design Risks',
+        '- none',
+        '',
+      ].join('\n'),
+    );
+  }
+
   it('rejects a File field with two backticked paths', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-multi-file-'));
     try {
@@ -1893,6 +1917,291 @@ describe('validator — final-delivery quality checks', () => {
   });
 
 
+});
+
+describe('validator — UI design quality gate', () => {
+  function runValidator(sandbox: string): { out: string; code: number } {
+    try {
+      return {
+        out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
+        code: 0,
+      };
+    } catch (e) {
+      const err = e as { stdout?: Buffer; status?: number };
+      return {
+        out: err.stdout?.toString() ?? '',
+        code: err.status ?? 0,
+      };
+    }
+  }
+
+  function passingCompanions(dir: string) {
+    fs.writeFileSync(path.join(dir, 'external-accounts.md'), '# External Accounts Required\n');
+    fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
+  }
+
+  function writeUiSourceMap(dir: string) {
+    fs.writeFileSync(
+      path.join(dir, 'ui-reference-source-map.md'),
+      [
+        '# UI Reference Source Map',
+        '',
+        '## Product Design Direction',
+        '- **Existing style authority:** no',
+        '- **Design intent:** operational dashboard UI',
+        '- **Primary surfaces:** web',
+        '- **Non-copy rule:** references are pattern inspiration only',
+        '',
+        '## Reference Map',
+        '| Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |',
+        '|---|---|---|---|---|---|---|---|---|',
+        '| Admin analytics dashboard | KPI, filter, chart, table flow | Use compact dashboard layout | Do not copy brand assets | sidebar, KPI card, filter bar, chart card, table | surface, text, border, accent | default, loading, empty, error, disabled, success | Stack cards on mobile | Keyboard and screen-reader summaries |',
+        '',
+        '## Open Design Risks',
+        '- none',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  function uiTask(extraLines: string[]): string {
+    return [
+      '# Remediation — UI quality',
+      '',
+      '## R1 · dashboard screen implementation',
+      '- **Closes user story:** As an admin, I want a dashboard screen, so that I can monitor operations.',
+      '- **Change type:** modify-existing',
+      '- **File:** `src/app/dashboard.tsx`',
+      '- **Precise change:** update the dashboard screen.',
+      '- **Acceptance:**',
+      '  - KPI cards use token mapping from the existing design system.',
+      '  - Filter controls, chart card, and table region share the current component inventory.',
+      '  - Visual QA covers responsive desktop and mobile layouts.',
+      '- **Test:** `npm run test -- dashboard`',
+      '- **Depends on:** none',
+      '- **Estimated LOC:** +80',
+      '',
+      ...extraLines,
+      '',
+    ].join('\n');
+  }
+
+  it('accepts a UI task with source map, token mapping, and required states', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: existing-style source map from `src/styles/theme.css` and `src/components/Button.tsx`; Mobbin admin analytics references are pattern inspiration only.',
+          '- Existing theme authority: yes; existing product style is authoritative.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation, chart color tokens.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+          '- Responsive and accessibility checks: mobile stack, desktop grid, keyboard focus, screen-reader chart summary.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects generic UI styling language without concrete design research', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-generic-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- Make it beautiful with modern UI and polished UI details.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/generic UI styling language/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects dashboard tasks that omit loading, empty, and error states', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-states-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: existing-style source map from `src/styles/theme.css`.',
+          '- Component inventory: sidebar, KPI card, filter bar, chart card, table.',
+          '- Token mapping: surface, text, border, spacing, radius.',
+          '- State matrix: default, disabled, success.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing required state coverage/);
+      expect(out).toMatch(/loading/);
+      expect(out).toMatch(/empty/);
+      expect(out).toMatch(/error/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects existing-product UI tasks that propose unrelated redesign without approval', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-redesign-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-ui-theme.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: existing-style source map from `src/styles/theme.css`.',
+          '- Existing theme authority: yes.',
+          '- Component inventory: button, card, nav, table.',
+          '- Token mapping: surface, text, border, spacing, radius.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Replace the existing theme with a new visual language and new palette.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/unrelated redesign without approval/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects UI-heavy task sets with no central source-map or design context', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-no-map-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: task cites source-map requirements but no central artifact exists.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+        ]),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/no central design context artifact/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects malformed UI source maps that omit required schema columns', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-bad-map-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: see `ui-reference-source-map.md`.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+        ]),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'ui-reference-source-map.md'),
+        '# UI Reference Source Map\n\n| Reference Category | Observed Pattern |\n|---|---|\n| Admin | Compact cards |\n',
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/missing required source-map column/);
+      expect(out).toMatch(/Product Decision/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects mobile cleanup tasks that omit OS capability matrix language', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-cap-missing-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-cleanup.md'),
+        [
+          '# Remediation — cleanup',
+          '',
+          '## R1 · storage cleanup scanner',
+          '- **Closes user story:** As a user, I want storage cleanup, so that I can free up space.',
+          '- **Change type:** create-new',
+          '- **File:** `src/cleanup.ts`',
+          '- **Precise change:** add scanner.',
+          '- **Acceptance:**',
+          '  - Scanner lists files.',
+          '  - Scanner skips private containers.',
+          '  - Scanner has tests.',
+          '- **Test:** `npm test -- cleanup`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +50',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/lacks an OS capability matrix/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts mobile cleanup tasks that include OS capability matrix language', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-cap-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-cleanup.md'),
+        [
+          '# Remediation — cleanup',
+          '',
+          '## R1 · storage cleanup scanner',
+          '- **Closes user story:** As a user, I want storage cleanup, so that I can free up space.',
+          '- **Change type:** create-new',
+          '- **File:** `src/cleanup.ts`',
+          '- **Precise change:** add scanner with OS capability matrix.',
+          '- **Acceptance:**',
+          '  - OS capability matrix includes iOS Support and Android Support.',
+          '  - Matrix includes Fallback Behavior and Store Policy Risk.',
+          '  - Matrix includes User-Facing Copy Constraint for unsupported cleanup.',
+          '- **Test:** `npm test -- cleanup`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +50',
+          '',
+          '## OS capability matrix',
+          '| Feature | iOS Support | Android Support | Required Permissions | OS API | Fallback Behavior | User-Facing Copy Constraint | Store Policy Risk |',
+          '|---|---|---|---|---|---|---|---|',
+          '| Photo cleanup | supported | supported | Photos / media permissions | Photos, MediaStore | guide user when denied | Do not promise private cache cleanup | sensitive media permissions |',
+          '',
+        ].join('\n'),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
 });
 
 describe('validator — rejects quality violations', () => {

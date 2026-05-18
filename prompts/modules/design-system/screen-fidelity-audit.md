@@ -23,6 +23,8 @@ Verify that generated implementation plans preserve provided mockups and design 
 2. For each screen, map:
    - source file/reference
    - source frame/artboard ID
+   - existing product style source files when the product is already built
+   - Mobbin-style reference category when no canonical design exists
    - app surface (`mobile`, `web`, `admin`)
    - required components
    - required tokens
@@ -39,6 +41,9 @@ Verify that generated implementation plans preserve provided mockups and design 
    - interaction/state treatment (default/hover/focus/disabled/loading/empty/error)
 5. Flag unresolved design gaps as blockers before implementation.
 6. Reject completion for any screen with scaffold/placeholder substitutions in parity-required scope.
+7. For existing products, treat current theming and component patterns as
+   authoritative. New references can inform missing patterns, but cannot
+   override existing style without an explicit redesign/rebrand decision.
 
 ## Required Output
 Generate `prompts/outputs/specifications/screen-fidelity-matrix.md` with:
@@ -55,6 +60,8 @@ Required columns:
 - `Flow`
 - `Source Mockup File`
 - `Source Frame ID`
+- `Existing Style Source`
+- `Reference Research Source`
 - `Platform Surface`
 - `Tokens Required`
 - `Components Required`
@@ -72,11 +79,15 @@ Required columns:
 Forbidden:
 - Grouped rows (for example "Student Onboarding" as one row)
 - Missing source mockup references
-- Missing source frame IDs for UI surfaces
+- Missing source frame IDs for UI surfaces unless the row is explicitly
+  based on existing-product style source files
+- Missing existing-style source for already-built products
 - Missing task IDs for unresolved gaps
 - Status `ready` without measurable checks
 - Marking placeholder/scaffold screens as complete parity
 - Reinterpreting source HTML/prototype composition without explicit approved deviation
+- Introducing unrelated visual language into an existing product without
+  explicit redesign/rebrand approval
 
 ## Acceptance Criteria
 - 100% of in-scope screens are mapped.
@@ -87,7 +98,7 @@ Forbidden:
 ## Examples
 
 ```markdown
-| Screen ID | Flow | Source Mockup File | Source Frame ID | Platform Surface | Tokens Required | Components Required | Exact Copy Checks | Shell Composition Checks | Typography Checks | Spacing Checks | Color/Gradient Checks | Iconography Checks | Interaction Checks | Status | Owner | Follow-up Task ID |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| A-1.0 | Admin Foundation | prompts/working_copy/admin-design.fig | Frame-1024 | admin | brand/purple-500, text/main | sidebar, topbar, stats-card, data-table | Header/title/button labels match source | Sidebar widths + topbar search/action placement match source | Display/Heading scale matches source | Section/card/table spacing rhythm matches source | Primary gradient + dark surface treatment matches source | Line icon set and sizing match source | Hover/focus/disabled states match source behavior | ready | Design Lead | N/A |
+| Screen ID | Flow | Source Mockup File | Source Frame ID | Existing Style Source | Reference Research Source | Platform Surface | Tokens Required | Components Required | Exact Copy Checks | Shell Composition Checks | Typography Checks | Spacing Checks | Color/Gradient Checks | Iconography Checks | Interaction Checks | Status | Owner | Follow-up Task ID |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| A-1.0 | Admin Foundation | prompts/working_copy/admin-design.fig | Frame-1024 | apps/admin/src/styles/theme.css | Mobbin: admin analytics dashboards, pattern only | admin | brand/purple-500, text/main | sidebar, topbar, stats-card, data-table | Header/title/button labels match source | Sidebar widths + topbar search/action placement match source | Display/Heading scale matches source | Section/card/table spacing rhythm matches source | Primary gradient + dark surface treatment matches source | Line icon set and sizing match source | Hover/focus/disabled states match source behavior | ready | Design Lead | N/A |
 ```

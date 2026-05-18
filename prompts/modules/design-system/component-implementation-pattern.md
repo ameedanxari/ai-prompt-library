@@ -23,6 +23,8 @@ Components built without a consistent pattern lead to:
 - Divergence from design system over time as components are copied/modified
 - Difficulty maintaining component fidelity when design tokens change
 - No clear mapping between design and implementation
+- New work that ignores an already-built product's theme and creates an
+  unrelated visual system
 
 ## Instructions
 
@@ -41,12 +43,14 @@ import { designTokens } from "../design-tokens/tokens";
  *
  * Visual specs from design system:
  * - Design source: working_copy/design_repo/.../ComponentName.html
+ * - Existing style source: src/core/ui/Button.tsx, src/styles/theme.css
  * - Token dependencies: --color-primary-600, --space-md, --radius-card
- * - State variants: default, loading, error, disabled, empty
+ * - State variants: default, loading, empty, error, disabled, success
+ * - External references: pattern inspiration only; do not copy brand assets
  */
 
 export type ComponentVariant = "primary" | "secondary";
-export type ComponentState = "default" | "loading" | "error" | "disabled";
+export type ComponentState = "default" | "loading" | "empty" | "error" | "disabled" | "success";
 
 export interface ComponentProps extends HTMLAttributes<HTMLDivElement> {
   children: ReactNode;
@@ -79,8 +83,10 @@ const variantTokenMap: Record<ComponentVariant, Record<string, string>> = {
 const stateModifiers: Record<ComponentState, Record<string, string | number>> = {
   default: { opacity: 1, pointerEvents: "auto" },
   loading: { opacity: 0.6, pointerEvents: "none" },
+  empty: { opacity: 1 },
   error: { borderColor: designTokens.colors.danger["500"] },
   disabled: { opacity: 0.5, pointerEvents: "none", cursor: "not-allowed" },
+  success: { borderColor: designTokens.colors.success["500"] },
 };
 
 export function ComponentName({
@@ -293,9 +299,12 @@ Every component must have accompanying documentation:
 ### 6. Platform-Specific Component Rules
 
 #### Web (React + Tailwind)
-- Use CSS-in-JS for token application (styled-components, Tailwind CSS variables, inline styles)
+- Use Tailwind utilities only when they resolve to approved tokens,
+  `@theme` variables, CSS variables, or the existing Tailwind config.
 - Avoid `.css` files with hardcoded values
 - Use `data-*` attributes instead of className combinations
+- Preserve existing component and class conventions unless migration is
+  explicitly in scope.
 
 #### Mobile (Flutter)
 - Use ThemeData extensions that reference token constants
@@ -327,11 +336,13 @@ Every component must have accompanying documentation:
 
 - ✅ Component only uses `designTokens` constants, never hardcoded values
 - ✅ Variant/state mappings are declarative, not conditional
-- ✅ Component has comprehensive test coverage for all variants/states
+- ✅ Component has comprehensive test coverage for all variants/states:
+  default, loading, empty, error, disabled, success
 - ✅ `data-component`, `data-variant`, `data-state` attributes present
 - ✅ TypeDoc comments include design source and token dependencies
 - ✅ Linter passes with no `design-tokens` violations
 - ✅ Component matches hi-fidelity design mockup visually
+- ✅ Existing product styling is preserved unless redesign/rebrand is explicit
 
 ## Integration with Stage 06 Tasks
 

@@ -464,6 +464,57 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/do not guess/);
   });
 
+  it('external-input-handler extracts Design Context and existing theme authority', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'external-input-handler.md'),
+      'utf8',
+    );
+    expect(body).toMatch(/## Design Context/);
+    expect(body).toMatch(/Existing theme authority/);
+    expect(body).toMatch(/Tailwind usage/);
+    expect(body).toMatch(/Redesign requested/);
+    expect(body.toLowerCase()).toMatch(/authoritative/);
+    expect(body.toLowerCase()).toMatch(/redesign\/rebrand/);
+  });
+
+  it('both engines preserve existing UI theme precedence', () => {
+    const drill = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    const audit = fs.readFileSync(
+      path.join(ORCH, 'audit-and-remediate.md'),
+      'utf8',
+    );
+    expect(drill).toMatch(/existing theme is authoritative/i);
+    expect(drill).toMatch(/redesign or rebrand/i);
+    expect(audit).toMatch(/Existing theme authority/);
+    expect(audit).toMatch(/redesign\/rebrand/i);
+  });
+
+  it('revise-outputs includes the UI design quality gate', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'revise-outputs.md'),
+      'utf8',
+    );
+    expect(body).toMatch(/C10 — UI design quality/);
+    expect(body).toMatch(/UI reference source map/);
+    expect(body).toMatch(/ui-reference-source-map\.md/);
+    expect(body).toMatch(/OS capability matrix/);
+    expect(body).toMatch(/accept the design shortcut/);
+  });
+
+  it('drill-down creates central UI reference source maps for greenfield UI', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+    expect(body).toMatch(/ui-reference-source-map\.md/);
+    expect(body).toMatch(/Reference Category/);
+    expect(body).toMatch(/Non-copy Boundary/);
+    expect(body).toMatch(/Mobile OS capability matrix/i);
+  });
+
   it('drill-down Step 1 emits production-readiness baseline epics', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),

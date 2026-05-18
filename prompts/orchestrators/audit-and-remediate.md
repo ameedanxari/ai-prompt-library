@@ -120,6 +120,12 @@ _Audited: <today's ISO date — obtain via `date +%Y-%m-%d`, do not guess>_
 ### Documentation
 - <state of user/developer docs>
 
+### Design system and UI theme
+- **Existing theme authority:** <yes | no | unknown> — <evidence from code/design files>
+- **Tokens and styling:** <token files, Tailwind setup, CSS variables, native theme files, or unknown>
+- **Component library:** <existing primitives/components and paths, or unknown>
+- **UI risks:** <screens/components that drift from the existing style, missing states, missing accessibility, or none observed>
+
 ## Open questions
 - <decisions the user must make before remediation can proceed>
 ```
@@ -198,6 +204,10 @@ only:
   concrete patterns and best practices needed to fix the gap correctly.
   If the needed module set is broad because the gap combines unrelated
   concerns, split the gap/remediation rather than loading the catalog.
+  For UI gaps, load the design-research/design-system modules that match
+  the gap. Existing product UI remediation must preserve the audited
+  theme, tokens, component library, density, typography, and navigation
+  unless the gap or user request explicitly says redesign/rebrand.
 - If the gap maps to a baseline topic (auth, admin/RBAC, observability,
   localization, theming, accessibility, testing, CI/CD, IaC, app-store
   prep, settings/debug, privacy/PII), ALSO load
@@ -242,9 +252,22 @@ instructions for the project. Include:>
 - Concrete acceptance criteria
 - Exact commands to run
 
+### UI design constraints
+Include this section for UI remediation only:
+- Current style source: files/components/tokens inspected in the audit.
+- Existing theme authority: yes unless redesign/rebrand is explicit.
+- UI reference source map: existing product source paths first; external
+  references only for missing patterns and only with a non-copy boundary.
+- Component inventory and token mapping.
+- State matrix: default, loading, empty, error, disabled, success.
+- Responsive, accessibility, and screenshot/visual QA checks.
+
 ### What NOT to do
 - Common mistakes the module warns about
 - Things to avoid touching
+- For existing UI, do not introduce unrelated colors, typography, spacing,
+  navigation patterns, component libraries, or Tailwind conventions without
+  an explicit redesign or migration decision.
 ```
 
 **Example — remediating a missing Xcode target:**

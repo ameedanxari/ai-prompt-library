@@ -31,6 +31,10 @@ cleanup guidance, and any feature that claims to free device space.
    platform-specific source task.
 5. Add deletion confirmation, local-only privacy constraints, and store
    policy acceptance criteria to every destructive cleanup task.
+6. Include an OS capability matrix before implementation for storage,
+   memory, media, and cleanup claims. Each row must name iOS support,
+   Android support, permissions, OS API, fallback behavior, user-facing
+   copy constraints, and store-policy risk.
 
 ## Platform Boundaries
 

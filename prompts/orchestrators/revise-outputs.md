@@ -43,6 +43,7 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C7 — User-story linkage | Applies | Applies |
 | C8 — Platform coverage | Applies | Applies |
 | C9 — Regression against prior pass | Applies if prior revise-report exists | Applies if prior revise-report exists |
+| C10 — UI design quality | Applies when UI tasks exist | Applies when UI remediation exists |
 
 `checks_run` in the report's frontmatter MUST list every check row
 marked "Applies" for the active engine. A revise report that omits an
@@ -85,6 +86,8 @@ closure) and verify each task meets the schema. If any task fails:
 - **Test:** named path or named command.
 - **Closes user story:** present (see `closes_user_story` task field).
 - **Depends on:** justified with a Reason line if not `none`.
+- UI-heavy tasks must include design-system/source-map evidence, token
+  mapping, responsive behavior, accessibility checks, and state coverage.
 
 Any failure triggers `scripts/validate-instantiation.sh` — if it exits
 non-zero, stop here and report. Do NOT proceed to C5 with invalid tasks.
@@ -147,6 +150,39 @@ If any baseline topic is under-covered, surface it with a
 `remaining_issues` entry AND regenerate the affected remediation /
 tasks file via the originating engine's Step 3, scoped to just that
 gap/feature, with the specific rule cited in the regeneration prompt.
+
+### C10 — UI design quality (conditional, both modes)
+
+Run when any task/remediation file is UI-heavy: screen, dashboard,
+chart, graph, component, Tailwind, frontend, mobile app screen, web app
+screen, visual design, or design-system work.
+
+Required checks:
+- UI task includes a UI reference source map, existing-style source map,
+  screen-fidelity matrix reference, or explicit statement that existing
+  product style is authoritative.
+- Greenfield UI-heavy plans without `project-context.md` Design Context
+  include `ui-reference-source-map.md` with the required schema columns:
+  Reference Category, Observed Pattern, Product Decision, Non-copy
+  Boundary, Components Affected, Tokens Affected, States Affected,
+  Responsive Notes, Accessibility Notes.
+- Component inventory and token mapping are present for screen-level UI.
+- State matrix covers default, loading, empty, error, disabled, and success.
+- Dashboard/chart tasks define KPI, filter, chart/table region,
+  tooltip/legend behavior where applicable, plus loading/empty/error states.
+- Tailwind tasks derive styles from tokens, `@theme` variables, CSS
+  variables, or the existing Tailwind config. Hardcoded one-off colors or
+  spacing are violations.
+- Existing-product UI remediation preserves the audited theme unless the
+  task explicitly cites redesign, rebrand, or migration approval.
+- Mobile cleanup/storage/memory tasks include an OS capability matrix with
+  iOS support, Android support, required permissions, OS API, fallback
+  behavior, user-facing copy constraint, and store-policy risk.
+
+Any C10 failure must be regenerated through the originating engine. Do not
+offer an "accept the design shortcut" option. The library cannot proceed to
+execution with generic "make it beautiful" guidance, missing design
+research, missing chart states, or unrelated redesign drift.
 
 ### C6 — External services manifest
 

@@ -30,6 +30,18 @@ FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|
 TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?\s*$'
 
 HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Implementation guidance here|TODO:|TBD)'
+GENERIC_UI_PATTERN='(make it beautiful|beautifully crafted|modern UI|polished UI|nice design|clean design)'
+UI_TASK_PATTERN='(^|[^[:alpha:]])(frontend|screen|dashboard|chart|graph|tailwind|design[ -]system|app screen|web app|mobile app|visual design|ui design|ui surface|ui screen|ui component|ui reference|ui-heavy|component library|component inventory|component system|reusable component)([^[:alpha:]]|$)'
+UI_EVIDENCE_PATTERN='(ui reference source map|reference source map|existing-style source map|existing style source|screen-fidelity|screen fidelity|design-system|design system|component inventory|token mapping|existing product style is authoritative|existing theme authority|current style source)'
+DASHBOARD_PATTERN='(^|[^[:alpha:]])(dashboard|admin panel|analytics console|operational panel)([^[:alpha:]]|$)'
+CHART_PATTERN='(^|[^[:alpha:]])(chart|graph|data visualization|visualization)([^[:alpha:]]|$)'
+TAILWIND_PATTERN='(^|[^[:alpha:]])tailwind([^[:alpha:]]|$)'
+HARDCODED_STYLE_PATTERN='(#[0-9a-fA-F]{3,8}|rgb[a]?\(|hsl[a]?\()'
+TOKEN_STYLE_PATTERN='(token|@theme|var\(--|tailwind\.config|theme variable|css variable|designTokens)'
+UNRELATED_REDESIGN_PATTERN='(new visual language|unrelated visual|replace the existing theme|replace current theme|from scratch visual system|new unrelated palette|new palette)'
+REDESIGN_APPROVAL_PATTERN='(redesign requested|redesign approval|explicit redesign|rebrand|migration approved|user requested redesign|user requested rebrand)'
+MOBILE_CLEANUP_PATTERN='(memory cleanup|storage cleanup|storage cleaner|free up space|photo/video cleanup|phone cleanup|cleanup app)'
+CAPABILITY_MATRIX_PATTERN='(os capability matrix|capability matrix|iOS Support|Android Support|Fallback Behavior|Store Policy Risk|User-Facing Copy Constraint)'
 
 # User-story line. Each task block must contain a **Closes user story:**
 # line that uses the canonical "As a ... I want ... so that ..." form.
@@ -70,6 +82,7 @@ if [ ${#files[@]} -eq 0 ]; then
 fi
 
 fail=0
+ui_design_gate_needed=0
 
 # 0b. Feature→task coverage (C2). If features-*.md files exist, every
 # feature heading inside them must have a matching tasks-<slug>.md on
@@ -540,6 +553,110 @@ for f in "${files[@]}"; do
     fail=1
   fi
 
+  # 4c. UI design-quality gate. UI-heavy task/remediation files must
+  # carry design evidence before implementation begins. This prevents
+  # generic "make it beautiful" prompts, dashboard/chart tasks without
+  # real states, and existing-product work that invents a new theme
+  # instead of following the audited one.
+  if grep -Eiq "$UI_TASK_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+    ui_design_gate_needed=1
+    if ! grep -Eiq "$UI_EVIDENCE_PATTERN" "$f"; then
+      echo "❌ $f: UI-heavy task lacks design evidence"
+      echo "   UI tasks must include a UI reference source map, existing-style"
+      echo "   source map, screen-fidelity reference, component inventory, token"
+      echo "   mapping, or explicit note that existing product style is authoritative."
+      echo "   Do not implement screen-level UI from generic taste alone."
+      fail=1
+    fi
+
+    if grep -Eiq "$GENERIC_UI_PATTERN" "$f"; then
+      echo "❌ $f: generic UI styling language detected"
+      grep -niE "$GENERIC_UI_PATTERN" "$f" | sed 's/^/   /'
+      echo "   Replace generic design adjectives with concrete source-map,"
+      echo "   component, token, state, responsive, and accessibility guidance."
+      fail=1
+    fi
+
+    missing_ui_states=""
+    for state in default loading empty error disabled success; do
+      if ! grep -Eiq "(^|[^[:alpha:]])${state}([^[:alpha:]]|$)" "$f"; then
+        missing_ui_states="$missing_ui_states $state"
+      fi
+    done
+    if [ -n "$missing_ui_states" ]; then
+      echo "❌ $f: UI-heavy task missing required state coverage:$missing_ui_states"
+      echo "   Include a state matrix for default, loading, empty, error,"
+      echo "   disabled, and success before implementation."
+      fail=1
+    fi
+
+    if grep -Eiq "$TAILWIND_PATTERN" "$f" \
+       && grep -Eq "$HARDCODED_STYLE_PATTERN" "$f" \
+       && ! grep -Eiq "$TOKEN_STYLE_PATTERN" "$f"; then
+      echo "❌ $f: Tailwind task appears to use hardcoded styles without token/theme mapping"
+      echo "   Tailwind work must derive colors and spacing from tokens,"
+      echo "   @theme variables, CSS variables, designTokens, or the existing"
+      echo "   tailwind.config setup."
+      fail=1
+    fi
+
+    if grep -Eiq "$UNRELATED_REDESIGN_PATTERN" "$f" \
+       && ! grep -Eiq "$REDESIGN_APPROVAL_PATTERN" "$f"; then
+      echo "❌ $f: existing-product UI task proposes unrelated redesign without approval"
+      grep -niE "$UNRELATED_REDESIGN_PATTERN" "$f" | sed 's/^/   /'
+      echo "   Existing product theming is authoritative unless the user"
+      echo "   explicitly requested redesign, rebrand, or a Tailwind/theme migration."
+      fail=1
+    fi
+  fi
+
+  if grep -Eiq "$DASHBOARD_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+    ui_design_gate_needed=1
+    missing_dashboard_terms=""
+    for term in kpi filter chart table; do
+      if ! grep -Eiq "(^|[^[:alpha:]])${term}([^[:alpha:]]|$)" "$f"; then
+        missing_dashboard_terms="$missing_dashboard_terms $term"
+      fi
+    done
+    for state in loading empty error; do
+      if ! grep -Eiq "(^|[^[:alpha:]])${state}([^[:alpha:]]|$)" "$f"; then
+        missing_dashboard_terms="$missing_dashboard_terms $state"
+      fi
+    done
+    if [ -n "$missing_dashboard_terms" ]; then
+      echo "❌ $f: dashboard task missing required planning terms:$missing_dashboard_terms"
+      echo "   Dashboard tasks must define KPI, filter, chart, table, loading,"
+      echo "   empty, and error behavior."
+      fail=1
+    fi
+  fi
+
+  if grep -Eiq "$CHART_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+    ui_design_gate_needed=1
+    missing_chart_terms=""
+    for term in tooltip legend loading empty error; do
+      if ! grep -Eiq "(^|[^[:alpha:]])${term}([^[:alpha:]]|$)" "$f"; then
+        missing_chart_terms="$missing_chart_terms $term"
+      fi
+    done
+    if [ -n "$missing_chart_terms" ]; then
+      echo "❌ $f: chart/graph task missing required planning terms:$missing_chart_terms"
+      echo "   Chart/graph tasks must define tooltip, legend, loading, empty,"
+      echo "   and error behavior."
+      fail=1
+    fi
+  fi
+
+  if grep -Eiq "$MOBILE_CLEANUP_PATTERN" "$f" && ! grep -Eiq "$CAPABILITY_MATRIX_PATTERN" "$f"; then
+    echo "❌ $f: mobile cleanup/storage task lacks an OS capability matrix"
+    echo "   Storage, memory cleanup, photo/video cleanup, and free-space"
+    echo "   tasks must declare platform support before implementation:"
+    echo "   iOS Support, Android Support, Required Permissions, OS API,"
+    echo "   Fallback Behavior, User-Facing Copy Constraint, and Store Policy Risk."
+    echo "   This prevents promising capabilities the OS or store policy does not allow."
+    fail=1
+  fi
+
 
   # 5. Metadata completeness check (Phase 7 — StorageCleaner field test).
   # Every task file must carry ALL 6 required metadata fields. Missing fields
@@ -914,6 +1031,45 @@ for f in "${files[@]}"; do
     fi
   fi
 done
+
+# 6c-0. Central UI reference source-map check. Greenfield UI-heavy plans
+# need one shared design research artifact unless external input or an
+# existing-project audit already supplied authoritative design context.
+if [ "$ui_design_gate_needed" -eq 1 ]; then
+  has_design_context=0
+  if [ -f "$TARGET_DIR/project-context.md" ] && grep -qE '^## Design Context' "$TARGET_DIR/project-context.md"; then
+    has_design_context=1
+  fi
+  if [ -f "$TARGET_DIR/audit-report.md" ] && grep -qiE 'Design system and UI theme|Existing theme authority' "$TARGET_DIR/audit-report.md"; then
+    has_design_context=1
+  fi
+  if [ -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
+    has_design_context=1
+    missing_cols=""
+    for col in "Reference Category" "Observed Pattern" "Product Decision" "Non-copy Boundary" "Components Affected" "Tokens Affected" "States Affected" "Responsive Notes" "Accessibility Notes"; do
+      if ! grep -q "$col" "$TARGET_DIR/ui-reference-source-map.md"; then
+        missing_cols="$missing_cols '$col'"
+      fi
+    done
+    if [ -n "$missing_cols" ]; then
+      echo "❌ $TARGET_DIR/ui-reference-source-map.md: missing required source-map column(s):$missing_cols"
+      echo "   Greenfield UI source maps must include the full schema so"
+      echo "   task prompts can cite reference category, product decision,"
+      echo "   non-copy boundary, components, tokens, states, responsive notes,"
+      echo "   and accessibility notes."
+      fail=1
+    fi
+  fi
+  if [ "$has_design_context" -eq 0 ]; then
+    echo "❌ UI-heavy plan has no central design context artifact"
+    echo "   Add prompts/outputs/current/ui-reference-source-map.md for"
+    echo "   greenfield UI planning, or provide project-context.md with a"
+    echo "   Design Context / audit-report.md with Existing theme authority."
+    echo "   Task-level UI notes are not enough; the run needs one shared"
+    echo "   design source map before execution."
+    fail=1
+  fi
+fi
 
 # 6c. DAG cycle detection (Phase 7 — StorageCleaner field test).
 # The Depends-on graph must be a DAG. A cycle means the executor would

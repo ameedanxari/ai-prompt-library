@@ -50,6 +50,21 @@ _Derived from:_
 - **Store listing title:** <title, if known>
 - **Default locale:** <locale from user/material; otherwise user's current locale>
 
+## Design Context
+- **UI surfaces present:** <mobile | web | admin | desktop | none observed>
+- **Existing theme authority:** <yes | no | unknown> — <one-line reason>
+- **Design source files inspected:** <paths to mockups, screenshots, CSS/theme files, component libraries, or `none`>
+- **Token/source of truth:** <tokens.json, Tailwind theme CSS, tailwind.config, Figma/design file, CSS variables, native theme file, or unknown>
+- **Tailwind usage:** <v4 theme variables | tailwind.config | utility-only | not present | unknown>
+- **CSS/UI framework:** <Tailwind, shadcn/ui, Material UI, SwiftUI, Jetpack Compose, Flutter, custom CSS, unknown>
+- **Component library:** <existing primitives/components and paths, or unknown>
+- **Typography style:** <font family, scale, weight patterns, or unknown>
+- **Color/style notes:** <brand colors, semantic colors, light/dark mode, density, radius, elevation>
+- **Navigation style:** <sidebar, top nav, tab bar, bottom nav, split nav, unknown>
+- **Visual density:** <compact | standard | spacious | unknown>
+- **Reference/research needs:** <Mobbin-style reference categories needed, or none because existing product style is authoritative>
+- **Redesign requested:** <yes | no> — <quote or source if yes>
+
 ## Entities
 - `EntityName { field: type, field: type }`  # real field names only
 
@@ -91,6 +106,13 @@ Rules for each section:
   flow per role.
 - **Constraints:** only include constraints explicitly stated or strongly
   implied by the material (e.g. HIPAA badge in mockup → HIPAA constraint).
+- **Design Context:** inspect existing source and design material for
+  theming before inventing UI direction. If source code already contains
+  substantial UI, set **Existing theme authority: yes** unless the user
+  explicitly asked for redesign/rebrand. Record Tailwind usage when visible:
+  modern `@theme` CSS variables, legacy `tailwind.config.*`, or utility-only
+  usage. If no UI surface exists, state `none observed` rather than inventing
+  a theme.
 - **Tech Decisions:** only include decisions the user has already made. If
   the material shows Tailwind classes, record "Tailwind CSS". Do NOT invent
   decisions. Include version numbers when visible (e.g. "Node.js 18+").

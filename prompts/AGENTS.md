@@ -61,8 +61,8 @@ restart.
 | Step | Input context | Output |
 |---|---|---|
 | **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) **AND** `brief-keywords.md` (every distinctive brief keyword mapped to `covered` or `out-of-scope` with the epic/reason) |
-| **2 — Expand epic** | one epic block + optional `project-context.md` + the modules needed for that epic | `features-<epic>.md` (6–10 features per epic) |
-| **3 — Atomize feature** | one feature block + optional `project-context.md` + the modules needed for that feature | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from modules) |
+| **2 — Expand epic** | one epic block + optional `project-context.md` + the modules needed for that epic | `features-<epic>.md` (6–10 features per epic), plus `ui-reference-source-map.md` when greenfield UI exists without external Design Context |
+| **3 — Atomize feature** | one feature block + optional `project-context.md` / `ui-reference-source-map.md` + the modules needed for that feature | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from modules) |
 
 ### Gap-closure: audit-and-remediate.md
 
@@ -168,6 +168,7 @@ Under `prompts/outputs/current/`:
 | `epics.md` | drill-down Step 1 (greenfield only) |
 | `brief-keywords.md` | drill-down Step 1 (greenfield only; required companion to `epics.md`) |
 | `features-<epic>.md` | drill-down Step 2 |
+| `ui-reference-source-map.md` | drill-down Step 2 conditional output for greenfield UI-heavy planning when no authoritative Design Context exists |
 | `external-accounts.md` | drill-down Step 2.5 / audit-remediate Step 3.5 |
 | `tasks-<feature>.md` | drill-down Step 3 |
 | `audit-report.md` | audit-remediate Step 1 (gap-closure only) |
@@ -221,8 +222,9 @@ artifact forward; load only the specific slice the current step is expanding.
    After the external-input-handler writes `project-context.md`, proceed
    immediately to Step 1. After Step 1 writes `epics.md` **and**
    `brief-keywords.md`, stop only at the Step 1 checkpoint defined by
-   the engine. After Step 2 writes all `features-*.md` and
-   `external-accounts.md`, stop only at the Step 2 checkpoint. During
+   the engine. After Step 2 writes all `features-*.md`,
+   `external-accounts.md`, and any required `ui-reference-source-map.md`,
+   stop only at the Step 2 checkpoint. During
    Step 3, stop at the engine's task-generation checkpoints. Do not add
    extra ad hoc prompts, and do not bypass a checkpoint that says to
    wait for the user.

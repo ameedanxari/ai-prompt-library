@@ -42,4 +42,14 @@ describe('module-selection-index', () => {
       `missing modules:\n${missing.join('\n')}`,
     ).toEqual([]);
   });
+
+  it('indexes design research, dashboard, data-viz, and Tailwind modules', () => {
+    expect(body).toMatch(/design-research\/mobbin-reference-intake\.md/);
+    expect(body).toMatch(/design-research\/ui-reference-source-map\.md/);
+    expect(body).toMatch(/design-system\/dashboard-screen-patterns\.md/);
+    expect(body).toMatch(/design-system\/data-visualization-system\.md/);
+    expect(body).toMatch(/design-system\/native-visual-effects-and-motion\.md/);
+    expect(body).toMatch(/technology-stacks\/tailwind-css\.md/);
+    expect(body).toMatch(/technology-stacks\/mobile-os-capability-matrix\.md/);
+  });
 });

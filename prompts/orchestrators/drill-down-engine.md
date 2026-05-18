@@ -49,6 +49,7 @@ prompts/outputs/current/
 ├── project-context.md           (optional, from external-input-handler)
 ├── epics.md                     (Step 1)
 ├── features-<epic-slug>.md      (Step 2, one per epic)
+├── ui-reference-source-map.md   (Step 2.6, when greenfield UI exists)
 └── tasks-<feature-slug>.md      (Step 3, one per feature)
 ```
 
@@ -247,6 +248,17 @@ For each epic in Step 1's output, start a **fresh context** containing only:
   is to produce high-quality features that serve the end user, not to
   satisfy an artificial one-module constraint.
 
+  For UI epics or features (screens, dashboards, charts, app flows,
+  component systems, Tailwind, visual redesign, admin panels), also load
+  the relevant design-research/design-system modules. Greenfield UI must
+  include design reference research before screen-level implementation.
+  Existing product UI must preserve the `project-context.md` Design
+  Context as authoritative unless the user explicitly requested redesign
+  or rebrand.
+  If UI features exist and no `project-context.md` Design Context exists,
+  plan to generate `ui-reference-source-map.md` after Step 2 so task
+  generation has a central design-research artifact.
+
   If the module-selection-index has no matching entry for a needed
   capability, write a high-quality feature specification from first
   principles and note the gap — the library should be extended to
@@ -361,17 +373,66 @@ services required — the project runs with local-only dependencies." The
 file must always exist so downstream consumers (README generator,
 executor's env-var check, CI setup) can rely on its presence.
 
+### Generate UI reference source map (conditional final action of Step 2)
+
+After `external-accounts.md`, inspect all `features-*.md` files. If any
+feature introduces or materially changes screens, dashboards, charts,
+mobile app flows, web app screens, components, Tailwind UI, visual design,
+or design-system work, and there is no authoritative Design Context from
+`project-context.md`, generate:
+
+`prompts/outputs/current/ui-reference-source-map.md`
+
+This artifact is required for greenfield UI-heavy planning. It must use
+this schema:
+
+```markdown
+# UI Reference Source Map
+
+## Product Design Direction
+- **Existing style authority:** no
+- **Design intent:** <project-specific visual/interaction direction>
+- **Primary surfaces:** <mobile | web | admin | desktop>
+- **Non-copy rule:** references are pattern inspiration only
+
+## Reference Map
+| Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
+|---|---|---|---|---|---|---|---|---|
+| <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+
+## Open Design Risks
+- <risk or `none`>
+```
+
+Rules:
+- Do not claim exact Mobbin/Figma/source references unless they were
+  actually supplied or inspected.
+- Use product-specific reference categories such as "mobile photo review
+  swipe flows" rather than generic "modern UI".
+- Every row must include a non-copy boundary.
+- Every row must include components, tokens, all six states, responsive
+  notes, and accessibility notes.
+- For native visual effects such as liquid glass, distinguish iOS and
+  Android treatment instead of forcing pixel parity.
+
+If `project-context.md` exists and contains a Design Context with
+`Existing theme authority: yes`, do not generate a competing greenfield
+source map. Existing product style wins.
+
 ---
 
 ### ⏸ CHECKPOINT — Features review
 
-After writing all `features-*.md` files AND `external-accounts.md`,
+After writing all `features-*.md` files, `external-accounts.md`, and
+`ui-reference-source-map.md` when required,
 **STOP and present a summary to the user**. Show:
 
 1. Number of feature files written, grouped by epic.
 2. Total feature count across all epics.
 3. External services summary (count + names, or "none required").
-4. The line: "Planning progress: Step 2 of 3 complete. N features across
+4. UI reference source-map status (`created`, `not needed`, or
+   `covered by existing Design Context`).
+5. The line: "Planning progress: Step 2 of 3 complete. N features across
    M epics are ready for task expansion. Say **Continue** to generate
    atomic task prompts, or give feedback to adjust.
    **Recommended:** Start a NEW CHAT for the next step to ensure a fresh
@@ -415,12 +476,28 @@ For each feature, start a **fresh context** containing:
 
 - The single feature block (name, description, data model, API contract)
 - `project-context.md` if it exists
+- `ui-reference-source-map.md` if it exists and the feature is UI-heavy
 - **One or more modules** from `.ai-prompts/prompts/modules/` selected via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md`. Modules ARE
   the source of the prompt's quality — they contain the patterns, code
   examples, security considerations, and testing approaches that make
   this library's output better than what an AI would produce from
   scratch. Load as many as the feature requires for quality.
+
+  For UI features, always include the applicable design-research and
+  design-system modules in addition to stack/domain modules. Examples:
+  app screens need reference intake + screen fidelity + component
+  sequencing; dashboards need dashboard patterns + data visualization;
+  Tailwind web work needs the Tailwind CSS stack module. If
+  `project-context.md` says an existing theme is authoritative, task
+  prompts must extend that theme and must not introduce unrelated visual
+  language unless the brief explicitly requested redesign or rebrand.
+  For native visual effects requests ("liquid glass", material surfaces,
+  aesthetic animations), load the native visual effects/motion module and
+  produce platform-specific iOS and Android treatment. For mobile cleanup,
+  storage, memory, or OS-controlled features, load the mobile OS
+  capability matrix module and include a capability matrix before
+  implementation.
 
 If the module-selection-index has no matching entry for this feature,
 write a high-quality prompt from first principles. The library is a
@@ -488,6 +565,21 @@ into project-specific instructions. Include:>
 - What to test and how
 - Known reference values for calibration
 - Edge cases to cover
+
+### UI design plan
+Include this section for UI features only:
+- UI reference source map: existing product source paths and/or 3-5
+  Mobbin-style reference categories, with a non-copy boundary for each.
+- Component inventory: primitives and composed components required.
+- Token mapping: colors, typography, spacing, radius, elevation, motion,
+  and chart colors if applicable.
+- State matrix: default, loading, empty, error, disabled, success.
+- Responsive behavior: mobile, tablet, desktop, and large desktop.
+- Accessibility and screenshot/visual QA criteria.
+- Mobile OS capability matrix for storage, memory cleanup, media access,
+  or other OS-controlled features: iOS support, Android support,
+  permissions, OS API, fallback behavior, user-facing copy constraint,
+  and store-policy risk.
 
 ### What NOT to do
 - Common mistakes the module warns about
@@ -702,6 +794,13 @@ Do **not** declare prompts ready if any of these are true:
   feature name). It must provide a concrete delta, not a category of work.
 - A prompt could describe any project — it's not specific to THIS
   project's entities, platform, or architecture.
+- A UI prompt lacks a UI reference source map or an explicit note that
+  existing product style is authoritative.
+- A dashboard/chart prompt lacks KPI/filter/chart/table/tooltip/legend
+  planning or omits loading, empty, and error states.
+- A Tailwind prompt introduces one-off hardcoded colors/spacing rather
+  than deriving styles from tokens, `@theme` variables, CSS variables, or
+  the existing Tailwind configuration.
 
 If any stop condition trips, reload the module and regenerate the
 prompt before the validation gate below.
