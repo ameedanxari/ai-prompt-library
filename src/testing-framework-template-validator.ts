@@ -6,11 +6,23 @@ export interface TestingFrameworkTemplateStructure {
   hasTestDataManagementTemplate: boolean;
   hasPerformanceTestingTemplate: boolean;
   hasSecurityTestingTemplate: boolean;
+  hasMobileScreenshotUITestingTemplate: boolean;
   allTemplatesHaveRequiredSections: boolean;
   templatesHaveImplementationPatterns: boolean;
   templatesHaveConfigurationExamples: boolean;
   templatesHaveIntegrationPoints: boolean;
   templatesHaveSecurityConsiderations: boolean;
+}
+
+export interface MobileScreenshotUITestingTemplateStructure {
+  hasTemplate: boolean;
+  hasIOSXCUITestHarness: boolean;
+  hasAndroidInstrumentationHarness: boolean;
+  hasRunnerOrchestration: boolean;
+  hasLocalizationMatrix: boolean;
+  hasArtifactDiagnostics: boolean;
+  hasProjectTemplateAssets: boolean;
+  hasSecurityConsiderations: boolean;
 }
 
 export interface QualityAssuranceTemplateStructure {
@@ -50,7 +62,8 @@ export class TestingFrameworkTemplateValidator {
       'test-automation.md',
       'test-data-management.md',
       'performance-testing.md',
-      'security-testing.md'
+      'security-testing.md',
+      'mobile-screenshot-ui-testing.md'
     ];
 
     const templateExists = (filename: string) =>
@@ -60,6 +73,7 @@ export class TestingFrameworkTemplateValidator {
     const hasTestDataManagementTemplate = templateExists('test-data-management.md');
     const hasPerformanceTestingTemplate = templateExists('performance-testing.md');
     const hasSecurityTestingTemplate = templateExists('security-testing.md');
+    const hasMobileScreenshotUITestingTemplate = templateExists('mobile-screenshot-ui-testing.md');
 
     let allTemplatesHaveRequiredSections = true;
     let templatesHaveImplementationPatterns = true;
@@ -99,6 +113,7 @@ export class TestingFrameworkTemplateValidator {
       hasTestDataManagementTemplate,
       hasPerformanceTestingTemplate,
       hasSecurityTestingTemplate,
+      hasMobileScreenshotUITestingTemplate,
       allTemplatesHaveRequiredSections,
       templatesHaveImplementationPatterns,
       templatesHaveConfigurationExamples,
@@ -193,6 +208,39 @@ export class TestingFrameworkTemplateValidator {
       hasCodeExamples: this.hasCodeExamples(content),
       hasCoreComponents: this.hasSection(content, 'Core Components') ||
         this.hasSection(content, 'Components')
+    };
+  }
+
+  validateMobileScreenshotUITestingTemplate(): MobileScreenshotUITestingTemplateStructure {
+    const templatePath = join(this.testingModulePath, 'mobile-screenshot-ui-testing.md');
+    const hasTemplate = existsSync(templatePath);
+    const content = hasTemplate ? readFileSync(templatePath, 'utf-8') : '';
+    const lower = content.toLowerCase();
+
+    return {
+      hasTemplate,
+      hasIOSXCUITestHarness: lower.includes('xcuitest') &&
+        lower.includes('xcuiscreen') &&
+        lower.includes('launchenvironment'),
+      hasAndroidInstrumentationHarness: lower.includes('android') &&
+        lower.includes('instrumentation') &&
+        lower.includes('compose') &&
+        lower.includes('additionaltestoutputdir'),
+      hasRunnerOrchestration: lower.includes('simulator') &&
+        lower.includes('emulator') &&
+        lower.includes('run lock'),
+      hasLocalizationMatrix: lower.includes('locale') &&
+        lower.includes('rtl') &&
+        lower.includes('localization key parity'),
+      hasArtifactDiagnostics: lower.includes('artifact') &&
+        lower.includes('debug') &&
+        lower.includes('screenshot_path'),
+      hasProjectTemplateAssets: lower.includes('project-templates/testing/mobile-screenshot-ui') &&
+        lower.includes('run-mobile-screenshot-tests.sh') &&
+        lower.includes('storescreenshottest.kt.template'),
+      hasSecurityConsiderations: this.hasSecurityConsiderations(content) &&
+        lower.includes('production networking') &&
+        lower.includes('secrets')
     };
   }
 
@@ -309,6 +357,7 @@ export class TestingFrameworkTemplateValidator {
     hasUnitTesting: boolean;
     hasIntegrationTesting: boolean;
     hasE2ETesting: boolean;
+    hasNativeMobileScreenshotTesting: boolean;
     hasPerformanceTesting: boolean;
     hasSecurityTesting: boolean;
     hasTestDataGeneration: boolean;
@@ -324,6 +373,7 @@ export class TestingFrameworkTemplateValidator {
     let hasUnitTesting = false;
     let hasIntegrationTesting = false;
     let hasE2ETesting = false;
+    let hasNativeMobileScreenshotTesting = false;
     let hasPerformanceTesting = false;
     let hasSecurityTesting = false;
     let hasTestDataGeneration = false;
@@ -336,6 +386,15 @@ export class TestingFrameworkTemplateValidator {
       hasUnitTesting = content.includes('unit') && content.includes('test');
       hasIntegrationTesting = content.includes('integration') && content.includes('test');
       hasE2ETesting = (content.includes('e2e') || content.includes('end-to-end')) && content.includes('test');
+      hasNativeMobileScreenshotTesting = content.includes('native mobile screenshot') &&
+        content.includes('mobile-screenshot-ui-testing.md');
+    }
+
+    const mobileScreenshotPath = join(this.testingModulePath, 'mobile-screenshot-ui-testing.md');
+    if (existsSync(mobileScreenshotPath)) {
+      const content = readFileSync(mobileScreenshotPath, 'utf-8').toLowerCase();
+      hasNativeMobileScreenshotTesting = hasNativeMobileScreenshotTesting ||
+        (content.includes('xcuitest') && content.includes('android') && content.includes('screenshot'));
     }
 
     if (existsSync(testDataPath)) {
@@ -360,6 +419,7 @@ export class TestingFrameworkTemplateValidator {
       hasUnitTesting,
       hasIntegrationTesting,
       hasE2ETesting,
+      hasNativeMobileScreenshotTesting,
       hasPerformanceTesting,
       hasSecurityTesting,
       hasTestDataGeneration,

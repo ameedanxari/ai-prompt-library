@@ -326,6 +326,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Chaos engineering | `prompts/modules/testing/chaos-engineering.md` |
 | Integration test coverage (backend API) | `prompts/modules/testing/test-automation.md` |
 | Accessibility audit (WCAG) | `prompts/modules/testing/accessibility-testing.md` |
+| Native mobile screenshot capture / app-store screenshots | `prompts/modules/testing/mobile-screenshot-ui-testing.md` |
 | Mobile app store submission (iOS) | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
 | Mobile app store submission (Android) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
 | Beta / TestFlight / internal testing | `prompts/modules/testing/test-automation.md` |
@@ -464,6 +465,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Intent | Module |
 |---|---|
 | Test automation strategy | `prompts/modules/testing/test-automation.md` |
+| Native mobile UI screenshot testing (iOS XCUITest / Android instrumentation) | `prompts/modules/testing/mobile-screenshot-ui-testing.md` |
 | Property-based tests | `prompts/modules/testing/property-based-testing.md` |
 | Centralized mock data | `prompts/modules/testing/centralized-mock-data.md` |
 | Fake backend generator (local API doubles) | `prompts/modules/testing/fake-backend-generator.md` |

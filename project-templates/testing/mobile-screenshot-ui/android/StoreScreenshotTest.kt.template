@@ -1,0 +1,168 @@
+package com.example.app.screenshots
+
+import android.content.Context
+import android.content.res.Configuration
+import android.graphics.Bitmap
+import android.os.Build
+import android.text.TextUtils
+import android.view.ContextThemeWrapper
+import androidx.activity.ComponentActivity
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asAndroidBitmap
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.test.captureToImage
+import androidx.compose.ui.test.junit4.createAndroidComposeRule
+import androidx.compose.ui.test.onRoot
+import androidx.compose.ui.unit.LayoutDirection
+import androidx.compose.ui.unit.dp
+import androidx.core.view.drawToBitmap
+import androidx.test.ext.junit.runners.AndroidJUnit4
+import androidx.test.filters.LargeTest
+import androidx.test.platform.app.InstrumentationRegistry
+import org.junit.Assert.assertTrue
+import org.junit.Rule
+import org.junit.Test
+import org.junit.runner.RunWith
+import java.io.File
+import java.io.FileOutputStream
+import java.util.Locale
+
+@LargeTest
+@RunWith(AndroidJUnit4::class)
+class StoreScreenshotTest {
+    @get:Rule
+    val composeRule = createAndroidComposeRule<ComponentActivity>()
+
+    private data class Scenario(
+        val id: String,
+        val locale: String,
+        val screenTitle: String,
+        val body: String,
+        val isDark: Boolean = false
+    )
+
+    private val baseScenarios = listOf(
+        Scenario(
+            id = "dashboard_populated",
+            locale = "en",
+            screenTitle = "Storage dashboard",
+            body = "3.4 GB ready to clean"
+        ),
+        Scenario(
+            id = "dashboard_populated",
+            locale = "ar",
+            screenTitle = "لوحة التخزين",
+            body = "٣٫٤ غيغابايت جاهزة للتنظيف"
+        ),
+        Scenario(
+            id = "dashboard_populated",
+            locale = "ur",
+            screenTitle = "اسٹوریج ڈیش بورڈ",
+            body = "3.4 GB صاف کرنے کے لیے تیار"
+        )
+    )
+
+    private val scenarios = baseScenarios.flatMap { listOf(it, it.copy(isDark = true)) }
+    private var localeContext: Context? = null
+
+    @Test
+    fun captureStoreScreenshots() {
+        val args = InstrumentationRegistry.getArguments()
+        val localeFilter = args.getString("locale") ?: System.getProperty("locale")
+        val device = (System.getenv("SCREENSHOT_DEVICE") ?: Build.MODEL ?: "android")
+            .replace(" ", "_")
+        val outputRoot = args.getString("additionalTestOutputDir")
+            ?: System.getenv("SCREENSHOT_OUTPUT_DIR")
+            ?: composeRule.activity.getExternalFilesDir("screenshots")?.absolutePath
+            ?: composeRule.activity.filesDir.resolve("screenshots").absolutePath
+        val activeScenarios = scenarios.filter { localeFilter == null || it.locale == localeFilter }
+        assertTrue("No screenshot scenarios selected", activeScenarios.isNotEmpty())
+
+        val current = mutableStateOf(activeScenarios.first())
+        applyLocale(current.value.locale, current.value.isDark)
+
+        composeRule.setContent {
+            val scenario = current.value
+            val direction = if (isRtl(scenario.locale)) LayoutDirection.Rtl else LayoutDirection.Ltr
+            val context = localeContext ?: composeRule.activity
+
+            MaterialTheme {
+                CompositionLocalProvider(
+                    LocalLayoutDirection provides direction,
+                    LocalContext provides context
+                ) {
+                    Surface(modifier = Modifier.fillMaxSize()) {
+                        Column(modifier = Modifier.padding(24.dp)) {
+                            Text(text = scenario.screenTitle, style = MaterialTheme.typography.headlineMedium)
+                            Text(text = scenario.body, style = MaterialTheme.typography.bodyLarge)
+                        }
+                    }
+                }
+            }
+        }
+
+        activeScenarios.forEach { scenario ->
+            applyLocale(scenario.locale, scenario.isDark)
+            current.value = scenario
+            composeRule.waitForIdle()
+
+            val suffix = if (scenario.isDark) "_dark" else ""
+            val file = File(outputRoot, "android/$device/${scenario.locale}/${scenario.id}$suffix.png")
+            file.parentFile?.mkdirs()
+            saveBitmap(captureBitmap(), file)
+            assertTrue("Screenshot was not written: ${file.absolutePath}", file.isFile && file.length() > 0)
+            println("SCREENSHOT_PATH: ${file.absolutePath}")
+        }
+    }
+
+    private fun captureBitmap(): Bitmap {
+        return try {
+            composeRule.onRoot().captureToImage().asAndroidBitmap()
+        } catch (error: Throwable) {
+            println("UITEST_DIAGNOSTIC: platform=android failure_class=capture_retry observed_state=${error.message}")
+            composeRule.runOnIdle {
+                composeRule.activity.findViewById<android.view.View>(android.R.id.content).drawToBitmap()
+            }
+        }
+    }
+
+    private fun saveBitmap(bitmap: Bitmap, file: File) {
+        FileOutputStream(file).use { stream ->
+            bitmap.compress(Bitmap.CompressFormat.PNG, 100, stream)
+        }
+    }
+
+    private fun applyLocale(tag: String, isDark: Boolean) {
+        val locale = Locale.forLanguageTag(tag)
+        Locale.setDefault(locale)
+        composeRule.activityRule.scenario.onActivity { activity ->
+            val config = Configuration(activity.resources.configuration)
+            config.setLocale(locale)
+            config.setLayoutDirection(locale)
+            config.uiMode = (config.uiMode and Configuration.UI_MODE_NIGHT_MASK.inv()) or
+                if (isDark) Configuration.UI_MODE_NIGHT_YES else Configuration.UI_MODE_NIGHT_NO
+            localeContext = ContextThemeWrapper(activity, activity.theme).apply {
+                applyOverrideConfiguration(config)
+            }
+            activity.window.decorView.layoutDirection =
+                if (TextUtils.getLayoutDirectionFromLocale(locale) == android.view.View.LAYOUT_DIRECTION_RTL) {
+                    android.view.View.LAYOUT_DIRECTION_RTL
+                } else {
+                    android.view.View.LAYOUT_DIRECTION_LTR
+                }
+        }
+    }
+
+    private fun isRtl(locale: String): Boolean {
+        return locale.lowercase() in setOf("ar", "ur", "fa", "he")
+    }
+}

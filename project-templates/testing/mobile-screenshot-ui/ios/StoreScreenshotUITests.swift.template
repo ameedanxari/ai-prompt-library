@@ -1,0 +1,83 @@
+import XCTest
+
+final class StoreScreenshotUITests: LocalizedScreenshotUITestCase {
+    override class var supportedLanguages: [String] { ["en", "ar", "ur"] }
+
+    private struct Scenario {
+        let id: String
+        let requiredSelector: String
+        let launchEnvironment: [String: String]
+    }
+
+    private let scenarios: [Scenario] = [
+        Scenario(
+            id: "dashboard_populated",
+            requiredSelector: "dashboardTitle",
+            launchEnvironment: [
+                "UITEST_FIXTURE": "dashboard_populated",
+                "UITEST_DISABLE_NETWORK": "1"
+            ]
+        ),
+        Scenario(
+            id: "settings_main",
+            requiredSelector: "settingsTitle",
+            launchEnvironment: [
+                "UITEST_FIXTURE": "settings_authenticated",
+                "UITEST_DISABLE_NETWORK": "1"
+            ]
+        ),
+        Scenario(
+            id: "error_recovery",
+            requiredSelector: "retryButton",
+            launchEnvironment: [
+                "UITEST_FIXTURE": "network_error",
+                "UITEST_DISABLE_NETWORK": "1"
+            ]
+        )
+    ]
+
+    func testStoreScreenshots() throws {
+        for scenario in scenarios {
+            try captureScenario(scenario, theme: "light")
+            try captureScenario(scenario, theme: "dark")
+        }
+    }
+
+    private func captureScenario(_ scenario: Scenario, theme: String) throws {
+        launchApp(
+            scenario: scenario.id,
+            theme: theme,
+            environment: scenario.launchEnvironment
+        )
+
+        let requiredElement = app.descendants(matching: .any)
+            .matching(identifier: scenario.requiredSelector)
+            .firstMatch
+        assertExists(
+            requiredElement,
+            selector: scenario.requiredSelector,
+            scenario: scenario.id
+        )
+        assertNoUnexpectedProductionState(scenario: scenario.id)
+        saveScreenshot(name: scenario.id, theme: theme)
+    }
+
+    private func assertNoUnexpectedProductionState(scenario: String) {
+        let forbiddenLabels = [
+            "live server",
+            "production",
+            "access token",
+            "secret"
+        ]
+        let debug = app.debugDescription.lowercased()
+        for label in forbiddenLabels where debug.contains(label) {
+            emitDiagnostic(
+                scenario: scenario,
+                selector: label,
+                failureClass: "sensitive_data_visible",
+                observedState: "forbidden label found in UI tree"
+            )
+            XCTFail("Screenshot UI contains forbidden text: \(label)")
+        }
+    }
+}

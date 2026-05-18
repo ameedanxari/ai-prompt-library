@@ -39,6 +39,7 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
           expect(structure.hasTestDataManagementTemplate).toBe(true);
           expect(structure.hasPerformanceTestingTemplate).toBe(true);
           expect(structure.hasSecurityTestingTemplate).toBe(true);
+          expect(structure.hasMobileScreenshotUITestingTemplate).toBe(true);
 
           // Property assertion: All templates have required structural elements
           expect(structure.allTemplatesHaveRequiredSections).toBe(true);
@@ -57,7 +58,8 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
           const allTemplatesExist = structure.hasTestAutomationTemplate &&
             structure.hasTestDataManagementTemplate &&
             structure.hasPerformanceTestingTemplate &&
-            structure.hasSecurityTestingTemplate;
+            structure.hasSecurityTestingTemplate &&
+            structure.hasMobileScreenshotUITestingTemplate;
 
           expect(allTemplatesExist).toBe(true);
 
@@ -74,7 +76,7 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
     fc.assert(
       fc.property(
         fc.record({
-          templateOrder: fc.shuffledSubarray(['test-automation.md', 'test-data-management.md', 'performance-testing.md', 'security-testing.md'], { minLength: 1, maxLength: 4 }),
+          templateOrder: fc.shuffledSubarray(['test-automation.md', 'test-data-management.md', 'performance-testing.md', 'security-testing.md', 'mobile-screenshot-ui-testing.md'], { minLength: 1, maxLength: 5 }),
           contentValidation: fc.constantFrom('structure', 'patterns', 'integration_points', 'security')
         }),
         (testCase) => {
@@ -119,6 +121,7 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
           expect(structure1.hasTestDataManagementTemplate).toBe(structure2.hasTestDataManagementTemplate);
           expect(structure1.hasPerformanceTestingTemplate).toBe(structure2.hasPerformanceTestingTemplate);
           expect(structure1.hasSecurityTestingTemplate).toBe(structure2.hasSecurityTestingTemplate);
+          expect(structure1.hasMobileScreenshotUITestingTemplate).toBe(structure2.hasMobileScreenshotUITestingTemplate);
 
           expect(requirements1.requirement_18_1).toBe(requirements2.requirement_18_1);
           expect(requirements1.requirement_18_2).toBe(requirements2.requirement_18_2);
@@ -158,6 +161,7 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
             case 'integration_testing':
             case 'e2e_testing':
               expect(structure.hasTestAutomationTemplate).toBe(true);
+              expect(features.hasNativeMobileScreenshotTesting).toBe(true);
               break;
             case 'performance_testing':
               expect(structure.hasPerformanceTestingTemplate).toBe(true);
@@ -231,6 +235,36 @@ describe('Property-Based Tests: Testing Framework Template Completeness', () => 
 
           // Property: All templates should have implementation patterns for any depth
           expect(structure.templatesHaveImplementationPatterns).toBe(true);
+
+          return true;
+        }
+      ),
+      { numRuns: 100 }
+    );
+  });
+
+  it('Property 18 (Mobile): Native mobile screenshot UI testing template is complete', () => {
+    fc.assert(
+      fc.property(
+        fc.record({
+          platform: fc.constantFrom('ios', 'android'),
+          matrixAxis: fc.constantFrom('locale', 'device', 'theme', 'scenario'),
+          artifactConcern: fc.constantFrom('debug', 'baseline', 'dimensions', 'localization')
+        }),
+        () => {
+          const validator = new TestingFrameworkTemplateValidator(testingModulePath);
+          const mobile = validator.validateMobileScreenshotUITestingTemplate();
+          const features = validator.validateTestingFeatureCoverage();
+
+          expect(mobile.hasTemplate).toBe(true);
+          expect(mobile.hasIOSXCUITestHarness).toBe(true);
+          expect(mobile.hasAndroidInstrumentationHarness).toBe(true);
+          expect(mobile.hasRunnerOrchestration).toBe(true);
+          expect(mobile.hasLocalizationMatrix).toBe(true);
+          expect(mobile.hasArtifactDiagnostics).toBe(true);
+          expect(mobile.hasProjectTemplateAssets).toBe(true);
+          expect(mobile.hasSecurityConsiderations).toBe(true);
+          expect(features.hasNativeMobileScreenshotTesting).toBe(true);
 
           return true;
         }

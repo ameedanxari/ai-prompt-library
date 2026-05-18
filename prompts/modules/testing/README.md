@@ -16,8 +16,9 @@ Comprehensive testing modules for advanced testing strategies including chaos en
 8. **Validate Contracts**: Use mock-validation.md to ensure API contract compliance
 9. **Generate Fake Backend**: Use fake-backend-generator.md to create lightweight test server
 10. **Integrate Debug Menu**: Use debug-menu-integration.md for environment switching
-11. **Set Up Test Runners**: Configure test automation and CI/CD integration
-12. **Monitor Test Coverage**: Track coverage metrics and identify gaps
+11. **Capture Native Mobile Screenshots**: Use mobile-screenshot-ui-testing.md for iOS and Android UI-test screenshot matrices
+12. **Set Up Test Runners**: Configure test automation and CI/CD integration
+13. **Monitor Test Coverage**: Track coverage metrics and identify gaps
 
 ## Examples
 
@@ -161,6 +162,7 @@ class EnhancedPropertyBasedTesting {
 - **chaos-engineering.md** - Comprehensive chaos engineering with failure injection and resilience testing
 - **accessibility-testing.md** - Automated accessibility testing with WCAG compliance and screen reader validation
 - **cross-browser-testing.md** - Cross-browser compatibility testing with visual regression and performance consistency
+- **mobile-screenshot-ui-testing.md** - Native iOS and Android screenshot UI testing with locale, device, theme, artifact, and debug orchestration
 - **performance-testing.md** - Intelligent performance testing orchestration with AI-driven analysis and optimization
 - **security-testing.md** - Advanced security testing automation with AI threat detection and automated penetration testing
 
@@ -176,6 +178,7 @@ class EnhancedPropertyBasedTesting {
 
 ### Test Infrastructure and Automation
 - **test-automation.md** - Advanced test automation with AI-driven test generation
+- **mobile-screenshot-ui-testing.md** - App Store / Play Store screenshot capture through native UI tests and deterministic fixtures
 - **ci-cd-testing.md** - CI/CD integration with comprehensive testing pipelines
 - **property-based-testing.md** - Enhanced property-based testing with intelligent test case generation
 - **quality-metrics.md** - Comprehensive quality metrics and reporting
@@ -193,6 +196,7 @@ Advanced testing modules ensure:
 - **AI-Driven Analysis**: Machine learning integration for intelligent test generation and analysis
 - **Continuous Validation**: Real-time testing and monitoring with adaptive responses
 - **Cross-Platform Consistency**: Unified testing approach across web, mobile, and desktop platforms
+- **Native Mobile Release Quality**: iOS and Android screenshot testing with localization, RTL, theme, device, and artifact validation
 - **Security-First Approach**: Integrated security testing throughout the development lifecycle
 - **Accessibility Compliance**: Automated accessibility validation with inclusive design principles
 - **Performance Optimization**: Intelligent performance testing with automated optimization recommendations

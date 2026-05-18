@@ -1,0 +1,144 @@
+import XCTest
+
+class LocalizedScreenshotUITestCase: XCTestCase {
+    class var supportedLanguages: [String] { ["en"] }
+
+    var app: XCUIApplication!
+    private(set) var currentLanguage = "en"
+
+    override func setUpWithError() throws {
+        try super.setUpWithError()
+        continueAfterFailure = false
+        app = XCUIApplication()
+    }
+
+    override func tearDownWithError() throws {
+        if app?.state == .runningForeground || app?.state == .runningBackground {
+            app.terminate()
+        }
+        app = nil
+        try super.tearDownWithError()
+    }
+
+    override func invokeTest() {
+        let previousLanguage = ProcessInfo.processInfo.environment["FORCED_LANGUAGE"]
+        defer {
+            if let previousLanguage {
+                setenv("FORCED_LANGUAGE", previousLanguage, 1)
+            } else {
+                unsetenv("FORCED_LANGUAGE")
+            }
+        }
+
+        let explicit = ProcessInfo.processInfo.environment["UITEST_LANGUAGES"]?
+            .split(separator: ",")
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines).lowercased() }
+            .filter { !$0.isEmpty }
+        let languages = (explicit?.isEmpty == false) ? explicit! : Self.supportedLanguages
+
+        for language in languages {
+            currentLanguage = language
+            setenv("FORCED_LANGUAGE", language, 1)
+            super.invokeTest()
+        }
+    }
+
+    func launchApp(
+        scenario: String,
+        theme: String,
+        environment overrides: [String: String] = [:]
+    ) {
+        app.terminate()
+        app.launchArguments = ["-UI-Testing", "-Language", currentLanguage]
+
+        if theme.lowercased() == "dark" {
+            app.launchArguments += ["-AppleInterfaceStyle", "Dark", "-uiuserinterfacestyle", "Dark"]
+        }
+
+        app.launchEnvironment = [
+            "FORCED_LANGUAGE": currentLanguage,
+            "UITEST_SCENARIO": scenario,
+            "UITEST_DISABLE_NETWORK": "1",
+            "SCREENSHOT_THEME": theme.lowercased()
+        ].merging(overrides) { _, new in new }
+
+        app.launch()
+    }
+
+    @discardableResult
+    func assertExists(
+        _ element: XCUIElement,
+        selector: String,
+        scenario: String,
+        timeout: TimeInterval = 5,
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) -> Bool {
+        let exists = element.waitForExistence(timeout: timeout)
+        guard exists else {
+            emitDiagnostic(
+                scenario: scenario,
+                selector: selector,
+                failureClass: "selector_mismatch",
+                observedState: app.debugDescription
+            )
+            XCTFail("Missing required screenshot element: \(selector)", file: file, line: line)
+            return false
+        }
+        return true
+    }
+
+    func saveScreenshot(name: String, theme: String) {
+        let screenshot = XCUIScreen.main.screenshot()
+        let outputRoot = ProcessInfo.processInfo.environment["SCREENSHOT_OUTPUT_DIR"] ?? "/tmp/mobile-screenshots"
+        let device = ProcessInfo.processInfo.environment["SCREENSHOT_DEVICE"] ??
+            ProcessInfo.processInfo.environment["SIMULATOR_DEVICE_NAME"] ??
+            "ios-simulator"
+        let safeDevice = device.replacingOccurrences(of: " ", with: "_")
+        let suffix = theme.lowercased() == "dark" ? "_dark" : ""
+        let filePath = "\(outputRoot)/ios/\(safeDevice)/\(currentLanguage)/\(name)\(suffix).png"
+        let fileURL = URL(fileURLWithPath: filePath)
+
+        do {
+            try FileManager.default.createDirectory(
+                at: fileURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            try screenshot.pngRepresentation.write(to: fileURL, options: .atomic)
+            let attachment = XCTAttachment(screenshot: screenshot)
+            attachment.name = "\(name)\(suffix)"
+            attachment.lifetime = .keepAlways
+            add(attachment)
+            print("SCREENSHOT_PATH: \(filePath)")
+        } catch {
+            emitDiagnostic(
+                scenario: name,
+                selector: "XCUIScreen.main",
+                failureClass: "capture_failed",
+                observedState: "\(error)"
+            )
+            XCTFail("Failed to write screenshot: \(error)")
+        }
+    }
+
+    func emitDiagnostic(
+        scenario: String,
+        selector: String,
+        failureClass: String,
+        observedState: String
+    ) {
+        let payload: [String: String] = [
+            "platform": "ios",
+            "locale": currentLanguage,
+            "scenario_id": scenario,
+            "selector_or_tag": selector,
+            "failure_class": failureClass,
+            "observed_state": observedState
+        ]
+
+        if let data = try? JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]),
+           let line = String(data: data, encoding: .utf8) {
+            print("UITEST_DIAGNOSTIC: \(line)")
+        }
+    }
+}

@@ -285,6 +285,46 @@ class E2ETestRunner implements E2ETestService {
 }
 ```
 
+### Native Mobile Screenshot Testing
+
+Use `mobile-screenshot-ui-testing.md` when automated testing must produce iOS
+or Android screenshots for release review, visual QA, localization validation,
+or cross-platform parity. Native screenshot testing is a specialized E2E track:
+the test harness must control simulator or emulator state, app launch
+environment, deterministic fixtures, locale, theme, and artifact paths.
+
+```typescript
+interface NativeMobileScreenshotTestPlan {
+  platforms: Array<'ios' | 'android'>;
+  scenarios: Array<{
+    id: string;
+    screenName: string;
+    requiredSelectors: string[];
+    fixtureName: string;
+  }>;
+  locales: string[];
+  deviceClasses: Array<'phone' | 'tablet'>;
+  themes: Array<'light' | 'dark'>;
+  artifactRoot: string;
+  verification: {
+    validateDimensions: boolean;
+    validateLocalizedCopy: boolean;
+    compareBaselines: boolean;
+    collectDebugArtifacts: boolean;
+  };
+}
+
+class NativeMobileScreenshotOrchestrator {
+  async execute(plan: NativeMobileScreenshotTestPlan): Promise<TestResults> {
+    await this.validateLocalizationKeys(plan.locales);
+    await this.prepareCleanDeviceState(plan.platforms);
+    const captures = await this.runNativeScreenshotHarnesses(plan);
+    await this.verifyScreenshotArtifacts(captures, plan.verification);
+    return this.toTestResults(captures);
+  }
+}
+```
+
 ## Implementation Patterns
 
 ### Test Organization Pattern
