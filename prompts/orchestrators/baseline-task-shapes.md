@@ -324,22 +324,33 @@ exempt because their File is a source file.
 - User-facing settings screen task per platform (theme picker, locale
   picker, notifications, account management, sign out).
 - Debug menu task per platform, gated to `DEBUG` / dev builds only.
-  Must include: API endpoint switcher (dev / staging / prod / mock),
-  feature flag overrides, mock-data toggle, locale preview switcher,
-  theme preview switcher, a way to trigger a forced crash for
-  testing error-tracking integration.
+  For apps with a backend, include an API endpoint switcher (dev /
+  staging / prod / mock). For local-only native apps, do not invent an
+  endpoint switcher; include local debug actions instead: feature flag
+  overrides, mock media/source-data toggle, permission-state simulator,
+  local database reset/export, ML model/threshold preview, locale
+  preview switcher, theme preview switcher, app-owned cache cleanup
+  trigger, and a way to trigger a forced crash for crash-reporting
+  verification.
 - One-command setup script task that installs dependencies, sets up
-  the database, seeds fixtures, and starts the dev server. Name the
-  script path explicitly (e.g. `scripts/dev-setup.sh`).
+  the database or local persistence fixtures, seeds deterministic test
+  data, and starts the relevant dev target. For native local-only apps,
+  this can be an Xcode/Gradle bootstrap plus fixture seeding command
+  rather than a dev server. Name the script path explicitly (e.g.
+  `scripts/dev-setup.sh`).
 
 ## Privacy, PII & compliance
 
 - Consent capture task on first run (per platform).
 - Data export task (GDPR Article 20 / CCPA right to know): an
-  endpoint + UI trigger that exports the user's data to JSON.
+  endpoint + UI trigger for backend apps, or a native local UI action
+  for local-only apps, that exports the user's app-owned data to JSON.
 - Data deletion task (GDPR Article 17 / CCPA right to delete): the
   full cascade, including a task-list that enumerates every table /
-  storage location that holds user data.
+  local store / file directory / app-owned cache location that holds
+  user data. Local-only native apps must delete local databases,
+  derived labels, thumbnails, OCR snippets, embeddings, and app-owned
+  caches without implying deletion of external media the OS still owns.
 - Age gate task if the brief mentions consumer / social features.
 - Cookie / tracking consent task for web.
 - PII classification task: a doc that labels each entity field as

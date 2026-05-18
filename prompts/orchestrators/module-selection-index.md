@@ -64,6 +64,15 @@ Paths are relative to the repository root.
 | ML-driven autoscaling / workload forecasting | `prompts/modules/ai-native/predictive-scaling.md` |
 | On-device ML — iOS (Core ML, Vision, Create ML) | `prompts/modules/ai-native/on-device-ml-ios.md` |
 | On-device ML — Android (ML Kit, TensorFlow Lite, MediaPipe) | `prompts/modules/ai-native/on-device-ml-android.md` |
+| Blurry photo detection / low-quality image detection on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
+| Blurry photo detection / low-quality image detection on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
+| Near-duplicate photo detection / visual similarity on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
+| Near-duplicate photo detection / visual similarity on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
+| Sensitive document detection / OCR classification on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
+| Sensitive document detection / OCR classification on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
+| Duplicate video detection / video fingerprinting on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
+| Duplicate video detection / video fingerprinting on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
+| Local-only media AI for gallery cleanup | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
 
 If the brief mentions privacy, local-only processing, no network, device
 AI/ML, phone media, or on-device inference, prefer the on-device modules
@@ -174,6 +183,7 @@ explicitly needs server-side or remote inference infrastructure.
 | Offline media sync | `prompts/modules/media-streaming/offline-sync.md` |
 | Media search within a catalog | `prompts/modules/media-streaming/content-search.md` |
 | Media processing (transcode, thumbnails, waveforms) | `prompts/modules/media-streaming/media-processing.md` |
+| Photo near-duplicates / duplicate videos in local device gallery | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
 | Streaming quality (ABR, bitrate, DRM) | `prompts/modules/media-streaming/streaming-quality.md` |
 | Recommendation engine (collaborative filtering) | `prompts/modules/media-streaming/recommendation-engine.md` |
 | Artist / creator tools (uploads, analytics, payouts) | `prompts/modules/media-streaming/artist-creator-tools.md` |

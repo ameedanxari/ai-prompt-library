@@ -80,6 +80,72 @@ try observation.computeDistance(&distance, to: otherObservation)
 // distance < 10.0 often indicates near-duplicates depending on the model version
 ```
 
+### 3. Blurry / Low-Quality Photo Detection
+Use a deterministic quality score before showing any deletion candidate.
+Do not rely on one generic "bad photo" classifier. Combine:
+
+- Downsampled luminance variance of Laplacian for blur.
+- Pixel dimensions and byte size for tiny or over-compressed images.
+- EXIF exposure / ISO / shutter speed when available.
+- `VNDetectFaceCaptureQualityRequest` for face-centric photos when a
+  face is detected.
+- Manual-review fallback for borderline scores.
+
+```swift
+struct PhotoQualityScore: Codable {
+    let assetId: String
+    let blurVariance: Double
+    let faceQuality: Float?
+    let isLowResolution: Bool
+    let confidence: Float
+    let reasons: [String]
+}
+```
+
+Implementation prompt requirements:
+
+- Compute blur from a thumbnail no larger than 1024 px on the long edge.
+- Use calibrated thresholds from fixture images rather than hard-coded
+  universal numbers. Start with `blurVariance < 80` as "likely blurry",
+  `80...150` as "review", and require local calibration before release.
+- Never auto-delete solely from a blur score. Add candidates to a
+  review queue with the reason label visible.
+- Test with sharp, motion-blurred, low-light, screenshot, and document
+  fixtures.
+
+### 4. Sensitive Document / OCR Classification
+Use Vision OCR and document-shape signals conservatively:
+
+- `VNRecognizeTextRequest` for text presence and coarse keyword classes.
+- `VNDetectRectanglesRequest` for document-like boundaries.
+- Optional barcode / QR detection if the product needs it.
+- Regex classification for local-only categories such as possible ID,
+  receipt, bill, medical form, bank card, or screenshot with text.
+
+Do not persist raw OCR text, document numbers, face embeddings, GPS
+coordinates, or thumbnails unless the brief explicitly requires it.
+Persist category, confidence, model version, asset ID, and timestamp.
+Low-confidence OCR categories must route to "review manually".
+
+### 5. Video Duplicate Handling
+Treat videos separately from photos:
+
+- Exact duplicate candidates: compare duration, byte size, dimensions,
+  codec, creation date, and optional local file hash when file access is
+  permitted.
+- Near-duplicate candidates: sample 3-7 frames with
+  `AVAssetImageGenerator` at deterministic timestamps, generate Vision
+  feature prints for each sampled frame, and compare aggregate distance.
+- Burst / live photo / edited export groups must be labeled as related
+  media, not exact duplicates, unless the sampled fingerprints and
+  metadata agree.
+- Long videos should be processed in background batches with cancellable
+  tasks and progress checkpoints.
+
+Every video-cleanup prompt must include memory limits for frame
+extraction, cancellation behavior, and fixtures for same-video,
+trimmed-video, transcoded-video, and unrelated-video cases.
+
 ## Security & Privacy Considerations
 1. **Never send user data to a server** when using this module. The primary value proposition is local processing.
 2. Ensure the app's `PrivacyInfo.xcprivacy` documents that data remains on-device.

@@ -78,18 +78,20 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/\.ai-prompts\/scripts\/reset-integration\.sh --yes/);
   });
 
-  it('steering guard centralises the execute-signal list and forbids A/B/C/D menus', () => {
+  it('steering guard scopes execute signals to existing validated plans and forbids A/B/C/D menus', () => {
     const body = fs.readFileSync(
       path.resolve(REPO_ROOT, 'prompts', 'steering', 'library-context.md'),
       'utf8',
     );
     // Named guard section.
     expect(body).toMatch(/Execute-signal guard/);
-    // Lists the execute-signal words canonically.
+    // Lists the execute-signal words canonically, but only for an existing plan.
+    expect(body.toLowerCase()).toMatch(/validated plan already exists/);
     expect(body.toLowerCase()).toMatch(/fix/);
     expect(body.toLowerCase()).toMatch(/implement/);
     expect(body.toLowerCase()).toMatch(/close the gaps/);
     expect(body.toLowerCase()).toMatch(/write the tests/);
+    expect(body.toLowerCase()).toMatch(/do not bypass checkpoints/);
     // Forbids the A/B/C/D menu pattern explicitly.
     expect(body.toLowerCase()).toMatch(/menu/);
     expect(body.toLowerCase()).toMatch(/forbidden|do not produce|do not emit/);
@@ -103,17 +105,19 @@ describe('active orchestrators', () => {
     expect(lineCount).toBeLessThan(150);
   });
 
-  it('audit-remediate Step 5 delegates to steering guard (no duplicated list)', () => {
+  it('audit-remediate Step 5 is a planning hard stop, not an auto-executor chain', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
-    // Step 5 body must reference the steering guard as authority.
+    // Step 5 must require user review before executor handoff.
     const stepIdx = body.indexOf('## STEP 5');
     const nextSection = body.indexOf('\n## ', stepIdx + 10);
     const step5 = body.slice(stepIdx, nextSection > -1 ? nextSection : undefined);
-    expect(step5).toMatch(/steering\/library-context\.md/);
-    // Should no longer inline the full execute-signal bullet list.
+    expect(step5.toLowerCase()).toMatch(/planning hard stop/);
+    expect(step5).toMatch(/Say \*\*Execute\*\*/);
+    expect(step5).toMatch(/Do NOT auto-invoke/);
+    // Should not inline the full execute-signal bullet list.
     const bulletMatches = step5.match(/^- "/gm) ?? [];
     expect(bulletMatches.length).toBeLessThan(5);
     // Must forbid the A/B/C/D menu pattern too.
@@ -397,14 +401,14 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/executor_gate: fail/);
   });
 
-  it('audit-and-remediate runs revise gate at Step 4.5 before Step 5 chain', () => {
+  it('audit-and-remediate runs revise gate at Step 4.5 before Step 5 hard stop', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
     const step4 = body.search(/^## STEP 4 — Validate/m);
     const step4_5 = body.search(/^## STEP 4\.5 — Revise/m);
-    const step5 = body.search(/^## STEP 5 — Chain to execution/m);
+    const step5 = body.search(/^## STEP 5 — Planning hard stop/m);
     expect(step4).toBeGreaterThan(-1);
     expect(step4_5).toBeGreaterThan(-1);
     expect(step5).toBeGreaterThan(-1);
@@ -441,17 +445,16 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/project-context\.md/);
   });
 
-  it('audit-and-remediate has a Step 5 that chains to the executor', () => {
+  it('audit-and-remediate has a Step 5 planning hard stop before executor handoff', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'audit-and-remediate.md'),
       'utf8',
     );
     expect(body).toMatch(/STEP 5/);
-    expect(body.toLowerCase()).toMatch(/chain to execution/);
-    // The execute-signal word list now lives in steering; Step 5 must
-    // reference it rather than duplicate it.
+    expect(body.toLowerCase()).toMatch(/planning hard stop/);
+    expect(body).toMatch(/Say \*\*Execute\*\*/);
+    expect(body).toMatch(/Do NOT auto-invoke/);
     expect(body).toMatch(/executor\.md/);
-    expect(body).toMatch(/steering\/library-context\.md/);
   });
 
   it('audit-report format uses live date, not a static string', () => {

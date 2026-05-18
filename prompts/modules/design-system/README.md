@@ -21,26 +21,20 @@ Provide explicit prompt modules for building and enforcing a production-ready de
 
 ## Required Outputs
 When these modules are selected, they should drive:
-- `prompts/outputs/specifications/design-system-foundation.md`
-- `prompts/outputs/specifications/design-system-component-catalog.md`
-- `prompts/outputs/specifications/ui-fidelity-source-map.md` (when high-fidelity UI source files exist)
-- `prompts/outputs/specifications/screen-fidelity-matrix.md`
+- `prompts/outputs/current/ui-reference-source-map.md` when greenfield
+  UI exists without authoritative design context.
+- `prompts/outputs/current/features-*.md` feature specs that identify
+  token, component, state, responsive, and accessibility requirements.
+- `prompts/outputs/current/tasks-*.md` implementation prompts that
+  sequence token/component foundation before screen work.
 - `docs/DESIGN_TOKENS.md` (auto-generated)
 - `docs/DESIGN_FIDELITY_AUDIT.md` (auto-generated)
 - `docs/DESIGN_SYSTEM_GOVERNANCE.md` (governance charter)
 - `docs/DESIGN_SYSTEM_VERSIONING.md` (versioning policy)
 - `.github/workflows/design-token-validation.yml` (CI/CD enforcement)
 - Infrastructure: `src/core/design-tokens/tokens.json`, generation scripts, linting rules
-- Stage 06 task tracks that sequence design-system component implementation before screens
-- `prompts/outputs/specifications/design-system-implementation-sequencing.md` (UI scope)
-- `prompts/outputs/quality/design-system-verification-report.md` (UI scope)
-
-## Complementary Templates
-- `.ai-prompts/prompts/templates/design-system-foundation-template.md`
-- `.ai-prompts/prompts/templates/design-system-component-catalog-template.md`
-- `.ai-prompts/prompts/templates/ui-fidelity-source-map-template.md`
-- `.ai-prompts/prompts/templates/design-system-implementation-sequencing-template.md`
-- `.ai-prompts/prompts/templates/design-system-verification-report-template.md`
+- Current task prompts must dissolve module guidance directly. Do not
+  reference legacy template paths in generated output.
 
 ## Example Composition
 ```markdown

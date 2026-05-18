@@ -94,10 +94,10 @@ any field to pin a specific choice._
 - **Frontend (web)**:
 - **Mobile**:
 - **Backend**:
-- **Database**:
+- **Database**: _(For local-only native apps, prefer SwiftData/Core Data backed by SQLite on iOS and Room backed by SQLite on Android.)_
 - **Hosting**:
 - **Auth provider**:
-- **Payments** (if relevant):
+- **Payments** (if relevant): _(State whether monetization is in v1. If not, write "No monetization in v1; IAP may be planned separately.")_
 
 ---
 
@@ -120,7 +120,7 @@ offline support, data residency, integrations you MUST use._
 
 ---
 
-## Reference material (optional)
+## Reference material / External material (optional)
 
 _If you have designs, mockups, specs, brand guidelines, or existing
 code you want the library to respect, drop them into `working_copy/`

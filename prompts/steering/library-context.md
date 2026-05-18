@@ -16,14 +16,15 @@ Loaded by the IDE at every session. Keep it short.
      do-the-work) → `executor.md`.
    - **Gap-closure** (existing codebase; user asks to review, audit,
      fix gaps, productionize, write tests, finish) →
-     `audit-and-remediate.md`. Chains into Execute automatically when
-     the plan passes validation and the user's ask implied execution.
+     `audit-and-remediate.md`. Stops after the planning revise gate
+     for user review before execution.
    - **Greenfield** (new project) → `drill-down-engine.md`.
 4. If external material exists (designs/specs/source code under
    `working_copy/`, `prompts/working_copy/`, or project has real
    `src/`/`backend/`/`frontend/`/`android/`/`ios/` directories), also
    read `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
-5. Follow the chosen engine end-to-end. Do NOT stop between steps.
+5. Follow the chosen engine until its next checkpoint. Stop at every
+   checkpoint and wait for `Continue`.
 
 ## Progress-checklist guard — don't advance stages on memory
 
@@ -79,24 +80,26 @@ bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
 
 After running any helper, re-run `finalize.sh` to refresh the gate.
 
-## Execute-signal guard — do not ask for preference
+## Execute-signal guard — only after a plan exists
 
-If the user's prompt contains any of these words (case-insensitive),
-they have ALREADY authorised you to execute end-to-end:
+If a validated plan already exists and the user's prompt contains any
+of these words (case-insensitive), they have authorised execution:
 
 > **fix · implement · execute · run · do the work · build · ship ·
 > close the gaps · write the tests · make it pass · productionize ·
 > deploy-ready · review AND fix · audit AND fix**
 
-When you see any of those, **do not** produce a message that ends with
+When that is true, **do not** produce a message that ends with
 a menu like:
 
 > _Would you like me to: A. Execute critical gaps, B. Execute all, C. …_
 
-That menu pattern is **forbidden** once execute-signals are present. It
-presents a decision the user already made. Instead, start executing —
-if the preflight gate is already green, pick the first unblocked task
-and begin the execution loop per `executor.md`.
+That menu pattern is **forbidden** for an already-validated plan. Start
+the execution loop per `executor.md`.
+
+During greenfield or gap-closure planning, execute-signal words in the
+original prompt do not bypass checkpoints or the final planning hard
+stop. The user reviews the generated plan before executor handoff.
 
 You may stop execution and report to the user only when:
 - A hard preflight / validator gate fails (mechanical block).

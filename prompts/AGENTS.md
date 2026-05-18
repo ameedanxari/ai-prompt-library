@@ -17,11 +17,9 @@ If anything elsewhere in this repo contradicts this file, this file wins.
      "do the work". Use `.ai-prompts/prompts/orchestrators/executor.md`.
    - **Gap-closure** — user has an existing codebase and asks to
      "review", "audit", "fix gaps", "productionize", or similar. Use
-     `.ai-prompts/prompts/orchestrators/audit-and-remediate.md`. Its Step 5
-     **mandatorily** chains into Execute mode when the user's ask
-     contains any execute signal ("fix", "implement", "close the
-     gaps", "write the tests", etc.). Do NOT treat the chain as
-     optional — a field test failed because an earlier agent did.
+     `.ai-prompts/prompts/orchestrators/audit-and-remediate.md`. It stops
+     after the planning revise gate and waits for explicit execution
+     authorization.
    - **Greenfield** — user is building something new. Use the drill-down
      engine.
 4. If external material is present (designs/specs/existing code), read
@@ -29,6 +27,11 @@ If anything elsewhere in this repo contradicts this file, this file wins.
    `prompts/outputs/current/project-context.md` and hands off to the
    selected engine.
 5. Write outputs to `prompts/outputs/current/`.
+
+Engines are checkpoint-driven. At each `⏸ CHECKPOINT`, stop, summarize
+the output just produced, and wait for the user to say `Continue` before
+advancing. When planning reaches its final hard stop, wait for the user
+to say `Execute` or `Continue` before reading `executor.md`.
 
 Total auto-load budget at session start: **2 files** (entry point +
 drill-down engine). In gap-closure mode, add one more read

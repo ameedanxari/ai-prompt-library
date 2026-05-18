@@ -114,17 +114,17 @@ Load these files (in order) before handling any non-trivial request:
 3. `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — the 3-step engine.
 
 If the user has provided designs / specs / existing code under `working_copy/`
-or references existing code in `MY_PROJECT.md`, also load:
+or references external/reference material in `MY_PROJECT.md`, also load:
 4. `.ai-prompts/prompts/orchestrators/external-input-handler.md`
 
 Do NOT auto-load anything else under `.ai-prompts/prompts/orchestrators/` 
 without following the entry-point routing. The core active files are 
 the ones above plus `module-selection-index.md` (consulted as needed).
 
-After the external-input-handler finishes (if it ran), proceed IMMEDIATELY
-to Step 1 of the drill-down engine without waiting for user confirmation.
-Between engine steps, continue automatically — each step's output is the
-next step's input.
+Follow the entry point's checkpoint protocol exactly. At every engine
+checkpoint, stop, summarize progress, and wait for the user to say
+`Continue` before moving to the next step. Do not auto-advance across
+planning checkpoints.
 
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
@@ -164,8 +164,9 @@ echo "AI agent: do NOT stop here. Proceed immediately to the entry point flow:"
 echo "  1. Read .ai-prompts/prompts/AGENTS.md"
 echo "  2. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md"
 echo "  3. Follow its mode selection (greenfield vs gap-closure vs trivial)"
-echo "  4. Execute the chosen engine end-to-end."
+echo "  4. Execute the chosen engine until its next checkpoint."
 echo "  5. Write outputs to prompts/outputs/current/"
 echo ""
 echo "Continue with the user's original request — reset is just a precondition,"
-echo "not the whole task. Do not ask the user to re-prompt."
+echo "not the whole task. Do not ask the user to re-prompt, but do stop at"
+echo "the next checkpoint and wait for Continue."

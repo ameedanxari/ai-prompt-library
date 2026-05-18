@@ -74,9 +74,8 @@ Steering for AI coding agents working on this project.
 EOF
 fi
 
-if ! grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
-  cat >> AGENTS.md << 'EOF'
-
+MANAGED_BLOCK=""
+read -r -d '' MANAGED_BLOCK <<'EOF' || true
 ## AI Prompt Library Steering (Auto-Managed — do not edit)
 
 Load these files (in order) before handling any non-trivial request:
@@ -91,10 +90,33 @@ source code, also load:
 Do NOT auto-load anything else under `.ai-prompts/prompts/orchestrators/` 
 without following the entry-point routing.
 
-After the handler finishes, proceed IMMEDIATELY to Step 1 of the engine
-without waiting for the user. Between engine steps, continue automatically.
+Follow the entry point's checkpoint protocol exactly. At every engine
+checkpoint, stop, summarize progress, and wait for the user to say
+`Continue` before moving to the next step. Do not auto-advance across
+planning checkpoints.
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
+
+if grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
+  tmp_file="$(mktemp)"
+  awk -v block="$MANAGED_BLOCK" '
+    /^## AI Prompt Library Steering \(Auto-Managed/ {
+      print block
+      in_block = 1
+      next
+    }
+    /<!-- \/AI Prompt Library Steering \(Auto-Managed\) -->/ {
+      in_block = 0
+      next
+    }
+    !in_block { print }
+  ' AGENTS.md > "$tmp_file"
+  mv "$tmp_file" AGENTS.md
+else
+  {
+    echo ""
+    printf "%s\n" "$MANAGED_BLOCK"
+  } >> AGENTS.md
 fi
 
 # MY_PROJECT.md — the brief the drill-down engine reads at Step 1 (Seed).
@@ -120,7 +142,7 @@ _2–3 sentences: what is the product, who is it for, what is the most important
 - Backend:
 - Database:
 
-## External material (optional)
+## Reference material / External material (optional)
 - working_copy/ — designs and mockups
 - prompts/working_copy/ — specs / reference code
 EOF

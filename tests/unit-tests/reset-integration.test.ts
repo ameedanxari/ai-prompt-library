@@ -73,6 +73,8 @@ describe('reset-integration.sh', () => {
     const agents = fs.readFileSync(path.join(sandbox, 'AGENTS.md'), 'utf8');
     expect(agents).toMatch(/AI Prompt Library Steering \(Auto-Managed/);
     expect(agents).toMatch(/drill-down-engine\.md/);
+    expect(agents).toMatch(/checkpoint protocol/);
+    expect(agents).not.toMatch(/continue automatically/);
     expect(agents).not.toMatch(/execution-orchestrator/);
     expect(agents).not.toMatch(/stage-pipeline-orchestrator/);
   });

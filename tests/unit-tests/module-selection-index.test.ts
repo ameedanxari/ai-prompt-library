@@ -52,4 +52,11 @@ describe('module-selection-index', () => {
     expect(body).toMatch(/technology-stacks\/tailwind-css\.md/);
     expect(body).toMatch(/technology-stacks\/mobile-os-capability-matrix\.md/);
   });
+
+  it('indexes native gallery-cleanup ML intents', () => {
+    expect(body).toMatch(/Blurry photo detection/);
+    expect(body).toMatch(/Near-duplicate photo detection/);
+    expect(body).toMatch(/Sensitive document detection/);
+    expect(body).toMatch(/Duplicate video detection/);
+  });
 });

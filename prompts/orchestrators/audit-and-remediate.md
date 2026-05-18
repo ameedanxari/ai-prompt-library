@@ -14,10 +14,10 @@ are true:
    `backend/`, `frontend/`, `android/`, `ios/`, etc.) with non-trivial
    content (more than a few files).
 2. `MY_PROJECT.md` mentions the existing codebase under "External
-   material" with completion estimates (e.g. "95% complete"), OR the
-   user's prompt mentions "review", "audit", "fix gaps", "finish",
-   "productionize", "test coverage", "deploy-ready", "production
-   readiness", or similar.
+   material" or "Reference material" with completion estimates
+   (e.g. "95% complete"), OR the user's prompt mentions "review",
+   "audit", "fix gaps", "finish", "productionize", "test coverage",
+   "deploy-ready", "production readiness", or similar.
 3. The user is NOT asking for a single-file edit (trivial mode).
 
 If the project is empty or the user is asking to build something new,
@@ -185,8 +185,21 @@ Dependency rules (strict — prevents invented ordering):
 
 **Write to:** `prompts/outputs/current/gap-list.md`.
 
-**After writing — continue immediately to Step 3.** Expand every gap.
-Do not ask the user to pick a subset.
+### ⏸ CHECKPOINT — Gap review
+
+After writing `gap-list.md`, **STOP and present the gaps to the user**.
+Show:
+
+1. Components audited.
+2. Gap count by severity.
+3. Ordered gap list with each slug and one-line description.
+4. What comes next: remediation prompts will be generated for every gap.
+5. The line: "Audit progress: Step 2 of 5 complete. Say **Continue**
+   to expand these gaps into remediation prompts, or give feedback to
+   adjust."
+
+Wait for the user to say `Continue`. If feedback is given, update
+`gap-list.md` before advancing.
 
 ---
 
@@ -433,24 +446,25 @@ it — the fail means the plan is not ready to execute.
 
 ---
 
-## STEP 5 — Chain to execution
+## STEP 5 — Planning hard stop
 
-The **execute-signal guard** lives in
-`prompts/steering/library-context.md` — one canonical list of the words
-that authorise end-to-end execution. Apply it here:
+After the revise gate passes, stop for user review. Present:
 
-- If any execute-signal word is present in the user's original prompt,
-  invoke `.ai-prompts/prompts/orchestrators/executor.md` immediately. The executor
-  will run its own preflight gate against `prompts/outputs/current/`;
-  you do not need to re-validate.
-- If none are present and the ask was planning-oriented ("review",
-  "audit", "analyze", "what are the gaps", "produce a plan"), stop
-  here and report the summary.
-- "Review AND fix" / "audit AND write tests" are plan-and-execute
-  requests — chain to the executor.
+1. Components audited and gap count by severity.
+2. Remediation files written.
+3. External services / account checklist summary.
+4. Revise result (`executor_gate: pass`).
+5. The line: "Planning complete. Say **Execute** to start the executor,
+   or give feedback to adjust the plan."
+
+Do NOT auto-invoke `.ai-prompts/prompts/orchestrators/executor.md` from
+execute-signal words in the original prompt. Planning output must be
+reviewed first. Only read `executor.md` after the user explicitly says
+`Execute` or `Continue` at this hard stop.
 
 Do NOT emit a menu-of-options ("Would you like me to: A. execute, B.
-review…") — see the steering guard for why.
+review..."). The only next actions are user feedback on the plan or
+explicit executor authorization.
 
 ---
 

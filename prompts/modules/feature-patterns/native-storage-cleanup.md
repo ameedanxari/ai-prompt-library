@@ -24,8 +24,11 @@ cleanup guidance, and any feature that claims to free device space.
 
 1. Identify which storage surfaces the product is allowed to inspect:
    Photos, Videos, app-owned cache, downloads, or OS settings guidance.
-2. Declare unsupported surfaces as non-goals before task generation
-   (system RAM, other apps' private caches, protected app containers).
+2. Declare unsupported surfaces as non-goals before task generation.
+   General "memory management" claims must be reframed as storage
+   cleanup, app-owned cache cleanup, and OS settings guidance only.
+   Do not promise system RAM cleanup, other apps' private caches, or
+   protected app containers.
 3. Pick platform APIs by OS version and permission scope.
 4. Generate separate iOS and Android implementation details for every
    platform-specific source task.

@@ -72,7 +72,8 @@ Is there user-provided external material? Check for any of:
 - Attached spec / PRD / RFC
 - Existing source code the user wants to extend (e.g. `src/`, `backend/`,
   `frontend/`, `android/`, `ios/` with non-trivial content)
-- `MY_PROJECT.md` lists external material under "External material"
+- `MY_PROJECT.md` lists external/reference material under either
+  "External material" or "Reference material"
 
 If yes:
 1. Read `prompts/orchestrators/external-input-handler.md` (file #3).
@@ -129,21 +130,20 @@ Use when ALL of these are true:
   - Prompt contains any of: "review", "audit", "fix gaps",
     "productionize", "production-ready", "finish", "complete",
     "test coverage", "deploy-ready", "functional completeness", "QA".
-  - OR `MY_PROJECT.md` "External material" section lists source
-    directories with completion percentages (e.g. "95% complete",
-    "85% complete").
+  - OR `MY_PROJECT.md` "External material" / "Reference material"
+    section lists source directories with completion percentages
+    (e.g. "95% complete", "85% complete").
 - Mode 2 does NOT apply (either no plan exists or the user explicitly
   wants a fresh audit).
 
 Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
-5-step flow (Component audit → Gap list → Remediation tasks → Validate
-→ Chain to executor).
+5-step flow (Component audit → Gap list checkpoint → Remediation tasks
+→ Validate/revise → Planning hard stop).
 
-The orchestrator's Step 5 inspects the user's prompt for execute signals
-("fix", "implement", "close the gaps", "write the tests", etc.) and
-chains into Mode 2 automatically when any match. That chain is MANDATORY
-— SWE 1.6 failed this in an earlier test by treating chain language as
-optional. Trust Step 5; do not second-guess it.
+The orchestrator ends with a planning hard stop after the revise gate
+passes. Do not auto-chain into the executor from the user's original
+prompt. The user must explicitly authorize execution after reviewing the
+generated audit, gaps, remediation prompts, and revise result.
 
 #### Mode 4 — Greenfield (drill-down engine)
 

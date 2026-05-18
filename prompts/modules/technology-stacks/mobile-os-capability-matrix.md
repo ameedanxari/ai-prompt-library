@@ -65,9 +65,10 @@ must include or reference an OS capability matrix with these columns:
   unless the policy case is explicit and justified.
 - Both platforms require honest UX around permission-denied, limited-access,
   and partial-cleanup states.
-- "Memory cleanup" should be scoped to app-owned cache cleanup, storage
-  insights, and OS settings guidance unless a platform API clearly supports
-  the requested action.
+- "Memory cleanup" and "general memory management" should be scoped to
+  storage cleanup, app-owned cache cleanup, and OS settings guidance.
+  Do not generate system optimizer claims unless a platform API clearly
+  supports the requested action.
 
 ## Integration Points
 
@@ -98,4 +99,3 @@ must include or reference an OS capability matrix with these columns:
   API, fallback, copy, and policy-risk decisions.
 - Unsupported cleanup claims are removed or converted to guidance.
 - Tests verify permission and unsupported-capability states.
-
