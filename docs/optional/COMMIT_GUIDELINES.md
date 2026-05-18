@@ -91,9 +91,8 @@ Before committing, ensure:
 git status
 git diff --cached
 
-# 2. Check for artifacts (should return nothing)
-grep -r "TODO\|FIXME\|DEBUG\|TEMP\|XXX" --include="*.md" .
-find . -name "*.md" -empty
+# 2. Run the same review-enforcement gates used by CI
+npm run validate:review
 
 # 3. Stage files individually after review
 git add path/to/reviewed-file.md
@@ -107,6 +106,7 @@ git commit -m "feat: descriptive message following conventions"
 The repository includes pre-commit hooks that automatically:
 
 - Run the full test suite
+- Run the same review-enforcement gates used by CI
 - Check for accidentally staged .kiro files
 - Detect temporary or generated files
 - Warn about large files (>1MB)

@@ -12,6 +12,7 @@ REQUIRED_FILES=(
     "prompts/orchestrators/external-input-handler.md"
     "prompts/orchestrators/module-selection-index.md"
     "scripts/validate-instantiation.sh"
+    "scripts/validate-review-enforcement.sh"
     ".husky/pre-commit"
 )
 
