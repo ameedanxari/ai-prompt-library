@@ -267,8 +267,25 @@ repeat:
 
 ### ⏸ CHECKPOINT — After each prompt
 
-After executing each prompt and appending its log entry, **STOP and
-present the result to the user**. Show:
+After executing each prompt, appending its log entry, and updating the `execution-log.md` YAML envelope, **write the resumption checkpoint** and then **STOP and present the result to the user**.
+
+**Update `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: execution
+engine: executor
+step: "Task N of M"
+last_completed: "<filename of the just-completed tasks-*.md or remediation-*.md>"
+next_action: "Execute <next task filename> (or complete if all done)"
+re_load_files:
+  - prompts/outputs/current/execution-log.md
+  - prompts/outputs/current/<next-task-filename>
+updated_at: <current ISO 8601 timestamp>
+---
+```
+*(If this was the final task, set `next_action: "Run honest-handoff gate"` and list only `execution-log.md` in `re_load_files`.)*
+
+Show:
 
 1. **Prompt file** (e.g. `tasks-signup-endpoint.md`).
 2. **What was built** — one-paragraph summary of the implementation.

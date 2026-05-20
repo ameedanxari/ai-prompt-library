@@ -54,6 +54,12 @@ Before starting or continuing work, you **MUST** read the contents of `prompts/o
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
+### Resumption Checkpoint Manifest
+
+Every `⏸ CHECKPOINT` in this engine writes (or updates) the canonical state manifest at `prompts/outputs/current/resumption-checkpoint.md`. This file enables **selective context loading** — a new chat session only loads the files listed in `re_load_files` instead of re-reading all outputs, cutting resumption token cost by ~85%.
+
+The entry point (`ai-agent-entry-point.md`) parses this file on `"Continue"` / `"Continue where you left off"` to route directly to the correct phase and step. See the checkpoint-write instructions at each `⏸ CHECKPOINT` block below for the exact YAML frontmatter to emit.
+
 ### The "New Chat" Recommendation
 To ensure maximum attention to detail and prevent context overflow, it is **recommended** to start a **NEW CHAT** for each major transition:
 - After the Audit Report (Step 1) is generated.
@@ -187,7 +193,23 @@ Dependency rules (strict — prevents invented ordering):
 
 ### ⏸ CHECKPOINT — Gap review
 
-After writing `gap-list.md`, **STOP and present the gaps to the user**.
+After writing `gap-list.md`, **write the resumption checkpoint** and then **STOP and present the gaps to the user**.
+
+**Write `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: audit-and-remediate
+step: "Step 2 — Gap list"
+last_completed: "gap-list.md"
+next_action: "Generate implementation prompts for each gap (Step 3)"
+re_load_files:
+  - prompts/outputs/current/audit-report.md
+  - prompts/outputs/current/gap-list.md
+updated_at: <current ISO 8601 timestamp>
+---
+```
+
 Show:
 
 1. Components audited.
@@ -448,7 +470,24 @@ it — the fail means the plan is not ready to execute.
 
 ## STEP 5 — Planning hard stop
 
-After the revise gate passes, stop for user review. Present:
+After the revise gate passes, **write the final planning checkpoint** and then stop for user review.
+
+**Update `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: audit-and-remediate
+step: "Step 5 — Planning hard stop"
+last_completed: "revise-report.md"
+next_action: "User authorization required — say Execute to begin"
+re_load_files:
+  - prompts/outputs/current/revise-report.md
+  - prompts/outputs/current/gap-list.md
+updated_at: <current ISO 8601 timestamp>
+---
+```
+
+Present:
 
 1. Components audited and gap count by severity.
 2. Remediation files written.

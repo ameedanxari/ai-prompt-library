@@ -9,34 +9,33 @@ If anything elsewhere in this repo contradicts this file, this file wins.
 ## The only flow you need
 
 1. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` (the entry point).
-2. Read `.ai-prompts/prompts/orchestrators/drill-down-engine.md` (the greenfield engine).
-3. The entry point selects one of four modes:
-   - **Trivial** — one-file edit. Skip engines, just do the work.
+2. The entry point selects one of four modes and then loads the matching engine:
+   - **Trivial** — one-file edit. Skip engines, just do the work. (no engine load)
    - **Execute** — a validated plan (`remediation-*.md` or `tasks-*.md`)
      already exists and the user says "fix", "implement", "execute",
-     "do the work". Use `.ai-prompts/prompts/orchestrators/executor.md`.
+     "do the work". Loads `.ai-prompts/prompts/orchestrators/executor.md`.
    - **Gap-closure** — user has an existing codebase and asks to
-     "review", "audit", "fix gaps", "productionize", or similar. Use
+     "review", "audit", "fix gaps", "productionize", or similar. Loads
      `.ai-prompts/prompts/orchestrators/audit-and-remediate.md`. It stops
      after the planning revise gate and waits for explicit execution
      authorization.
-   - **Greenfield** — user is building something new. Use the drill-down
-     engine.
-4. If external material is present (designs/specs/existing code), read
+   - **Greenfield** — user is building something new. Loads
+     `.ai-prompts/prompts/orchestrators/drill-down-engine.md`.
+3. If external material is present (designs/specs/existing code), read
    `.ai-prompts/prompts/orchestrators/external-input-handler.md` first. It produces
    `prompts/outputs/current/project-context.md` and hands off to the
    selected engine.
-5. Write outputs to `prompts/outputs/current/`.
+4. Write outputs to `prompts/outputs/current/`.
 
 Engines are checkpoint-driven. At each `⏸ CHECKPOINT`, stop, summarize
 the output just produced, and wait for the user to say `Continue` before
 advancing. When planning reaches its final hard stop, wait for the user
 to say `Execute` or `Continue` before reading `executor.md`.
 
-Total auto-load budget at session start: **2 files** (entry point +
-drill-down engine). In gap-closure mode, add one more read
-(`audit-and-remediate.md`). Conditional extra read for
-`external-input-handler.md` when external material exists.
+Auto-load budget: **1 file at session start** (the entry point). After
+routing, exactly **one engine** is loaded for the chosen mode (or none in
+Mode 1). External material adds one conditional read for
+`external-input-handler.md`. Total ceiling before doing work: 3 files.
 
 ---
 
@@ -114,10 +113,14 @@ To ensure maximum attention to detail and prevent context overflow (which leads 
 
 A fresh context window ensures the model focuses entirely on the single slice of work it is expanding, without being weighed down by the history of prior steps.
 
-### Mandatory Re-load on Continuity
-If you continue in the same chat, or resume a session:
-1. **You MUST re-read the relevant project files from disk** (e.g., `project-context.md`, `epics.md`, the specific `features-*.md`). Do NOT rely on your previous context or memory of those files, as context-compaction/summarization can distort details.
-2. **Explicit User Override:** If you detect you are continuing in a long chat history, ask the user: *"I see we are continuing in this chat. To ensure maximum precision, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
+### Selective Checkpoint Resumption (Continuity & Token Optimization)
+If you continue in the same chat, or resume a session, the entry point picks ONE of the following paths in order:
+
+1. **Always Read Entry Point First.** Start by reading `ai-agent-entry-point.md`. It contains the full routing logic; you don't also need to pre-read `AGENTS.md`.
+2. **Checkpoint Resumption (preferred).** If `prompts/outputs/current/resumption-checkpoint.md` exists and the user did NOT ask to force-reload, parse its YAML envelope and ONLY load the files listed in `re_load_files`. This is the ~85%-token-saving path.
+3. **Execution-Phase Fast Path.** If `resumption-checkpoint.md` is missing but `prompts/outputs/current/execution-log.md` exists with a non-null `next_task`, skip the planning re-read entirely. Route directly to `executor.md`; its preflight will read the envelope and resume from `next_task`. Do not pre-load any `epics.md` / `features-*.md` / `tasks-*.md` other than the one named by `next_task`.
+4. **Force-Reload Escape Hatch (last resort).** Only if BOTH the above are unavailable (no checkpoint AND no in-flight execution-log) — OR the user explicitly asks to "rebuild", "force reload", "re-read all", "refresh context" — perform a full re-read of `epics.md`, all `features-*.md`, and all `tasks-*.md`. After it succeeds, write a fresh `resumption-checkpoint.md` so the next resumption hits path 2.
+5. **Ambiguous-Resumption Guard.** If the user's prompt is a bare resumption verb (case-insensitive: `continue`, `continue please`, `go`, `go on`, `proceed`, `next`, `resume`, `keep going`) AND `resumption-checkpoint.md` is missing AND `execution-log.md` is missing or its `next_task` is `null`, fail fast with a helpful error directing them to either (a) use the robust long-form resumption prompt — *"Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first."* — or (b) describe the work they want to start. Do NOT introspect on "is this a new chat?" — base the decision on disk facts alone.
 
 Following this protocol prevents the "shallow task card" failure mode and ensures every implementation prompt carries the full weight of its source module.
 
@@ -179,6 +182,7 @@ Under `prompts/outputs/current/`:
 | `remediation-<gap>.md` | audit-remediate Step 3 |
 | `revise-report.md` | `scripts/revise.sh` (writes YAML frontmatter; never hand-write) |
 | `execution-log.md` | executor (includes YAML handoff envelope) |
+| `resumption-checkpoint.md` | written at checkpoints to enable selective context loading |
 
 Each step runs in a **fresh context**. Do not carry the previous step's full
 artifact forward; load only the specific slice the current step is expanding.
@@ -278,9 +282,7 @@ Do not invent one.
 - **"Fix this bug" / "Rename X" / "Tweak copy"** → just do it. Don't run the
   engine. The engine is for generating spec-to-task expansions, not trivial
   edits.
-- **"Continue"** → look at what exists under `prompts/outputs/current/` and
-  resume from the first missing output. Do NOT consult legacy
-  `NEXT_ACTION.md`.
+- **"Continue"** / **"Continue where you left off"** → Read `ai-agent-entry-point.md` first. It picks one of: (a) checkpoint resumption if `resumption-checkpoint.md` exists — load only `re_load_files`; (b) execution-phase fast path if `execution-log.md` has a non-null `next_task` — go straight to `executor.md`; (c) full force-reload if neither artifact is usable; or (d) ambiguous-resumption error if both are missing and the prompt is a bare resumption verb.
 - **"Reset" / "Start over"** → delete `prompts/outputs/current/*` and
   re-run from Step 1.
 - **"Use Stage X"** → inform the user that the waterfall stages have been fully deprecated and removed in v1.0. Direct them to use the drill-down engine (Greenfield mode).

@@ -34,6 +34,12 @@ Before starting or continuing work, you **MUST** read the contents of `prompts/o
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
+### Resumption Checkpoint Manifest
+
+Every `⏸ CHECKPOINT` in this engine writes (or updates) the canonical state manifest at `prompts/outputs/current/resumption-checkpoint.md`. This file enables **selective context loading** — a new chat session only loads the files listed in `re_load_files` instead of re-reading all outputs, cutting resumption token cost by ~85%.
+
+The entry point (`ai-agent-entry-point.md`) parses this file on `"Continue"` / `"Continue where you left off"` to route directly to the correct phase and step. See the checkpoint-write instructions at each `⏸ CHECKPOINT` block below for the exact YAML frontmatter to emit.
+
 ## Inputs
 
 - **User brief** — freeform description of what to build (required).
@@ -210,8 +216,24 @@ both Status and "Covered by / reason" non-empty.
 
 ### ⏸ CHECKPOINT — Epics review
 
-After writing `epics.md` and `brief-keywords.md`, **STOP and present the
-epics to the user**. Show:
+After writing `epics.md` and `brief-keywords.md`, **write the resumption checkpoint** and then **STOP and present the epics to the user**.
+
+**Write `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: drill-down
+step: "Step 1 — Seed"
+last_completed: "epics.md"
+next_action: "Expand epics into features (Step 2)"
+re_load_files:
+  - prompts/outputs/current/epics.md
+  - prompts/outputs/current/brief-keywords.md
+updated_at: <current ISO 8601 timestamp>
+---
+```
+
+Show:
 
 1. The list of feature epics (names + one-line goals).
 2. The list of baseline epics (names only — note which were included vs.
@@ -425,7 +447,26 @@ source map. Existing product style wins.
 
 After writing all `features-*.md` files, `external-accounts.md`, and
 `ui-reference-source-map.md` when required,
-**STOP and present a summary to the user**. Show:
+**write the resumption checkpoint** and then **STOP and present a summary to the user**.
+
+**Update `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: drill-down
+step: "Step 2 — Expand epic"
+last_completed: "features-*.md"
+next_action: "Generate atomic task prompts (Step 3)"
+re_load_files:
+  - prompts/outputs/current/epics.md
+  - prompts/outputs/current/external-accounts.md
+  # Include every features-*.md file path written in this step
+updated_at: <current ISO 8601 timestamp>
+---
+```
+*(List every `features-*.md` file path in `re_load_files` so the next session can load the full feature set.)*
+
+Show:
 
 1. Number of feature files written, grouped by epic.
 2. Total feature count across all epics.
@@ -701,8 +742,27 @@ you honest between writes.
 
 ### ⏸ CHECKPOINT — Task generation progress (after each epic)
 
-After writing task files for all features in one epic, **STOP and
-present progress to the user**. Show:
+After writing task files for all features in one epic, **update the
+resumption checkpoint** and then **STOP and present progress to the user**.
+
+**Update `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: drill-down
+step: "Step 3 — Atomize feature"
+last_completed: "tasks-<last-feature-slug>.md"
+next_action: "Generate task prompts for next epic (or run Revise Gate if all epics done)"
+re_load_files:
+  # List only the task files written for this epic (not all prior epics)
+  - prompts/outputs/current/tasks-<feature-slug-1>.md
+  - prompts/outputs/current/tasks-<feature-slug-2>.md
+  # ... one entry per tasks-*.md written in this epic
+updated_at: <current ISO 8601 timestamp>
+---
+```
+
+Show:
 
 1. The epic just completed (name).
 2. Number of task files written for this epic.
@@ -919,6 +979,21 @@ Each prompt file is self-contained: a user can copy its contents into
 any AI chat and get a correct implementation. The orchestration
 scaffolding automates this — the executor picks prompts from the task
 list and feeds them to the AI — but the result is the same either way.
+
+**Write the final planning checkpoint to `prompts/outputs/current/resumption-checkpoint.md`:**
+```yaml
+---
+phase: planning
+engine: drill-down
+step: "Step 5 — Planning complete"
+last_completed: "revise-report.md"
+next_action: "User authorization required — say Execute to begin"
+re_load_files:
+  - prompts/outputs/current/revise-report.md
+  - prompts/outputs/current/external-accounts.md
+updated_at: <current ISO 8601 timestamp>
+---
+```
 
 **STOP and present the planning summary to the user.** Show:
 

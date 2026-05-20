@@ -1,23 +1,95 @@
 # AI Agent Entry Point
 
-Minimal, low-context entry for any user request. Maximum files auto-loaded
-at startup: **2** (this file + `drill-down-engine.md`).
+Minimal, low-context entry for any user request. Auto-loaded at startup: **1 file** (this one). The engine for the chosen mode loads after routing decides which mode applies.
 
-## Startup sequence (total: 2 file reads)
+## Startup sequence
 
 1. **Read this file.**
-2. **Read `prompts/orchestrators/drill-down-engine.md`.**
 
-That is the entire auto-load list at startup. If step D below routes to
-gap-closure mode, you will also read `audit-and-remediate.md` (one more
-file). Nothing else loads automatically — not safeguards, not stage
-files, not modules, not templates, not router orchestrators. All of
-those are opt-in, on demand, one at a time.
+That is the only startup auto-load. The mode-specific engine loads after
+the routing logic below selects it:
+
+| Mode chosen at step D | Engine to load |
+|---|---|
+| Mode 1 — Trivial | None (just do the edit) |
+| Mode 2 — Execute existing plan | `prompts/orchestrators/executor.md` |
+| Mode 3 — Gap-closure | `prompts/orchestrators/audit-and-remediate.md` |
+| Mode 4 — Greenfield | `prompts/orchestrators/drill-down-engine.md` |
+
+If `working_copy/` contains external material, also load
+`prompts/orchestrators/external-input-handler.md` before the engine
+(it runs first and hands off).
+
+Maximum auto-load before doing work: **2 files** (this one + the chosen
+engine). Mode 3 inherits one extra read for the external-input handler
+when external material exists. Nothing else loads automatically — not
+safeguards, not stage files, not modules, not templates, not router
+orchestrators. All of those are opt-in, on demand, one at a time.
 
 ## Routing
 
-After the two startup reads, execute these checks **in order** and do NOT
+After reading this file, execute these checks **in order** and do NOT
 stop between them. Each step flows into the next without user confirmation.
+The engine for the chosen mode is loaded at step D once routing decides it.
+
+### Guard: Ambiguous-Resumption Detection
+
+This guard catches the case where the user issues a bare resumption verb but the project has no on-disk state to resume from. The check is **disk-fact based** — do not introspect on "is this a new chat?" because that is unreliable.
+
+**Trigger condition (ALL three must be true):**
+
+1. The user's prompt is a bare resumption verb. Match case-insensitively against this enumerated list (with optional trailing `.` or `!` and surrounding whitespace; nothing else on the line):
+   - `continue`
+   - `continue please`
+   - `go`
+   - `go on`
+   - `proceed`
+   - `next`
+   - `resume`
+   - `keep going`
+2. `prompts/outputs/current/resumption-checkpoint.md` is missing.
+3. `prompts/outputs/current/execution-log.md` is missing **OR** its YAML envelope's `next_task` is `null` / absent.
+
+If all three are true, surface this exact ERROR message immediately and stop:
+
+```
+I see you said 'Continue' but I have no checkpoint (`resumption-checkpoint.md`) and no in-flight execution log (`execution-log.md`) to resume from. There is no state on disk that tells me where to pick up.
+
+If you have an in-flight project, please use the standard resumption command:
+**Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**
+
+If you are starting fresh, please tell me the brief or task you'd like to begin.
+```
+
+If conditions 2 or 3 are FALSE (i.e., disk has state to resume from), there is no ambiguity. Skip this guard and continue to Guard B — the agent will resume from disk regardless of whether the chat is new or existing.
+
+---
+
+### Guard: Selective Disk-State Loading via Checkpoint
+
+If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equivalent resumption request), pick exactly one of three paths in this order:
+
+1. **Checkpoint Resumption (preferred path).** If `prompts/outputs/current/resumption-checkpoint.md` is present **and** the user did NOT include any force-reload word (`rebuild`, `force reload`, `re-read all`, `refresh context`):
+   - **Do NOT** load all prior files or task files from disk.
+   - Parse the YAML frontmatter envelope in `resumption-checkpoint.md`.
+   - Read the active `phase` (planning | execution), the active `step`, and the array of files under `re_load_files`.
+   - **Only load the files listed in `re_load_files`** (this restricts context loading to the active slice, e.g. a specific epic or task file).
+   - Route directly to the corresponding engine/phase at that designated step:
+     - If `phase: execution`, route to `prompts/orchestrators/executor.md` and load `execution-log.md` plus the current task.
+     - If `phase: planning` and the engine is Greenfield, route to `prompts/orchestrators/drill-down-engine.md` at the step and load the specified files.
+     - If `phase: planning` and the engine is Gap-closure, route to `prompts/orchestrators/audit-and-remediate.md` at the step and load the specified files.
+
+2. **Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If `resumption-checkpoint.md` is missing, **before** doing a full re-read, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
+   - **Skip the planning re-read entirely.** Do NOT load `epics.md`, `brief-keywords.md`, `features-*.md`, or any `tasks-*.md` other than the one named by `next_task`.
+   - Route directly to `prompts/orchestrators/executor.md`. The executor's own preflight will run `scripts/revise.sh`, confirm `executor_gate: pass`, and read the envelope to resume from `next_task`.
+   - This branch is the correct behavior for any in-flight project whose planning is already complete; the planning artifacts are stable on disk and do not need to be re-read into context.
+
+3. **Force-Reload Escape Hatch (last resort).** Take this path only if BOTH of the above are unavailable — i.e. `resumption-checkpoint.md` is missing AND `execution-log.md` is missing (or shows `next_task: null`) — OR the user explicitly asked to `rebuild` / `force reload` / `re-read all` / `refresh context`:
+   - Perform a **full project context re-read**: `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist.
+   - Then proceed through Steps A–F below to verify state and route.
+   - After the re-read succeeds, write a fresh `resumption-checkpoint.md` reflecting the current phase/step so that the next resumption hits the preferred path above.
+
+---
 
 ### A. Stale-integration check (run FIRST — before anything else)
 
@@ -217,27 +289,23 @@ each task. It maintains `execution-log.md` (with YAML handoff
 envelope) and stops on regressions, 3+ consecutive blockers, or user
 interrupt.
 
-**Resumability:** If the IDE closes or context is exhausted mid-run,
-the user can start a new session and say:
+**Resumability:** If the IDE closes or context is exhausted mid-run, the user can start a new session and paste this exact line:
 
 ```
-Continue where you left off. Read .ai-prompts/prompts/AGENTS.md and
-.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
+Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
 ```
 
-The entry point will detect current state from
-`prompts/outputs/current/` and `execution-log.md` and resume from the
-last checkpoint.
+The entry point will detect the current state from `prompts/outputs/current/resumption-checkpoint.md` (or `execution-log.md`) and perform a token-efficient resumption by loading only the active files under `re_load_files`. If neither file exists, the entry point surfaces an ambiguous-resumption error and stops.
 
 ## Context Management & Continuity
 
 ### The "New Chat" Recommendation
 For complex projects, starting a **NEW CHAT** for each major planning or execution step is the most reliable way to avoid context-compaction artifacts and hallucinations.
 
-### Mandatory Re-load on Continuity
+### Selective Checkpoint Resumption (Continuity & Token Optimization)
 If you are continuing an existing session or resuming work:
-1. **You MUST re-read all relevant project files from disk.** Do not rely on previous context or history.
-2. **Explicit Override:** If continuing in a long chat history, ask the user: *"I see we are continuing in this chat. To ensure maximum precision for this next step, should I restart in a fresh chat, or would you like me to re-load all context from disk and continue here?"*
+1. **Unified State Manifest:** Read `resumption-checkpoint.md` first. Only load the specific files under `re_load_files` (e.g., a specific epic's features or the current execution task) to preserve token space.
+2. **Force-Reload Escape Hatch:** If the context is suspected to be corrupted, or on explicit request ("force reload", "rebuild context"), read all outputs under `prompts/outputs/current/` to perform a full re-build/re-read from disk.
 
 This protocol ensures every implementation prompt and every code change is based on the current, accurate state of the repository.
 
@@ -254,8 +322,10 @@ This protocol ensures every implementation prompt and every code change is based
 1. **Isolation first.** Each expansion step starts from a minimal context.
    Do not carry prior-step artifacts into the next context beyond the
    specific slice being expanded.
-2. **Two-file startup budget.** If you find yourself loading a third file
-   before routing, stop — you're back in waterfall mode.
+2. **One-file startup budget.** Read only this file before routing. The
+   engine loads after Mode D selects it. If you find yourself loading a
+   second orchestrator before routing decides the mode, stop — you're
+   back in waterfall mode.
 3. **No defensive auto-loads.** Safeguard, impact-guard, and self-healing
    orchestrators run on explicit request only.
 4. **Templates subordinate to project context.** If
@@ -269,9 +339,11 @@ This protocol ensures every implementation prompt and every code change is based
 ```
 User: "A todo app with user auth and team workspaces"
 
-Agent loads: ai-agent-entry-point.md, drill-down-engine.md   (2 files)
+Agent loads: ai-agent-entry-point.md                          (1 file)
 Agent checks: working_copy/ empty → skip external handler
 Agent checks: project-context.md missing → skip precedence load
+Agent routes: Mode 4 (greenfield)
+Agent loads: drill-down-engine.md                             (2 files total)
 Agent runs: drill-down-engine Step 1 (seed)
   → writes prompts/outputs/current/epics.md (5 feature + 12 baseline)
   → writes prompts/outputs/current/brief-keywords.md
@@ -315,10 +387,12 @@ User: "Continue"
 ```
 User: "Here are Figma exports in working_copy/ — build this"
 
-Agent loads: ai-agent-entry-point.md, drill-down-engine.md   (2 files)
+Agent loads: ai-agent-entry-point.md                          (1 file)
 Agent detects: working_copy/ has files → load external-input-handler.md
 Agent runs: external-input-handler
   → writes prompts/outputs/current/project-context.md
+Agent routes: Mode 4 (greenfield)
+Agent loads: drill-down-engine.md                             (3 files total)
 Agent runs: drill-down-engine Step 1 loading project-context.md first
   → epics reflect real screen names, real entities from the mockups
 ⏸ CHECKPOINT: shows epics, waits for "Continue"
@@ -332,11 +406,12 @@ Agent runs: drill-down-engine Step 1 loading project-context.md first
 User: "Continue where you left off"
 
 Agent loads: ai-agent-entry-point.md
-Agent detects: execution-log.md exists with next_task: tasks-signup.md
+Agent detects: resumption-checkpoint.md exists (phase: execution, next_task: tasks-signup.md)
+Agent loads: re_load_files (execution-log.md, tasks-signup.md)
 Agent routes: Mode 2 (execute existing plan)
 Agent reads: executor.md
 Agent resumes: from tasks-signup.md
-  → implements task, logs result
+  → implements task, logs result, updates resumption-checkpoint.md
 ⏸ CHECKPOINT: shows result, waits for "Continue"
 ```
 

@@ -6,19 +6,23 @@ Loaded by the IDE at every session. Keep it short.
 
 ---
 
-## The flow (for non-trivial requests)
+## The flow (for non-trivial or resume requests)
 
-1. Read `.ai-prompts/prompts/AGENTS.md`.
-2. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`.
-3. The entry point chooses one of four modes:
+1. Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` first. That's the only orchestrator that auto-loads at startup; the engine for the chosen mode loads after routing.
+2. **Continue / Resume:** the entry point picks ONE path in order:
+   - **Checkpoint:** if `resumption-checkpoint.md` exists, load ONLY files under `re_load_files` (~85% token savings).
+   - **Execution fast path:** if checkpoint is missing but `execution-log.md` has a non-null `next_task`, skip planning re-reads and route directly to `executor.md`.
+   - **Force-reload:** only when both above are unavailable, or the user explicitly asks to "rebuild" / "force reload" / "re-read all" / "refresh context". Re-read all planning artifacts, then write a fresh checkpoint.
+   - **Ambiguous-resumption error:** if the prompt is a bare resumption verb (`continue`, `proceed`, `next`, `resume`, etc.) AND no checkpoint AND no in-flight execution-log, fail fast and ask the user to use the long-form resumption prompt or describe new work. Do not introspect on "is this a new chat?" — use disk facts only.
+3. The entry point chooses one of four modes and then loads the matching engine:
    - **Trivial** (single-file edit) → skip engines, just do the work.
    - **Execute** (a validated plan exists and user says fix/implement/
-     do-the-work) → `executor.md`.
+     do-the-work) → loads `executor.md`.
    - **Gap-closure** (existing codebase; user asks to review, audit,
      fix gaps, productionize, write tests, finish) →
-     `audit-and-remediate.md`. Stops after the planning revise gate
+     loads `audit-and-remediate.md`. Stops after the planning revise gate
      for user review before execution.
-   - **Greenfield** (new project) → `drill-down-engine.md`.
+   - **Greenfield** (new project) → loads `drill-down-engine.md`.
 4. If external material exists (designs/specs/source code under
    `working_copy/`, `prompts/working_copy/`, or project has real
    `src/`/`backend/`/`frontend/`/`android/`/`ios/` directories), also
