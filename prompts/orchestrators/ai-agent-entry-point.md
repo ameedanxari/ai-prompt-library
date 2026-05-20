@@ -67,9 +67,16 @@ If conditions 2 or 3 are FALSE (i.e., disk has state to resume from), there is n
 
 ### Guard: Selective Disk-State Loading via Checkpoint
 
-If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equivalent resumption request), pick exactly one of three paths in this order:
+If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equivalent resumption request), evaluate these conditions in order. The first match wins — do not also run later paths.
 
-1. **Checkpoint Resumption (preferred path).** If `prompts/outputs/current/resumption-checkpoint.md` is present **and** the user did NOT include any force-reload word (`rebuild`, `force reload`, `re-read all`, `refresh context`):
+**Precondition — detect force-reload intent.** Set `force_reload = true` if the user's prompt contains any of (case-insensitive): `rebuild`, `force reload`, `re-read all`, `refresh context`. Otherwise `force_reload = false`. Force-reload always overrides the cheap paths below.
+
+1. **Path 1 — Force-Reload Escape Hatch.** If `force_reload == true`, take this path immediately (skip the cheap paths even when a checkpoint or execution-log exists; the user is explicitly asking to rebuild context):
+   - Perform a **full project context re-read**: `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist. If an `execution-log.md` is also present, load it too.
+   - Then proceed through Steps A–F below to verify state and route.
+   - After the re-read succeeds, write a fresh `resumption-checkpoint.md` reflecting the current phase/step so that the next resumption hits Path 2.
+
+2. **Path 2 — Checkpoint Resumption (preferred when `force_reload == false`).** If `prompts/outputs/current/resumption-checkpoint.md` is present:
    - **Do NOT** load all prior files or task files from disk.
    - Parse the YAML frontmatter envelope in `resumption-checkpoint.md`.
    - Read the active `phase` (planning | execution), the active `step`, and the array of files under `re_load_files`.
@@ -79,15 +86,14 @@ If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equi
      - If `phase: planning` and the engine is Greenfield, route to `prompts/orchestrators/drill-down-engine.md` at the step and load the specified files.
      - If `phase: planning` and the engine is Gap-closure, route to `prompts/orchestrators/audit-and-remediate.md` at the step and load the specified files.
 
-2. **Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If `resumption-checkpoint.md` is missing, **before** doing a full re-read, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
+3. **Path 3 — Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If Path 2 didn't apply (no checkpoint) **and** `force_reload == false`, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
    - **Skip the planning re-read entirely.** Do NOT load `epics.md`, `brief-keywords.md`, `features-*.md`, or any `tasks-*.md` other than the one named by `next_task`.
    - Route directly to `prompts/orchestrators/executor.md`. The executor's own preflight will run `scripts/revise.sh`, confirm `executor_gate: pass`, and read the envelope to resume from `next_task`.
    - This branch is the correct behavior for any in-flight project whose planning is already complete; the planning artifacts are stable on disk and do not need to be re-read into context.
 
-3. **Force-Reload Escape Hatch (last resort).** Take this path only if BOTH of the above are unavailable — i.e. `resumption-checkpoint.md` is missing AND `execution-log.md` is missing (or shows `next_task: null`) — OR the user explicitly asked to `rebuild` / `force reload` / `re-read all` / `refresh context`:
-   - Perform a **full project context re-read**: `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist.
-   - Then proceed through Steps A–F below to verify state and route.
-   - After the re-read succeeds, write a fresh `resumption-checkpoint.md` reflecting the current phase/step so that the next resumption hits the preferred path above.
+4. **Path 4 — No-State Force-Reload (last resort).** If none of the above matched (i.e. `force_reload == false`, no checkpoint, and no usable execution-log), there is no cheap path. Fall back to the same full re-read as Path 1: read `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist. Proceed through Steps A–F to route. Write a fresh `resumption-checkpoint.md` afterward so the next resumption hits Path 2.
+
+Note: the **Guard: Ambiguous-Resumption Detection** above runs *before* this guard. If the prompt was a bare resumption verb and there was no disk state, that guard has already surfaced an error and stopped — Path 4 only fires when there's some disk state but no cheap shortcut.
 
 ---
 
