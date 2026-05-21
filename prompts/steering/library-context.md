@@ -84,6 +84,26 @@ bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
 
 After running any helper, re-run `finalize.sh` to refresh the gate.
 
+## Harness-crash + auto-commit pipelines (executor-only)
+
+The executor (`.ai-prompts/prompts/orchestrators/executor.md`) wires
+two pipelines that happy-path planning sessions do NOT need to load:
+
+- **On every test/build failure:** `scripts/diagnose-harness.sh`
+  classifies the failure (`harness_crash` / `code_crash_known` /
+  `code_crash_unknown` / `not_crashed`) using per-stack catalogs
+  under `.ai-prompts/prompts/modules/harness-recovery/`. Recipes
+  recover the harness automatically; structured `code_fix`
+  remediations are applied by the AI executor in the next loop iteration.
+- **On every successful task:** `scripts/safety-check-commit.sh` +
+  `scripts/commit-task.sh` produce one commit per task with scope
+  and revert-protection invariants. Push is never automatic at the
+  task level.
+
+If you are routing into Mode 1 (trivial), Mode 3/4 (planning), or
+running pure planning steps, do not pre-load any of these — the
+executor loads them on demand.
+
 ## Execute-signal guard — only after a plan exists
 
 If a validated plan already exists and the user's prompt contains any

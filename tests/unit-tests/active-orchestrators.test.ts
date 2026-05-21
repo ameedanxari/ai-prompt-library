@@ -100,9 +100,12 @@ describe('active orchestrators', () => {
     //   90 → 120 (progress-checklist guard)
     //   120 → 135 (mechanical-fixes helper block)
     //   135 → 150 (finalize.sh mandate)
+    //   150 → 180 (harness-recovery + auto-commit pipeline links —
+    //              executor-only, advertised here so happy-path planning
+    //              sessions know they don't need to load them)
     // Any future bump requires a clear reason.
     const lineCount = body.split('\n').length;
-    expect(lineCount).toBeLessThan(150);
+    expect(lineCount).toBeLessThan(180);
   });
 
   it('audit-remediate Step 5 is a planning hard stop, not an auto-executor chain', () => {

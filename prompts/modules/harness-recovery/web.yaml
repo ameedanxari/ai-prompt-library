@@ -1,0 +1,106 @@
+# Web (Node + React) harness-crash catalog.
+# Consumed by scripts/diagnose-harness-web.sh.
+
+entries:
+  - id: port-in-use
+    signatures:
+      - { regex: "EADDRINUSE.*:[0-9]+|listen EADDRINUSE|Port [0-9]+ is already in use", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      # Recipes avoid nested escapes by sticking to single-quoted shell
+      # forms. The recipe kills processes on the common dev-server port
+      # set rather than extracting the port from stderr — extraction
+      # added an escape-quote tarpit and the kill-set is small.
+      recipe:
+        - "for p in 3000 3001 5173 8080 8081; do (command -v lsof >/dev/null 2>&1 && lsof -ti :$p 2>/dev/null | xargs -r kill -9 2>/dev/null) || true; done"
+    confidence: high
+
+  - id: vitest-worker-crash
+    signatures:
+      - { regex: "Test worker.*crashed|Worker process exited|Worker terminated unexpectedly", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "rm -rf node_modules/.vitest 2>/dev/null || true"
+        - "rm -rf .vitest-cache 2>/dev/null || true"
+    confidence: high
+
+  - id: node-native-abi-mismatch
+    signatures:
+      - { regex: "NODE_MODULE_VERSION|was compiled against a different Node.js version|invalid ELF header.*\\.node", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "rm -rf node_modules/.cache 2>/dev/null || true"
+        - "npm rebuild 2>&1 | tail -10 || true"
+    confidence: medium
+
+  - id: vite-cache-corrupt
+    signatures:
+      - { regex: "Failed to resolve import .* from cached|EPERM.*node_modules/\\.vite", source: stderr }
+    evidence_paths:
+      - "node_modules/.vite"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "rm -rf node_modules/.vite 2>/dev/null || true"
+        - "rm -rf node_modules/.cache 2>/dev/null || true"
+    confidence: high
+
+  - id: missing-dependency
+    signatures:
+      - { regex: "Cannot find module '([^']+)'|Module not found: Error: Can't resolve '([^']+)'", source: stderr }
+    evidence_paths:
+      - "package.json"
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "package.json"
+        action: "add_dependency"
+        package_hint: "extract the unresolved module name from the stderr message"
+        dependency_type_hint: "if it appears only in test files or vitest config, add to devDependencies; otherwise dependencies"
+        version_hint: "use the version pinned by other peers if present; otherwise use the latest compatible major"
+    confidence: high
+
+  - id: jsdom-oom
+    signatures:
+      - { regex: "JavaScript heap out of memory|FATAL ERROR: .* Allocation failed", source: stderr }
+    evidence_paths: []
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "package.json"
+        action: "add_node_options"
+        env_hint: "set NODE_OPTIONS=--max-old-space-size=4096 for the failing script; if a per-script test already runs with this flag, escalate to user — bigger heap masks a leak"
+    confidence: medium
+
+  - id: playwright-browser-crash
+    signatures:
+      - { regex: "browserType\\.launch.*failed|Target page, context or browser has been closed|Protocol error.*Browser.close", source: stderr }
+    evidence_paths:
+      - "playwright-report"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "(command -v npx >/dev/null && npx playwright install --with-deps 2>&1 | tail -10) || true"
+    confidence: medium
+
+  - id: jest-vitest-snapshot-fail
+    signatures:
+      - { regex: "snapshot test failed|toMatchSnapshot|Snapshot file is outdated", source: stderr }
+    evidence_paths: []
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "Snapshot mismatch is a real failure to surface, not a harness issue. Inspect whether the new snapshot is intentional UI change or a regression."
+    confidence: high

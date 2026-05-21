@@ -78,12 +78,26 @@ restart.
 
 | Step | Input context | Output |
 |---|---|---|
-| Loop | one `remediation-<gap>.md` or `tasks-<feature>.md` at a time, plus `execution-log.md` for resume | Code changes in the app, test runs, entries in `execution-log.md` per task |
+| Loop | one `remediation-<gap>.md` or `tasks-<feature>.md` at a time, plus `execution-log.md` for resume | Code changes in the app, test runs, entries in `execution-log.md` per task, one commit per successful task |
 
 The executor picks tasks in severity + dependency order, runs the
 Precise change, runs the named Test, checks Acceptance bullets, logs
 the outcome. Stops on regressions, 3+ consecutive blockers, or user
 interrupt.
+
+On test/build failure the executor runs the **harness-diagnosis
+pipeline** (`scripts/diagnose-harness.sh` + per-stack catalogs under
+`prompts/modules/harness-recovery/`) before marking a task `failed`.
+Diagnosis can apply a deterministic recipe (simulator restart, port
+free, cache clear) or surface a structured `code_fix` that the
+executor's AI step applies conservatively. One retry per task; the
+second crash always blocks.
+
+On task success the executor runs the **auto-commit pipeline**
+(`scripts/safety-check-commit.sh` + `scripts/commit-task.sh`) so
+every successful task becomes one reviewable commit. Push is NEVER
+auto — it happens only on user request or at gap/epic boundaries
+when `MY_PROJECT.md` opts in.
 
 `execution-log.md` carries a YAML handoff envelope (session_id,
 parent_session, last_completed_task, next_task, blocked_tasks,

@@ -1,0 +1,60 @@
+# Bash harness-crash catalog. Consumed by scripts/diagnose-harness-bash.sh.
+
+entries:
+  - id: command-not-found
+    signatures:
+      - { regex: "command not found|No such file or directory.*: line [0-9]+:", source: stderr }
+    evidence_paths: []
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "scripts/(the failing script — derive from stderr)"
+        action: "add_dependency_or_path_check"
+        hint: "The script references a binary that isn't on PATH. Either add a preflight check that errors out with a helpful install hint, or replace the dependency with one shipped on the runner. Do NOT silently `|| true` past missing tools."
+    confidence: high
+
+  - id: permission-denied
+    signatures:
+      - { regex: "Permission denied|cannot execute: required file not found.*[Ee]xec format error", source: stderr }
+    evidence_paths: []
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "scripts/(the failing script — derive from stderr)"
+        action: "chmod_or_shebang"
+        hint: "Either the file lacks +x or has the wrong shebang. If +x is missing, propose `chmod +x scripts/<file>.sh`. If shebang is wrong, propose adding `#!/usr/bin/env bash`. The fix is one line; the AI step applies it."
+    confidence: high
+
+  - id: signal-killed
+    signatures:
+      - { regex: "Killed|Terminated|signal SIGKILL|received signal 9", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "uptime 2>/dev/null || true"
+        - "echo '⚠️  process was killed (likely OOM or external kill). Recipe re-runs the command once.'"
+    confidence: medium
+
+  - id: segfault
+    signatures:
+      - { regex: "Segmentation fault|core dumped|signal SIGSEGV|received signal 11", source: stderr }
+    evidence_paths: []
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "Native-binary segfault. The script calling a native binary needs to be examined; do not auto-retry. Mark blocked and surface the segfaulting binary name to the user."
+    confidence: high
+
+  - id: pipefail-trip
+    signatures:
+      - { regex: "set -[eo].*pipefail|pipefail.*non-zero", source: stderr }
+    evidence_paths: []
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "A piped command failed under `set -o pipefail`. The earlier command in the pipe is the root cause — diagnose it directly, do not silence pipefail."
+    confidence: medium

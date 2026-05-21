@@ -1,0 +1,98 @@
+# iOS harness-crash catalog. Consumed by scripts/diagnose-harness-ios.sh.
+#
+# Each entry must be uniquely identifiable from on-disk evidence —
+# no LLM-only classification. Regexes match `--stderr` capture; the
+# `evidence_paths` entries are also scanned for the same regex.
+#
+# Schema (per entry):
+#   id              - kebab-case, unique
+#   signatures      - list of { regex, source } where source ∈ {stderr, evidence}
+#   evidence_paths  - paths checked for both existence and regex match
+#   classification  - harness_crash | code_crash_known | code_crash_unknown
+#   remediation     - { type: recipe | code_fix, recipe?: [...], code_fix?: {...} }
+#   confidence      - high | medium  (low entries are not allowed in the catalog)
+
+entries:
+  - id: simulator-boot-timeout
+    signatures:
+      - { regex: "Failed to boot.*simulator|Simulator device.*not booted|Unable to boot device", source: stderr }
+      - { regex: "TIMEOUT.*simctl boot", source: stderr }
+    evidence_paths:
+      - "~/Library/Logs/CoreSimulator/CoreSimulator.log"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "xcrun simctl shutdown all"
+        - "xcrun simctl erase all || true"
+        - "killall -9 com.apple.CoreSimulator.CoreSimulatorService 2>/dev/null || true"
+        - "sleep 2"
+        - "open -a Simulator || true"
+        - "xcrun simctl bootstatus booted -b || true"
+    confidence: high
+
+  - id: derived-data-corruption
+    signatures:
+      - { regex: "could not read.*DerivedData|ld: warning: ignoring file.*architecture", source: stderr }
+      - { regex: "Cannot find module|No such module .*Swift", source: stderr }
+    evidence_paths:
+      - "~/Library/Developer/Xcode/DerivedData"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "rm -rf ~/Library/Developer/Xcode/DerivedData/${IOS_SCHEME:-}*"
+        - "xcodebuild clean -scheme ${IOS_SCHEME:-} || true"
+    confidence: high
+
+  - id: code-signing-missing
+    signatures:
+      - { regex: "Code signing.*required|No signing certificate.*found|No profiles for.*were found", source: stderr }
+    evidence_paths: []
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "ios/${IOS_APP}.xcodeproj/project.pbxproj"
+        action: "enable_automatic_signing"
+        hint: "Set CODE_SIGN_STYLE=Automatic and DEVELOPMENT_TEAM from MY_PROJECT.md. If the team isn't known, leave the recipe and ask the user before applying."
+    confidence: medium
+
+  - id: missing-usage-description
+    signatures:
+      - { regex: "This app has crashed because it attempted to access privacy-sensitive data without a usage description", source: stderr }
+      - { regex: "(NSCameraUsageDescription|NSPhotoLibraryUsageDescription|NSMicrophoneUsageDescription|NSLocationWhenInUseUsageDescription|NSContactsUsageDescription) ", source: stderr }
+    evidence_paths:
+      - "ios/${IOS_APP}/Info.plist"
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "ios/${IOS_APP}/Info.plist"
+        action: "add_plist_key"
+        key_hint: "extract from the stderr — the exact NSxxxUsageDescription key the OS rejected"
+        value_hint: "use the user-facing copy declared in the task's feature spec; never hard-code a generic string"
+    confidence: high
+
+  - id: xcresult-parse-failure
+    signatures:
+      - { regex: "xcrun xcresulttool.*could not|xcresult.*corrupted", source: stderr }
+    evidence_paths:
+      - "~/Library/Developer/Xcode/DerivedData"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "find ~/Library/Developer/Xcode/DerivedData -name '*.xcresult' -mmin -60 -delete || true"
+    confidence: medium
+
+  - id: app-runtime-crash
+    signatures:
+      - { regex: "Thread [0-9]+ Crashed:|EXC_BAD_ACCESS|EXC_CRASH", source: evidence }
+    evidence_paths:
+      - "~/Library/Logs/DiagnosticReports"
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "App crashed at runtime during test. Extract the top frame from the .ips report and surface it to the user — the fix requires the AI to read the implicated source file and reason about the crash."
+    confidence: high

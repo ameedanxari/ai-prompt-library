@@ -178,6 +178,7 @@ deferred_tasks: [tasks-dashboard.md]   # waiting on a dependency
 test_suite_state: green | red | unknown
 regressions_since_green: []            # prompt filenames that introduced red
 external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
+harness_recoveries: []     # appended by the diagnose-harness pipeline; each entry is { task, classification, action, result, at }
 ---
 
 # Execution Log
@@ -252,11 +253,18 @@ repeat:
         2. Implement the feature as described in the prompt.
            The prompt is self-contained: treat it the same way you
            would if a user had copy-pasted it into a fresh chat.
-        3. Run the build-green gate (see below). If it fails,
-           the prompt is `failed` — do NOT mark done.
+        3. Run the build-green gate AND the task's named test
+           (see below). Capture stderr to a file. If either fails,
+           run the **Harness-Diagnosis pipeline** (see below) before
+           marking the prompt `failed`. Diagnosis may recover the
+           harness or apply a deterministic code fix and warrant ONE
+           retry; only after recovery fails does the prompt become
+           `failed` or `blocked`.
         4. Verify the implementation matches the prompt's guidance.
-        5. Append a log entry.
-        6. Present the ⏸ CHECKPOINT (see below).
+        5. Run the **Auto-commit pipeline** (see below). It validates
+           the diff against the task's declared scope, then commits.
+        6. Append a log entry.
+        7. Present the ⏸ CHECKPOINT (see below).
       if status != `done`:
         surface the blocker to the user and stop this epic.
         move to next epic (do NOT retry without user input).
@@ -333,6 +341,142 @@ check. Exit codes:
 
 If the gate blames a path that is not in `path-ledger.md`, that is a
 canonical-paths violation — re-read the contract above.
+
+### Harness-Diagnosis pipeline (run on every test/build failure)
+
+A test or build-gate failure is **not** automatically a `failed` task.
+Simulators crash. ADB servers go offline. Vite caches corrupt. Many
+"failures" are harness issues that resolve with a deterministic
+recipe; some are genuine code crashes the catalog already knows how
+to patch. Both cases must NOT cost the user a wasted re-run later.
+
+Before marking a task `failed`, invoke the diagnosis pipeline:
+
+```bash
+bash .ai-prompts/scripts/diagnose-harness.sh \
+    --task <current task filename> \
+    --exit-code <captured exit code> \
+    --stderr <path to captured stderr> \
+    --output prompts/outputs/current/harness-diagnosis.json
+```
+
+The script auto-detects the stack from the task's `**File:**` paths
+(or you can pass `--stack ios|android|web|flutter|bash` explicitly),
+matches stderr against
+`.ai-prompts/prompts/modules/harness-recovery/<stack>.yaml`, writes
+the structured `harness-diagnosis.json`, and returns one of four
+exit codes that drives the executor:
+
+| Exit | Meaning | Executor action |
+|---|---|---|
+| 0 | `not_crashed` — real test logic failure | Mark task `failed` exactly as today. Surface the test output to the user. |
+| 1 | `harness_crash` — recipe applied successfully | Re-run the same task EXACTLY ONCE. Do not modify code; the harness is now healthy. |
+| 2 | `code_crash_known` — structured `code_fix` in JSON | Read `remediation.code_fix` from the JSON. Apply the patch conservatively (read the named file, derive the value from the task's feature spec as the catalog hints, do not invent generic copy). Re-run the task EXACTLY ONCE. |
+| 3 | `code_crash_unknown` — no recipe and no catalog match | Mark task `blocked` with `remediation.evidence.report_paths` and `remediation.evidence.key_lines` copied into the journal entry. The user reviews. |
+
+**Loop protection.** The dispatcher reads `harness_recoveries` in
+`execution-log.md` and refuses to recover twice within the same task.
+A second crash of the same signature in the same task forces exit 3
+(blocked) regardless of catalog match. This is non-negotiable.
+
+**Conservative code-fix discipline.** When the JSON says
+`remediation.type == "code_fix"`, you (the AI executor) apply the
+patch — the script never edits source files itself. Two hard rules:
+
+1. The patch must be confined to the file in `remediation.code_fix.file`.
+   Do not edit unrelated files because the catalog hint is vague.
+2. The value the patch inserts (e.g. usage-description copy, runtime
+   permission rationale) must come from the **task's feature spec**.
+   Never use generic strings like `"App needs camera"`. If the spec
+   doesn't specify the copy, leave the patch unapplied and surface
+   the JSON to the user — better to block than to commit a fix that
+   reverts the task's intent.
+
+**Record the recovery in the envelope.** Whether a recipe ran or a
+code-fix was applied, append an entry to `execution-log.md`:
+
+```yaml
+harness_recoveries:
+  - task: tasks-<feature-or-gap>.md
+    classification: <id from catalog>
+    action: recipe | code_fix
+    result: recovered | escalated | blocked
+    at: <ISO 8601 timestamp>
+```
+
+So flake patterns become visible across sessions. The
+`Selective Disk-State Loading` guard in the entry point already
+reads this list (via `execution-log.md` envelope) so a resumed
+session knows where the last recovery happened.
+
+See `.ai-prompts/prompts/modules/harness-recovery/README.md` for
+the catalog schema and per-stack details.
+
+### Auto-commit pipeline (run after every task that goes done)
+
+The library produces atomic tasks; the executor must produce atomic
+commits. Without auto-commit, a 50-task run leaves the user with a
+single uncommitted blob and the burden of inferring the boundary
+between tasks. With auto-commit, every successful task is one
+reviewable commit on the branch.
+
+After build-gate is green and acceptance bullets are verified, but
+BEFORE writing the log entry / checkpoint, run:
+
+```bash
+# 1. Validate diff scope.
+bash .ai-prompts/scripts/safety-check-commit.sh \
+    --task <current task filename> \
+    --report .ai-prompts/safety-report.json
+
+# 2. Commit only if exit 0.
+bash .ai-prompts/scripts/commit-task.sh \
+    --task <current task filename> \
+    --change-line "<one-liner you would have written into execution-log Change made>" \
+    --safety-report .ai-prompts/safety-report.json
+```
+
+The safety check enforces two invariants that protect the user from
+silent damage:
+
+1. **Scope drift.** Every modified file must appear in the task's
+   `**File:**` lines OR in `path-ledger.md`. Engine-output artifacts
+   (`execution-log.md`, `resumption-checkpoint.md`, `path-ledger.md`,
+   `harness-diagnosis.json`, `revise-report.md`) are always allowed.
+   Anything else triggers a warning — the executor includes the
+   list in the commit's `Safety-Check:` trailer.
+2. **Reverted logic.** If the diff deletes more than 80 lines AND
+   the net deletion is more than 2× the additions, the safety check
+   surfaces this as a warning. If the deletion includes files not
+   in the task scope, it's a hard error (exit 1) — commit blocked,
+   surfaced to user.
+
+The commit message follows conventional-commits with the form:
+
+```
+<type>(<scope>): <subject>
+
+Task: <task filename>
+Safety-Check: <verdict> (warnings if any)
+```
+
+Type is inferred from the slug (`test`, `docs`, `fix` for
+remediation, `feat` for tasks-*). Scope is derived from the task
+slug. Subject is the executor's `Change made` one-liner.
+
+**Push policy.** Auto-commit is NEVER auto-push. The executor only
+pushes when:
+- The user explicitly says "push" in chat, OR
+- A gap/epic completes and `MY_PROJECT.md` declares `auto_push: true`
+  for gap/epic boundaries.
+
+Pushing per task would flood CI on every task and dilute the
+review unit. Commits per task + push per gap is the right cadence.
+
+**Failure mode.** If the safety check returns 1 (unsafe), do NOT
+commit. Surface the report's `errors`/`warnings` to the user and
+ask for guidance. The task journal entry records the verdict so the
+audit trail is complete even when the commit didn't happen.
 
 ### Broader regression check after each gap
 
@@ -438,6 +582,13 @@ Next step options:
 - `scripts/build-path-ledger.sh` — emits the canonical-paths ledger
   the executor must consult before writing any source file.
 - `scripts/build-gate.sh` — the after-each-task build-green gate.
+- `scripts/diagnose-harness.sh` + per-stack scripts and
+  `prompts/modules/harness-recovery/*.yaml` — the diagnosis pipeline
+  the executor runs on every test/build failure before marking a
+  task `failed`.
+- `scripts/safety-check-commit.sh` + `scripts/commit-task.sh` — the
+  per-task auto-commit pipeline with scope and revert-protection
+  invariants.
 - `scripts/validate-execution-envelope.sh` — the honest-handoff gate
   that refuses `next_task: null` when files are missing without a
   blocked/failed/deferred entry.

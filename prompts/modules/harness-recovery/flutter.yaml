@@ -1,0 +1,80 @@
+# Flutter harness-crash catalog. Consumed by scripts/diagnose-harness-flutter.sh.
+
+entries:
+  - id: pub-get-corrupted
+    signatures:
+      - { regex: "Could not find a file named .* in the Pub cache|pub-cache.*corrupt", source: stderr }
+    evidence_paths:
+      - ".dart_tool"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "rm -rf .dart_tool 2>/dev/null || true"
+        - "rm -rf .flutter-plugins .flutter-plugins-dependencies 2>/dev/null || true"
+        - "flutter pub get 2>&1 | tail -10 || true"
+    confidence: high
+
+  - id: flutter-engine-version-mismatch
+    signatures:
+      - { regex: "Engine version.*does not match|Flutter SDK upgrade required|Your Flutter version is .* but this project requires", source: stderr }
+    evidence_paths:
+      - "pubspec.yaml"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "flutter --version 2>/dev/null | head -3 || true"
+        - "flutter clean 2>&1 | tail -10 || true"
+        - "flutter pub get 2>&1 | tail -10 || true"
+    confidence: medium
+
+  - id: device-disconnected
+    signatures:
+      - { regex: "Lost connection to device|Device .* unavailable|No supported devices connected", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "flutter devices 2>/dev/null | head -10 || true"
+        - "(command -v adb >/dev/null && adb kill-server && adb start-server) || true"
+    confidence: medium
+
+  - id: dart-isolate-crash
+    signatures:
+      - { regex: "Isolate paused at start|Isolate handler crashed|Lost connection to device.*main isolate", source: stderr }
+    evidence_paths: []
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "Dart isolate crash. Run `flutter symbolize -i <stack> -d <dSYM/obfuscation-file>` to symbolicate the stack, then read the implicated file before the AI step proposes a fix."
+    confidence: high
+
+  - id: missing-pubspec-dependency
+    signatures:
+      - { regex: "Target of URI doesn't exist: 'package:([^']+)/|Undefined name '([A-Z][A-Za-z]+)'", source: stderr }
+    evidence_paths:
+      - "pubspec.yaml"
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "pubspec.yaml"
+        action: "add_pub_dependency"
+        package_hint: "extract package name from the unresolved URI"
+        version_hint: "use the latest minor compatible with the project's Flutter SDK constraint"
+    confidence: high
+
+  - id: native-side-crash
+    signatures:
+      - { regex: "PlatformException|MissingPluginException|FlutterFire.*not initialized", source: stderr }
+    evidence_paths: []
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "lib/main.dart"
+        action: "ensure_widgets_binding_init_or_register_plugin"
+        hint: "If MissingPluginException: confirm the plugin is in pubspec.yaml AND that hot-restart was issued. If FlutterFire not initialized: ensure `await Firebase.initializeApp()` runs before `runApp`."
+    confidence: medium

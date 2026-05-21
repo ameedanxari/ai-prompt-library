@@ -1,0 +1,85 @@
+# Android harness-crash catalog. Consumed by scripts/diagnose-harness-android.sh.
+# See ios.yaml for schema documentation.
+
+entries:
+  - id: gradle-daemon-dead
+    signatures:
+      - { regex: "Gradle build daemon has been stopped|Daemon will be stopped at the end of the build|Could not connect to.*daemon", source: stderr }
+      - { regex: "FAILED.*Could not start.*daemon", source: stderr }
+    evidence_paths:
+      - "~/.gradle/daemon"
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "(cd android && ./gradlew --stop) || true"
+        - "rm -rf ~/.gradle/caches/journal-* 2>/dev/null || true"
+    confidence: high
+
+  - id: adb-server-crashed
+    signatures:
+      - { regex: "adb: device offline|error: device not found|error: protocol fault|cannot connect to daemon", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "adb kill-server || true"
+        - "adb start-server"
+        - "adb devices"
+    confidence: high
+
+  - id: emulator-boot-timeout
+    signatures:
+      - { regex: "Timed out waiting for device|emulator-[0-9]+ offline|Emulator did not.* boot", source: stderr }
+    evidence_paths: []
+    classification: harness_crash
+    remediation:
+      type: recipe
+      recipe:
+        - "adb kill-server || true"
+        - "pkill -f 'qemu-system' || true"
+        - "adb start-server"
+        - "sleep 2"
+        - "adb devices"
+    confidence: medium
+
+  - id: gradle-oom
+    signatures:
+      - { regex: "OutOfMemoryError|Java heap space|GC overhead limit exceeded", source: stderr }
+    evidence_paths:
+      - "android/gradle.properties"
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "android/gradle.properties"
+        action: "increase_gradle_heap"
+        hint: "Add or raise `org.gradle.jvmargs=-Xmx4096m -XX:MaxMetaspaceSize=1024m`. If the line already exists with a higher value, escalate to the user — increasing further may starve the host."
+    confidence: high
+
+  - id: missing-manifest-permission
+    signatures:
+      - { regex: "java.lang.SecurityException.*requires.*permission|Permission Denial.*requires .*permission", source: stderr }
+    evidence_paths:
+      - "android/app/src/main/AndroidManifest.xml"
+    classification: code_crash_known
+    remediation:
+      type: code_fix
+      code_fix:
+        file: "android/app/src/main/AndroidManifest.xml"
+        action: "add_uses_permission"
+        permission_hint: "extract the permission name from the SecurityException stack — e.g. android.permission.READ_MEDIA_IMAGES"
+        runtime_request_hint: "if the permission is runtime-sensitive (camera/location/media/contacts), also ensure the runtime request flow exists in the feature's screen — read the task spec before patching"
+    confidence: high
+
+  - id: kotlin-compile-error
+    signatures:
+      - { regex: "error:.*\\.kt: \\([0-9]+, [0-9]+\\)", source: stderr }
+    evidence_paths:
+      - "android/app/build/reports"
+    classification: code_crash_unknown
+    remediation:
+      type: none
+      hint: "Real compile error in Kotlin source. The AI step must read the implicated file (path is in stderr) and fix the error in the next executor iteration."
+    confidence: high

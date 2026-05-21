@@ -340,6 +340,11 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Mobile app store submission (iOS) | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
 | Mobile app store submission (Android) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
 | Beta / TestFlight / internal testing | `prompts/modules/testing/test-automation.md` |
+| iOS simulator / xcodebuild crash recovery (planning of test tasks) | `prompts/modules/harness-recovery/ios.md` |
+| Android emulator / gradle daemon crash recovery | `prompts/modules/harness-recovery/android.md` |
+| Web (Vitest / Jest / Playwright / Node) test harness crashes | `prompts/modules/harness-recovery/web.md` |
+| Flutter test harness crash recovery | `prompts/modules/harness-recovery/flutter.md` |
+| Bash / shell script crash recovery | `prompts/modules/harness-recovery/bash.md` |
 | Documentation / runbook readiness | `prompts/modules/best-practices/coding-standards.md` |
 | Compliance readiness (GDPR, HIPAA, PCI) | pick from the domain sections above (`healthcare/hipaa-compliance.md`, `commerce/payment-security.md`, `security/data-encryption.md`) |
 
