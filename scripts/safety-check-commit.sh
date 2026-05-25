@@ -124,7 +124,8 @@ while IFS= read -r f; do
     prompts/outputs/current/path-ledger.md|\
     prompts/outputs/current/harness-diagnosis.json|\
     prompts/outputs/current/resumption-checkpoint.md|\
-    prompts/outputs/current/revise-report.md)
+    prompts/outputs/current/revise-report.md|\
+    prompts/outputs/current/delivery-order.md)
       in_scope=1 ;;
   esac
   # Allow any tasks-*.md / remediation-*.md (spec files) and the

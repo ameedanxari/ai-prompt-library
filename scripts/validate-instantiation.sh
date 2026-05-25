@@ -56,6 +56,13 @@ TEST_MARKER='^\s*[-*]?\s*\*\*Test:\*\*'
 FILE_MARKER='^\s*[-*]?\s*\*\*File:\*\*'
 DEPENDS_MARKER='^\s*[-*]?\s*\*\*Depends on:\*\*'
 LOC_MARKER='^\s*[-*]?\s*\*\*Estimated LOC:\*\*'
+PHASE_MARKER='^\s*[-*]?\s*\*\*Phase:\*\*'
+# Phase value must be one of the four enum values. The script
+# `build-delivery-order.sh` reads this field and refuses to sort a
+# plan that mixes unknown values.
+# NOTE: awk's POSIX regex does NOT support \s — use [[:space:]] so
+# the same pattern works in awk's regex engine.
+PHASE_ENUM_VALID='^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*[[:space:]]*(foundation|mvp|expand|polish)[[:space:]]*\.?[[:space:]]*$'
 
 # Depends-on must carry a Reason when not `none`. Both engines require
 # this to prevent invented ordering between unrelated tasks.
@@ -170,9 +177,29 @@ fi
 # bootstrap paradox.
 required_companions=(
   "$TARGET_DIR/external-accounts.md"
+  "$TARGET_DIR/delivery-order.md"
+  # Stream A planning artifacts — upstream of tasks. Every greenfield
+  # run that produced tasks-*.md must also have these:
+  "$TARGET_DIR/product-vision.md"
+  "$TARGET_DIR/architecture.md"
+  "$TARGET_DIR/release-plan.md"
+  # store-submission.md is required for all runs that produced tasks
+  # — for non-mobile projects it can be a one-line file noting the
+  # actual distribution channel, but it must exist.
+  "$TARGET_DIR/store-submission.md"
 )
 if [ "${VALIDATOR_SKIP_GATE_CHECK:-0}" != "1" ]; then
   required_companions+=("$TARGET_DIR/revise-report.md")
+fi
+
+# Conditional companion: ux-flows.md is required when the plan has
+# UI-heavy work (same trigger as ui-reference-source-map.md). We use
+# the presence of ui-reference-source-map.md as the proxy: it is
+# already conditionally required by the existing UI design-quality
+# gate, so requiring ux-flows.md alongside it keeps the two
+# UI-blueprint artifacts in lockstep.
+if [ -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
+  required_companions+=("$TARGET_DIR/ux-flows.md")
 fi
 for rc in "${required_companions[@]}"; do
   if [ ! -f "$rc" ]; then
@@ -659,7 +686,7 @@ for f in "${files[@]}"; do
 
 
   # 5. Metadata completeness check (Phase 7 — StorageCleaner field test).
-  # Every task file must carry ALL 6 required metadata fields. Missing fields
+  # Every task file must carry ALL 7 required metadata fields. Missing fields
   # were the #1 schema-alignment defect: 9 of 78 files shipped without any
   # metadata, and the engine never caught it because each field was checked
   # in isolation but the "all present" invariant was never enforced.
@@ -670,18 +697,44 @@ for f in "${files[@]}"; do
   grep -qE "$DEPENDS_MARKER" "$f"        || missing_fields="$missing_fields Depends-on"
   grep -qE "$TEST_MARKER" "$f"           || missing_fields="$missing_fields Test"
   grep -qE "$LOC_MARKER" "$f"            || missing_fields="$missing_fields Estimated-LOC"
+  grep -qE "$PHASE_MARKER" "$f"          || missing_fields="$missing_fields Phase"
   if [ -n "$missing_fields" ]; then
     echo "❌ $f: missing required metadata field(s):$missing_fields"
-    echo "   Every task file MUST carry all 6 metadata fields:"
+    echo "   Every task file MUST carry all 7 metadata fields:"
     echo "     - **Closes user story:** As a <role>, I <want|need> <action>, so that <value>."
     echo "     - **Change type:** <create-new | modify-existing>"
     echo "     - **File:** \`<path>\`"
     echo "     - **Depends on:** <tasks-other.md | none> (reason)"
     echo "     - **Test:** <verification command or steps>"
     echo "     - **Estimated LOC:** <+N | -N | ~N>"
-    echo "   Run the Schema Alignment Pass (schema-alignment-pass.md) to inject"
+    echo "     - **Phase:** <foundation | mvp | expand | polish>"
+    echo "   Run the Schema Alignment Pass (drill-down Step 3.7) to inject"
     echo "   the missing fields from the narrative content."
     fail=1
+  fi
+
+  # 5a-ii. Phase enum check. Phase must be foundation | mvp | expand | polish.
+  # An out-of-enum value (e.g. "Phase: high", "Phase: critical") would
+  # break build-delivery-order.sh — the script normalises case but does
+  # not accept arbitrary values. Caught here too so the failure surfaces
+  # at the same level as the other schema checks.
+  # NOTE: regex inlined inside awk with double-escapes (\\*) because
+  # passing it via -v re=... loses the literal-asterisk escape.
+  if grep -qE "$PHASE_MARKER" "$f"; then
+    bad_phase=$(awk '
+      /^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*/ {
+        if ($0 !~ /^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*[[:space:]]*(foundation|mvp|expand|polish)[[:space:]]*\.?[[:space:]]*$/) {
+          printf "%d:%s\n", NR, $0
+        }
+      }
+    ' "$f")
+    if [ -n "$bad_phase" ]; then
+      echo "❌ $f: Phase: value is not in the enum"
+      printf "%s\n" "$bad_phase" | sed 's/^/   /'
+      echo "   Allowed values (lowercase): foundation, mvp, expand, polish."
+      echo "   See baseline-task-shapes.md § Phase enum for semantics."
+      fail=1
+    fi
   fi
 
   # 5b. Cross-platform path check (Phase 7 — StorageCleaner field test).
@@ -1138,6 +1191,93 @@ else:
       fail=1
       ;;
   esac
+fi
+
+# 6d. Phase-inversion check (Stream B / C11 — delivery-aware ordering).
+# A task in an earlier phase MUST NOT depend on a task in a later phase.
+# foundation < mvp < expand < polish. A reverse edge means either the
+# Phase field is wrong on one side, or the dependency is wrong.
+if [ ${#files[@]} -gt 0 ]; then
+  inversion_result=$(python3 -c "
+import sys, os, re
+
+target_dir = sys.argv[1]
+PHASE_ORDER = {'foundation': 0, 'mvp': 1, 'expand': 2, 'polish': 3}
+
+phase_re = re.compile(r'^\s*[-*]?\s*\*\*Phase:\*\*\s*([A-Za-z]+)', re.MULTILINE)
+deps_re  = re.compile(r'^\s*[-*]?\s*\*\*Depends on:\*\*\s*(.+)$', re.MULTILINE)
+ref_re   = re.compile(r'tasks-[a-z0-9][a-z0-9-]*\.md|remediation-[a-z0-9][a-z0-9-]*\.md')
+
+phases = {}
+deps = {}
+for fn in os.listdir(target_dir):
+    if not (fn.startswith('tasks-') or fn.startswith('remediation-')) or not fn.endswith('.md'):
+        continue
+    with open(os.path.join(target_dir, fn)) as fh:
+        body = fh.read()
+    pm = phase_re.search(body)
+    p = pm.group(1).strip().lower() if pm else None
+    phases[fn] = p
+    dm = deps_re.search(body)
+    if dm and 'none' not in dm.group(1).lower():
+        deps[fn] = ref_re.findall(dm.group(1))
+    else:
+        deps[fn] = []
+
+inversions = []
+for fn, fn_phase in phases.items():
+    if fn_phase not in PHASE_ORDER:
+        continue
+    for dep in deps.get(fn, []):
+        dep_phase = phases.get(dep)
+        if dep_phase not in PHASE_ORDER:
+            continue
+        if PHASE_ORDER[dep_phase] > PHASE_ORDER[fn_phase]:
+            inversions.append(f'{fn} ({fn_phase}) -> {dep} ({dep_phase})')
+
+if inversions:
+    print('inversion')
+    for line in inversions:
+        print(line)
+else:
+    print('ok')
+" "$TARGET_DIR" 2>/dev/null || echo "skip")
+
+  case "$(printf "%s" "$inversion_result" | head -n1)" in
+    ok)
+      ;;
+    skip)
+      echo "⚠️  Phase-inversion check skipped (python3 not available)"
+      ;;
+    inversion)
+      echo "❌ phase inversion detected — earlier-phase tasks depend on later-phase tasks"
+      echo "   foundation < mvp < expand < polish. A task MUST NOT depend on a later phase."
+      printf "%s\n" "$inversion_result" | tail -n +2 | sed 's/^/   - /'
+      echo "   Fix by re-grading Phase on one side of the edge, or by removing"
+      echo "   the dependency entirely if it was invented. See"
+      echo "   baseline-task-shapes.md § Phase enum for the assignment rule."
+      fail=1
+      ;;
+  esac
+fi
+
+# 6e. MVP-non-empty check (greenfield only — Stream B / C11).
+# A plan with zero MVP tasks has no walking skeleton. The library cannot
+# proceed to execution because the executor would have no "minimum
+# shippable" tier to prioritize after foundations.
+if [ -f "$TARGET_DIR/epics.md" ]; then
+  mvp_count=$(grep -hE "$PHASE_MARKER" "$TARGET_DIR"/tasks-*.md 2>/dev/null \
+    | grep -Eic '\*\*Phase:\*\*[[:space:]]*mvp\b' || true)
+  if [ "${mvp_count:-0}" -eq 0 ]; then
+    echo "❌ Phase coverage: plan has zero tasks in the 'mvp' phase"
+    echo "   Every greenfield plan must place at least one task in 'mvp' —"
+    echo "   the minimum shippable surface that proves the product. A plan"
+    echo "   with zero MVP tasks has no walking skeleton and the executor"
+    echo "   would have nothing to prioritize after foundations. Re-grade"
+    echo "   which features belong in MVP. See baseline-task-shapes.md"
+    echo "   § Phase enum for the assignment rule."
+    fail=1
+  fi
 fi
 
 # 7. Cross-file create-new collision detector. If N tasks across all

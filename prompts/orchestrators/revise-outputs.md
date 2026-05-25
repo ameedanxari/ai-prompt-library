@@ -44,6 +44,12 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C8 — Platform coverage | Applies | Applies |
 | C9 — Regression against prior pass | Applies if prior revise-report exists | Applies if prior revise-report exists |
 | C10 — UI design quality | Applies when UI tasks exist | Applies when UI remediation exists |
+| C11 — Phase coverage + ordering | Applies | Applies |
+| C12 — Product-vision schema | Applies | Skip |
+| C13 — Architecture schema | Applies | Skip |
+| C14 — UX-flows schema | Applies when UI tasks exist | Skip |
+| C15 — Release-plan schema | Applies | Skip |
+| C16 — Store-submission schema | Applies (one-liner ok for non-mobile) | Skip |
 
 `checks_run` in the report's frontmatter MUST list every check row
 marked "Applies" for the active engine. A revise report that omits an
@@ -183,6 +189,186 @@ Any C10 failure must be regenerated through the originating engine. Do not
 offer an "accept the design shortcut" option. The library cannot proceed to
 execution with generic "make it beautiful" guidance, missing design
 research, missing chart states, or unrelated redesign drift.
+
+### C11 — Phase coverage + ordering (both modes)
+
+Reads `delivery-order.md` frontmatter (written by
+`scripts/build-delivery-order.sh` during finalize). Verifies four
+invariants that together make the plan executable in delivery order
+rather than alphabetical order:
+
+1. **Every task carries a `Phase:` field.** The frontmatter's
+   `missing_phase_field` array must be empty. Tasks without a Phase
+   defaulted to `mvp` during sorting; that masks the gap. Regenerate
+   the offending task via Step 3.7 with explicit Phase guidance.
+
+2. **`Phase:` values are within the enum.** Anything other than
+   `foundation`, `mvp`, `expand`, `polish` is a schema violation.
+   The build-delivery-order script normalises case but does not
+   accept arbitrary values.
+
+3. **MVP is non-empty.** For greenfield plans, `phase_counts.mvp`
+   must be ≥ 1. A plan with zero MVP tasks has no walking skeleton
+   and no demonstrable shippable surface — by definition the plan
+   does not yet describe a product. Re-grade which features belong
+   in MVP (see `baseline-task-shapes.md` § Phase enum). For
+   audit-and-remediate (gap-closure) runs, this rule is relaxed —
+   not every gap closure has an MVP feature.
+
+4. **No phase inversions.** `phase_inversions` in the frontmatter
+   must be empty. A `foundation` task that depends on an `mvp`
+   task, or any reverse-direction edge, means either the Phase
+   field is wrong on one side of the edge or the dependency is
+   wrong. Fix by re-grading the Phase or removing the inverted
+   edge. The executor cannot proceed with phase inversions —
+   running a foundation task that waits on an mvp task would either
+   block forever or skip ahead past foundations.
+
+5. **No cycles.** `cycle_tasks` in the frontmatter must be empty.
+   Already enforced by `validate-instantiation.sh` check 6c
+   independently, but C11 also surfaces it here so the user sees
+   it next to the Phase context.
+
+When any C11 invariant fails:
+
+- Surface the specific tasks and the rule violated.
+- Regenerate the offending tasks-*.md via Step 3 / Step 3.7, then
+  re-run `bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current`.
+- Do NOT proceed to the executor with a failing C11 — the executor
+  reads `delivery-order.md` verbatim as its iteration order.
+
+### C12 — Product-vision schema (greenfield only)
+
+Verifies `prompts/outputs/current/product-vision.md` exists and
+matches the schema declared in
+`.ai-prompts/prompts/orchestrators/product-vision.md`. Required
+sections (any missing → fail):
+
+- **Identity** with one-liner, positioning, platforms.
+- **Personas** — at least 1, at most 3. Each persona has role,
+  goal, frustration, "what good looks like".
+- **Success metrics** — at least 3 measurable metrics, each with
+  a target value and a measurement source.
+- **Non-goals** — at least 3 explicit exclusions.
+- **Risks & assumptions** — at least 3 ranked risks, each with
+  impact + mitigation.
+
+Anti-pattern checks (see product-vision.md § Anti-patterns):
+marketing copy without measurement, personas with no frustration,
+empty risk register. Any anti-pattern fired → fail, regenerate
+via the product-vision orchestrator.
+
+### C13 — Architecture schema (greenfield only)
+
+Verifies `prompts/outputs/current/architecture.md` exists and
+matches the schema declared in
+`.ai-prompts/prompts/orchestrators/architecture-blueprint.md`.
+Required sections:
+
+- **Layer map** with named layers and responsibilities.
+- **Tech stack** table — every row must have a "Why this, not the
+  alternative" rationale (not boilerplate).
+- **Data flow** description with at least one diagram or
+  structured walkthrough.
+- **Domain entities** table aggregated from all `features-*.md`.
+- **Performance budgets** — at least 3 budgets, each with a
+  device class + measurement source.
+- **Privacy & security posture** with explicit network-surface
+  declaration.
+- **ADRs** — at least 3, fewer than 13.
+
+Cross-artifact consistency: the network-surface line in the
+privacy posture must align with `external-accounts.md` (zero
+external services ⇒ network surface = "none"; presence of
+runtime third-party services ⇒ network surface explicitly names
+those services).
+
+### C14 — UX-flows schema (conditional, both modes)
+
+Runs when any feature in `features-*.md` is UI-heavy OR when
+`ui-reference-source-map.md` exists. Verifies
+`prompts/outputs/current/ux-flows.md` exists and matches the
+schema declared in
+`.ai-prompts/prompts/orchestrators/ux-blueprint.md`. Required
+sections:
+
+- **Design principles** — 3–5 product-specific principles.
+- **Screen map** — hierarchical tree or diagram.
+- **Navigation rules** — push/modal/tab + back-stack + deep-link.
+- **Per-screen specifications** — one subsection per leaf screen.
+  Each MUST include the full state matrix (default, loading,
+  empty, error, disabled, success) AND accessibility AC
+  (VoiceOver/TalkBack, touch targets, dynamic type, reduced
+  motion, contrast).
+- **Cross-screen patterns** — at minimum, behaviour for empty
+  first launch + permission revoked + offline + crash recovery.
+
+Mechanical state-matrix check: every screen subsection must
+contain the words `default`, `loading`, `empty`, `error`,
+`disabled`, `success`. A screen missing any state is rejected.
+
+### C15 — Release-plan schema (greenfield only)
+
+Verifies `prompts/outputs/current/release-plan.md` exists and
+matches the schema declared in
+`.ai-prompts/prompts/orchestrators/release-plan.md`. Required
+sections:
+
+- **Stage map** — alpha, beta, ga, post-ga (or equivalent named
+  stages if the plan justifies departing from the default).
+- **Per-stage details** — every stage has task count, ship-gate
+  checklist, known-issues list, rollback strategy.
+- **Cross-stage release gates** — build-green, regression,
+  external-accounts.
+- **Risk register** distinct from product-vision risks.
+
+Cross-artifact consistency: every task in `delivery-order.md`
+must appear in exactly one stage's task list (or be explicitly
+deferred to `post-ga`). A task in zero stages is "ghosted" —
+the executor would build it but no stage owns it. A task in
+multiple stages is double-counted.
+
+Mechanical phase-vs-stage check: tasks tagged `polish` must not
+appear in the Alpha stage; tasks tagged `foundation` should
+typically be fully consumed by Alpha.
+
+### C16 — Store-submission schema
+
+Verifies `prompts/outputs/current/store-submission.md` exists.
+
+**For mobile projects** (platforms includes `ios` or `android`):
+required sections —
+
+- **Per-platform listing metadata** with name, subtitle / short
+  description, full description, keywords, categories, age rating.
+- **Privacy disclosures** — iOS nutrition labels table AND/OR
+  Android data safety table, depending on platforms.
+- **Permission strings** — every requested permission has a
+  user-facing string. Permissions explicitly NOT requested are
+  also listed (negative-space declarations).
+- **Asset checklist** — app icon spec, screenshot matrix
+  (platform × locale × device class), preview video plan.
+- **Monetisation** — free vs paid, paywall trigger if any.
+- **Reviewer notes** for each store.
+- **Compliance** — privacy policy URL, export compliance answer.
+
+**For non-mobile projects** (web-only, backend, CLI, library):
+a one-line file naming the actual distribution channel is
+sufficient. Example:
+`Distribution: direct download from <URL>. No app-store
+submission required.`
+
+Cross-artifact consistency:
+- Privacy disclosures align with `architecture.md` § Privacy &
+  security posture. If architecture declares "Network surface:
+  none", every nutrition-label row defaults to "Not Collected".
+  A contradiction is the #1 cause of App Store rejection.
+- Every permission named here must have a matching task in
+  `tasks-*.md` that wires the permission.
+- Every screenshot in the asset matrix must have a corresponding
+  capture task (see `baseline-task-shapes.md` § App Store Release
+  Prep). The submission doc lists the matrix; the tasks
+  implement individual screenshots.
 
 ### C6 — External services manifest
 

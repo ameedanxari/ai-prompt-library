@@ -24,6 +24,12 @@ const ACTIVE = [
   'baseline-task-shapes.md',
   'schema-alignment-pass.md',
   'self-maintain.md',
+  // Stream A upstream planning artifacts (run from drill-down-engine):
+  'product-vision.md',
+  'architecture-blueprint.md',
+  'ux-blueprint.md',
+  'release-plan.md',
+  'store-submission.md',
 ];
 
 describe('active orchestrators', () => {

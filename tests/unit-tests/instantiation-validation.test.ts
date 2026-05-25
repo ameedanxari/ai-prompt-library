@@ -17,6 +17,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-instantiation.sh');
@@ -108,6 +109,7 @@ describe('validator — clean fixture passes', () => {
           '',
         ].join('\n'),
       );
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
       });
@@ -142,6 +144,7 @@ describe('validator — clean fixture passes', () => {
       let code = 0;
       let out = '';
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -182,6 +185,7 @@ describe('validator — clean fixture passes', () => {
       let code = 0;
       let out = '';
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -237,6 +241,7 @@ describe('validator — clean fixture passes', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -293,6 +298,7 @@ describe('validator — clean fixture passes', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -354,6 +360,7 @@ describe('validator — clean fixture passes', () => {
           '',
         ].join('\n'),
       );
+      writeStreamAStubs(sandbox);
 
       const out = execSync(`bash "${REVISE}" "${sandbox}"`, {
         encoding: 'utf8',
@@ -406,6 +413,7 @@ describe('validator — clean fixture passes', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -456,6 +464,7 @@ describe('validator — clean fixture passes', () => {
       let code = 0;
       let out = '';
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -500,6 +509,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -541,6 +551,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -587,6 +598,7 @@ describe('validator — user-story linkage', () => {
         path.join(sandbox, 'revise-report.md'),
         passingReviseReport(),
       );
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
       });
@@ -639,6 +651,7 @@ describe('validator — user-story linkage', () => {
         '# External Accounts Required\n\nNo new external services required.\n',
       );
       fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       expect(out).toMatch(/✅/);
     } finally {
@@ -675,6 +688,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -717,6 +731,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -783,6 +798,7 @@ describe('validator — user-story linkage', () => {
         path.join(sandbox, 'revise-report.md'),
         passingReviseReport(),
       );
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
         encoding: 'utf8',
       });
@@ -819,6 +835,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -881,6 +898,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -920,6 +938,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -1047,6 +1066,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -1095,6 +1115,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -1147,6 +1168,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -1205,6 +1227,7 @@ describe('validator — user-story linkage', () => {
         ].join('\n'),
       );
 
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       expect(out).toMatch(/✅/);
     } finally {
@@ -1256,6 +1279,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -1300,6 +1324,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       } catch (e) {
         const err = e as { stdout?: Buffer; status?: number };
@@ -1339,6 +1364,7 @@ describe('validator — user-story linkage', () => {
         path.join(sandbox, 'revise-report.md'),
         passingReviseReport(),
       );
+      writeStreamAStubs(sandbox);
       const out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
       expect(out).toMatch(/✅/);
     } finally {
@@ -1375,6 +1401,7 @@ describe('validator — user-story linkage', () => {
       let out = '';
       let code = 0;
       try {
+        writeStreamAStubs(sandbox);
         out = execSync(`bash "${VALIDATOR}" "${sandbox}"`, {
           encoding: 'utf8',
         });
@@ -1393,6 +1420,7 @@ describe('validator — user-story linkage', () => {
 
 describe('validator — orphan tasks and baseline coverage', () => {
   function runValidator(sandbox: string): { out: string; code: number } {
+    writeStreamAStubs(sandbox);
     try {
       return {
         out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
@@ -1719,6 +1747,7 @@ describe('validator — orphan tasks and baseline coverage', () => {
 
 describe('validator — final-delivery quality checks', () => {
   function runValidator(sandbox: string): { out: string; code: number } {
+    writeStreamAStubs(sandbox);
     try {
       return {
         out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
@@ -1736,6 +1765,7 @@ describe('validator — final-delivery quality checks', () => {
   function passingCompanions(dir: string) {
     fs.writeFileSync(path.join(dir, 'external-accounts.md'), '# External Accounts Required\n');
     fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
+    writeStreamAStubs(dir);
   }
 
   function writeUiSourceMap(dir: string) {
@@ -1921,6 +1951,7 @@ describe('validator — final-delivery quality checks', () => {
 
 describe('validator — UI design quality gate', () => {
   function runValidator(sandbox: string): { out: string; code: number } {
+    writeStreamAStubs(sandbox);
     try {
       return {
         out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
@@ -1938,6 +1969,7 @@ describe('validator — UI design quality gate', () => {
   function passingCompanions(dir: string) {
     fs.writeFileSync(path.join(dir, 'external-accounts.md'), '# External Accounts Required\n');
     fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
+    writeStreamAStubs(dir);
   }
 
   function writeUiSourceMap(dir: string) {

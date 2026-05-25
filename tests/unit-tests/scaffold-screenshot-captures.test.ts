@@ -12,6 +12,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCAFFOLD = path.join(REPO_ROOT, 'scripts', 'scaffold-screenshot-captures.sh');
@@ -120,6 +121,7 @@ describe('scaffold-screenshot-captures.sh', () => {
         '# External Accounts Required\n',
       );
       fs.writeFileSync(path.join(dir, 'revise-report.md'), passingReviseReport());
+      writeStreamAStubs(dir);
       const out = execSync(`bash "${VALIDATOR}" "${dir}"`, { encoding: 'utf8' });
       expect(out).toMatch(/✅/);
     } finally {

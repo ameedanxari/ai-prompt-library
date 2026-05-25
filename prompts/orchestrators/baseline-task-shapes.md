@@ -57,10 +57,74 @@ by `scripts/validate-instantiation.sh`; violating them fails the gate.
    (`build-path-ledger.sh`) splits on `|` and registers both paths.
    Files that are inherently single-platform (`.xcprivacy`, `fastlane/`,
    `.github/workflows/`, `AndroidManifest.xml`) are exempt.
-8. **All 6 metadata fields are mandatory.** Every task file MUST
+8. **All 7 metadata fields are mandatory.** Every task file MUST
    carry: `Closes user story`, `Change type`, `File`, `Depends on`,
-   `Test`, and `Estimated LOC`. The validator enforces this as a
-   hard gate — files missing any field will fail.
+   `Test`, `Estimated LOC`, and `Phase`. The validator enforces this
+   as a hard gate — files missing any field will fail.
+9. **`Phase` must be one of `foundation | mvp | expand | polish`.**
+   See the Phase enum section below for the semantics of each value
+   and how the executor uses it to order delivery. Field tests
+   showed weak models producing alphabetical task corpora that hid
+   foundations behind feature tasks — the Phase field, combined with
+   the executor's phase-aware topological sort, is what makes
+   filesystem listing and delivery order one and the same.
+
+---
+
+## Phase enum — the delivery-order field
+
+Every task and every feature carries one `Phase` value. The executor
+orders execution **first by Phase** (foundation before mvp before
+expand before polish), **then topologically** within a phase by
+`Depends on:` edges, **then lexically** by filename as the final
+tiebreak. This is the mechanism that replaces alphabetical filename
+ordering with delivery-aware ordering.
+
+| Phase | What belongs here | Examples |
+|---|---|---|
+| `foundation` | Project scaffolding and baseline infrastructure that unblocks everything else. Must finish before MVP feature work begins. | Toolchain setup, project templates, design tokens, base architecture, dev-setup script, CI/CD pipelines, observability harness, test fixtures, path-ledger, build gates. |
+| `mvp` | The minimum shippable feature surface — the walking skeleton plus the core user journey that proves the product. The set you'd demo as "v1.0 alpha". | One end-to-end flow per platform: indexer → review queue → swipe interaction → deletion staging → result confirmation. The smallest set that earns the right to ship. |
+| `expand` | Feature breadth beyond MVP — secondary flows, additional capabilities, deeper settings, history/review screens, alternate filter types. Built only after MVP works. | Smart groupings, new-media detection, storage dashboard, review history, user settings, advanced filters. |
+| `polish` | Accessibility refinements, localization breadth, app-store listing perfection, performance tuning, edge-case handling, visual regression coverage. The last 20% that ships the product. | RTL/locale QA, screen-reader audits, color-contrast checks, screenshot matrices, store metadata, beta distribution, crash signal wiring, performance budgets. |
+
+### How to assign Phase
+
+When you write a task or feature, ask in order:
+
+1. **Could MVP work without this task?** If no → `foundation` or `mvp`.
+   - If the task scaffolds infrastructure other tasks depend on → `foundation`.
+   - If the task is part of the core user journey → `mvp`.
+2. **Is this a secondary flow or expansion of an MVP capability?** → `expand`.
+3. **Is this a refinement that improves an already-working feature?** → `polish`.
+
+Tie-breaker rule: when a task could plausibly sit in two phases,
+**choose the earlier phase**. A late-phase task should be one you
+can confidently defer; if the team would actually pull it forward
+under pressure, it isn't really late.
+
+### Phase-inversion rule (validated by revise-outputs.md C11)
+
+A task in an earlier phase **must not** depend on a task in a later
+phase. Concretely:
+
+- `foundation` may depend only on other `foundation` tasks (or none).
+- `mvp` may depend on `foundation` or other `mvp` tasks.
+- `expand` may depend on `foundation`, `mvp`, or other `expand` tasks.
+- `polish` may depend on anything.
+
+A reverse edge (e.g. an `mvp` task that lists a `polish` task in its
+`Depends on:`) is a phase inversion — it means either the phases are
+mis-assigned or the dependency is wrong. The revise gate flags this
+and refuses to let the executor proceed.
+
+### MVP-non-empty rule
+
+Every greenfield plan must place **at least one task** in the `mvp`
+phase. A plan with zero MVP tasks is a definitional failure: it has
+no walking skeleton, no demonstrable shippable surface, and the
+executor would have nothing to prioritize after foundations. The
+revise gate refuses such a plan and asks the engine to re-grade
+which features belong in MVP.
 
 ---
 

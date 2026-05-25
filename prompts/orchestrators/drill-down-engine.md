@@ -27,10 +27,16 @@ project grows. Each step loads only what it needs; nothing else.
 
 Before starting or continuing work, you **MUST** read the contents of `prompts/outputs/current/` to determine the current state of the planning phase:
 
-1. **If `epics.md` is missing:** The planning phase has not started. Start with **Step 1 (Seed)**.
-2. **If `epics.md` exists but `features-*.md` are missing:** Step 1 is complete. Proceed to **Step 2 (Expansion)**.
-3. **If `features-*.md` exist but some `tasks-*.md` are missing:** Step 2 is complete. Run `bash scripts/step3-progress.sh` to see exactly which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
-4. **If all `tasks-*.md` exist but `revise-report.md` is missing or outdated:** Step 3 is complete. Proceed to **Step 4 (Validate)** and then **Step 4.5 (Revise)**.
+1. **If `product-vision.md` is missing:** Planning has not started. Run **Step 0.5 (Product Vision)** first.
+2. **If `product-vision.md` exists but `epics.md` is missing:** Step 0.5 is complete. Proceed to **Step 1 (Seed)**.
+3. **If `epics.md` exists but `features-*.md` are missing:** Step 1 is complete. Proceed to **Step 2 (Expansion)**.
+4. **If `features-*.md` exist but `architecture.md` is missing:** Step 2 is complete. Proceed to **Step 2.7 (Architecture Blueprint)**.
+5. **If `architecture.md` exists, the project has UI features, and `ux-flows.md` is missing:** Proceed to **Step 2.8 (UX Blueprint)**.
+6. **If the upstream blueprints are complete but some `tasks-*.md` are missing:** Run `bash scripts/step3-progress.sh` to see which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
+7. **If all `tasks-*.md` exist but `delivery-order.md` is missing:** Step 3 is complete. Proceed to **Step 3.7 (Schema Alignment)** then **Step 3.8 (Delivery Order)**.
+8. **If `delivery-order.md` exists but `release-plan.md` is missing:** Proceed to **Step 3.9 (Release Plan)**.
+9. **If the project has mobile platforms and `store-submission.md` is missing:** Proceed to **Step 3.95 (Store Submission)**.
+10. **If all the above exist but `revise-report.md` is missing or outdated:** Proceed to the **Revise Gate**.
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
@@ -53,11 +59,39 @@ The entry point (`ai-agent-entry-point.md`) parses this file on `"Continue"` / `
 ```
 prompts/outputs/current/
 ├── project-context.md           (optional, from external-input-handler)
+├── product-vision.md            (Step 0.5)
 ├── epics.md                     (Step 1)
+├── brief-keywords.md            (Step 1)
 ├── features-<epic-slug>.md      (Step 2, one per epic)
+├── external-accounts.md         (Step 2.5)
 ├── ui-reference-source-map.md   (Step 2.6, when greenfield UI exists)
-└── tasks-<feature-slug>.md      (Step 3, one per feature)
+├── architecture.md              (Step 2.7)
+├── ux-flows.md                  (Step 2.8, when greenfield UI exists)
+├── tasks-<feature-slug>.md      (Step 3, one per feature)
+├── delivery-order.md            (Step 3.8)
+├── release-plan.md              (Step 3.9)
+├── store-submission.md          (Step 3.95, when mobile platforms in scope)
+└── revise-report.md             (Revise Gate)
 ```
+
+---
+
+## STEP 0.5 — Product Vision (runs once, before any epic work)
+
+Before brain-dumping epics, anchor the plan with a one-page product
+vision. This file is consumed by every downstream orchestrator
+(architecture, UX, release-plan, store-submission); without it,
+weak models re-derive positioning differently in each context and
+the resulting artifacts drift.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/product-vision.md`
+
+It produces `prompts/outputs/current/product-vision.md`. After
+writing the file and presenting the checkpoint, **wait for the user
+to say "Continue"** before starting Step 1.
+
+If `product-vision.md` already exists on disk (resumption), skip
+this step — re-reading the file is sufficient.
 
 ---
 
@@ -65,6 +99,7 @@ prompts/outputs/current/
 
 **Load ONLY:**
 - The user brief (`MY_PROJECT.md` or inline input)
+- `product-vision.md` (from Step 0.5)
 - `project-context.md` if it exists
 
 **Do NOT load:** stage files, modules, templates, orchestrators beyond this one.
@@ -128,6 +163,18 @@ Each epic entry has exactly:
 - `complexity` — `S` (<1 week) | `M` (1–2 weeks) | `L` (2+ weeks)
 - `applies_to` — list of platforms this epic spans (subset of the
   project's platforms)
+- `phase` — `foundation` | `mvp` | `expand` | `polish`. The default
+  phase for the epic's features and tasks (individual features may
+  override). See `baseline-task-shapes.md` § Phase enum for the rule.
+  Rough mapping:
+  - baseline epics that scaffold the project (toolchain, design
+    tokens, CI/CD, observability, testing harness) → `foundation`
+  - baseline epics that ship the product (privacy disclosures,
+    onboarding/consent, settings minimum) → usually `mvp` or
+    `polish` depending on whether MVP can ship without them
+  - feature epics that make up the core user journey → `mvp`
+  - feature epics that broaden the surface → `expand`
+  - feature epics that refine an already-working surface → `polish`
 
 ### Output format
 
@@ -146,6 +193,7 @@ _Feature epics: N · Baseline epics: M · Total: N+M_
   - <bullet>
 - **Complexity:** <S|M|L>
 - **Applies to:** web, android, ios
+- **Phase:** mvp
 
 ### 2. …
 
@@ -158,6 +206,7 @@ _Feature epics: N · Baseline epics: M · Total: N+M_
   - <bullet>
 - **Complexity:** <S|M|L>
 - **Applies to:** web, android, ios
+- **Phase:** mvp
 
 ### B2. …
 ```
@@ -313,6 +362,14 @@ Each feature has:
 - `constraints` — any project-specific constraints that affect how this
   feature must be built (e.g. "no network access", "on-device only",
   "must work offline")
+- `phase` — `foundation` | `mvp` | `expand` | `polish`. Inherits from
+  the parent epic's `phase` unless this feature is materially earlier
+  or later than its siblings (e.g. a "design tokens" feature inside an
+  mvp epic legitimately moves to `foundation`; an "advanced filters"
+  feature inside an mvp epic legitimately moves to `expand`). See
+  `baseline-task-shapes.md` § Phase enum for the assignment rule.
+  A feature MUST NOT name a `dependencies` entry from a later phase
+  (phase inversion) — the revise gate rejects such cases.
 
 **Output format:**
 
@@ -331,6 +388,8 @@ Each feature has:
 - `POST /auth/login`  → req `{email, password}` → res `{token}`
 
 **Dependencies:** none
+
+**Phase:** mvp
 ```
 
 **Write to:** `prompts/outputs/current/features-<epic-slug>.md`
@@ -440,6 +499,40 @@ Rules:
 If `project-context.md` exists and contains a Design Context with
 `Existing theme authority: yes`, do not generate a competing greenfield
 source map. Existing product style wins.
+
+---
+
+### STEP 2.7 — Architecture Blueprint (MANDATORY, runs once)
+
+After every `features-*.md` is written and the external-services
+rollup is complete, produce the architecture blueprint. This file
+is consumed by every Step 3 task; tasks cite tech-stack choices
+from the blueprint instead of re-deriving them per-task.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/architecture-blueprint.md`
+
+It produces `prompts/outputs/current/architecture.md`. After
+writing the file and presenting the checkpoint, **wait for the user
+to say "Continue"** before starting Step 2.8 (or Step 3 if no UI).
+
+If `architecture.md` already exists on disk (resumption), skip
+this step.
+
+### STEP 2.8 — UX Blueprint (CONDITIONAL, runs once)
+
+Runs only if at least one feature in `features-*.md` is UI-heavy
+(screen, dashboard, flow, dialog, swipe interface, list, form).
+For pure backend / CLI / library projects, skip this step
+entirely.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/ux-blueprint.md`
+
+It produces `prompts/outputs/current/ux-flows.md`. After writing
+the file and presenting the checkpoint, **wait for the user to say
+"Continue"** before starting Step 3.
+
+If `ux-flows.md` already exists on disk (resumption), skip this
+step.
 
 ---
 
@@ -892,9 +985,12 @@ Step 3 prioritized **creative density** (narrative implementation prompts). Step
 - **Depends on:** <tasks-other-feature.md | none> (reason if not none)
 - **Test:** <command or manual steps to verify>
 - **Estimated LOC:** <+N | -N | ~N>
+- **Phase:** <foundation | mvp | expand | polish>
 ```
 
-4. **ALL 6 FIELDS ARE MANDATORY.** The validator (`validate-instantiation.sh`) will reject any task file missing even one field. Do not omit `Estimated LOC:` or `Test:` — both are required by the executor.
+4. **ALL 7 FIELDS ARE MANDATORY.** The validator (`validate-instantiation.sh`) will reject any task file missing even one field. Do not omit `Estimated LOC:`, `Test:`, or `Phase:` — all three are required by the executor.
+
+   The `Phase:` value comes from the parent feature's `phase` (Step 2 schema). A task only overrides its feature's phase when the task is materially earlier or later than its feature's other tasks — e.g. an `mvp` feature whose first task scaffolds a shared module legitimately marks that one task `foundation`. See `baseline-task-shapes.md` § Phase enum for the assignment rule. A task MUST NOT depend on a task in a later phase (phase inversion) — the revise gate rejects such cases.
 
 5. **Cross-Platform File Paths (MANDATORY for multi-platform projects):**
    Read the `_Project platforms:_` line in `epics.md`. If the project targets both iOS and Android (or any two platforms), then every task that contains platform-specific source code MUST include paths for BOTH platforms in the `File:` field, separated by a pipe `|`:
@@ -919,6 +1015,114 @@ Step 3 prioritized **creative density** (narrative implementation prompts). Step
 8. **DAG Validation:** After injecting all metadata, the `Depends on:` graph MUST be a DAG (Directed Acyclic Graph). The validator runs Kahn's algorithm to detect cycles. A cycle means the executor would deadlock. Fix cycles by removing or reversing one dependency in the chain.
 
 **Perform this pass in a single context window** (or segmented by epic) to maintain global awareness of the project's file structure and dependency graph.
+
+
+---
+
+
+## STEP 3.8 — Emit the delivery-order manifest (MANDATORY)
+
+After Step 3.7 has injected the `Phase:` field into every task, emit
+the canonical execution-order manifest. Without this file, the
+executor falls back to filesystem listing — which is alphabetical and
+hides the phase grouping.
+
+Run:
+
+```bash
+bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current
+```
+
+The script reads every `tasks-*.md` and `remediation-*.md`, extracts
+its `Phase:` and `Depends on:` fields, performs Kahn's topological
+sort over the dependency graph using `Phase` as the primary tiebreak
+(`foundation` < `mvp` < `expand` < `polish`) and lexical filename as
+the final tiebreak, and writes:
+
+`prompts/outputs/current/delivery-order.md`
+
+Schema:
+
+```markdown
+---
+generated_at: <ISO 8601>
+total_tasks: N
+phase_counts:
+  foundation: <count>
+  mvp: <count>
+  expand: <count>
+  polish: <count>
+phase_inversions: []           # populated by C11; empty when plan is healthy
+---
+
+# Delivery Order
+
+## Phase 1 — foundation
+1. `tasks-toolchain-setup.md`        (depends on: none)
+2. `tasks-design-tokens-and-themes.md` (depends on: tasks-toolchain-setup.md)
+…
+
+## Phase 2 — mvp
+N+1. `tasks-incremental-library-indexer.md` (depends on: tasks-photos-and-videos-permission-state.md)
+…
+
+## Phase 3 — expand
+…
+
+## Phase 4 — polish
+…
+```
+
+The executor reads this manifest verbatim to pick the next task —
+the order in the manifest IS the order of execution.
+
+Exit codes:
+- `0` → manifest written, no phase inversions, no cycles.
+- non-zero → the script surfaced a phase inversion or a cycle.
+  Both block the gate. Fix by either (a) re-grading the offending
+  task's `Phase:`, or (b) removing the inverted dependency. Re-run
+  Step 3.8 until exit 0.
+
+
+---
+
+
+## STEP 3.9 — Release Plan (MANDATORY, runs once)
+
+After `delivery-order.md` is generated, convert the Phase tags
+(`foundation | mvp | expand | polish`) into release stages
+(`alpha | beta | ga | post-ga`) with explicit ship-gates.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/release-plan.md`
+
+It produces `prompts/outputs/current/release-plan.md`. After
+writing the file and presenting the checkpoint, **wait for the user
+to say "Continue"** before starting Step 3.95 (or the Revise Gate
+if no mobile platforms).
+
+If `release-plan.md` already exists on disk (resumption), skip
+this step.
+
+
+---
+
+
+## STEP 3.95 — Store Submission (CONDITIONAL, runs once)
+
+Runs only if `MY_PROJECT.md` Platforms includes `ios` or `android`.
+For web-only / backend / CLI / library projects, write a one-line
+`store-submission.md` that names the actual distribution channel
+("Distribution: direct download from <URL>" or similar), so the
+required-companions check passes.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/store-submission.md`
+
+It produces `prompts/outputs/current/store-submission.md`. After
+writing the file and presenting the checkpoint, **wait for the
+user to say "Continue"** before running the Revise Gate.
+
+If `store-submission.md` already exists on disk (resumption),
+skip this step.
 
 
 ---

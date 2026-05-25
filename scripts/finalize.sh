@@ -39,11 +39,11 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
-echo "Step 1/3 — apply mechanical auto-fixers"
+echo "Step 1/4 — apply mechanical auto-fixers"
 echo "----------------------------------------"
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
-echo "Step 2/3 — build the canonical-paths ledger"
+echo "Step 2/4 — build the canonical-paths ledger"
 echo "-------------------------------------------"
 # Emit path-ledger.md so the executor has an authoritative list of
 # every File: path the plan owns. Non-fatal: ledger collisions are
@@ -51,7 +51,17 @@ echo "-------------------------------------------"
 ledger_status=0
 bash "$SCRIPT_DIR/build-path-ledger.sh" "$TARGET_DIR" || ledger_status=$?
 echo ""
-echo "Step 3/3 — run the Revise Gate"
+echo "Step 3/4 — build the delivery-order manifest"
+echo "--------------------------------------------"
+# Emit delivery-order.md so the executor has a canonical phase-aware
+# topological sort. Without this, the executor falls back to filesystem
+# listing (alphabetical) and the Phase field has no effect on order.
+# Phase inversions / cycles are fatal here — exit 1 or 2 from the
+# script flips the gate to fail.
+delivery_status=0
+bash "$SCRIPT_DIR/build-delivery-order.sh" "$TARGET_DIR" || delivery_status=$?
+echo ""
+echo "Step 4/4 — run the Revise Gate"
 echo "------------------------------"
 gate_status=0
 bash "$SCRIPT_DIR/revise.sh" "$TARGET_DIR" || gate_status=$?
@@ -64,6 +74,17 @@ if [ $gate_status -eq 0 ] && [ $ledger_status -ne 0 ]; then
   echo ""
   echo "ℹ️  revise gate alone passed, but path-ledger.sh found collisions;"
   echo "   promoting overall gate to fail. Open path-ledger.md."
+fi
+
+# Phase inversions / dependency cycles in delivery-order.md are also
+# blocking. A plan that cannot be linearly ordered for execution must
+# not pass the gate, even if every task individually validates.
+if [ $gate_status -eq 0 ] && [ $delivery_status -ne 0 ]; then
+  gate_status=$delivery_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but build-delivery-order.sh found"
+  echo "   phase inversions or a cycle; promoting overall gate to fail."
+  echo "   Open delivery-order.md for the specific tasks."
 fi
 
 echo ""

@@ -10,6 +10,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const FINALIZE = path.join(REPO_ROOT, 'scripts', 'finalize.sh');
@@ -49,6 +50,7 @@ describe('finalize.sh', () => {
           '  - C present.',
           '- **Test:** `src/a.test.ts`',
           '- **Estimated LOC:** ~10',
+          '- **Phase:** mvp',
           '',
         ].join('\n'),
       );
@@ -56,6 +58,7 @@ describe('finalize.sh', () => {
         path.join(sandbox, 'external-accounts.md'),
         '# External Accounts Required\n',
       );
+      writeStreamAStubs(sandbox);
       const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
       expect(code).toBe(0);
       expect(out).toMatch(/executor_gate: pass/);
@@ -91,6 +94,7 @@ describe('finalize.sh', () => {
           '  - C present.',
           '- **Test:** `src/signup.test.ts`',
           '- **Estimated LOC:** ~10',
+          '- **Phase:** mvp',
           '',
         ].join('\n'),
       );
@@ -98,6 +102,7 @@ describe('finalize.sh', () => {
         path.join(sandbox, 'external-accounts.md'),
         '# External Accounts Required\n',
       );
+      writeStreamAStubs(sandbox);
       const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
       expect(code).toBe(0);
       expect(out).toMatch(/executor_gate: pass/);
@@ -135,6 +140,7 @@ describe('finalize.sh', () => {
           '  - C present.',
           '- **Test:** `src/alpha.test.ts`',
           '- **Estimated LOC:** ~10',
+          '- **Phase:** mvp',
           '',
         ].join('\n'),
       );
@@ -142,6 +148,7 @@ describe('finalize.sh', () => {
         path.join(sandbox, 'external-accounts.md'),
         '# External Accounts Required\n',
       );
+      writeStreamAStubs(sandbox);
       const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
       expect(code).not.toBe(0);
       expect(out).toMatch(/executor_gate: fail/);
@@ -175,6 +182,7 @@ describe('finalize.sh', () => {
           '  - C present.',
           '- **Test:** `src/alpha.test.ts`',
           '- **Estimated LOC:** ~10',
+          '- **Phase:** mvp',
           '',
         ].join('\n'),
       );
@@ -182,6 +190,7 @@ describe('finalize.sh', () => {
         path.join(sandbox, 'external-accounts.md'),
         '# External Accounts Required\n',
       );
+      writeStreamAStubs(sandbox);
       const first = run(`bash "${FINALIZE}" "${sandbox}"`);
       const second = run(`bash "${FINALIZE}" "${sandbox}"`);
       expect(first.code).toBe(0);

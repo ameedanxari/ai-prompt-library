@@ -33,15 +33,20 @@ Running it is idempotent — if the plan is clean it just re-confirms
 
 Act on the exit code:
 
-- **Exit 0** → `executor_gate: pass`. External-accounts.md and
-  revise-report.md are both present and valid. Proceed to the
-  execution loop.
+- **Exit 0** → `executor_gate: pass`. External-accounts.md,
+  revise-report.md, AND delivery-order.md are all present and valid.
+  Proceed to the execution loop.
 - **Non-zero exit** → stop immediately. Do NOT start writing
   `execution-log.md`. Read `revise-report.md`'s `failing_files:` list
   and report the specific files to the user, then name which engine
   step needs to re-run:
   - Missing `external-accounts.md` → audit-and-remediate Step 3.5
     (or drill-down Step 2.5) was skipped.
+  - Missing `delivery-order.md` → drill-down Step 3.8 was skipped.
+    Re-run `bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current`.
+  - Phase inversions / cycles in `delivery-order.md` frontmatter →
+    re-grade the offending tasks' `Phase:` or remove the inverted
+    edge, then re-run `build-delivery-order.sh`.
   - Missing or failing `revise-report.md` → the revise gate caught a
     violation. Regenerate the offending `tasks-*.md` /
     `remediation-*.md` via the engine's Step 3, then re-invoke
@@ -62,11 +67,21 @@ drift.
 
 On top of the entry-point + this file, load:
 
-1. `prompts/outputs/current/gap-list.md` (gap-closure) OR
-   `prompts/outputs/current/epics.md` (greenfield) — for ordering.
-2. `prompts/outputs/current/execution-log.md` if it exists — resume
+1. `prompts/outputs/current/delivery-order.md` — **the authoritative
+   execution order.** Each numbered entry names exactly one task
+   filename. The executor iterates this list top to bottom; do NOT
+   re-sort, do NOT iterate filesystem listings, do NOT skip ahead
+   past a phase. If the file is missing or stale, run
+   `bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current`
+   yourself before the first task. The Phase field on each task is
+   already baked into the manifest's order — you do not need to
+   re-derive it.
+2. `prompts/outputs/current/gap-list.md` (gap-closure) OR
+   `prompts/outputs/current/epics.md` (greenfield) — for traceability
+   from task back to epic/gap.
+3. `prompts/outputs/current/execution-log.md` if it exists — resume
    point.
-3. `prompts/outputs/current/path-ledger.md` — the authoritative list of
+4. `prompts/outputs/current/path-ledger.md` — the authoritative list of
    every file path the plan owns. Keep this open (or re-read on demand)
    before every file write. If `finalize.sh` wrote the ledger as part
    of the gate, it is up to date; if it is missing, run
@@ -239,39 +254,83 @@ envelope is the source of truth for "where we are".
 ## Execution loop
 
 ```
+read delivery-order.md
+  parse its numbered list of task filenames in order; this IS the
+  execution order. The list is already phase-grouped (foundation →
+  mvp → expand → polish) and topologically sorted within each phase
+  by Depends-on edges, with lexical filename as the final tiebreak.
+
 repeat:
-  read epics.md (or gap-list.md)
-  for each epic (or gap) in dependency order:
-    if every prompt in this epic/gap is `done` in execution-log.md:
-      continue  // complete
-    for each prompt file (`tasks-<feature>.md` or `remediation-<gap>.md`) in this epic/gap:
-      if already `done` in execution-log.md: skip
-      execute the prompt:
-        1. Read the full contents of the chosen prompt file.
-           This IS the implementation prompt — it contains all the
-           context, guidance, patterns, and constraints the AI needs.
-        2. Implement the feature as described in the prompt.
-           The prompt is self-contained: treat it the same way you
-           would if a user had copy-pasted it into a fresh chat.
-        3. Run the build-green gate AND the task's named test
-           (see below). Capture stderr to a file. If either fails,
-           run the **Harness-Diagnosis pipeline** (see below) before
-           marking the prompt `failed`. Diagnosis may recover the
-           harness or apply a deterministic code fix and warrant ONE
-           retry; only after recovery fails does the prompt become
-           `failed` or `blocked`.
-        4. Verify the implementation matches the prompt's guidance.
-        5. Run the **Auto-commit pipeline** (see below). It validates
-           the diff against the task's declared scope, then commits.
-        6. Append a log entry.
-        7. Present the ⏸ CHECKPOINT (see below).
-      if status != `done`:
-        surface the blocker to the user and stop this epic.
-        move to next epic (do NOT retry without user input).
-    after epic: run broader regression check (see below).
-  when all epics processed: run the honest-handoff gate (see below)
-    and only then produce the summary.
+  for each task filename in delivery-order.md, in the order listed:
+    if already `done` in execution-log.md: skip
+    if blocked/deferred/failed by a previous attempt: respect the
+      envelope's blocked_tasks / failed_tasks / deferred_tasks list
+      and skip — do not retry without user input.
+
+    execute the task:
+      1. Read the full contents of the chosen prompt file.
+         This IS the implementation prompt — it contains all the
+         context, guidance, patterns, and constraints the AI needs.
+      2. Implement the feature as described in the prompt.
+         The prompt is self-contained: treat it the same way you
+         would if a user had copy-pasted it into a fresh chat.
+      3. Run the build-green gate AND the task's named test
+         (see below). Capture stderr to a file. If either fails,
+         run the **Harness-Diagnosis pipeline** (see below) before
+         marking the prompt `failed`. Diagnosis may recover the
+         harness or apply a deterministic code fix and warrant ONE
+         retry; only after recovery fails does the prompt become
+         `failed` or `blocked`.
+      4. Verify the implementation matches the prompt's guidance.
+      5. Run the **Auto-commit pipeline** (see below). It validates
+         the diff against the task's declared scope, then commits.
+      6. Append a log entry.
+      7. Present the ⏸ CHECKPOINT (see below).
+
+    if status != `done`:
+      surface the blocker to the user and stop the current phase.
+      Do NOT skip ahead to a later phase — a foundation/mvp failure
+      almost always implies later tasks will fail too. Move on only
+      when the user gives explicit guidance.
+
+    after each phase boundary in delivery-order.md (when the next
+    task in the list belongs to a later phase): run broader
+    regression check (see below).
+
+  when every task in delivery-order.md is accounted for: run the
+    honest-handoff gate (see below) and only then produce the summary.
 ```
+
+### Why delivery-order.md and not filesystem listing
+
+Iterating filesystem listings (`ls tasks-*.md`) produces alphabetical
+order, which hides the phase grouping and mixes foundation tasks with
+expand/polish tasks. The Phase field exists specifically to fix this,
+but the field alone does not change iteration order — the executor
+must read a canonical sorted list. That list is `delivery-order.md`,
+written by `scripts/build-delivery-order.sh` during finalize.
+
+**Never substitute filesystem order for delivery-order.md.** If the
+manifest is missing or out of date, regenerate it via:
+
+```bash
+bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current
+```
+
+The script also re-validates that no task depends on a later-phase
+task (phase inversion) and no cycle exists. Both conditions are
+fatal to the executor.
+
+### Phase-boundary regression check
+
+Every transition from one Phase to the next (foundation → mvp,
+mvp → expand, expand → polish) is a natural checkpoint where the
+whole project should still build and the broader regression test
+should still pass. Treat each phase boundary the same way the old
+loop treated an epic boundary: run the broader regression check
+before crossing into the next phase. If foundation tasks all pass
+individually but the regression check fails at the foundation/mvp
+boundary, do NOT start MVP — surface to the user.
 
 ### ⏸ CHECKPOINT — After each prompt
 
@@ -442,7 +501,8 @@ silent damage:
 1. **Scope drift.** Every modified file must appear in the task's
    `**File:**` lines OR in `path-ledger.md`. Engine-output artifacts
    (`execution-log.md`, `resumption-checkpoint.md`, `path-ledger.md`,
-   `harness-diagnosis.json`, `revise-report.md`) are always allowed.
+   `harness-diagnosis.json`, `revise-report.md`, `delivery-order.md`)
+   are always allowed.
    Anything else triggers a warning — the executor includes the
    list in the commit's `Safety-Check:` trailer.
 2. **Reverted logic.** If the diff deletes more than 80 lines AND
