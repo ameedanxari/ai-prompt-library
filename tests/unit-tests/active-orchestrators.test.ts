@@ -239,6 +239,13 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/validate-instantiation\.sh/);
   });
 
+  it('executor surfaces design-system review artifacts for feedback', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    expect(body).toMatch(/docs\/design-system\/review\/index\.html/);
+    expect(body).toMatch(/Design-system review handoff/);
+    expect(body).toMatch(/visual-review feedback/);
+  });
+
   it('executor execution-log schema includes a YAML handoff envelope', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
     // Envelope must name the fields needed for cross-session resume.
@@ -503,8 +510,10 @@ describe('active orchestrators', () => {
     expect(drill).toMatch(/existing theme is authoritative/i);
     expect(drill).toMatch(/redesign or rebrand/i);
     expect(drill).toMatch(/Reference\/research needs/);
+    expect(drill).toMatch(/docs\/design-system\/review\/index\.html/);
     expect(audit).toMatch(/Existing theme authority/);
     expect(audit).toMatch(/Reference\/research needs/);
+    expect(audit).toMatch(/docs\/design-system\/review\/index\.html/);
     expect(audit).toMatch(/redesign\/rebrand/i);
   });
 
@@ -517,6 +526,7 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/UI reference source map/);
     expect(body).toMatch(/ui-reference-source-map\.md/);
     expect(body).toMatch(/Reference\/research needs/);
+    expect(body).toMatch(/docs\/design-system\/review\/index\.html/);
     expect(body).toMatch(/OS capability matrix/);
     expect(body).toMatch(/accept the design shortcut/);
   });

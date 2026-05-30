@@ -26,6 +26,9 @@ Define a reusable component library aligned to the product’s mockups and inter
 6. For existing products, extend the current component library, density,
    typography, navigation, and theme conventions unless the user explicitly
    requested redesign or rebrand.
+7. Pair component catalog work with a static design-system review artifact
+   at `docs/design-system/review/index.html` so the user can visually review
+   components, variants, states, and reference evidence before screen work.
 
 ## Required Output Sections
 Ensure `design-system-component-catalog.md` includes:
@@ -35,6 +38,8 @@ Ensure `design-system-component-catalog.md` includes:
   and `success`
 - Token usage map per component
 - UI reference source map or existing-style source map
+- Static HTML review artifact path (`docs/design-system/review/index.html`)
+  with linked Mobbin/Figma/product/platform reference URLs or paths
 - Interaction/accessibility notes
 - Dependencies and composition rules
 

@@ -23,6 +23,9 @@ Define a token-driven visual system that is implementation-ready across web, mob
 3. Create semantic token aliases (for example: `surface.primary`, `text.muted`).
 4. Map tokens to each platform implementation layer (CSS vars, Flutter theme, etc.).
 5. Document accessibility constraints (contrast, focus visibility, touch targets).
+6. Create or update `docs/design-system/review/index.html` so token swatches,
+   semantic aliases, platform mappings, and the reference evidence behind
+   design choices are visible for user feedback.
 
 ## Required Output Sections
 Ensure `design-system-foundation.md` includes:
@@ -31,8 +34,12 @@ Ensure `design-system-foundation.md` includes:
 - Platform mapping table
 - Theming strategy (brand/light/dark if applicable)
 - Accessibility guardrails tied to tokens
+- Static HTML review artifact path (`docs/design-system/review/index.html`)
+  with token swatches and linked Mobbin/Figma/product/platform references
 
 ## Acceptance Criteria
 - No major UI style is left "free-form" outside token usage.
 - Tokens are referenceable by engineering tasks.
 - Platform mapping is concrete enough for direct implementation.
+- User can open the HTML review artifact and give feedback before dependent
+  screen-level tasks proceed.

@@ -323,6 +323,10 @@ For each epic in Step 1's output, start a **fresh context** containing only:
   component systems, Tailwind, visual redesign, admin panels), also load
   the relevant design-research/design-system modules. Greenfield UI must
   include design reference research before screen-level implementation.
+  If the epic or feature creates design tokens, a component system,
+  component catalog, reusable component library, or native theme
+  foundation, load the design-system review artifact module too and plan
+  `docs/design-system/review/index.html` as a foundation deliverable.
   Existing product UI must preserve the `project-context.md` Design
   Context as authoritative unless the user explicitly requested redesign
   or rebrand.
@@ -724,6 +728,11 @@ into project-specific instructions. Include:>
 Include this section for UI features only:
 - UI reference source map: existing product source paths and/or 3-5
   Mobbin-style reference categories, with a non-copy boundary for each.
+- Design-system review artifact: for token/component/theme foundation
+  work, create `docs/design-system/review/index.html` with token swatches,
+  component gallery, state matrix, responsive previews, accessibility
+  notes, and linked reference evidence from `ui-reference-source-map.md`
+  or the existing-style source map.
 - Component inventory: primitives and composed components required.
 - Token mapping: colors, typography, spacing, radius, elevation, motion,
   and chart colors if applicable.
@@ -974,6 +983,11 @@ Do **not** declare prompts ready if any of these are true:
 - A Tailwind prompt introduces one-off hardcoded colors/spacing rather
   than deriving styles from tokens, `@theme` variables, CSS variables, or
   the existing Tailwind configuration.
+- A design-system foundation prompt creates tokens/components/theme
+  primitives but does not create or update
+  `docs/design-system/review/index.html`, does not include reference
+  URLs/paths/availability from the source map, or does not require a
+  user visual-review feedback checkpoint before dependent screen work.
 
 If any stop condition trips, reload the module and regenerate the
 prompt before the validation gate below.

@@ -298,6 +298,12 @@ Include this section for UI remediation only:
   inspected Mobbin/Figma/product/platform evidence, or a
   `research-unavailable` row with the concrete reason and fallback sources.
 - Component inventory and token mapping.
+- Design-system review artifact: if remediation creates or materially
+  changes tokens, theme primitives, component catalog, or a reusable
+  component library, create or update
+  `docs/design-system/review/index.html` and include linked
+  Mobbin/Figma/product/platform reference URLs or paths that led to the
+  design choices.
 - State matrix: default, loading, empty, error, disabled, success.
 - Responsive, accessibility, and screenshot/visual QA checks.
 

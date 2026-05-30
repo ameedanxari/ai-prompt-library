@@ -189,6 +189,16 @@ Required checks:
 - Tailwind tasks derive styles from tokens, `@theme` variables, CSS
   variables, or the existing Tailwind config. Hardcoded one-off colors or
   spacing are violations.
+- Design-system foundation tasks that create or materially change design
+  tokens, theme primitives, component systems, component catalogs, or
+  reusable component libraries include `docs/design-system/review/index.html`
+  as a static HTML review artifact. The artifact must show token swatches,
+  component gallery, state matrix, responsive previews, accessibility notes,
+  and the Mobbin/Figma/product/platform reference URLs or paths that led to
+  the design choices.
+- Those design-system foundation tasks require the executor checkpoint to
+  present the HTML artifact path plus reference evidence links/paths and ask
+  the user for visual-review feedback before dependent screen-level work.
 - Existing-product UI remediation preserves the audited theme unless the
   task explicitly cites redesign, rebrand, or migration approval.
 - Mobile cleanup/storage/memory tasks include an OS capability matrix with

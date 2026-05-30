@@ -356,6 +356,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 | Design tokens (generation pipeline — single source of truth across platforms) | `prompts/modules/design-system/token-generation-pipeline.md` |
 | Component system | `prompts/modules/design-system/component-system.md` |
 | Component implementation pattern (from tokens, no hardcoded styles) | `prompts/modules/design-system/component-implementation-pattern.md` |
+| Design system HTML review artifact / style guide preview / component catalog review / user design feedback | `prompts/modules/design-system/design-system-review-artifact.md` |
 | Loading states / skeletons / motion tokens | `prompts/modules/design-system/loading-states-and-animations.md` |
 | Design-to-code validation | `prompts/modules/design-system/design-to-code-validation.md` |
 | Design system governance / ownership / change control | `prompts/modules/design-system/governance-and-maintenance.md` |

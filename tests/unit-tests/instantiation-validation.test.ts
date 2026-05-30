@@ -2032,6 +2032,29 @@ describe('validator — UI design quality gate', () => {
     ].join('\n');
   }
 
+  function designSystemTask(extraLines: string[]): string {
+    return [
+      '# Remediation — Design system foundation',
+      '',
+      '## R1 · design tokens and component system review',
+      '- **Closes user story:** As a product owner, I want design tokens and a component system, so that I can review visual direction before screens are implemented.',
+      '- **Change type:** create-new',
+      '- **File:** `docs/design-system/review/index.html`',
+      '- **Precise change:** create a static HTML review artifact for design tokens, component system, and local visual inspection.',
+      '- **Acceptance:**',
+      '  - The artifact includes token swatches, component gallery, responsive previews, and accessibility notes.',
+      '  - The artifact includes default, loading, empty, error, disabled, and success state examples.',
+      '  - The task satisfies the design-system review-page requirements.',
+      '- **Test:** `test -f docs/design-system/review/index.html && rg "default, loading, empty, error, disabled, success" docs/design-system/review/index.html`',
+      '- **Depends on:** none',
+      '- **Estimated LOC:** +180',
+      '- **Phase:** foundation',
+      '',
+      ...extraLines,
+      '',
+    ].join('\n');
+  }
+
   it('accepts a UI task with source map, token mapping, and required states', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-ok-'));
     try {
@@ -2221,6 +2244,99 @@ describe('validator — UI design quality gate', () => {
           '- Responsive and accessibility checks: mobile stack, desktop grid, keyboard focus, screen-reader chart summary.',
         ]),
       );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects design-system foundation tasks without an HTML review artifact', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-design-review-missing-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-design-system.md'),
+        [
+          '# Remediation — Design system foundation',
+          '',
+          '## R1 · design tokens and component system',
+          '- **Closes user story:** As a product owner, I want design tokens and a component system, so that I can review visual direction before screens are implemented.',
+          '- **Change type:** create-new',
+          '- **File:** `docs/design-system/tokens.md`',
+          '- **Precise change:** document design tokens and component system foundations.',
+          '- **Acceptance:**',
+          '  - Token swatches are documented.',
+          '  - Component gallery coverage is documented.',
+          '  - State matrix includes default, loading, empty, error, disabled, success.',
+          '- **Test:** `rg "default, loading, empty, error, disabled, success" docs/design-system/tokens.md`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +120',
+          '- **Phase:** foundation',
+          '',
+          '## UI design constraints',
+          '- UI reference source map: see `ui-reference-source-map.md` for REF-001 and REF-003.',
+          '- Component inventory: button, card, list, tab bar, modal, toast.',
+          '- Token mapping: color, typography, spacing, radius, elevation, motion.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Reference Evidence: REF-003 Mobbin mobile cleanup references, URL / Path / Availability recorded in the source map.',
+          '- Executor must ask for user review and provide feedback before dependent screen work.',
+          '',
+        ].join('\n'),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/design-system foundation task lacks a static HTML review artifact/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects design-system review artifacts that omit reference evidence and feedback handoff', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-design-review-no-evidence-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-design-system.md'),
+        designSystemTask([
+          '## UI design constraints',
+          '- Design-system review artifact: create `docs/design-system/review/index.html` with token swatches and a component gallery.',
+          '- UI reference source map: see `ui-reference-source-map.md`.',
+          '- Component inventory: button, card, list, tab bar, modal, toast.',
+          '- Token mapping: color, typography, spacing, radius, elevation, motion.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/design-system review artifact lacks reference evidence/);
+      expect(out).toMatch(/design-system review artifact lacks user feedback handoff/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts design-system foundation tasks with HTML review artifact, references, and feedback handoff', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-design-review-ok-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-design-system.md'),
+        designSystemTask([
+          '## UI design constraints',
+          '- Design-system review artifact: create `docs/design-system/review/index.html` as a static HTML review artifact with token swatches, component gallery, state matrix, responsive previews, and accessibility notes.',
+          '- UI reference source map: cite `ui-reference-source-map.md` rows REF-001 and REF-003.',
+          '- Reference Evidence: REF-001 existing product file `src/styles/theme.css`; REF-003 Mobbin mobile cleanup references with URL / Path / Availability from the source map and a non-copy boundary.',
+          '- Component inventory: button, card, list, tab bar, modal, toast.',
+          '- Token mapping: color, typography, spacing, radius, elevation, motion.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Executor review checkpoint: present `docs/design-system/review/index.html`, the reference URLs and paths, and ask the user for visual-review feedback before dependent screen-level work.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
       passingCompanions(sandbox);
       const { code, out } = runValidator(sandbox);
       expect(code).toBe(0);

@@ -386,7 +386,14 @@ Show:
 5. **Status** (done / blocked / failed).
 6. **Overall progress** — `N / M prompts complete (P%)`.
    Include counts: `done: X, blocked: Y, failed: Z, remaining: W`.
-7. If status is `done`:
+7. **Design-system review handoff** — if the prompt created or updated
+   `docs/design-system/review/index.html`, include:
+   - absolute or repo-relative path to the HTML artifact
+   - Mobbin/Figma/product/platform reference URLs or file paths that
+     appear in the artifact
+   - one explicit question asking the user for visual-review feedback
+     before dependent screen-level prompts proceed
+8. If status is `done`:
    `"Prompt complete. Say **Continue** to proceed to the next prompt. If starting a new chat, paste exactly: **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"`
    If status is `blocked` or `failed`:
    `"Prompt [status]. [One-line explanation]. Say **Continue** to skip

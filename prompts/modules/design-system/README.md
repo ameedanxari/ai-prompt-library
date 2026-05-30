@@ -11,6 +11,9 @@ Provide explicit prompt modules for building and enforcing a production-ready de
 - `loading-states-and-animations.md` - **[NEW]** Motion design tokens, loading indicators (spinner/shimmer/skeleton), and animations integrated with design tokens.
 - `design-to-code-validation.md` - **[NEW]** Automated verification that implementation matches design specifications.
 - `governance-and-maintenance.md` - **[NEW]** Ownership, change control, versioning, and long-term sustainability processes.
+- `design-system-review-artifact.md` - Static HTML design-system review
+  page with tokens, components, states, responsive previews, reference
+  evidence, and user feedback checklist.
 - `dashboard-screen-patterns.md` - Dashboard shell, KPI, filter, table, and state planning for admin and analytics screens.
 - `data-visualization-system.md` - Chart/graph contracts, state handling, tokenized colors, and accessibility summaries.
 - `native-visual-effects-and-motion.md` - Platform-native material, glass,
@@ -28,6 +31,9 @@ When these modules are selected, they should drive:
 - `prompts/outputs/current/tasks-*.md` implementation prompts that
   sequence token/component foundation before screen work.
 - `docs/DESIGN_TOKENS.md` (auto-generated)
+- `docs/design-system/review/index.html` (static visual review artifact
+  linking token/component decisions to Mobbin/Figma/product/platform
+  reference evidence)
 - `docs/DESIGN_FIDELITY_AUDIT.md` (auto-generated)
 - `docs/DESIGN_SYSTEM_GOVERNANCE.md` (governance charter)
 - `docs/DESIGN_SYSTEM_VERSIONING.md` (versioning policy)
@@ -45,6 +51,7 @@ When these modules are selected, they should drive:
 #[[module:design-system/loading-states-and-animations.md]]
 #[[module:design-system/design-to-code-validation.md]]
 #[[module:design-system/governance-and-maintenance.md]]
+#[[module:design-system/design-system-review-artifact.md]]
 #[[module:design-system/dashboard-screen-patterns.md]]
 #[[module:design-system/data-visualization-system.md]]
 #[[module:design-system/native-visual-effects-and-motion.md]]
@@ -60,5 +67,6 @@ This composition ensures:
 5. Loading states and animations defined with motion tokens (loading-states-and-animations)
 6. Design-to-code alignment enforced (design-to-code-validation)
 7. Governance and maintenance processes established (governance-and-maintenance)
-8. Implementation sequencing enforced (component-implementation-sequencing)
-9. Fidelity audits performed (screen-fidelity-audit)
+8. Static HTML review artifact generated and presented for user feedback
+9. Implementation sequencing enforced (component-implementation-sequencing)
+10. Fidelity audits performed (screen-fidelity-audit)

@@ -42,6 +42,10 @@ UNRELATED_REDESIGN_PATTERN='(new visual language|unrelated visual|replace the ex
 REDESIGN_APPROVAL_PATTERN='(redesign requested|redesign approval|explicit redesign|rebrand|migration approved|user requested redesign|user requested rebrand)'
 MOBILE_CLEANUP_PATTERN='(memory cleanup|storage cleanup|storage cleaner|free up space|photo/video cleanup|phone cleanup|cleanup app)'
 CAPABILITY_MATRIX_PATTERN='(os capability matrix|capability matrix|iOS Support|Android Support|Fallback Behavior|Store Policy Risk|User-Facing Copy Constraint)'
+DESIGN_SYSTEM_FOUNDATION_PATTERN='(design tokens|token architecture|component system|component catalog|component library|reusable component library|native theme foundation|theme primitives|design-system foundation|design system foundation)'
+DESIGN_REVIEW_ARTIFACT_PATTERN='(docs/design-system/review/index\.html|design-system review artifact|design system review artifact|static HTML review artifact|visual review artifact)'
+DESIGN_REVIEW_REFERENCE_PATTERN='(Reference Evidence|Reference URLs|reference URLs|URL / Path / Availability|Mobbin|Figma|App Store|platform guideline|existing product file|existing-style source map|research-unavailable)'
+DESIGN_REVIEW_FEEDBACK_PATTERN='(user review|visual-review feedback|visual review feedback|provide feedback|review checkpoint|feedback checkpoint|ask .* feedback)'
 
 # User-story line. Each task block must contain a **Closes user story:**
 # line that uses the canonical "As a ... I want ... so that ..." form.
@@ -682,6 +686,32 @@ for f in "${files[@]}"; do
     echo "   Fallback Behavior, User-Facing Copy Constraint, and Store Policy Risk."
     echo "   This prevents promising capabilities the OS or store policy does not allow."
     fail=1
+  fi
+
+  if grep -Eiq "$DESIGN_SYSTEM_FOUNDATION_PATTERN" "$f"; then
+    ui_design_gate_needed=1
+    if ! grep -Eiq "$DESIGN_REVIEW_ARTIFACT_PATTERN" "$f"; then
+      echo "❌ $f: design-system foundation task lacks a static HTML review artifact"
+      echo "   Design-system foundation work must create or update"
+      echo "   docs/design-system/review/index.html so the user can visually"
+      echo "   review tokens, components, states, responsive previews, and"
+      echo "   accessibility notes before dependent screen work proceeds."
+      fail=1
+    fi
+    if ! grep -Eiq "$DESIGN_REVIEW_REFERENCE_PATTERN" "$f"; then
+      echo "❌ $f: design-system review artifact lacks reference evidence"
+      echo "   The HTML review artifact must include Mobbin/Figma/product/"
+      echo "   platform reference URLs or file paths from the source map,"
+      echo "   including availability notes or research-unavailable rationale."
+      fail=1
+    fi
+    if ! grep -Eiq "$DESIGN_REVIEW_FEEDBACK_PATTERN" "$f"; then
+      echo "❌ $f: design-system review artifact lacks user feedback handoff"
+      echo "   The task must require the executor checkpoint to present the"
+      echo "   HTML artifact path plus reference evidence and ask the user for"
+      echo "   visual-review feedback before dependent screen-level work."
+      fail=1
+    fi
   fi
 
 
