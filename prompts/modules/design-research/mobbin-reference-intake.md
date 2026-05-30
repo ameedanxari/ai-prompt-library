@@ -58,16 +58,20 @@ interface UIReferencePacket {
    dashboard, data table, graph/chart, mobile app screen, web app screen,
    auth/onboarding, checkout/paywall, settings/profile, content, or
    marketing.
-2. Collect 3-5 relevant references when no canonical product design exists.
-   Each reference must explain the pattern being borrowed and the part that
-   must not be copied.
+2. Collect and record 3-5 relevant inspected references when no canonical
+   product design exists. Each reference must include source type, product
+   or file name, flow/screen, URL/path or availability note, inspection date,
+   the pattern being borrowed, and the part that must not be copied. If
+   Mobbin or another intended research source is unavailable, record
+   `research-unavailable` with the concrete reason and use fallback sources
+   such as platform guidelines, App Store screenshots, local screenshots, or
+   user-provided mockups.
 3. For existing products, inspect current code/design files first and record
    existing visual language as authoritative. New design work must extend the
    current system unless the user explicitly requested redesign or rebrand.
-4. Convert references into a UI reference source map with:
-   reference source, observed pattern, product-specific decision, tokens,
-   components, interaction states, responsive behavior, and accessibility
-   implications.
+4. Convert references into a UI reference source map with evidence row IDs,
+   observed pattern, product-specific decision, tokens, components,
+   interaction states, responsive behavior, and accessibility implications.
 5. Do not output generic phrases like "make it beautiful" or "use modern UI".
    Every design decision must map to a concrete layout, component, token, or
    interaction rule.
@@ -92,8 +96,10 @@ interface UIReferencePacket {
 
 ## Testing Considerations
 
-- Verify each UI task contains a source map or an explicit "existing style is
-  authoritative" note.
+- Verify each UI task cites specific source-map row IDs or contains an
+  explicit "existing style is authoritative" note.
+- Verify the source map contains inspected evidence rows or an explicit
+  research-unavailable rationale; generic categories alone are not evidence.
 - Verify every UI task names components, tokens, responsive behavior, and all
   required states: default, loading, empty, error, disabled, success.
 - For existing products, verify new UI does not introduce unrelated colors,
@@ -106,4 +112,6 @@ interface UIReferencePacket {
 - Reference patterns are translated into project-specific design decisions.
 - Existing product theming takes precedence over new inspiration.
 - The final task gives enough implementation detail to avoid ad hoc styling.
-
+- A final design direction is recorded: chosen archetype, rejected
+  archetypes, density, navigation model, core components, and visual QA
+  targets.

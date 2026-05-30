@@ -155,10 +155,23 @@ fi
 echo ""
 echo "[4/5] Clearing previous engine outputs…"
 if [ -d prompts/outputs/current ]; then
-  rm -f prompts/outputs/current/*.md
-  echo "   cleared: prompts/outputs/current/"
+  rm -rf prompts/outputs/current
+  mkdir -p prompts/outputs/current/planning/features \
+           prompts/outputs/current/planning/tasks \
+           prompts/outputs/current/execution/task-results \
+           prompts/outputs/current/logs/build-gate \
+           prompts/outputs/current/logs/harness \
+           prompts/outputs/current/logs/revise \
+           prompts/outputs/current/logs/safety
+  echo "   reset: prompts/outputs/current/"
 else
-  mkdir -p prompts/outputs/current
+  mkdir -p prompts/outputs/current/planning/features \
+           prompts/outputs/current/planning/tasks \
+           prompts/outputs/current/execution/task-results \
+           prompts/outputs/current/logs/build-gate \
+           prompts/outputs/current/logs/harness \
+           prompts/outputs/current/logs/revise \
+           prompts/outputs/current/logs/safety
   echo "   created: prompts/outputs/current/"
 fi
 
@@ -176,11 +189,10 @@ echo ""
 echo "🟢 Reset complete."
 echo ""
 echo "AI agent: do NOT stop here. Proceed immediately to the entry point flow:"
-echo "  1. Read .ai-prompts/prompts/AGENTS.md"
-echo "  2. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md"
-echo "  3. Follow its mode selection (greenfield vs gap-closure vs trivial)"
-echo "  4. Execute the chosen engine until its next checkpoint."
-echo "  5. Write outputs to prompts/outputs/current/"
+echo "  1. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md"
+echo "  2. Follow its mode selection (greenfield vs gap-closure vs trivial)"
+echo "  3. Execute the chosen engine until its next checkpoint."
+echo "  4. Write outputs to prompts/outputs/current/"
 echo ""
 echo "Continue with the user's original request — reset is just a precondition,"
 echo "not the whole task. Do not ask the user to re-prompt, but do stop at"

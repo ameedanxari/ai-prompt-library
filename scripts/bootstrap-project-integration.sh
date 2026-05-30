@@ -19,14 +19,15 @@ fi
 
 echo "🔧 Bootstrapping AI Prompt Library integration..."
 
-mkdir -p prompts/outputs/specifications
-mkdir -p prompts/outputs/task-lists
-mkdir -p prompts/outputs/architecture
-mkdir -p prompts/outputs/deployment
-mkdir -p prompts/outputs/documentation
-mkdir -p prompts/outputs/quality
-mkdir -p prompts/outputs/handoff
-mkdir -p prompts/outputs/implementation-prompts
+mkdir -p prompts/outputs/current/planning/features
+mkdir -p prompts/outputs/current/planning/tasks
+mkdir -p prompts/outputs/current/execution/task-results
+mkdir -p prompts/outputs/current/logs/build-gate
+mkdir -p prompts/outputs/current/logs/harness
+mkdir -p prompts/outputs/current/logs/revise
+mkdir -p prompts/outputs/current/logs/safety
+mkdir -p prompts/outputs/archive
+mkdir -p prompts/outputs/field-tests
 mkdir -p prompts/working_copy
 mkdir -p prompts/archive
 

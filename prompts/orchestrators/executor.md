@@ -34,7 +34,8 @@ Running it is idempotent — if the plan is clean it just re-confirms
 Act on the exit code:
 
 - **Exit 0** → `executor_gate: pass`. External-accounts.md,
-  revise-report.md, AND delivery-order.md are all present and valid.
+  revise-report.md, delivery-order.md, and task-graph.json are all
+  present and valid.
   Proceed to the execution loop.
 - **Non-zero exit** → stop immediately. Do NOT start writing
   `execution-log.md`. Read `revise-report.md`'s `failing_files:` list
@@ -47,6 +48,11 @@ Act on the exit code:
   - Phase inversions / cycles in `delivery-order.md` frontmatter →
     re-grade the offending tasks' `Phase:` or remove the inverted
     edge, then re-run `build-delivery-order.sh`.
+  - Missing `task-graph.json` → drill-down Step 3.8 was skipped.
+    Re-run `bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current`.
+  - Missing dependencies / cycles in `task-graph.json` →
+    fix the offending `Depends on:` edges, then re-run
+    `build-task-graph.sh`.
   - Missing or failing `revise-report.md` → the revise gate caught a
     violation. Regenerate the offending `tasks-*.md` /
     `remediation-*.md` via the engine's Step 3, then re-invoke
@@ -77,8 +83,8 @@ On top of the entry-point + this file, load:
    already baked into the manifest's order — you do not need to
    re-derive it.
 2. `prompts/outputs/current/gap-list.md` (gap-closure) OR
-   `prompts/outputs/current/epics.md` (greenfield) — for traceability
-   from task back to epic/gap.
+   `prompts/outputs/current/epics.md` (greenfield) — for progress
+   grouping and user-facing summaries, not execution ordering.
 3. `prompts/outputs/current/execution-log.md` if it exists — resume
    point.
 4. `prompts/outputs/current/path-ledger.md` — the authoritative list of
@@ -87,6 +93,10 @@ On top of the entry-point + this file, load:
    of the gate, it is up to date; if it is missing, run
    `bash .ai-prompts/scripts/build-path-ledger.sh prompts/outputs/current`
    yourself before the first task write.
+5. `prompts/outputs/current/task-graph.json` — the authoritative task
+   dependency graph and topological order. If it is missing, run
+   `bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current`
+   before selecting a task.
 
 Do NOT load every remediation/task file at startup. Load each one only
 when you are about to execute its tasks. Isolation discipline from the
@@ -259,6 +269,11 @@ read delivery-order.md
   execution order. The list is already phase-grouped (foundation →
   mvp → expand → polish) and topologically sorted within each phase
   by Depends-on edges, with lexical filename as the final tiebreak.
+read task-graph.json
+  use it to verify each selected task's dependencies and to compute
+  the next unblocked task for the execution-log envelope. If the
+  delivery-order and graph disagree, stop and rebuild both artifacts
+  with finalize.sh.
 
 repeat:
   for each task filename in delivery-order.md, in the order listed:
@@ -266,6 +281,9 @@ repeat:
     if blocked/deferred/failed by a previous attempt: respect the
       envelope's blocked_tasks / failed_tasks / deferred_tasks list
       and skip — do not retry without user input.
+    if task-graph.json says any dependency is not `done`: stop.
+      The plan order is stale or a dependency was skipped; rebuild the
+      graph/order or complete the dependency first.
 
     execute the task:
       1. Read the full contents of the chosen prompt file.
@@ -298,10 +316,12 @@ repeat:
     regression check (see below).
 
   when every task in delivery-order.md is accounted for: run the
-    honest-handoff gate (see below) and only then produce the summary.
+    honest-handoff gate (see below). It validates execution-log order
+    against task-graph.json before allowing `next_task: null`, and
+    only then produce the summary.
 ```
 
-### Why delivery-order.md and not filesystem listing
+### Why delivery-order.md and task-graph.json
 
 Iterating filesystem listings (`ls tasks-*.md`) produces alphabetical
 order, which hides the phase grouping and mixes foundation tasks with
@@ -320,6 +340,11 @@ bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current
 The script also re-validates that no task depends on a later-phase
 task (phase inversion) and no cycle exists. Both conditions are
 fatal to the executor.
+
+`task-graph.json`, written by `scripts/build-task-graph.sh`, is the
+machine-readable DAG used for dependency checks, resume math, and final
+execution-order validation. It catches missing dependency references
+and cycles even when the human-readable delivery manifest looks sane.
 
 ### Phase-boundary regression check
 
@@ -583,10 +608,14 @@ Before declaring a run complete — that is, before setting `next_task:
 null` in the envelope — run:
 
 ```bash
+bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-execution-order.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
 ```
 
-This script reads every `tasks-*.md` / `remediation-*.md`, extracts
+The graph/order checks ensure the executor did not run dependents
+before their declared prerequisites. The envelope script reads every
+`tasks-*.md` / `remediation-*.md`, extracts
 the `**File:**` path declared by each T<n>/R<n>, and checks that
 either (a) the file exists on disk under the project root, OR (b) the
 task id is listed in `blocked_tasks` / `failed_tasks` /

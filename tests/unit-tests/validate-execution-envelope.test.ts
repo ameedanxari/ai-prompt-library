@@ -12,6 +12,7 @@ import * as os from 'node:os';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'validate-execution-envelope.sh');
+const BUILD_GRAPH = path.join(REPO_ROOT, 'scripts', 'build-task-graph.sh');
 
 type FixtureResult = {
   out: string;
@@ -51,6 +52,10 @@ const writeLog = (
   }
   lines.push('---', '', '# Execution Log', '');
   fs.writeFileSync(path.join(planDir, 'execution-log.md'), lines.join('\n'));
+};
+
+const buildGraph = (planDir: string): void => {
+  execSync(`bash "${BUILD_GRAPH}" "${planDir}"`, { encoding: 'utf8' });
 };
 
 describe('validate-execution-envelope.sh', () => {
@@ -95,6 +100,7 @@ describe('validate-execution-envelope.sh', () => {
         failed_tasks: '[]',
         deferred_tasks: '[]',
       });
+      buildGraph(planDir);
       const { code, report } = run(planDir, projectRoot);
       expect(code).toBe(0);
       expect(report!).toMatch(/envelope_state: honest/);
@@ -126,6 +132,7 @@ describe('validate-execution-envelope.sh', () => {
         failed_tasks: '[]',
         deferred_tasks: '[]',
       });
+      buildGraph(planDir);
       const { code, report } = run(planDir, projectRoot);
       expect(code).toBe(1);
       expect(report!).toMatch(/envelope_state: silent_skips_detected/);
@@ -158,6 +165,7 @@ describe('validate-execution-envelope.sh', () => {
         failed_tasks: '[]',
         deferred_tasks: '[]',
       });
+      buildGraph(planDir);
       const { code, report } = run(planDir, projectRoot);
       expect(code).toBe(0);
       expect(report!).toMatch(/excused_blocked_failed_deferred: 1/);
@@ -180,6 +188,7 @@ describe('validate-execution-envelope.sh', () => {
         failed_tasks: '[tasks-auth.md:T1]',
         deferred_tasks: '[]',
       });
+      buildGraph(planDir);
       const { code } = run(planDir, projectRoot);
       expect(code).toBe(0);
     } finally {

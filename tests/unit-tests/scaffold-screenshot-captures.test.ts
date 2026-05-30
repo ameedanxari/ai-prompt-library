@@ -42,22 +42,26 @@ function passingReviseReport(): string {
 }
 
 describe('scaffold-screenshot-captures.sh', () => {
-  it('iOS defaults: current locale × 3 devices × 1 frame = 3 captures + 2 tooling', () => {
+  it('iOS defaults: current locale × 3 devices × 5 frames = 15 captures + 2 tooling', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-ios-'));
     try {
       const out = scaffold(['--target', dir, '--platform', 'ios', '--app-name', 'TestApp']);
-      expect(out).toMatch(/total tasks: 5 \(2 tooling \+ 3 captures\)/);
+      expect(out).toMatch(/total tasks: 17 \(2 tooling \+ 15 captures\)/);
       const body = fs.readFileSync(path.join(dir, 'tasks-screenshots-ios.md'), 'utf8');
       // Tooling tasks
       expect(body).toMatch(/## T1 · Fastlane config for ios/);
       expect(body).toMatch(/## T2 · Screenshot verification helper/);
       expect(body).toMatch(/`fastlane\/Snapfile`/);
-      // 3 capture tasks, one per device for the default locale.
+      // 15 capture tasks, one per device × default store-flow frame.
       const captureHeadings = body.match(/^## T\d+ · Screenshot — /gm) ?? [];
-      expect(captureHeadings.length).toBe(3);
+      expect(captureHeadings.length).toBe(15);
       // All capture tasks use a concrete PNG File path
       const imageFiles = body.match(/\*\*File:\*\* `[^`]+\.png`/g) ?? [];
-      expect(imageFiles.length).toBe(3);
+      expect(imageFiles.length).toBe(15);
+      expect(body).toMatch(/\/ privacy-permission$/m);
+      expect(body).toMatch(/\/ smart-groups$/m);
+      expect(body).toMatch(/\/ swipe-review$/m);
+      expect(body).toMatch(/\/ cleanup-results$/m);
       // No capture task collapses axes — each mentions exactly one locale and one device
       for (const m of body.matchAll(/^## T(\d+) · Screenshot — (\S+) \/ (\S+) \/ (\S+)$/gm)) {
         const [, , locale, device, frame] = m;

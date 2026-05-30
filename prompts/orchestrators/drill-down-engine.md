@@ -477,9 +477,14 @@ this schema:
 - **Non-copy rule:** references are pattern inspiration only
 
 ## Reference Map
-| Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
-|---|---|---|---|---|---|---|---|---|
-| <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+| Row ID | Evidence Row | Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MAP-1 | REF-1 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+
+## Reference Evidence
+| Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
+|---|---|---|---|---|---|---|---|
+| REF-1 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
 
 ## Open Design Risks
 - <risk or `none`>
@@ -487,9 +492,12 @@ this schema:
 
 Rules:
 - Do not claim exact Mobbin/Figma/source references unless they were
-  actually supplied or inspected.
+  actually supplied or inspected. If research was not possible, record a
+  `research-unavailable` evidence row with the reason and use fallback
+  sources; do not silently replace research with generic categories.
 - Use product-specific reference categories such as "mobile photo review
   swipe flows" rather than generic "modern UI".
+- Every Reference Map row must cite a Reference Evidence row ID.
 - Every row must include a non-copy boundary.
 - Every row must include components, tokens, all six states, responsive
   notes, and accessibility notes.

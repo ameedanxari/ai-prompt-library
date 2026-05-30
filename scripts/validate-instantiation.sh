@@ -763,16 +763,18 @@ for f in "${files[@]}"; do
           *.github/*|*fastlane/*|*.swiftlint*|*detekt*) is_exempt=1 ;;
           *.xcprivacy*|*.plist*) is_exempt=1 ;;
           *docs/*|*readme*) is_exempt=1 ;;
+          *release/*|*tools/*|*scripts/*|*privacy/*|*store-assets/*|*fixtures/*|*test-fixtures/*|*build/reports/*) is_exempt=1 ;;
         esac
         # Check: non-exempt files must have the pipe separator
         if [ $is_exempt -eq 0 ] && ! echo "$file_line" | grep -q '|'; then
-          echo "⚠️  $f: File: field has only one platform path on a multi-platform project"
+          echo "❌ $f: File: field has only one platform path on a multi-platform project"
           echo "   Project targets both iOS and Android. Dual-platform task files should"
           echo "   carry paths for both: \`ios/path\` | \`android/path\`"
-          echo "   If this file is legitimately single-platform, no action needed."
+          echo "   Shared/release/docs/tooling artifacts are exempt by path pattern."
+          echo "   If this file is legitimately single-platform, move it to an exempt"
+          echo "   artifact path or split the task by platform with explicit dependencies."
           echo "   Current: $(echo "$file_line" | sed 's/^[[:space:]]*//')"
-          # Warn only, don't fail — some tasks are genuinely single-platform.
-          # The schema alignment pass orchestrator will handle these.
+          fail=1
         fi
       fi
     fi
@@ -967,10 +969,10 @@ for f in "${files[@]}"; do
       # list-of-axes pattern ("iPhone 6.7\", 6.5\", 5.5\"" or
       # "phone and tablet sizes" — five+ screenshots per size, etc.).
       l = tolower(line)
-      if (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform|form factor)/) return 1
+      if (l ~ /(each|all|every|multiple) [a-z ]*(device|locale|language|size|platform|form factor|frame|scenario|screen)/) return 1
       # "for each size", "for each locale", "for each device" are the
       # giveaway forms in Acceptance bullets.
-      if (l ~ /for each (size|locale|language|device|platform)/) return 1
+      if (l ~ /for each (size|locale|language|device|platform|frame|scenario|screen)/) return 1
       # "at least N screenshots are provided" without a specific path
       # is also a collapse signal — it promises N artefacts without
       # splitting them into tasks.
@@ -1082,6 +1084,43 @@ for f in "${files[@]}"; do
       echo "            --target $TARGET_DIR --platform <ios|android> --app-name <AppName>"
       fail=1
     fi
+    if case "$fname_lower" in *screenshots*) true ;; *) false ;; esac && [ "$capture_count" -gt 1 ]; then
+      frame_count=$(awk '
+        function frame_from_path(token) {
+          n = split(token, segs, "/")
+          base = segs[n]
+          sub(/\.(png|jpg|jpeg|webp|heic|gif|svg)$/, "", base)
+          sub(/^[0-9]+[_-]/, "", base)
+          return base
+        }
+        function is_image_path(token) {
+          t = tolower(token)
+          return (t ~ /\.(png|jpg|jpeg|webp|heic|gif|svg)$/)
+        }
+        /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ || /^[[:space:]]*-[[:space:]]*File:/ {
+          s = $0
+          while (match(s, /`[^`]+`/)) {
+            token = substr(s, RSTART + 1, RLENGTH - 2)
+            if (is_image_path(token)) {
+              frames[frame_from_path(token)] = 1
+              break
+            }
+            s = substr(s, RSTART + RLENGTH)
+          }
+        }
+        END { for (f in frames) count++; print count + 0 }
+      ' "$f")
+      if [ "$frame_count" -lt 2 ] && ! grep -Eiq 'single-frame-ok|single frame ok|single-frame reference|one-frame reference' "$f"; then
+        echo "❌ $f: screenshot matrix covers only one frame/scenario"
+        echo "   App-store screenshots must span the store-safe product flow,"
+        echo "   not repeat the same screen on every device. Include multiple"
+        echo "   frames such as privacy permission, dashboard, smart groups,"
+        echo "   swipe review, and cleanup results. If this file is intentionally"
+        echo "   a single-frame reference artifact, add a single-frame-ok note"
+        echo "   with a concrete reason."
+        fail=1
+      fi
+    fi
   fi
 done
 
@@ -1099,7 +1138,7 @@ if [ "$ui_design_gate_needed" -eq 1 ]; then
   if [ -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
     has_design_context=1
     missing_cols=""
-    for col in "Reference Category" "Observed Pattern" "Product Decision" "Non-copy Boundary" "Components Affected" "Tokens Affected" "States Affected" "Responsive Notes" "Accessibility Notes"; do
+    for col in "Row ID" "Evidence Row" "Reference Category" "Observed Pattern" "Product Decision" "Non-copy Boundary" "Components Affected" "Tokens Affected" "States Affected" "Responsive Notes" "Accessibility Notes"; do
       if ! grep -q "$col" "$TARGET_DIR/ui-reference-source-map.md"; then
         missing_cols="$missing_cols '$col'"
       fi
@@ -1110,6 +1149,26 @@ if [ "$ui_design_gate_needed" -eq 1 ]; then
       echo "   task prompts can cite reference category, product decision,"
       echo "   non-copy boundary, components, tokens, states, responsive notes,"
       echo "   and accessibility notes."
+      fail=1
+    fi
+    missing_evidence_cols=""
+    for col in "Source Type" "Product / File" "Flow / Screen" "URL / Path / Availability" "Inspected At" "Evidence Quality"; do
+      if ! grep -q "$col" "$TARGET_DIR/ui-reference-source-map.md"; then
+        missing_evidence_cols="$missing_evidence_cols '$col'"
+      fi
+    done
+    if [ -n "$missing_evidence_cols" ]; then
+      echo "❌ $TARGET_DIR/ui-reference-source-map.md: missing required reference-evidence column(s):$missing_evidence_cols"
+      echo "   Greenfield UI source maps must record inspected reference evidence"
+      echo "   (or an explicit research-unavailable rationale), not only broad"
+      echo "   reference categories."
+      fail=1
+    fi
+    if ! grep -Eq 'REF-[0-9]+' "$TARGET_DIR/ui-reference-source-map.md" \
+       && ! grep -qi 'research-unavailable' "$TARGET_DIR/ui-reference-source-map.md"; then
+      echo "❌ $TARGET_DIR/ui-reference-source-map.md: no reference evidence rows found"
+      echo "   Add 3-5 inspected references with REF-* row IDs, or record"
+      echo "   research-unavailable with a concrete reason and fallback source."
       fail=1
     fi
   fi

@@ -321,21 +321,29 @@ file, which documents what was scoped in and what was scoped out.
   test harness, and optional organizer / uploader scripts. These write
   **source files** (`.swift`, `.kt`, `.rb`, `.sh`) and may iterate
   over locales and devices internally. One task per source file.
-- **Per platform × per locale × per required device class** (iPhone
-  6.7" + 6.5" + 5.5" for iOS; phone + 7" tablet + 10" tablet for
-  Android): one screenshot **capture** task. The File field is the
+- **Per platform × per locale × per required device class × per required
+  store-flow scenario** (iPhone 6.7" + 6.5" + 5.5" for iOS; phone +
+  7" tablet + 10" tablet for Android): one screenshot **capture** task.
+  The File field is the
   concrete image path (e.g.
   `fastlane/screenshots/en-US/iphone-6.5-inch/1_feature.png`), NOT a
   source file. The precise-change names exactly one locale and one
-  device; the test asserts visual-diff against a baseline for that
-  specific file. Locale count comes from `MY_PROJECT.md`, external
-  material, or the user's current locale if unspecified. For example,
-  1 locale × 3 devices = **3 capture tasks per platform**; 5 locales ×
-  3 devices = **15 capture tasks per platform**. These appear alongside
-  the tooling tasks in the same file.
+  device and one scenario/frame; the test asserts visual-diff against a
+  baseline for that specific file. Locale count comes from
+  `MY_PROJECT.md`, external material, or the user's current locale if
+  unspecified. Scenario count comes from the product's store-safe core
+  flow. User-facing mobile apps with more than one meaningful screen
+  must include at least three scenarios, and cleanup/media apps should
+  normally include:
+  onboarding or privacy permission education, storage dashboard,
+  smart-group or scan result, swipe review, and deletion safety or
+  cleanup results. For example, 1 locale × 3 devices × 5 scenarios =
+  **15 capture tasks per platform**. These appear alongside the tooling
+  tasks in the same file.
   **Use the scaffolder instead of writing these by hand.** Run
   `scripts/scaffold-screenshot-captures.sh --target <dir> --platform
-  ios --app-name <Name>` (and again with `--platform android`) to
+  ios --app-name <Name> --frames dashboard,privacy-permission,smart-groups,swipe-review,cleanup-results`
+  (and again with `--platform android`) to
   generate the full matrix with the canonical schema pre-filled; you
   only fill in each task's UITest class / method / expected text.
 - One task for signing + distribution (certificates, provisioning
@@ -377,11 +385,14 @@ A capture task looks like this:
 ```
 
 The capture task MUST name one specific image file path and one
-specific locale / device pair. Do not parameterise; do not batch;
-do not describe a loop. The validator's collapse detector fires on
-**capture** tasks (File is an image extension) that describe
-"each/all/every/multiple" devices or locales. Tooling tasks are
-exempt because their File is a source file.
+specific locale / device / scenario tuple. Do not parameterise; do not
+batch; do not describe a loop. The validator's collapse detector fires
+on **capture** tasks (File is an image extension) that describe
+"each/all/every/multiple" devices, locales, or scenarios. Tooling tasks
+are exempt because their File is a source file. A screenshot task file
+where every capture uses the same frame (for example only
+`dashboard.png`) is incomplete unless it is explicitly marked as a
+single-frame reference artifact with a reason.
 
 ## Settings, debug menu & dev UX
 

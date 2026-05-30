@@ -96,7 +96,13 @@ describe('reset-integration.sh', () => {
     const remaining = fs.readdirSync(
       path.join(sandbox, 'prompts', 'outputs', 'current'),
     );
-    expect(remaining).toHaveLength(0);
+    expect(remaining.sort()).toEqual(['execution', 'logs', 'planning']);
+    expect(
+      fs.existsSync(path.join(sandbox, 'prompts', 'outputs', 'current', 'planning', 'features')),
+    ).toBe(true);
+    expect(
+      fs.existsSync(path.join(sandbox, 'prompts', 'outputs', 'current', 'execution', 'task-results')),
+    ).toBe(true);
   });
 
   it('creates MY_PROJECT.md from template if absent', () => {

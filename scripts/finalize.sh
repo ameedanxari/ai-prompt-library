@@ -10,8 +10,9 @@
 # agents a single post-Step-3 action that:
 #
 #   1. Applies mechanical auto-fixers (missing-comma user stories).
-#   2. Runs the Revise Gate (writes canonical revise-report.md).
-#   3. Surfaces the gate verdict so the agent cannot declare done
+#   2. Builds path, delivery-order, and task-graph ledgers.
+#   3. Runs the Revise Gate (writes canonical revise-report.md).
+#   4. Surfaces the gate verdict so the agent cannot declare done
 #      without seeing whether executor_gate is pass or fail.
 #
 # Idempotent — safe to re-run. Exit code matches revise.sh: 0 when the
@@ -39,11 +40,11 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
-echo "Step 1/4 — apply mechanical auto-fixers"
+echo "Step 1/5 — apply mechanical auto-fixers"
 echo "----------------------------------------"
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
-echo "Step 2/4 — build the canonical-paths ledger"
+echo "Step 2/5 — build the canonical-paths ledger"
 echo "-------------------------------------------"
 # Emit path-ledger.md so the executor has an authoritative list of
 # every File: path the plan owns. Non-fatal: ledger collisions are
@@ -51,7 +52,7 @@ echo "-------------------------------------------"
 ledger_status=0
 bash "$SCRIPT_DIR/build-path-ledger.sh" "$TARGET_DIR" || ledger_status=$?
 echo ""
-echo "Step 3/4 — build the delivery-order manifest"
+echo "Step 3/5 — build the delivery-order manifest"
 echo "--------------------------------------------"
 # Emit delivery-order.md so the executor has a canonical phase-aware
 # topological sort. Without this, the executor falls back to filesystem
@@ -61,7 +62,12 @@ echo "--------------------------------------------"
 delivery_status=0
 bash "$SCRIPT_DIR/build-delivery-order.sh" "$TARGET_DIR" || delivery_status=$?
 echo ""
-echo "Step 4/4 — run the Revise Gate"
+echo "Step 4/5 — build the canonical task graph"
+echo "-----------------------------------------"
+graph_status=0
+bash "$SCRIPT_DIR/build-task-graph.sh" "$TARGET_DIR" || graph_status=$?
+echo ""
+echo "Step 5/5 — run the Revise Gate"
 echo "------------------------------"
 gate_status=0
 bash "$SCRIPT_DIR/revise.sh" "$TARGET_DIR" || gate_status=$?
@@ -85,6 +91,13 @@ if [ $gate_status -eq 0 ] && [ $delivery_status -ne 0 ]; then
   echo "ℹ️  revise gate alone passed, but build-delivery-order.sh found"
   echo "   phase inversions or a cycle; promoting overall gate to fail."
   echo "   Open delivery-order.md for the specific tasks."
+fi
+
+if [ $gate_status -eq 0 ] && [ $graph_status -ne 0 ]; then
+  gate_status=$graph_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but build-task-graph.sh found"
+  echo "   dependency graph problems; promoting overall gate to fail."
 fi
 
 echo ""

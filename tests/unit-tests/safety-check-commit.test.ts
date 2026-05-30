@@ -15,15 +15,18 @@ import * as os from 'node:os';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'safety-check-commit.sh');
+const CLEAN_GIT_ENV = Object.fromEntries(
+  Object.entries(process.env).filter(([key]) => !key.startsWith('GIT_')),
+);
 
 function makeRepo(): string {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'safety-check-'));
-  execSync(`git init -q --initial-branch=main "${dir}"`);
-  execSync('git config user.email test@example.com', { cwd: dir });
-  execSync('git config user.name test', { cwd: dir });
+  execSync(`git init -q --initial-branch=main "${dir}"`, { env: CLEAN_GIT_ENV });
+  execSync('git config user.email test@example.com', { cwd: dir, env: CLEAN_GIT_ENV });
+  execSync('git config user.name test', { cwd: dir, env: CLEAN_GIT_ENV });
   fs.writeFileSync(path.join(dir, 'README.md'), '# init\n', 'utf8');
-  execSync('git add README.md', { cwd: dir });
-  execSync('git -c commit.gpgsign=false commit -q -m init', { cwd: dir });
+  execSync('git add README.md', { cwd: dir, env: CLEAN_GIT_ENV });
+  execSync('git -c commit.gpgsign=false commit -q -m init', { cwd: dir, env: CLEAN_GIT_ENV });
   return dir;
 }
 
@@ -54,6 +57,7 @@ function run(
     out = execSync(`bash "${SCRIPT}" ${args.join(' ')}`, {
       encoding: 'utf8',
       cwd: repo,
+      env: CLEAN_GIT_ENV,
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   } catch (e) {
@@ -118,10 +122,10 @@ describe('safety-check-commit.sh', () => {
   it('verdict=unsafe (exit 1) when files outside scope are deleted', () => {
     fs.mkdirSync(path.join(repo, 'src'), { recursive: true });
     fs.writeFileSync(path.join(repo, 'src', 'precious.ts'), 'export const precious = 42;\n', 'utf8');
-    execSync('git add src/precious.ts', { cwd: repo });
-    execSync('git -c commit.gpgsign=false commit -q -m add', { cwd: repo });
+    execSync('git add src/precious.ts', { cwd: repo, env: CLEAN_GIT_ENV });
+    execSync('git -c commit.gpgsign=false commit -q -m add', { cwd: repo, env: CLEAN_GIT_ENV });
     fs.unlinkSync(path.join(repo, 'src', 'precious.ts'));
-    execSync('git add -A', { cwd: repo });
+    execSync('git add -A', { cwd: repo, env: CLEAN_GIT_ENV });
     const task = writeTask(repo, 'tasks-foo.md', ['src/something-else.ts']);
     const { code, report } = run(repo, task);
     expect(code).toBe(1);

@@ -169,9 +169,14 @@ Required checks:
   product style is authoritative.
 - Greenfield UI-heavy plans without `project-context.md` Design Context
   include `ui-reference-source-map.md` with the required schema columns:
-  Reference Category, Observed Pattern, Product Decision, Non-copy
-  Boundary, Components Affected, Tokens Affected, States Affected,
-  Responsive Notes, Accessibility Notes.
+  Row ID, Evidence Row, Reference Category, Observed Pattern, Product
+  Decision, Non-copy Boundary, Components Affected, Tokens Affected,
+  States Affected, Responsive Notes, Accessibility Notes.
+- The source map includes a Reference Evidence table with source type,
+  product/file, flow/screen, URL/path/availability, inspected date, and
+  evidence quality. Generic reference categories alone are not enough;
+  if Mobbin/Figma/product research was unavailable, the map must say so
+  explicitly and name fallback sources.
 - Component inventory and token mapping are present for screen-level UI.
 - State matrix covers default, loading, empty, error, disabled, and success.
 - Dashboard/chart tasks define KPI, filter, chart/table region,
