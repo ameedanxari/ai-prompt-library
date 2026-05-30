@@ -63,7 +63,8 @@ drift.
 On top of the entry-point + this file, load:
 
 1. `prompts/outputs/current/gap-list.md` (gap-closure) OR
-   `prompts/outputs/current/epics.md` (greenfield) — for ordering.
+   `prompts/outputs/current/epics.md` (greenfield) — for progress
+   grouping and user-facing summaries, not execution ordering.
 2. `prompts/outputs/current/execution-log.md` if it exists — resume
    point.
 3. `prompts/outputs/current/path-ledger.md` — the authoritative list of
@@ -72,6 +73,10 @@ On top of the entry-point + this file, load:
    of the gate, it is up to date; if it is missing, run
    `bash .ai-prompts/scripts/build-path-ledger.sh prompts/outputs/current`
    yourself before the first task write.
+4. `prompts/outputs/current/task-graph.json` — the authoritative task
+   dependency graph and topological order. If it is missing, run
+   `bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current`
+   before selecting a task.
 
 Do NOT load every remediation/task file at startup. Load each one only
 when you are about to execute its tasks. Isolation discipline from the
@@ -241,11 +246,13 @@ envelope is the source of truth for "where we are".
 ```
 repeat:
   read epics.md (or gap-list.md)
-  for each epic (or gap) in dependency order:
-    if every prompt in this epic/gap is `done` in execution-log.md:
-      continue  // complete
-    for each prompt file (`tasks-<feature>.md` or `remediation-<gap>.md`) in this epic/gap:
-      if already `done` in execution-log.md: skip
+  read task-graph.json
+  compute terminal tasks from execution-log.md (`done`, `blocked`,
+  `deferred`, `failed`)
+  pick the first node in `task-graph.json.topological_order` whose
+  dependencies are all `done` and whose own status is not terminal
+  execute that prompt file (`tasks-<feature>.md` or `remediation-<gap>.md`):
+      if already terminal in execution-log.md: skip and recompute
       execute the prompt:
         1. Read the full contents of the chosen prompt file.
            This IS the implementation prompt — it contains all the
@@ -266,10 +273,9 @@ repeat:
         6. Append a log entry.
         7. Present the ⏸ CHECKPOINT (see below).
       if status != `done`:
-        surface the blocker to the user and stop this epic.
-        move to next epic (do NOT retry without user input).
-    after epic: run broader regression check (see below).
-  when all epics processed: run the honest-handoff gate (see below)
+        surface the blocker to the user and stop.
+  after a coherent group completes, run broader regression check (see below).
+  when all graph nodes are terminal: run the honest-handoff gate (see below)
     and only then produce the summary.
 ```
 
@@ -523,10 +529,14 @@ Before declaring a run complete — that is, before setting `next_task:
 null` in the envelope — run:
 
 ```bash
+bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-execution-order.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
 ```
 
-This script reads every `tasks-*.md` / `remediation-*.md`, extracts
+The graph/order checks ensure the executor did not run dependents
+before their declared prerequisites. The envelope script reads every
+`tasks-*.md` / `remediation-*.md`, extracts
 the `**File:**` path declared by each T<n>/R<n>, and checks that
 either (a) the file exists on disk under the project root, OR (b) the
 task id is listed in `blocked_tasks` / `failed_tasks` /

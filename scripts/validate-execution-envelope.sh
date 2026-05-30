@@ -91,6 +91,16 @@ blocked_raw=$(get_field blocked_tasks)
 failed_raw=$(get_field failed_tasks)
 deferred_raw=$(get_field deferred_tasks)
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+if [ "$next_task" = "null" ] || [ "$next_task" = "~" ] || [ -z "$next_task" ]; then
+  if [ ! -f "$PLAN_DIR/task-graph.json" ]; then
+    echo "❌ next_task is null but task-graph.json is missing" >&2
+    echo "   Run: bash $SCRIPT_DIR/build-task-graph.sh $PLAN_DIR" >&2
+    exit 1
+  fi
+  "$SCRIPT_DIR/validate-execution-order.sh" "$PLAN_DIR" "$PLAN_DIR/task-graph.json" || exit 1
+fi
+
 # Parse a YAML inline list ([a, b, c]) or scalar into a newline-separated
 # list. Strips whitespace and surrounding brackets.
 parse_list() {
@@ -170,8 +180,12 @@ for pf in "${tasks_files[@]}"; do
   slug="${base#tasks-}"
   slug="${slug#remediation-}"
 
-  # Extract (tid, path) rows per task block.
+  # Extract (tid, path) rows per task block. Most modern task files have
+  # one metadata block immediately under the H1 and no `## T<n>` section;
+  # treat those as a top-level TASK row. Also split pipe-separated
+  # cross-platform File fields before rejecting whitespace.
   awk -v slug="$slug" '
+    BEGIN { tid = "TASK" }
     /^## [TR][0-9]+/ {
       match($0, /[TR][0-9]+/)
       tid = substr($0, RSTART, RLENGTH)
@@ -185,11 +199,16 @@ for pf in "${tasks_files[@]}"; do
       sub(/[[:space:]]+$/, "", line)
       lower = tolower(line)
       if (line == "" || lower == "n/a" || lower == "none" || lower == "tbd" || line == "—") next
-      if (line ~ /[[:space:]]/) next
-      if (tid != "") {
-        printf("%s|%s|%s\n", slug, tid, line)
-        tid = ""
+      n = split(line, parts, /[[:space:]]*\|[[:space:]]*/)
+      for (i = 1; i <= n; i++) {
+        p = parts[i]
+        gsub(/^[[:space:]]+|[[:space:]]+$/, "", p)
+        if (p == "" || p ~ /[[:space:]]/) continue
+        if (tid != "") {
+          printf("%s|%s|%s\n", slug, tid, p)
+        }
       }
+      if (tid != "TASK") tid = ""
     }
   ' "$pf" >> "$silent_skips.rows"
 done

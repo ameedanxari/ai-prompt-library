@@ -10,8 +10,9 @@
 # agents a single post-Step-3 action that:
 #
 #   1. Applies mechanical auto-fixers (missing-comma user stories).
-#   2. Runs the Revise Gate (writes canonical revise-report.md).
-#   3. Surfaces the gate verdict so the agent cannot declare done
+#   2. Builds path and task-graph ledgers.
+#   3. Runs the Revise Gate (writes canonical revise-report.md).
+#   4. Surfaces the gate verdict so the agent cannot declare done
 #      without seeing whether executor_gate is pass or fail.
 #
 # Idempotent — safe to re-run. Exit code matches revise.sh: 0 when the
@@ -39,11 +40,11 @@ SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
-echo "Step 1/3 — apply mechanical auto-fixers"
+echo "Step 1/4 — apply mechanical auto-fixers"
 echo "----------------------------------------"
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
-echo "Step 2/3 — build the canonical-paths ledger"
+echo "Step 2/4 — build the canonical-paths ledger"
 echo "-------------------------------------------"
 # Emit path-ledger.md so the executor has an authoritative list of
 # every File: path the plan owns. Non-fatal: ledger collisions are
@@ -51,7 +52,12 @@ echo "-------------------------------------------"
 ledger_status=0
 bash "$SCRIPT_DIR/build-path-ledger.sh" "$TARGET_DIR" || ledger_status=$?
 echo ""
-echo "Step 3/3 — run the Revise Gate"
+echo "Step 3/4 — build the canonical task graph"
+echo "-----------------------------------------"
+graph_status=0
+bash "$SCRIPT_DIR/build-task-graph.sh" "$TARGET_DIR" || graph_status=$?
+echo ""
+echo "Step 4/4 — run the Revise Gate"
 echo "------------------------------"
 gate_status=0
 bash "$SCRIPT_DIR/revise.sh" "$TARGET_DIR" || gate_status=$?
@@ -64,6 +70,13 @@ if [ $gate_status -eq 0 ] && [ $ledger_status -ne 0 ]; then
   echo ""
   echo "ℹ️  revise gate alone passed, but path-ledger.sh found collisions;"
   echo "   promoting overall gate to fail. Open path-ledger.md."
+fi
+
+if [ $gate_status -eq 0 ] && [ $graph_status -ne 0 ]; then
+  gate_status=$graph_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but build-task-graph.sh found"
+  echo "   dependency graph problems; promoting overall gate to fail."
 fi
 
 echo ""

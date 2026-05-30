@@ -63,10 +63,15 @@ Required sections:
 - **Primary surfaces:** <mobile | web | admin | desktop>
 - **Non-copy rule:** references are pattern inspiration only
 
+## Reference Evidence
+| Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
+|---|---|---|---|---|---|---|---|
+| REF-1 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
+
 ## Reference Map
-| Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
-|---|---|---|---|---|---|---|---|---|
-| <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+| Row ID | Evidence Row | Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
+|---|---|---|---|---|---|---|---|---|---|---|
+| MAP-1 | REF-1 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
 
 ## Open Design Risks
 - <risk or `none`>
@@ -74,14 +79,20 @@ Required sections:
 
 ## Implementation Requirements
 
-1. Use product-specific reference categories, not vague phrases such as
+1. Record 3-5 inspected reference evidence rows when no canonical
+   product design exists. If external research is unavailable, include a
+   `research-unavailable` evidence row with the concrete reason and use
+   fallback sources such as platform HIG/Material guidance, App Store
+   screenshots, local product screenshots, or user-provided mockups.
+2. Use product-specific reference categories, not vague phrases such as
    "modern apps" or "nice UI".
-2. Every row must include a product decision and a non-copy boundary.
-3. Every UI row must list components, tokens, all six states, responsive
+3. Every map row must point to an evidence row ID.
+4. Every row must include a product decision and a non-copy boundary.
+5. Every UI row must list components, tokens, all six states, responsive
    notes, and accessibility notes.
-4. Native products must distinguish iOS and Android behavior when platform
+6. Native products must distinguish iOS and Android behavior when platform
    conventions differ.
-5. Dashboard/chart rows must include chart states, legend/tooltip behavior,
+7. Dashboard/chart rows must include chart states, legend/tooltip behavior,
    and non-visual summaries.
 
 ## Integration Points
@@ -106,8 +117,11 @@ Required sections:
   `ui-reference-source-map.md`.
 - Validator fixture should fail a malformed source map that lacks required
   columns.
+- Validator fixture should fail a source map with only generic reference
+  categories and no `Reference Evidence` rows or explicit
+  `research-unavailable` rationale.
 - Validator fixture should pass when the source map contains required
-  columns and task files cite the source map.
+  evidence columns, map columns, and task files cite source-map row IDs.
 
 ## Acceptance Criteria
 
@@ -115,4 +129,3 @@ Required sections:
 - Screen-level tasks cite the artifact instead of inventing ad hoc style.
 - Existing-product theme precedence remains intact.
 - References are converted into original, project-specific decisions.
-

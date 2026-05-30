@@ -21,8 +21,9 @@
 #        [--app-name StorageCleaner] \
 #        [--locales en-US] \
 #        [--devices iphone-6.7-inch,iphone-6.5-inch,iphone-5.5-inch] \
-#        [--frames dashboard,scan-results,cleanup-confirm] \
+#        [--frames dashboard,privacy-permission,smart-groups,swipe-review,cleanup-results] \
 #        [--feature-slug screenshots-ios] \
+#        [--single-frame-ok "reason"] \
 #        [--force]
 #
 # Exit codes:
@@ -50,9 +51,12 @@ optional:
                         (default for ios: iphone-6.7-inch,iphone-6.5-inch,iphone-5.5-inch)
                         (default for android: pixel_7,pixel_tablet_7in,pixel_tablet_10in)
   --frames LIST         comma-separated frame slugs
-                        (default: dashboard)
+                        (default: dashboard,privacy-permission,smart-groups,swipe-review,cleanup-results)
+                        Use multiple store-flow scenarios by default; single-frame
+                        matrices require --single-frame-ok with a reason.
   --feature-slug SLUG   output filename slug; file is tasks-<slug>.md
                         (default: screenshots-<platform>)
+  --single-frame-ok R   allow a one-frame matrix and record the reason
   --force               overwrite output file if it exists
 EOF
 }
@@ -66,8 +70,9 @@ if [ -z "$DEFAULT_LOCALE" ] || [ "$DEFAULT_LOCALE" = "C" ] || [ "$DEFAULT_LOCALE
 fi
 LOCALES="${DEFAULT_LOCALE:-en-US}"
 DEVICES=""
-FRAMES="dashboard"
+FRAMES="dashboard,privacy-permission,smart-groups,swipe-review,cleanup-results"
 FEATURE_SLUG=""
+SINGLE_FRAME_OK=""
 FORCE=0
 
 while [ $# -gt 0 ]; do
@@ -79,6 +84,7 @@ while [ $# -gt 0 ]; do
     --devices)        DEVICES="${2:-}"; shift 2 ;;
     --frames)         FRAMES="${2:-}"; shift 2 ;;
     --feature-slug)   FEATURE_SLUG="${2:-}"; shift 2 ;;
+    --single-frame-ok) SINGLE_FRAME_OK="${2:-}"; shift 2 ;;
     --force)          FORCE=1; shift ;;
     -h|--help)        usage; exit 0 ;;
     *) echo "❌ unknown argument: $1" >&2; usage >&2; exit 1 ;;
@@ -129,6 +135,14 @@ LOCALE_COUNT=$(echo "$LOCALES" | to_lines | wc -l | tr -d ' ')
 DEVICE_COUNT=$(echo "$DEVICES" | to_lines | wc -l | tr -d ' ')
 FRAME_COUNT=$(echo "$FRAMES"  | to_lines | wc -l | tr -d ' ')
 TOTAL_CAPTURES=$(( LOCALE_COUNT * DEVICE_COUNT * FRAME_COUNT ))
+
+if [ "$FRAME_COUNT" -lt 2 ] && [ -z "$SINGLE_FRAME_OK" ]; then
+  echo "❌ screenshot matrices must include at least two store-flow frames" >&2
+  echo "   Default frames: dashboard,privacy-permission,smart-groups,swipe-review,cleanup-results" >&2
+  echo "   If this is intentionally a single-frame reference artifact, pass:" >&2
+  echo "     --single-frame-ok \"<why one frame is sufficient>\"" >&2
+  exit 1
+fi
 
 # Ruby-style list for the Snapfile precise-change block.
 ruby_list() {
@@ -211,6 +225,11 @@ CAPTURE
   echo "_${TOTAL_CAPTURES} capture tasks + 2 tooling tasks = $(( TOTAL_CAPTURES + 2 )) total._"
   echo ""
   echo "_Review the generated test identifiers against the app's UITest naming before running the revise gate._"
+  echo ""
+  if [ -n "$SINGLE_FRAME_OK" ]; then
+    echo "_Single-frame-ok: ${SINGLE_FRAME_OK}_"
+    echo ""
+  fi
 
   write_tooling
 
