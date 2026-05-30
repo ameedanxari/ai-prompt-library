@@ -484,8 +484,10 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/## Design Context/);
     expect(body).toMatch(/Existing theme authority/);
     expect(body).toMatch(/Tailwind usage/);
+    expect(body).toMatch(/Reference\/research needs/);
     expect(body).toMatch(/Redesign requested/);
     expect(body.toLowerCase()).toMatch(/authoritative/);
+    expect(body.toLowerCase()).toMatch(/downstream trigger/);
     expect(body.toLowerCase()).toMatch(/redesign\/rebrand/);
   });
 
@@ -500,7 +502,9 @@ describe('active orchestrators', () => {
     );
     expect(drill).toMatch(/existing theme is authoritative/i);
     expect(drill).toMatch(/redesign or rebrand/i);
+    expect(drill).toMatch(/Reference\/research needs/);
     expect(audit).toMatch(/Existing theme authority/);
+    expect(audit).toMatch(/Reference\/research needs/);
     expect(audit).toMatch(/redesign\/rebrand/i);
   });
 
@@ -512,6 +516,7 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/C10 — UI design quality/);
     expect(body).toMatch(/UI reference source map/);
     expect(body).toMatch(/ui-reference-source-map\.md/);
+    expect(body).toMatch(/Reference\/research needs/);
     expect(body).toMatch(/OS capability matrix/);
     expect(body).toMatch(/accept the design shortcut/);
   });

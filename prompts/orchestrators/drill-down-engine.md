@@ -328,7 +328,10 @@ For each epic in Step 1's output, start a **fresh context** containing only:
   or rebrand.
   If UI features exist and no `project-context.md` Design Context exists,
   plan to generate `ui-reference-source-map.md` after Step 2 so task
-  generation has a central design-research artifact.
+  generation has a central design-research artifact. If Design Context
+  exists but `Reference/research needs` names concrete missing patterns,
+  plan the source map too; existing theme authority controls styling, but
+  it does not satisfy unresolved Mobbin/Figma/product-reference research.
 
   If the module-selection-index has no matching entry for a needed
   capability, write a high-quality feature specification from first
@@ -456,11 +459,16 @@ executor's env-var check, CI setup) can rely on its presence.
 
 ### Generate UI reference source map (conditional final action of Step 2)
 
-After `external-accounts.md`, inspect all `features-*.md` files. If any
-feature introduces or materially changes screens, dashboards, charts,
-mobile app flows, web app screens, components, Tailwind UI, visual design,
-or design-system work, and there is no authoritative Design Context from
-`project-context.md`, generate:
+After `external-accounts.md`, inspect all `features-*.md` files and
+`project-context.md` if present. If any feature introduces or materially
+changes screens, dashboards, charts, mobile app flows, web app screens,
+components, Tailwind UI, visual design, or design-system work, generate
+the map when either condition is true:
+
+- there is no authoritative Design Context from `project-context.md`
+- Design Context exists, but `Reference/research needs` names concrete
+  missing Mobbin/Figma/product/platform reference patterns rather than
+  `none because existing product style is authoritative`
 
 `prompts/outputs/current/ui-reference-source-map.md`
 
@@ -505,8 +513,12 @@ Rules:
   Android treatment instead of forcing pixel parity.
 
 If `project-context.md` exists and contains a Design Context with
-`Existing theme authority: yes`, do not generate a competing greenfield
-source map. Existing product style wins.
+`Existing theme authority: yes` and `Reference/research needs: none ...`,
+do not generate a competing greenfield source map. Existing product style
+wins. If `Reference/research needs` is non-empty, generate a scoped map
+for those missing patterns only: cite existing product files first, add
+external or fallback evidence for the named gaps, and keep every decision
+inside the existing theme unless redesign/rebrand was explicitly approved.
 
 ---
 

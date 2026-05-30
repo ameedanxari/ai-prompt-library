@@ -293,6 +293,10 @@ Include this section for UI remediation only:
 - Existing theme authority: yes unless redesign/rebrand is explicit.
 - UI reference source map: existing product source paths first; external
   references only for missing patterns and only with a non-copy boundary.
+  If `project-context.md` records non-none `Reference/research needs`, the
+  remediation must include or create `ui-reference-source-map.md` with
+  inspected Mobbin/Figma/product/platform evidence, or a
+  `research-unavailable` row with the concrete reason and fallback sources.
 - Component inventory and token mapping.
 - State matrix: default, loading, empty, error, disabled, success.
 - Responsive, accessibility, and screenshot/visual QA checks.

@@ -2152,6 +2152,84 @@ describe('validator — UI design quality gate', () => {
     }
   });
 
+  it('rejects existing-theme Design Context when reference research needs are still open', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-open-ref-needs-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'project-context.md'),
+        [
+          '# Project Context',
+          '',
+          '## Design Context',
+          '- **UI surfaces present:** mobile',
+          '- **Existing theme authority:** yes — native theme files and screenshots define the current product style.',
+          '- **Design source files inspected:** ios/GalleryCleaner/Theme.swift, android/app/src/main/java/com/gallery/ui/Theme.kt',
+          '- **Token/source of truth:** native theme files',
+          '- **Reference/research needs:** concrete mobile photo cleanup swipe, permission, smart group, and cleanup result references are still needed for second-pass UI polish.',
+          '- **Redesign requested:** no — preserve existing style.',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-mobile-polish.md'),
+        uiTask([
+          '## UI design constraints',
+          '- Existing theme authority: yes; existing product style is authoritative.',
+          '- Component inventory: dashboard, permission prompt, smart group list, swipe review, cleanup results.',
+          '- Token mapping: native surface, text, accent, border, spacing, radius, elevation tokens.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Responsive and accessibility checks: compact phones, large phones, dynamic type, focus order, screen-reader labels.',
+        ]),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/Reference\/research needs but no UI reference source map exists/);
+      expect(out).toMatch(/mobile photo cleanup swipe/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts existing-theme Design Context when reference research needs are explicitly none', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-no-ref-needs-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'project-context.md'),
+        [
+          '# Project Context',
+          '',
+          '## Design Context',
+          '- **UI surfaces present:** web',
+          '- **Existing theme authority:** yes — local theme and component files define the current product style.',
+          '- **Design source files inspected:** src/styles/theme.css, src/components/Button.tsx',
+          '- **Token/source of truth:** CSS variables',
+          '- **Reference/research needs:** none because existing product style is authoritative.',
+          '- **Redesign requested:** no — preserve existing style.',
+          '',
+        ].join('\n'),
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- Existing theme authority: yes; existing product style is authoritative.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+          '- Responsive and accessibility checks: mobile stack, desktop grid, keyboard focus, screen-reader chart summary.',
+        ]),
+      );
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/✅/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('rejects malformed UI source maps that omit required schema columns', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-bad-map-'));
     try {

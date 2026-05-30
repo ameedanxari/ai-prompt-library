@@ -16,15 +16,18 @@ When the drill-down engine (or any orchestrator) uses this template:
 ## Purpose
 
 Create a central, schema-backed design research artifact before UI task
-generation so greenfield products have an explicit design direction even
-when no mockups or existing product style files exist.
+generation so greenfield products have an explicit design direction and
+existing products have a traceable answer for any named reference-research
+gaps.
 
 ## Context
 
-Use this module when a project includes UI-heavy features and no
-authoritative `project-context.md` Design Context exists. It turns product
-brief language and reference research into a traceable source map that
-screen, dashboard, component, and chart tasks must cite.
+Use this module when a project includes UI-heavy features and either no
+authoritative `project-context.md` Design Context exists, or Design Context
+exists but `Reference/research needs` names missing Mobbin/Figma/product/
+platform reference patterns. It turns product brief language and reference
+research into a traceable source map that screen, dashboard, component, and
+chart tasks must cite.
 
 Existing products should prefer the extracted Design Context or audit
 theme findings. This source map may still be used for missing patterns,
@@ -50,7 +53,8 @@ interface UIReferenceMapRow {
 ## Required Artifact
 
 Generate `prompts/outputs/current/ui-reference-source-map.md` when
-greenfield UI-heavy planning has no existing Design Context.
+greenfield UI-heavy planning has no existing Design Context, or when
+existing-product Design Context records non-none `Reference/research needs`.
 
 Required sections:
 
@@ -80,7 +84,9 @@ Required sections:
 ## Implementation Requirements
 
 1. Record 3-5 inspected reference evidence rows when no canonical
-   product design exists. If external research is unavailable, include a
+   product design exists. For existing products with named reference needs,
+   cite current product files/screenshots first, then add evidence for only
+   the missing patterns. If external research is unavailable, include a
    `research-unavailable` evidence row with the concrete reason and use
    fallback sources such as platform HIG/Material guidance, App Store
    screenshots, local product screenshots, or user-provided mockups.

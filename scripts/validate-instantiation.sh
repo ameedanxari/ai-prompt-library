@@ -1127,12 +1127,36 @@ done
 # 6c-0. Central UI reference source-map check. Greenfield UI-heavy plans
 # need one shared design research artifact unless external input or an
 # existing-project audit already supplied authoritative design context.
+# Existing theme authority only satisfies this gate when the Design Context
+# says no additional reference research is needed. If the extractor recorded
+# concrete Reference/research needs, those needs must be traced through a
+# ui-reference-source-map.md artifact (or an explicit research-unavailable row).
 if [ "$ui_design_gate_needed" -eq 1 ]; then
   has_design_context=0
+  needs_reference_source_map=0
+  reference_needs=""
   if [ -f "$TARGET_DIR/project-context.md" ] && grep -qE '^## Design Context' "$TARGET_DIR/project-context.md"; then
-    has_design_context=1
+    reference_needs=$(awk '
+      /^## Design Context/ { in_design=1; next }
+      /^## / && in_design { exit }
+      in_design && /Reference\/research needs:/ {
+        sub(/^.*Reference\/research needs:[[:space:]]*/, "")
+        gsub(/^[[:space:]*-]+/, "")
+        print
+        exit
+      }
+    ' "$TARGET_DIR/project-context.md")
+    if [ -n "$reference_needs" ]; then
+      if echo "$reference_needs" | grep -Eiq '^(none|no additional|not needed|n/a)([[:space:][:punct:]]|$)|none because existing product style is authoritative|none because existing style is authoritative'; then
+        has_design_context=1
+      else
+        needs_reference_source_map=1
+      fi
+    else
+      has_design_context=1
+    fi
   fi
-  if [ -f "$TARGET_DIR/audit-report.md" ] && grep -qiE 'Design system and UI theme|Existing theme authority' "$TARGET_DIR/audit-report.md"; then
+  if [ "$needs_reference_source_map" -eq 0 ] && [ -f "$TARGET_DIR/audit-report.md" ] && grep -qiE 'Design system and UI theme|Existing theme authority' "$TARGET_DIR/audit-report.md"; then
     has_design_context=1
   fi
   if [ -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
@@ -1171,6 +1195,16 @@ if [ "$ui_design_gate_needed" -eq 1 ]; then
       echo "   research-unavailable with a concrete reason and fallback source."
       fail=1
     fi
+  fi
+  if [ "$needs_reference_source_map" -eq 1 ] && [ ! -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
+    echo "❌ Design Context declares Reference/research needs but no UI reference source map exists"
+    echo "   Reference/research needs: $reference_needs"
+    echo "   Add prompts/outputs/current/ui-reference-source-map.md with inspected"
+    echo "   Mobbin/Figma/product/platform evidence, or record a research-unavailable"
+    echo "   evidence row with a concrete reason and fallback sources. Existing theme"
+    echo "   authority controls style, but it does not erase explicitly recorded"
+    echo "   reference-research gaps."
+    fail=1
   fi
   if [ "$has_design_context" -eq 0 ]; then
     echo "❌ UI-heavy plan has no central design context artifact"

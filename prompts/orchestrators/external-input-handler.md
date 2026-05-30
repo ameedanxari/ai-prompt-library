@@ -112,7 +112,13 @@ Rules for each section:
   explicitly asked for redesign/rebrand. Record Tailwind usage when visible:
   modern `@theme` CSS variables, legacy `tailwind.config.*`, or utility-only
   usage. If no UI surface exists, state `none observed` rather than inventing
-  a theme.
+  a theme. Treat **Reference/research needs** as a downstream trigger: write
+  `none because existing product style is authoritative` only when current
+  source/screenshots fully cover the interaction patterns. If Mobbin-style,
+  Figma, App Store, platform guideline, or comparable references are still
+  needed for missing flows, write the concrete reference categories instead
+  of `none`; the drill-down engine will generate `ui-reference-source-map.md`
+  for those gaps while preserving the existing theme.
 - **Tech Decisions:** only include decisions the user has already made. If
   the material shows Tailwind classes, record "Tailwind CSS". Do NOT invent
   decisions. Include version numbers when visible (e.g. "Node.js 18+").

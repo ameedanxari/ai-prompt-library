@@ -172,6 +172,11 @@ Required checks:
   Row ID, Evidence Row, Reference Category, Observed Pattern, Product
   Decision, Non-copy Boundary, Components Affected, Tokens Affected,
   States Affected, Responsive Notes, Accessibility Notes.
+- Existing-product UI plans whose `project-context.md` Design Context says
+  `Reference/research needs` is anything other than none include
+  `ui-reference-source-map.md` for those named gaps. Existing theme authority
+  preserves style precedence, but it does not waive explicitly recorded
+  Mobbin/Figma/product-reference needs.
 - The source map includes a Reference Evidence table with source type,
   product/file, flow/screen, URL/path/availability, inspected date, and
   evidence quality. Generic reference categories alone are not enough;
