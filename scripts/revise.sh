@@ -16,8 +16,23 @@
 set -uo pipefail
 
 TARGET_DIR="${1:-prompts/outputs/current}"
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    local target
+    target="$(readlink "$source")"
+    case "$target" in
+      /*) source="$target" ;;
+      *) source="$dir/$target" ;;
+    esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_script_dir)"
 VALIDATOR="$SCRIPT_DIR/validate-instantiation.sh"
+PHASE_VALIDATOR="$SCRIPT_DIR/validate-phase-order.sh"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "❌ $TARGET_DIR does not exist" >&2
@@ -26,6 +41,11 @@ fi
 
 if [ ! -x "$VALIDATOR" ]; then
   echo "❌ validator not found or not executable: $VALIDATOR" >&2
+  exit 2
+fi
+
+if [ ! -x "$PHASE_VALIDATOR" ]; then
+  echo "❌ phase-order validator not found or not executable: $PHASE_VALIDATOR" >&2
   exit 2
 fi
 
@@ -54,7 +74,18 @@ NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 # Reading the old value creates a circular fail (see validator 0a).
 VAL_OUT_FILE=$(mktemp)
 VALIDATOR_SKIP_GATE_CHECK=1 "$VALIDATOR" "$TARGET_DIR" > "$VAL_OUT_FILE" 2>&1
-VAL_EXIT=$?
+INSTANTIATION_EXIT=$?
+{
+  echo ""
+  echo "=== phase-order validator ==="
+  bash "$PHASE_VALIDATOR" "$TARGET_DIR"
+} >> "$VAL_OUT_FILE" 2>&1
+PHASE_EXIT=$?
+
+VAL_EXIT=0
+if [ "$INSTANTIATION_EXIT" -ne 0 ] || [ "$PHASE_EXIT" -ne 0 ]; then
+  VAL_EXIT=1
+fi
 
 if [ "$VAL_EXIT" -eq 0 ]; then
   gate="pass"
@@ -70,6 +101,7 @@ failed_files=$(grep -E "^❌ " "$VAL_OUT_FILE" \
   | sed -E 's/^❌ ([^:]+):.*/\1/' \
   | grep -v "revise-report\.md$" \
   | grep -v "missing required companion$" \
+  | grep -v "^phase-order$" \
   | grep -v "^coverage$" \
   | sort -u || true)
 
@@ -104,9 +136,9 @@ fi
   echo "engine: $engine"
   echo "plan_files: $plan_count"
   if [ "$engine" = "drill-down-engine" ]; then
-    echo "checks_run: [C1, C2, C4, C5, C6, C7, C8, C9, C10]"
+    echo "checks_run: [C1, C2, C4, C5, C6, C7, C8, C9, C10, C11]"
   else
-    echo "checks_run: [C3, C4, C5, C6, C7, C8, C9, C10]"
+    echo "checks_run: [C3, C4, C5, C6, C7, C8, C9, C10, C11]"
   fi
   if [ "$gate" = "pass" ]; then
     echo "checks_passed: [all]"

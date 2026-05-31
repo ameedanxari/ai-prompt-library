@@ -78,6 +78,12 @@ If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equi
 
 2. **Path 2 — Checkpoint Resumption (preferred when `force_reload == false`).** If `prompts/outputs/current/resumption-checkpoint.md` is present:
    - **Do NOT** load all prior files or task files from disk.
+   - First run:
+     ```bash
+     bash .ai-prompts/scripts/validate-resumption-checkpoint.sh prompts/outputs/current/resumption-checkpoint.md
+     ```
+     If this fails, do not trust the selective reload list; continue to
+     Path 3 if an execution log can resume, otherwise use Path 4.
    - Parse the YAML frontmatter envelope in `resumption-checkpoint.md`.
    - Read the active `phase` (planning | execution), the active `step`, and the array of files under `re_load_files`.
    - **Only load the files listed in `re_load_files`** (this restricts context loading to the active slice, e.g. a specific epic or task file).
@@ -88,7 +94,7 @@ If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equi
 
 3. **Path 3 — Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If Path 2 didn't apply (no checkpoint) **and** `force_reload == false`, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
    - **Skip the planning re-read entirely.** Do NOT load `epics.md`, `brief-keywords.md`, `features-*.md`, or any `tasks-*.md` other than the one named by `next_task`.
-   - Route directly to `prompts/orchestrators/executor.md`. The executor's own preflight will run `scripts/revise.sh`, confirm `executor_gate: pass`, and read the envelope to resume from `next_task`.
+   - Route directly to `prompts/orchestrators/executor.md`. The executor's own preflight will run `scripts/validate-ready-to-execute.sh`, confirm `ready_to_execute: true`, and read the envelope to resume from `next_task`.
    - This branch is the correct behavior for any in-flight project whose planning is already complete; the planning artifacts are stable on disk and do not need to be re-read into context.
 
 4. **Path 4 — No-State Force-Reload (last resort).** If none of the above matched (i.e. `force_reload == false`, no checkpoint, and no usable execution-log), there is no cheap path. Fall back to the same full re-read as Path 1: read `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist. Proceed through Steps A–F to route. Write a fresh `resumption-checkpoint.md` afterward so the next resumption hits Path 2.
@@ -182,8 +188,8 @@ Just do the work directly. Do not run any engine.
 
 Use when BOTH of these are true:
 - `prompts/outputs/current/` contains `remediation-*.md` (gap-closure
-  plan) OR `tasks-*.md` (greenfield plan), AND those plan files pass
-  `scripts/validate-instantiation.sh`.
+  plan) OR `tasks-*.md` (greenfield plan), AND the plan passes
+  `scripts/validate-ready-to-execute.sh`.
 - The user's ask signals execution, not re-planning: "fix", "implement",
   "execute", "run the plan", "do the work", "build it", "ship", "close
   the gaps", "write the tests", "make it pass", "continue", "next task".

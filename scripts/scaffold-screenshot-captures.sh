@@ -170,6 +170,7 @@ write_tooling() {
   - The config declares exactly ${LOCALE_COUNT} entries in \`languages\`.
 - **Test:** \`${snap_verify}\`
 - **Estimated LOC:** +20
+- **Phase:** polish
 - **Depends on:** none
 
 ## T2 · Screenshot verification helper
@@ -184,6 +185,7 @@ write_tooling() {
   - It prints which check failed on non-zero exit (missing file / wrong dimensions / diff > tolerance).
 - **Test:** \`bats tools/app-store/verify-screenshot.bats\`
 - **Estimated LOC:** +60
+- **Phase:** polish
 - **Depends on:** none
 
 TOOLING
@@ -211,6 +213,7 @@ write_capture() {
   - OCR of the image contains ${locale}-localised copy for the ${frame} screen, including the ${APP_NAME} app name and the ${frame} screen title from the localised resource bundle.
 - **Test:** \`tools/app-store/verify-screenshot.sh fastlane/screenshots/${locale}/${device}/${num}_${frame}.png\`
 - **Estimated LOC:** +0
+- **Phase:** polish
 - **Depends on:** T1 (${snap_config_name} declares devices and languages), T2 (verify-screenshot.sh is the named Test)
 
 CAPTURE

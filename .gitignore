@@ -17,6 +17,8 @@ coverage/
 .vscode/
 .claude/
 .ruby-lsp/
+**/xcuserdata/
+*.xcuserstate
 *.swp
 *.swo
 *~

@@ -11,6 +11,22 @@ set -uo pipefail
 
 TARGET_DIR="${1:-prompts/outputs/current}"
 
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    local target
+    target="$(readlink "$source")"
+    case "$target" in
+      /*) source="$target" ;;
+      *) source="$dir/$target" ;;
+    esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_script_dir)"
+
 # Whole-file regex patterns that are always forbidden.
 GLOBAL_PATTERNS=(
   '\.ai-prompts/prompts/'
@@ -33,6 +49,8 @@ HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Im
 GENERIC_UI_PATTERN='(make it beautiful|beautifully crafted|modern UI|polished UI|nice design|clean design)'
 UI_TASK_PATTERN='(^|[^[:alpha:]])(frontend|screen|dashboard|chart|graph|tailwind|design[ -]system|app screen|web app|mobile app|visual design|ui design|ui surface|ui screen|ui component|ui reference|ui-heavy|component library|component inventory|component system|reusable component)([^[:alpha:]]|$)'
 UI_EVIDENCE_PATTERN='(ui reference source map|reference source map|existing-style source map|existing style source|screen-fidelity|screen fidelity|design-system|design system|component inventory|token mapping|existing product style is authoritative|existing theme authority|current style source)'
+SOURCE_MAP_REFERENCE_PATTERN='(ui reference source map|reference source map|ui-reference-source-map\.md)'
+SOURCE_MAP_ROW_PATTERN='(REF-[0-9]+|MAP-[0-9]+)'
 DASHBOARD_PATTERN='(^|[^[:alpha:]])(dashboard|admin panel|analytics console|operational panel)([^[:alpha:]]|$)'
 CHART_PATTERN='(^|[^[:alpha:]])(chart|graph|data visualization|visualization)([^[:alpha:]]|$)'
 TAILWIND_PATTERN='(^|[^[:alpha:]])tailwind([^[:alpha:]]|$)'
@@ -61,12 +79,6 @@ FILE_MARKER='^\s*[-*]?\s*\*\*File:\*\*'
 DEPENDS_MARKER='^\s*[-*]?\s*\*\*Depends on:\*\*'
 LOC_MARKER='^\s*[-*]?\s*\*\*Estimated LOC:\*\*'
 PHASE_MARKER='^\s*[-*]?\s*\*\*Phase:\*\*'
-# Phase value must be one of the four enum values. The script
-# `build-delivery-order.sh` reads this field and refuses to sort a
-# plan that mixes unknown values.
-# NOTE: awk's POSIX regex does NOT support \s — use [[:space:]] so
-# the same pattern works in awk's regex engine.
-PHASE_ENUM_VALID='^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*[[:space:]]*(foundation|mvp|expand|polish)[[:space:]]*\.?[[:space:]]*$'
 
 # Depends-on must carry a Reason when not `none`. Both engines require
 # this to prevent invented ordering between unrelated tasks.
@@ -600,6 +612,29 @@ for f in "${files[@]}"; do
       fail=1
     fi
 
+    if [ -f "$TARGET_DIR/ui-reference-source-map.md" ] \
+       && grep -Eiq "$SOURCE_MAP_REFERENCE_PATTERN" "$f"; then
+      cited_source_map_rows=$(grep -Eo "$SOURCE_MAP_ROW_PATTERN" "$f" | sort -u || true)
+      if [ -z "$cited_source_map_rows" ]; then
+        echo "❌ $f: UI source-map reference lacks row citations"
+        echo "   Task-level UI guidance must cite concrete REF-* or MAP-* rows"
+        echo "   from ui-reference-source-map.md so design decisions are traceable."
+        fail=1
+      else
+        missing_source_map_rows=""
+        for row_id in $cited_source_map_rows; do
+          if ! grep -Eq "(^|[^A-Z0-9-])${row_id}([^0-9]|$)" "$TARGET_DIR/ui-reference-source-map.md"; then
+            missing_source_map_rows="$missing_source_map_rows $row_id"
+          fi
+        done
+        if [ -n "$missing_source_map_rows" ]; then
+          echo "❌ $f: UI source-map citation references missing row(s):$missing_source_map_rows"
+          echo "   Every cited REF-* or MAP-* row must exist in ui-reference-source-map.md."
+          fail=1
+        fi
+      fi
+    fi
+
     if grep -Eiq "$GENERIC_UI_PATTERN" "$f"; then
       echo "❌ $f: generic UI styling language detected"
       grep -niE "$GENERIC_UI_PATTERN" "$f" | sed 's/^/   /'
@@ -741,30 +776,6 @@ for f in "${files[@]}"; do
     echo "   Run the Schema Alignment Pass (drill-down Step 3.7) to inject"
     echo "   the missing fields from the narrative content."
     fail=1
-  fi
-
-  # 5a-ii. Phase enum check. Phase must be foundation | mvp | expand | polish.
-  # An out-of-enum value (e.g. "Phase: high", "Phase: critical") would
-  # break build-delivery-order.sh — the script normalises case but does
-  # not accept arbitrary values. Caught here too so the failure surfaces
-  # at the same level as the other schema checks.
-  # NOTE: regex inlined inside awk with double-escapes (\\*) because
-  # passing it via -v re=... loses the literal-asterisk escape.
-  if grep -qE "$PHASE_MARKER" "$f"; then
-    bad_phase=$(awk '
-      /^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*/ {
-        if ($0 !~ /^[[:space:]]*[-*]?[[:space:]]*\*\*Phase:\*\*[[:space:]]*(foundation|mvp|expand|polish)[[:space:]]*\.?[[:space:]]*$/) {
-          printf "%d:%s\n", NR, $0
-        }
-      }
-    ' "$f")
-    if [ -n "$bad_phase" ]; then
-      echo "❌ $f: Phase: value is not in the enum"
-      printf "%s\n" "$bad_phase" | sed 's/^/   /'
-      echo "   Allowed values (lowercase): foundation, mvp, expand, polish."
-      echo "   See baseline-task-shapes.md § Phase enum for semantics."
-      fail=1
-    fi
   fi
 
   # 5b. Cross-platform path check (Phase 7 — StorageCleaner field test).
@@ -1191,38 +1202,7 @@ if [ "$ui_design_gate_needed" -eq 1 ]; then
   fi
   if [ -f "$TARGET_DIR/ui-reference-source-map.md" ]; then
     has_design_context=1
-    missing_cols=""
-    for col in "Row ID" "Evidence Row" "Reference Category" "Observed Pattern" "Product Decision" "Non-copy Boundary" "Components Affected" "Tokens Affected" "States Affected" "Responsive Notes" "Accessibility Notes"; do
-      if ! grep -q "$col" "$TARGET_DIR/ui-reference-source-map.md"; then
-        missing_cols="$missing_cols '$col'"
-      fi
-    done
-    if [ -n "$missing_cols" ]; then
-      echo "❌ $TARGET_DIR/ui-reference-source-map.md: missing required source-map column(s):$missing_cols"
-      echo "   Greenfield UI source maps must include the full schema so"
-      echo "   task prompts can cite reference category, product decision,"
-      echo "   non-copy boundary, components, tokens, states, responsive notes,"
-      echo "   and accessibility notes."
-      fail=1
-    fi
-    missing_evidence_cols=""
-    for col in "Source Type" "Product / File" "Flow / Screen" "URL / Path / Availability" "Inspected At" "Evidence Quality"; do
-      if ! grep -q "$col" "$TARGET_DIR/ui-reference-source-map.md"; then
-        missing_evidence_cols="$missing_evidence_cols '$col'"
-      fi
-    done
-    if [ -n "$missing_evidence_cols" ]; then
-      echo "❌ $TARGET_DIR/ui-reference-source-map.md: missing required reference-evidence column(s):$missing_evidence_cols"
-      echo "   Greenfield UI source maps must record inspected reference evidence"
-      echo "   (or an explicit research-unavailable rationale), not only broad"
-      echo "   reference categories."
-      fail=1
-    fi
-    if ! grep -Eq 'REF-[0-9]+' "$TARGET_DIR/ui-reference-source-map.md" \
-       && ! grep -qi 'research-unavailable' "$TARGET_DIR/ui-reference-source-map.md"; then
-      echo "❌ $TARGET_DIR/ui-reference-source-map.md: no reference evidence rows found"
-      echo "   Add 3-5 inspected references with REF-* row IDs, or record"
-      echo "   research-unavailable with a concrete reason and fallback source."
+    if ! bash "$SCRIPT_DIR/validate-ui-reference-source-map.sh" "$TARGET_DIR/ui-reference-source-map.md"; then
       fail=1
     fi
   fi
@@ -1314,93 +1294,6 @@ else:
       fail=1
       ;;
   esac
-fi
-
-# 6d. Phase-inversion check (Stream B / C11 — delivery-aware ordering).
-# A task in an earlier phase MUST NOT depend on a task in a later phase.
-# foundation < mvp < expand < polish. A reverse edge means either the
-# Phase field is wrong on one side, or the dependency is wrong.
-if [ ${#files[@]} -gt 0 ]; then
-  inversion_result=$(python3 -c "
-import sys, os, re
-
-target_dir = sys.argv[1]
-PHASE_ORDER = {'foundation': 0, 'mvp': 1, 'expand': 2, 'polish': 3}
-
-phase_re = re.compile(r'^\s*[-*]?\s*\*\*Phase:\*\*\s*([A-Za-z]+)', re.MULTILINE)
-deps_re  = re.compile(r'^\s*[-*]?\s*\*\*Depends on:\*\*\s*(.+)$', re.MULTILINE)
-ref_re   = re.compile(r'tasks-[a-z0-9][a-z0-9-]*\.md|remediation-[a-z0-9][a-z0-9-]*\.md')
-
-phases = {}
-deps = {}
-for fn in os.listdir(target_dir):
-    if not (fn.startswith('tasks-') or fn.startswith('remediation-')) or not fn.endswith('.md'):
-        continue
-    with open(os.path.join(target_dir, fn)) as fh:
-        body = fh.read()
-    pm = phase_re.search(body)
-    p = pm.group(1).strip().lower() if pm else None
-    phases[fn] = p
-    dm = deps_re.search(body)
-    if dm and 'none' not in dm.group(1).lower():
-        deps[fn] = ref_re.findall(dm.group(1))
-    else:
-        deps[fn] = []
-
-inversions = []
-for fn, fn_phase in phases.items():
-    if fn_phase not in PHASE_ORDER:
-        continue
-    for dep in deps.get(fn, []):
-        dep_phase = phases.get(dep)
-        if dep_phase not in PHASE_ORDER:
-            continue
-        if PHASE_ORDER[dep_phase] > PHASE_ORDER[fn_phase]:
-            inversions.append(f'{fn} ({fn_phase}) -> {dep} ({dep_phase})')
-
-if inversions:
-    print('inversion')
-    for line in inversions:
-        print(line)
-else:
-    print('ok')
-" "$TARGET_DIR" 2>/dev/null || echo "skip")
-
-  case "$(printf "%s" "$inversion_result" | head -n1)" in
-    ok)
-      ;;
-    skip)
-      echo "⚠️  Phase-inversion check skipped (python3 not available)"
-      ;;
-    inversion)
-      echo "❌ phase inversion detected — earlier-phase tasks depend on later-phase tasks"
-      echo "   foundation < mvp < expand < polish. A task MUST NOT depend on a later phase."
-      printf "%s\n" "$inversion_result" | tail -n +2 | sed 's/^/   - /'
-      echo "   Fix by re-grading Phase on one side of the edge, or by removing"
-      echo "   the dependency entirely if it was invented. See"
-      echo "   baseline-task-shapes.md § Phase enum for the assignment rule."
-      fail=1
-      ;;
-  esac
-fi
-
-# 6e. MVP-non-empty check (greenfield only — Stream B / C11).
-# A plan with zero MVP tasks has no walking skeleton. The library cannot
-# proceed to execution because the executor would have no "minimum
-# shippable" tier to prioritize after foundations.
-if [ -f "$TARGET_DIR/epics.md" ]; then
-  mvp_count=$(grep -hE "$PHASE_MARKER" "$TARGET_DIR"/tasks-*.md 2>/dev/null \
-    | grep -Eic '\*\*Phase:\*\*[[:space:]]*mvp\b' || true)
-  if [ "${mvp_count:-0}" -eq 0 ]; then
-    echo "❌ Phase coverage: plan has zero tasks in the 'mvp' phase"
-    echo "   Every greenfield plan must place at least one task in 'mvp' —"
-    echo "   the minimum shippable surface that proves the product. A plan"
-    echo "   with zero MVP tasks has no walking skeleton and the executor"
-    echo "   would have nothing to prioritize after foundations. Re-grade"
-    echo "   which features belong in MVP. See baseline-task-shapes.md"
-    echo "   § Phase enum for the assignment rule."
-    fail=1
-  fi
 fi
 
 # 7. Cross-file create-new collision detector. If N tasks across all

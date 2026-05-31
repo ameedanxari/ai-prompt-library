@@ -435,13 +435,22 @@ Report the validator's output, then print a one-line summary:
 
 ---
 
-## STEP 4.5 — Revise (MANDATORY — one shell command)
+## STEP 4.5 — Finalize / ready contract (MANDATORY — one shell command)
 
 After Step 4 writes the last `remediation-*.md`, run exactly:
 
 ```bash
-bash .ai-prompts/scripts/revise.sh prompts/outputs/current
+bash .ai-prompts/scripts/finalize.sh prompts/outputs/current
 ```
+
+This is the single planning handoff command. It rebuilds
+`task-schema-repair-report.md`, `path-ledger.md`,
+`delivery-order.md`, `task-contract.json`, `task-graph.json`,
+`phase-order-report.md`,
+`baseline-task-coverage.md`, and
+`user-review-checkpoints.md`, validates screenshot matrices when
+screenshot task files exist, then runs the Revise Gate and writes
+`revise-report.md`.
 
 **`revise-report.md` is a canonical machine-produced artifact.** Line 1
 must be `---` (YAML frontmatter fence). A hand-written narrative report
@@ -456,7 +465,7 @@ Exit codes:
 - `0` → `executor_gate: pass`. Continue to Step 5.
 - non-zero → `executor_gate: fail`. Read the report's `failing_files:`
   list, regenerate each offending `remediation-<gap>.md` via Step 3
-  scoped to that single gap, then re-run `bash .ai-prompts/scripts/revise.sh
+  scoped to that single gap, then re-run `bash .ai-prompts/scripts/finalize.sh
   prompts/outputs/current`. Repeat until exit 0.
 
 Do NOT hand-edit individual tasks to patch symptoms. Regenerate via
@@ -465,16 +474,19 @@ the engine so the whole remediation stays coherent.
 The check rationale (historical): schema violations and baseline-
 coverage gaps routinely slip past the engine (e.g. collapsing `Hindi
 (all device sizes)` into one task when the rule is per locale × per
-device class). The validator alone cannot catch these; the revise
-script invokes the full C1–C8 check set (including baseline
-coverage via `baseline-task-shapes.md`).
+device class). The finalize wrapper now writes
+`baseline-task-coverage.md` via
+`scripts/validate-baseline-task-coverage.sh`, runs specialized
+contract validators, then invokes the full revise check set for
+semantic review.
 
 If `executor_gate: fail` persists after one regeneration cycle,
 surface `remaining_issues` to the user and stop. Do not proceed to
 Step 5. A weak model must not work around a failing revise gate by ignoring
 it — the fail means the plan is not ready to execute.
 
-**Only when `executor_gate: pass`, continue to Step 5.**
+**Only when the finalize command prints `executor_gate: pass`, continue
+to Step 5.**
 
 ---
 
@@ -493,6 +505,14 @@ next_action: "User authorization required — say Execute to begin"
 re_load_files:
   - prompts/outputs/current/revise-report.md
   - prompts/outputs/current/gap-list.md
+  - prompts/outputs/current/task-schema-repair-report.md
+  - prompts/outputs/current/path-ledger.md
+  - prompts/outputs/current/delivery-order.md
+  - prompts/outputs/current/task-contract.json
+  - prompts/outputs/current/task-graph.json
+  - prompts/outputs/current/phase-order-report.md
+  - prompts/outputs/current/baseline-task-coverage.md
+  - prompts/outputs/current/user-review-checkpoints.md
 updated_at: <current ISO 8601 timestamp>
 ---
 ```

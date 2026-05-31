@@ -48,6 +48,20 @@ pass() {
   echo "✅ $1"
 }
 
+library_version() {
+  if [ -d "$LIB_DIR/.git" ] && (cd "$LIB_DIR" && git rev-parse HEAD >/dev/null 2>&1); then
+    (cd "$LIB_DIR" && git rev-parse HEAD)
+    return
+  fi
+
+  if [ -f "$LIB_DIR/package.json" ]; then
+    version="$(awk -F\" '/"version"[[:space:]]*:/ { print $4; exit }' "$LIB_DIR/package.json")"
+    if [ -n "$version" ]; then
+      echo "ai-prompt-library@$version"
+    fi
+  fi
+}
+
 echo "🔄 AI Prompt Library integration validation"
 echo "=========================================="
 
@@ -83,9 +97,24 @@ required_lib_files=(
   ".ai-prompts/scripts/validate-instantiation.sh"
   ".ai-prompts/scripts/revise.sh"
   ".ai-prompts/scripts/finalize.sh"
+  ".ai-prompts/scripts/validate-ready-to-execute.sh"
   ".ai-prompts/scripts/step3-progress.sh"
   ".ai-prompts/scripts/build-path-ledger.sh"
+  ".ai-prompts/scripts/build-delivery-order.sh"
+  ".ai-prompts/scripts/build-task-contract.sh"
+  ".ai-prompts/scripts/build-task-graph.sh"
+  ".ai-prompts/scripts/validate-task-contract.sh"
+  ".ai-prompts/scripts/validate-phase-order.sh"
+  ".ai-prompts/scripts/validate-baseline-task-coverage.sh"
+  ".ai-prompts/scripts/validate-user-review-checkpoints.sh"
   ".ai-prompts/scripts/scaffold-screenshot-captures.sh"
+  ".ai-prompts/scripts/validate-screenshot-matrix.sh"
+  ".ai-prompts/scripts/validate-ui-reference-source-map.sh"
+  ".ai-prompts/scripts/generate-design-system-review-artifact.sh"
+  ".ai-prompts/scripts/validate-design-system-review-artifact.sh"
+  ".ai-prompts/scripts/validate-resumption-checkpoint.sh"
+  ".ai-prompts/scripts/repair-task-schema-fields.sh"
+  ".ai-prompts/scripts/validate-release-readiness.sh"
   ".ai-prompts/prompts/modules/feature-patterns/native-storage-cleanup.md"
   ".ai-prompts/prompts/modules/feature-patterns/local-persistence-progress.md"
   ".ai-prompts/prompts/modules/feature-patterns/gesture-card-ui.md"
@@ -104,7 +133,7 @@ done
 
 if [ -f ".ai-prompts-version" ]; then
   old_version="$(cat .ai-prompts-version || true)"
-  new_version="$(cd "$LIB_DIR" && git rev-parse HEAD 2>/dev/null || echo "")"
+  new_version="$(library_version)"
   if [ -n "$new_version" ] && [ "$old_version" != "$new_version" ]; then
     warn "library version changed: $old_version -> $new_version"
     if [ "$AUTO_FIX" -eq 1 ]; then
@@ -116,7 +145,7 @@ if [ -f ".ai-prompts-version" ]; then
   fi
 else
   warn ".ai-prompts-version missing"
-  current_ver="$(cd "$LIB_DIR" && git rev-parse HEAD 2>/dev/null || echo "")"
+  current_ver="$(library_version)"
   if [ -n "$current_ver" ] && [ "$AUTO_FIX" -eq 1 ]; then
     echo "$current_ver" > .ai-prompts-version
     pass "created .ai-prompts-version"

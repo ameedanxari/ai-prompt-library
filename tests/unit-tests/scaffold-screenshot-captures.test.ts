@@ -16,11 +16,27 @@ import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCAFFOLD = path.join(REPO_ROOT, 'scripts', 'scaffold-screenshot-captures.sh');
+const MATRIX_VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-screenshot-matrix.sh');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-instantiation.sh');
 
 function scaffold(args: string[]): string {
   const quoted = args.map((a) => `"${a}"`).join(' ');
   return execSync(`bash "${SCAFFOLD}" ${quoted}`, { encoding: 'utf8' });
+}
+
+function runMatrixValidator(target: string): { code: number; out: string } {
+  try {
+    return {
+      code: 0,
+      out: execSync(`bash "${MATRIX_VALIDATOR}" "${target}"`, { encoding: 'utf8' }),
+    };
+  } catch (error) {
+    const err = error as { stdout?: Buffer; stderr?: Buffer; status?: number };
+    return {
+      code: err.status ?? 1,
+      out: `${err.stdout?.toString() ?? ''}${err.stderr?.toString() ?? ''}`,
+    };
+  }
 }
 
 function passingReviseReport(): string {
@@ -42,6 +58,13 @@ function passingReviseReport(): string {
 }
 
 describe('scaffold-screenshot-captures.sh', () => {
+  it('scaffolder and matrix validator are executable', () => {
+    expect(fs.existsSync(SCAFFOLD)).toBe(true);
+    expect((fs.statSync(SCAFFOLD).mode & 0o111) !== 0).toBe(true);
+    expect(fs.existsSync(MATRIX_VALIDATOR)).toBe(true);
+    expect((fs.statSync(MATRIX_VALIDATOR).mode & 0o111) !== 0).toBe(true);
+  });
+
   it('iOS defaults: current locale × 3 devices × 5 frames = 15 captures + 2 tooling', () => {
     const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-ios-'));
     try {
@@ -58,6 +81,7 @@ describe('scaffold-screenshot-captures.sh', () => {
       // All capture tasks use a concrete PNG File path
       const imageFiles = body.match(/\*\*File:\*\* `[^`]+\.png`/g) ?? [];
       expect(imageFiles.length).toBe(15);
+      expect(body.match(/\*\*Phase:\*\* polish/g)?.length).toBe(17);
       expect(body).toMatch(/\/ privacy-permission$/m);
       expect(body).toMatch(/\/ smart-groups$/m);
       expect(body).toMatch(/\/ swipe-review$/m);
@@ -71,6 +95,7 @@ describe('scaffold-screenshot-captures.sh', () => {
       }
       // Concrete fastlane snapshot command present
       expect(body).toMatch(/bundle exec fastlane snapshot --devices \S+ --languages \S+ --only_testing/);
+      expect(runMatrixValidator(dir).code).toBe(0);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -84,6 +109,7 @@ describe('scaffold-screenshot-captures.sh', () => {
       expect(body).toMatch(/`fastlane\/Screengrabfile`/);
       expect(body).toMatch(/bundle exec fastlane screengrab --devices/);
       expect(body).not.toMatch(/Snapfile/);
+      expect(runMatrixValidator(dir).code).toBe(0);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
@@ -107,6 +133,66 @@ describe('scaffold-screenshot-captures.sh', () => {
       expect(body).toMatch(/\/ home$/m);
       expect(body).toMatch(/\/ settings$/m);
       expect(body).toMatch(/\/ detail$/m);
+      expect(runMatrixValidator(dir).code).toBe(0);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('matrix validator rejects missing locale-device-frame combinations', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-matrix-missing-'));
+    try {
+      scaffold([
+        '--target', dir, '--platform', 'ios',
+        '--app-name', 'App',
+        '--locales', 'en-US,ja-JP',
+        '--devices', 'iphone-6.7-inch,iphone-5.5-inch',
+        '--frames', 'home,settings',
+      ]);
+      const taskPath = path.join(dir, 'tasks-screenshots-ios.md');
+      const body = fs.readFileSync(taskPath, 'utf8');
+      fs.writeFileSync(
+        taskPath,
+        body.replace(/\n## T10 · Screenshot — ja-JP \/ iphone-5\.5-inch \/ settings[\s\S]*$/m, '\n'),
+        'utf8',
+      );
+
+      const result = runMatrixValidator(dir);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/missing locale\/device\/frame combinations/);
+      expect(result.out).toMatch(/ja-JP\/iphone-5\.5-inch\/settings/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('matrix validator rejects capture tasks whose verifier points at another PNG', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-matrix-verifier-'));
+    try {
+      scaffold([
+        '--target', dir, '--platform', 'ios',
+        '--app-name', 'App',
+        '--locales', 'en-US',
+        '--devices', 'iphone-6.7-inch',
+        '--frames', 'home,settings',
+      ]);
+      const taskPath = path.join(dir, 'tasks-screenshots-ios.md');
+      const body = fs.readFileSync(taskPath, 'utf8');
+      fs.writeFileSync(
+        taskPath,
+        body.replace(
+          'tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/3_home.png',
+          'tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/999_home.png',
+        ),
+        'utf8',
+      );
+
+      const result = runMatrixValidator(taskPath);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/Test verifies fastlane\/screenshots\/en-US\/iphone-6\.7-inch\/999_home\.png/);
+      expect(result.out).toMatch(/expected fastlane\/screenshots\/en-US\/iphone-6\.7-inch\/3_home\.png/);
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

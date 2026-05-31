@@ -25,6 +25,22 @@ set -uo pipefail
 
 TARGET_DIR="${1:-prompts/outputs/current}"
 
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    local target
+    target="$(readlink "$source")"
+    case "$target" in
+      /*) source="$target" ;;
+      *) source="$dir/$target" ;;
+    esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_script_dir)"
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "❌ $TARGET_DIR does not exist" >&2
   exit 3
@@ -43,47 +59,54 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 OUTPUT_FILE="$TARGET_DIR/delivery-order.md"
+CONTRACT_FILE="$TARGET_DIR/task-contract.json"
+
+contract_status=0
+bash "$SCRIPT_DIR/build-task-contract.sh" "$TARGET_DIR" "$CONTRACT_FILE" || contract_status=$?
+if [ "$contract_status" -ne 0 ]; then
+  exit 3
+fi
 
 python3 - "$TARGET_DIR" "$OUTPUT_FILE" <<'PYEOF'
 import datetime
+import heapq
+import json
 import os
-import re
 import sys
-from collections import defaultdict, deque
+from collections import defaultdict
 
 target_dir, output_path = sys.argv[1], sys.argv[2]
+contract_path = os.path.join(target_dir, "task-contract.json")
 
 PHASE_ORDER = ["foundation", "mvp", "expand", "polish"]
 PHASE_RANK = {p: i for i, p in enumerate(PHASE_ORDER)}
 
-phase_re   = re.compile(r"^\s*[-*]?\s*\*\*Phase:\*\*\s*([A-Za-z]+)", re.MULTILINE)
-depends_re = re.compile(r"^\s*[-*]?\s*\*\*Depends on:\*\*\s*(.+)$",   re.MULTILINE)
-ref_re     = re.compile(r"tasks-[a-z0-9][a-z0-9-]*\.md|remediation-[a-z0-9][a-z0-9-]*\.md")
+if not os.path.exists(contract_path):
+    print(f"❌ task contract not found: {contract_path}", file=sys.stderr)
+    sys.exit(3)
+
+contract = json.load(open(contract_path, encoding="utf-8"))
+units_by_file = defaultdict(list)
+for unit in contract["units"]:
+    units_by_file[unit["file"]].append(unit)
 
 tasks = {}                # filename -> {phase, depends, raw_phase}
 missing_phase = []
 
-for fn in sorted(os.listdir(target_dir)):
-    if not (fn.startswith("tasks-") or fn.startswith("remediation-")) or not fn.endswith(".md"):
-        continue
-    path = os.path.join(target_dir, fn)
-    try:
-        with open(path, "r", encoding="utf-8") as fh:
-            body = fh.read()
-    except OSError as exc:
-        print(f"❌ cannot read {fn}: {exc}", file=sys.stderr)
-        sys.exit(3)
-
-    phase_match = phase_re.search(body)
-    phase = phase_match.group(1).strip().lower() if phase_match else None
-    if phase not in PHASE_RANK:
+for file_meta in sorted(contract["files"], key=lambda item: item["filename"]):
+    fn = file_meta["filename"]
+    units = units_by_file[fn]
+    phase = next((unit.get("phase") for unit in units if unit.get("phase") in PHASE_RANK), None)
+    if not phase:
         missing_phase.append(fn)
         phase = "mvp"  # fallback so the sort still runs; revise gate will reject the plan
+    elif any((not unit.get("phase")) or unit.get("invalidPhase") for unit in units):
+        missing_phase.append(fn)
 
-    deps = []
-    dep_match = depends_re.search(body)
-    if dep_match and "none" not in dep_match.group(1).lower():
-        deps = ref_re.findall(dep_match.group(1))
+    deps = next(
+        (node["dependencies"] for node in contract["graphs"]["files"]["nodes"] if node["id"] == fn),
+        [],
+    )
 
     tasks[fn] = {"phase": phase, "depends": deps}
 
@@ -106,10 +129,6 @@ for fn, meta in tasks.items():
                 "dep": dep,
                 "dep_phase": tasks[dep]["phase"],
             })
-
-# Topological sort: Kahn's algorithm. Priority queue uses (phase_rank,
-# filename) so earlier phases drain first and ties resolve lexically.
-import heapq
 
 adj = defaultdict(list)
 in_deg = defaultdict(int)

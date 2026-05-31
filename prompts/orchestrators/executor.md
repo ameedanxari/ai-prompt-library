@@ -14,7 +14,7 @@ The entry point routes here when ALL of these are true:
 - The user's prompt signals execution: "fix", "implement", "execute",
   "run the plan", "do the work", "build it", "ship", "write the tests",
   "close the gaps", or similar.
-- The plan passed `scripts/validate-instantiation.sh`.
+- The plan passed `scripts/validate-ready-to-execute.sh`.
 
 ## Preflight gate (MUST run before ANY task execution)
 
@@ -23,40 +23,57 @@ hard gates — you cannot "explain them away" or work around them by
 writing task entries anyway. Your first action on invocation is:
 
 ```bash
-bash .ai-prompts/scripts/revise.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-ready-to-execute.sh prompts/outputs/current
 ```
 
-This command runs the full instantiation validator and writes a fresh
-`revise-report.md` reflecting the CURRENT state of the plan directory.
-Running it is idempotent — if the plan is clean it just re-confirms
-`executor_gate: pass`.
+This command runs the single pre-executor readiness gate. It invokes
+`finalize.sh`, which rebuilds `path-ledger.md`, `delivery-order.md`,
+`task-schema-repair-report.md`, `task-contract.json`,
+`task-graph.json`, `phase-order-report.md`,
+`baseline-task-coverage.md`, `user-review-checkpoints.md`, and
+`revise-report.md`, then writes a fresh `ready-to-execute-report.md`
+reflecting the CURRENT state of the plan directory. Running it is
+idempotent — if the plan is clean it just re-confirms
+`ready_to_execute: true`.
 
 Act on the exit code:
 
-- **Exit 0** → `executor_gate: pass`. External-accounts.md,
-  revise-report.md, delivery-order.md, and task-graph.json are all
-  present and valid.
+- **Exit 0** → `ready_to_execute: true`. External-accounts.md,
+  revise-report.md, task-schema-repair-report.md, delivery-order.md,
+  task-contract.json, task-graph.json, phase-order-report.md,
+  baseline-task-coverage.md, user-review-checkpoints.md, and
+  path-ledger.md are present and valid.
   Proceed to the execution loop.
 - **Non-zero exit** → stop immediately. Do NOT start writing
-  `execution-log.md`. Read `revise-report.md`'s `failing_files:` list
-  and report the specific files to the user, then name which engine
-  step needs to re-run:
+  `execution-log.md`. Read `ready-to-execute-report.md` first. Its
+  YAML frontmatter names `blocking_artifacts`, `blocking_issues`, and
+  `recommended_step`; use those fields as the authoritative failure
+  summary instead of scraping finalize logs. Then open the named
+  artifact that failed (`revise-report.md`, `delivery-order.md`,
+  `task-contract.json`, `task-graph.json`, `phase-order-report.md`,
+  `baseline-task-coverage.md`, `user-review-checkpoints.md`, or
+  `path-ledger.md`). Report the specific files to the user, then name
+  which engine step needs to re-run:
   - Missing `external-accounts.md` → audit-and-remediate Step 3.5
     (or drill-down Step 2.5) was skipped.
-  - Missing `delivery-order.md` → drill-down Step 3.8 was skipped.
+  - Missing or invalid `delivery-order.md` → drill-down Step 3.8 was skipped.
     Re-run `bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current`.
-  - Phase inversions / cycles in `delivery-order.md` frontmatter →
+  - Phase/order failures in `phase-order-report.md` →
     re-grade the offending tasks' `Phase:` or remove the inverted
-    edge, then re-run `build-delivery-order.sh`.
-  - Missing `task-graph.json` → drill-down Step 3.8 was skipped.
+    edge, then re-run `validate-ready-to-execute.sh`.
+  - Missing or invalid `task-graph.json` → drill-down Step 3.8 was skipped.
     Re-run `bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current`.
   - Missing dependencies / cycles in `task-graph.json` →
     fix the offending `Depends on:` edges, then re-run
     `build-task-graph.sh`.
+  - Missing or invalid `user-review-checkpoints.md` →
+    regenerate the design-system foundation task or its dependent
+    screen tasks so the HTML review artifact is presented for
+    visual-review feedback before dependent screen-level work.
   - Missing or failing `revise-report.md` → the revise gate caught a
     violation. Regenerate the offending `tasks-*.md` /
     `remediation-*.md` via the engine's Step 3, then re-invoke
-    `bash .ai-prompts/scripts/revise.sh` until exit 0.
+    `bash .ai-prompts/scripts/validate-ready-to-execute.sh` until exit 0.
 
 This gate exists because field tests repeatedly showed weak models
 treating Steps 3.5/4.5 as optional and starting the executor on an
@@ -673,8 +690,17 @@ Next step options:
   this orchestrator executes (gap-closure).
 - `prompts/orchestrators/drill-down-engine.md` — produces the plan for
   greenfield builds; same execution semantics apply.
-- `scripts/validate-instantiation.sh` — the preflight gate this
-  orchestrator refuses to run without.
+- `scripts/validate-ready-to-execute.sh` — the single pre-executor
+  readiness gate this orchestrator refuses to run without.
+- `scripts/validate-phase-order.sh` — phase/order contract gate
+  invoked by the readiness/finalize flow.
+- `scripts/validate-baseline-task-coverage.sh` — baseline-topic
+  coverage gate invoked by the readiness/finalize flow.
+- `scripts/validate-screenshot-matrix.sh` — app-store screenshot matrix
+  gate invoked by the readiness/finalize flow when screenshot task files
+  exist.
+- `scripts/validate-instantiation.sh` — the lower-level instantiation
+  validator invoked by the readiness/finalize flow.
 - `scripts/build-path-ledger.sh` — emits the canonical-paths ledger
   the executor must consult before writing any source file.
 - `scripts/build-gate.sh` — the after-each-task build-green gate.

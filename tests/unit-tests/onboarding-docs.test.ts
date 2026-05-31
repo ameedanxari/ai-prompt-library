@@ -68,6 +68,35 @@ describe('QUICK_START.md', () => {
     expect(body.toLowerCase()).toMatch(/continue where you left off/);
     expect(body.toLowerCase()).toMatch(/force reset/);
   });
+
+  it('documents npm install, npx gates, prerequisites, and API usage', () => {
+    expect(body).toMatch(/npm install --save-dev ai-prompt-library/);
+    expect(body).toMatch(/ln -sfn node_modules\/ai-prompt-library \.ai-prompts/);
+    expect(body).toMatch(/npx ai-prompt-ready/);
+    expect(body).toMatch(/npx ai-prompt-finalize/);
+    expect(body).toMatch(/npx ai-prompt-validate-release-readiness/);
+    expect(body).toMatch(/Node\.js 20\+/);
+    expect(body).toMatch(/Python 3/);
+    expect(body).toMatch(/Bash/);
+    expect(body).toMatch(/buildTaskContractReportForDirectory/);
+    expect(body).toMatch(/ai-prompt-library\/task-contract/);
+  });
+
+  it('lists the readiness artifacts now produced before execution', () => {
+    for (const artifact of [
+      'task-schema-repair-report.md',
+      'path-ledger.md',
+      'delivery-order.md',
+      'task-contract.json',
+      'task-graph.json',
+      'phase-order-report.md',
+      'baseline-task-coverage.md',
+      'user-review-checkpoints.md',
+      'ready-to-execute-report.md',
+    ]) {
+      expect(body, artifact).toMatch(new RegExp(escapeRegExp(artifact)));
+    }
+  });
 });
 
 describe('README.md', () => {
@@ -76,4 +105,37 @@ describe('README.md', () => {
   it('points users at QUICK_START.md', () => {
     expect(body).toMatch(/QUICK_START\.md/);
   });
+
+  it('documents the npm package surface and prerequisites', () => {
+    expect(body).toMatch(/npm install --save-dev ai-prompt-library/);
+    expect(body).toMatch(/ln -sfn node_modules\/ai-prompt-library \.ai-prompts/);
+    expect(body).toMatch(/npx ai-prompt-ready/);
+    expect(body).toMatch(/npx ai-prompt-validate-task-contract/);
+    expect(body).toMatch(/npx ai-prompt-validate-release-readiness/);
+    expect(body).toMatch(/npx ai-prompt-generate-design-review/);
+    expect(body).toMatch(/Node\.js 20\+/);
+    expect(body).toMatch(/npm/);
+    expect(body).toMatch(/Python 3/);
+    expect(body).toMatch(/Bash/);
+  });
+
+  it('shows the public task-contract API example', () => {
+    expect(body).toMatch(/import \{ buildTaskContractReportForDirectory \} from 'ai-prompt-library\/task-contract'/);
+    expect(body).toMatch(/buildTaskContractReportForDirectory\('prompts\/outputs\/current'\)/);
+  });
+
+  it('does not pin a stale exact test count', () => {
+    expect(body).not.toMatch(/\b789 tests pass\b/);
+    expect(body).toMatch(/Treat `npm test` as the source of truth/);
+  });
+
+  it('documents release readiness validation before tags', () => {
+    expect(body).toMatch(/npm run validate:release/);
+    expect(body).toMatch(/package metadata/);
+    expect(body).toMatch(/dry-run package contents|dry-run package/);
+  });
 });
+
+function escapeRegExp(value: string): string {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}

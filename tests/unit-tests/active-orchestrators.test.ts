@@ -187,7 +187,7 @@ describe('active orchestrators', () => {
     // drill-down engine now names finalize.sh as the single command
     // (it wraps revise.sh + mechanical auto-fixers).
     expect(drill).toMatch(/bash \.ai-prompts\/scripts\/(finalize|revise)\.sh/);
-    expect(audit).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
+    expect(audit).toMatch(/bash \.ai-prompts\/scripts\/(finalize|revise)\.sh/);
     // Must tell the agent NOT to hand-edit files — regenerate via engine.
     expect(drill.toLowerCase()).toMatch(
       /do not.*manually|do not hand-edit|regenerate.*via/,
@@ -208,9 +208,10 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/executor_gate/);
   });
 
-  it('executor preflight now uses revise.sh (not just the bare validator)', () => {
+  it('executor preflight uses the ready-to-execute gate', () => {
     const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
-    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/validate-ready-to-execute\.sh/);
+    expect(body).toMatch(/ready-to-execute-report\.md/);
   });
 
   it('executor has a hard preflight gate that checks companion artifacts', () => {
@@ -218,12 +219,14 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/## Preflight gate/);
     // Must explicitly refuse without the gate passing.
     expect(body).toMatch(/refuse/i);
-    // Must name revise.sh as the preflight command (wraps validator +
-    // writes revise-report.md atomically).
-    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
+    // Must name the single readiness command (wraps finalize + revise +
+    // graph/order artifact generation).
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/validate-ready-to-execute\.sh/);
     // Must name the specific failure modes.
     expect(body).toMatch(/external-accounts\.md/);
+    expect(body).toMatch(/ready-to-execute-report\.md/);
     expect(body).toMatch(/revise-report\.md/);
+    expect(body).toMatch(/user-review-checkpoints\.md/);
     // Must explicitly forbid a "let's just start with what we have" path.
     // Body wraps across lines, so tolerate whitespace-or-newline.
     expect(body.toLowerCase()).toMatch(/let's\s+just\s+start/);
@@ -235,8 +238,8 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/tasks-/);
     expect(body).toMatch(/execution-log\.md/);
     expect(body).toMatch(/gap-list\.md|epics\.md/);
-    // Hard requirement: never execute unvalidated plan.
-    expect(body).toMatch(/validate-instantiation\.sh/);
+    // Hard requirement: never execute an unready plan.
+    expect(body).toMatch(/validate-ready-to-execute\.sh/);
   });
 
   it('executor surfaces design-system review artifacts for feedback', () => {
@@ -423,7 +426,7 @@ describe('active orchestrators', () => {
       'utf8',
     );
     const step4 = body.search(/^## STEP 4 — Validate/m);
-    const step4_5 = body.search(/^## STEP 4\.5 — Revise/m);
+    const step4_5 = body.search(/^## STEP 4\.5 — (Finalize|Revise)/m);
     const step5 = body.search(/^## STEP 5 — Planning hard stop/m);
     expect(step4).toBeGreaterThan(-1);
     expect(step4_5).toBeGreaterThan(-1);
@@ -432,7 +435,7 @@ describe('active orchestrators', () => {
     expect(step4_5).toBeLessThan(step5);
     // Step 4.5 must be mandatory and use the concrete shell command.
     expect(body).toMatch(/STEP 4\.5.*MANDATORY/);
-    expect(body).toMatch(/bash \.ai-prompts\/scripts\/revise\.sh/);
+    expect(body).toMatch(/bash \.ai-prompts\/scripts\/(finalize|revise)\.sh/);
   });
 
   it('entry point explains that engines own the revise gate (not the entry point)', () => {

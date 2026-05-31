@@ -20,7 +20,6 @@ section "Checking Markdown artifacts"
 artifact_matches=$(
   git grep -nE '(^|[^[:alnum:]_])(TODO|FIXME|DEBUG|TEMP|XXX)[[:space:]]*(:|-)' -- \
     '*.md' \
-    ':!docs/archive/**' \
     ':!prompts/outputs/**' \
     ':!prompts/working_copy/**' || true
 )
@@ -32,6 +31,7 @@ fi
 
 empty_markdown=$(
   git ls-files '*.md' | while IFS= read -r file; do
+    [ -e "$file" ] || continue
     if [ ! -s "$file" ]; then
       printf '%s\n' "$file"
     fi

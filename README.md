@@ -20,9 +20,11 @@ review / finishing / productionizing)
 3. **Remediation tasks** — atomic tasks pointing at real existing files.
 
 Each step runs in its own context, so token cost stays flat as the
-project grows. A revise gate (nine coverage + schema checks) runs
-after each engine and blocks the executor on any schema violation.
-The executor then writes real code, runs tests, and logs progress.
+project grows. A finalize/readiness gate builds typed artifacts
+(`task-contract.json`, delivery order, phase order, baseline coverage,
+design review checkpoints) and blocks the executor on any schema or
+ordering violation. The executor then writes real code, runs tests,
+and logs progress.
 
 ```
  brief           ──────────► external-input-handler (if reference material)
@@ -32,7 +34,7 @@ The executor then writes real code, runs tests, and logs progress.
                            (one context per step)
                                             │
                                             ▼
-                                   validator + revise gate
+                                   finalize + readiness gate
                                    (executor_gate: pass|fail)
                                             │
                               pass ─────────┴───────── fail (regen once, else stop)
@@ -51,7 +53,9 @@ prompt.** Paste it into any agentic AI chat inside an empty folder, answer
 one question, and the library handles everything else — installation,
 project scaffolding, planning, and implementation.
 
-If you want the manual path instead:
+If you want the manual path instead, use one of these install modes.
+
+**Git submodule (recommended for app projects):**
 
 1. `git submodule add https://github.com/ameedanxari/ai-prompt-library .ai-prompts`
 2. `bash .ai-prompts/scripts/bootstrap-project-integration.sh` — creates
@@ -63,6 +67,50 @@ If you want the manual path instead:
 4. In your AI chat: "Read `.ai-prompts/prompts/AGENTS.md` and
    `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`, follow
    its routing, do not stop between steps."
+
+**npm package (useful for CI, validators, and API consumers):**
+
+```bash
+npm install --save-dev ai-prompt-library
+ln -sfn node_modules/ai-prompt-library .ai-prompts
+bash .ai-prompts/scripts/bootstrap-project-integration.sh
+npx ai-prompt-ready prompts/outputs/current
+```
+
+The package expects Node.js 20+, npm, Python 3, and Bash. The npm
+install publishes the prompt library, shell validators, and typed
+task-contract API. The `.ai-prompts` symlink keeps the agent-facing
+paths identical to the submodule flow while `npx` exposes the
+mechanical gates.
+
+Programmatic task-contract example:
+
+```js
+import { buildTaskContractReportForDirectory } from 'ai-prompt-library/task-contract';
+
+const report = buildTaskContractReportForDirectory('prompts/outputs/current');
+console.log(report.summary);
+```
+
+CLI bins:
+
+| Command | Purpose |
+|---|---|
+| `npx ai-prompt-ready [target-dir]` | Runs the full pre-executor readiness gate. |
+| `npx ai-prompt-finalize [target-dir]` | Repairs mechanical schema aliases, rebuilds ledgers/contracts, and runs revise. |
+| `npx ai-prompt-build-task-contract [target-dir]` | Writes `task-contract.json` from task files. |
+| `npx ai-prompt-validate-task-contract [target-dir]` | Validates task schema, dependencies, phases, paths, and tests. |
+| `npx ai-prompt-validate-phase-order [target-dir]` | Writes and validates `phase-order-report.md`. |
+| `npx ai-prompt-validate-baseline-task-coverage [target-dir]` | Writes and validates scoped production baseline coverage. |
+| `npx ai-prompt-validate-user-review-checkpoints [target-dir]` | Enforces design review checkpoints before dependent UI work. |
+| `npx ai-prompt-validate-screenshot-matrix [target-dir-or-file]` | Validates app-store screenshot task matrices across locale, device, and frame axes. |
+| `npx ai-prompt-validate-ui-reference-source-map <file>` | Validates UI reference source-map rows and non-copy boundaries. |
+| `npx ai-prompt-generate-design-review <source-map> <output-html>` | Generates the design-system review HTML artifact. |
+| `npx ai-prompt-validate-design-review <html> [source-map]` | Validates design-review HTML structure and source-map traceability. |
+| `npx ai-prompt-validate-resumption-checkpoint <file>` | Validates selective context reload checkpoints. |
+| `npx ai-prompt-validate-release-readiness [repo-root]` | Checks package metadata, docs examples, bin executability, and npm pack dry-run contents before tagging or publishing. |
+| `npx ai-prompt-repair-task-schema-fields [target-dir]` | Normalizes explicit task-card field aliases before validation. |
+| `npx ai-prompt-validate-instantiation [target-dir]` | Runs the broad plan instantiation validator. |
 
 ---
 
@@ -80,17 +128,30 @@ and produces these files under `prompts/outputs/current/`:
 | Expand | `ui-reference-source-map.md` | Conditional artifact for greenfield UI-heavy products with no supplied Design Context. Converts research/reference categories into product-specific component, token, state, responsive, accessibility, and non-copy decisions. |
 | Services roll-up | `external-accounts.md` | Every third-party service the project touches — signup URL, env vars, free-tier notes, production caveats |
 | Atomize | `tasks-<feature>.md` | Atomic tasks. Each names a real file, exactly one file path, a real function signature, a change type (`create-new` / `edit-existing` / `delete`), a precise change, ≥3 verifiable acceptance criteria, a named test, and a `Depends on` line with reason. Every task closes a user story (`As a ... I want ... so that ...`). |
-| Validate | `revise-report.md` | Nine coverage + schema checks (C1–C9) plus brief-keyword coverage. Sets `executor_gate: pass` or `fail`. A failure regenerates the offending file once; if still failing, execution halts with a named `remaining_issues` list. Produced by `scripts/revise.sh`. |
+| Finalize | `task-schema-repair-report.md` | Records conservative field-alias repairs before validation. |
+| Finalize | `path-ledger.md`, `delivery-order.md` | Authoritative file ownership and phase-aware task order. |
+| Finalize | `task-contract.json`, `task-graph.json` | Typed task contract, dependency graph, path claims, and blocking contract issues. |
+| Finalize | `phase-order-report.md`, `baseline-task-coverage.md`, `user-review-checkpoints.md` | Deterministic checks for lifecycle order, scoped baseline topics, design-review approval before dependent UI work, and screenshot matrices when present. |
+| Validate | `revise-report.md`, `ready-to-execute-report.md` | Final gate reports. `executor_gate: pass` and `ready_to_execute: true` mean execution is cleared. |
 | Execute | `execution-log.md` | Per-task journal + YAML handoff envelope (session_id, next_task, blocked, failed, test suite state). Any new session resumes from this envelope alone. |
 
-**Mechanical gates:** `scripts/validate-instantiation.sh` runs at
-multiple points and refuses to pass when template leaks, placeholders,
-tautological acceptance, directory-as-file-path, multi-file collapse,
-missing external-accounts, missing revise-report, missing
-brief-keywords coverage, missing task `change_type` / `Test` /
-reasoned `Depends on`, or a failing `executor_gate` are present. The
-executor's preflight runs this same validator and refuses to start on
-a red gate.
+**Mechanical gates:** `scripts/finalize.sh` is the canonical
+post-planning gate. It runs task schema repair, path ledger generation,
+delivery order generation, task-contract validation, task graph
+generation, phase/order validation, baseline coverage validation,
+user-review checkpoint validation, screenshot matrix validation when
+screenshot task files exist, and the revise gate. The executor
+preflight runs `scripts/validate-ready-to-execute.sh`, which wraps
+finalize and writes `ready-to-execute-report.md` with machine-readable
+`blocking_artifacts`, `blocking_issues`, and `recommended_step`
+frontmatter fields.
+
+`scripts/validate-instantiation.sh` remains the broad template and
+plan-shape validator. It refuses to pass when template leaks,
+placeholders, tautological acceptance, directory-as-file-path,
+multi-file collapse, missing external-accounts, missing reports,
+missing brief-keywords coverage, missing task fields, invalid UI
+reference citations, or a failing `executor_gate` are present.
 
 **Executor-side safeguards** (added after a field test on a
 StorageCleaner build uncovered three failure modes the planning gates
@@ -171,19 +232,34 @@ preference menu — you already authorised the run.
 | `prompts/orchestrators/external-input-handler.md` | Runs first when user supplies designs/specs/code. |
 | `prompts/orchestrators/module-selection-index.md` | Intent → single-module lookup. |
 | `prompts/orchestrators/self-maintain.md` | Runs the library's engines on the library itself (maintainer tool). |
-| `prompts/modules/` | 252 dissolvable templates across 29 domain categories. Engine loads one per expansion. |
+| `prompts/modules/` | Load-on-demand domain modules. Engine loads the relevant module during expansion instead of carrying every capability in one prompt. |
+| `src/task-contract/` | Typed parser/report API for task files, dependency graphs, phases, path claims, and package consumers. |
 | `scripts/validate-instantiation.sh` | Mechanical validator. Refuses to pass on template leaks, schema violations, missing companions, missing brief-keyword coverage, or failing revise gate. |
 | `scripts/revise.sh` | Wraps the validator and writes `revise-report.md` with YAML frontmatter. Canonical producer — never hand-write the report. |
 | `scripts/step3-progress.sh` | Disk-derived checklist of features vs. task files. Engine consults between task-file writes to avoid jumping stages on memory. |
-| `scripts/finalize.sh` | **Mandatory post-Step-3 command.** Chains `fix-user-stories.sh` + `build-path-ledger.sh` + `revise.sh` and surfaces the gate verdict. Agents cannot declare the drill-down complete without seeing `executor_gate: pass` from this script. |
+| `scripts/finalize.sh` | **Mandatory post-Step-3 command.** Runs schema repair, ledgers, task contract, task graph, phase/order, baseline, user-review checkpoints, screenshot matrices, and revise. Agents cannot declare the drill-down complete without seeing `executor_gate: pass` from this script. |
+| `scripts/validate-ready-to-execute.sh` | Executor preflight. Wraps finalize and writes `ready-to-execute-report.md`. |
+| `scripts/build-task-contract.sh` | Writes `task-contract.json` using the TypeScript task-contract implementation. |
+| `scripts/validate-task-contract.sh` | Validates task-card schema, dependency graph, phases, file paths, test markers, and duplicate path claims. |
+| `scripts/build-delivery-order.sh` | Writes `delivery-order.md` from the task contract. |
+| `scripts/build-task-graph.sh` | Writes `task-graph.json` from the task contract. |
+| `scripts/validate-phase-order.sh` | Writes `phase-order-report.md` and blocks phase inversions or mixed-phase task files. |
+| `scripts/validate-baseline-task-coverage.sh` | Writes `baseline-task-coverage.md` and enforces scoped production-readiness topics. |
+| `scripts/validate-user-review-checkpoints.sh` | Writes `user-review-checkpoints.md` and blocks dependent UI work from bypassing design review. |
+| `scripts/validate-screenshot-matrix.sh` | Validates app-store screenshot task matrices: tooling tasks, locale × device × frame coverage, concrete PNG paths, verifier commands, and localized-copy acceptance. |
+| `scripts/validate-ui-reference-source-map.sh` | Validates UI source-map evidence, MAP rows, non-copy boundaries, category drift, states, and escaped-pipe tables. |
+| `scripts/generate-design-system-review-artifact.sh` | Generates `docs/design-system/review/index.html` from a UI reference source map. |
+| `scripts/validate-design-system-review-artifact.sh` | Validates design-review HTML and source-map traceability. |
+| `scripts/validate-resumption-checkpoint.sh` | Validates selective context reload checkpoints. |
+| `scripts/validate-release-readiness.sh` | Pre-tag / pre-publish package gate for metadata, docs examples, executable bins, and npm pack dry-run contents. |
+| `scripts/repair-task-schema-fields.sh` | Normalizes explicit task-card field aliases and mechanical shorthands before validation. |
 | `scripts/build-path-ledger.sh` | Emits `path-ledger.md` — the one authoritative list of every `**File:**` path the plan owns. Detects collisions (same path under two tasks; same source basename under two directories of the same role). Executor consults before writing any source file. |
 | `scripts/build-gate.sh` | After-each-task compile gate. Auto-detects Gradle / xcodebuild / Node / Python / Go and runs the cheapest compile-only check for each. Stops a task from being marked done when its unit test passes but the whole project stops compiling. |
 | `scripts/validate-execution-envelope.sh` | Honest-handoff gate. Refuses `next_task: null` when plan tasks have no file on disk and no entry in `blocked_tasks` / `failed_tasks` / `deferred_tasks`. Catches silent skips. |
 | `scripts/fix-user-stories.sh` | Auto-fixer for the mechanical "missing comma before 'so that'" pattern in `Closes user story` lines. Idempotent. |
-| `scripts/scaffold-screenshot-captures.sh` | Generates the full app-store screenshot task matrix (2 tooling + N locales × M devices captures) with canonical schema pre-filled, so weak models don't have to expand the matrix by hand. |
+| `scripts/scaffold-screenshot-captures.sh` | Generates the full app-store screenshot task matrix (2 tooling + locales × devices × frames captures) with canonical schema pre-filled, so weak models don't have to expand the matrix by hand. |
 | `scripts/reset-integration.sh` | Force-reset for consumer projects (purges stale state, refreshes steering, rewrites `AGENTS.md`). |
 | `docs/optional/` | Load-on-demand safeguard docs. |
-| `docs/rewrite-history/` | Historical reports from the rewrite. |
 
 ---
 
@@ -192,17 +268,21 @@ preference menu — you already authorised the run.
 ```bash
 npm install
 npm test
+npm run validate:release
 ```
 
 The suite includes property-based tests over every module, integration
-tests for the library's internal structure, and the instantiation
-validator. 789 tests pass, 0 failing.
+tests for the library's internal structure, package metadata tests,
+public entrypoint smoke tests, and validator coverage for the
+mechanical gates. Treat `npm test` as the source of truth for the
+current count.
 
-Before cutting a new release tag, also run the acceptance probe —
-see [`docs/acceptance-probe.md`](docs/acceptance-probe.md). Unit
-tests cover the mechanical gates; the probe covers the top-level
-claim that a low-end model can ship end-to-end from a one-paragraph
-brief.
+Before cutting a new release tag, run `npm run validate:release` to
+check package metadata, docs examples, and dry-run package contents.
+Also run the acceptance probe — see
+[`docs/acceptance-probe.md`](docs/acceptance-probe.md). Unit tests
+cover the mechanical gates; the probe covers the top-level claim that
+a low-end model can ship end-to-end from a one-paragraph brief.
 
 ---
 

@@ -10,13 +10,15 @@
 # agents a single post-Step-3 action that:
 #
 #   1. Applies mechanical auto-fixers (missing-comma user stories).
-#   2. Builds path, delivery-order, and task-graph ledgers.
-#   3. Runs the Revise Gate (writes canonical revise-report.md).
-#   4. Surfaces the gate verdict so the agent cannot declare done
+#   2. Builds path, delivery-order, task-contract, and task-graph ledgers.
+#   3. Validates phase order, baseline coverage, user-review checkpoints,
+#      and screenshot matrices when screenshot task files exist.
+#   4. Runs the Revise Gate (writes canonical revise-report.md).
+#   5. Surfaces the gate verdict so the agent cannot declare done
 #      without seeing whether executor_gate is pass or fail.
 #
-# Idempotent — safe to re-run. Exit code matches revise.sh: 0 when the
-# gate passes, non-zero when it does not.
+# Idempotent — safe to re-run. Exit code is 0 when the full gate passes
+# and non-zero when any blocking report fails.
 #
 # Usage:
 #   bash scripts/finalize.sh [target-dir]
@@ -33,15 +35,29 @@ if [ ! -d "$TARGET_DIR" ]; then
   exit 1
 fi
 
-# Resolve the library root from this script's location so the same
-# finalize.sh works when invoked as .ai-prompts/scripts/finalize.sh
-# from a consumer project.
-SCRIPT_DIR=$(cd "$(dirname "$0")" && pwd)
+# Resolve the real script directory so npm bin symlinks still find
+# sibling scripts in the package's scripts/ directory.
+resolve_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    local target
+    target="$(readlink "$source")"
+    case "$target" in
+      /*) source="$target" ;;
+      *) source="$dir/$target" ;;
+    esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_script_dir)"
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
 echo "Step 1/5 — apply mechanical auto-fixers"
 echo "----------------------------------------"
+bash "$SCRIPT_DIR/repair-task-schema-fields.sh" "$TARGET_DIR" || true
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
 echo "Step 2/5 — build the canonical-paths ledger"
@@ -62,10 +78,31 @@ echo "--------------------------------------------"
 delivery_status=0
 bash "$SCRIPT_DIR/build-delivery-order.sh" "$TARGET_DIR" || delivery_status=$?
 echo ""
-echo "Step 4/5 — build the canonical task graph"
-echo "-----------------------------------------"
+echo "Step 4/5 — build and validate contracts, graph, phase order, baseline, review checkpoints, and screenshot matrices"
+echo "----------------------------------------------------------------------------------------------------------------"
 graph_status=0
 bash "$SCRIPT_DIR/build-task-graph.sh" "$TARGET_DIR" || graph_status=$?
+contract_status=0
+bash "$SCRIPT_DIR/validate-task-contract.sh" "$TARGET_DIR" || contract_status=$?
+phase_order_status=0
+bash "$SCRIPT_DIR/validate-phase-order.sh" "$TARGET_DIR" || phase_order_status=$?
+baseline_status=0
+bash "$SCRIPT_DIR/validate-baseline-task-coverage.sh" "$TARGET_DIR" || baseline_status=$?
+review_checkpoint_status=0
+bash "$SCRIPT_DIR/validate-user-review-checkpoints.sh" "$TARGET_DIR" || review_checkpoint_status=$?
+screenshot_matrix_status=0
+screenshot_matrix_file_count=0
+while IFS= read -r _screenshot_matrix_file; do
+  screenshot_matrix_file_count=$((screenshot_matrix_file_count + 1))
+done < <(find "$TARGET_DIR" -maxdepth 1 -type f \( -name "tasks-*screenshots*.md" -o -name "remediation-*screenshots*.md" \) | sort)
+if [ "$screenshot_matrix_file_count" -gt 0 ]; then
+  bash "$SCRIPT_DIR/validate-screenshot-matrix.sh" "$TARGET_DIR" || screenshot_matrix_status=$?
+  if [ $screenshot_matrix_status -ne 0 ]; then
+    echo "❌ screenshot matrix validation: fail"
+  fi
+else
+  echo "ℹ️  no screenshot task matrix files found; skipping screenshot matrix validation."
+fi
 echo ""
 echo "Step 5/5 — run the Revise Gate"
 echo "------------------------------"
@@ -98,6 +135,46 @@ if [ $gate_status -eq 0 ] && [ $graph_status -ne 0 ]; then
   echo ""
   echo "ℹ️  revise gate alone passed, but build-task-graph.sh found"
   echo "   dependency graph problems; promoting overall gate to fail."
+fi
+
+if [ $gate_status -eq 0 ] && [ $contract_status -ne 0 ]; then
+  gate_status=$contract_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but task-contract.json contains"
+  echo "   blocking contract issues; promoting overall gate to fail."
+fi
+
+if [ $gate_status -eq 0 ] && [ $phase_order_status -ne 0 ]; then
+  gate_status=$phase_order_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but phase/order validation has"
+  echo "   blocking issues; promoting overall gate to fail."
+  echo "   Open phase-order-report.md for the specific tasks."
+fi
+
+if [ $gate_status -eq 0 ] && [ $baseline_status -ne 0 ]; then
+  gate_status=$baseline_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but baseline task coverage has"
+  echo "   blocking gaps; promoting overall gate to fail."
+  echo "   Open baseline-task-coverage.md for the specific topics."
+fi
+
+if [ $gate_status -eq 0 ] && [ $review_checkpoint_status -ne 0 ]; then
+  gate_status=$review_checkpoint_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but user-review checkpoints are"
+  echo "   missing or unordered; promoting overall gate to fail."
+  echo "   Open user-review-checkpoints.md for the specific tasks."
+fi
+
+if [ $gate_status -eq 0 ] && [ $screenshot_matrix_status -ne 0 ]; then
+  gate_status=$screenshot_matrix_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but screenshot matrix validation has"
+  echo "   blocking issues; promoting overall gate to fail."
+  echo "   Open tasks-*screenshots*.md / remediation-*screenshots*.md and"
+  echo "   run validate-screenshot-matrix for the specific matrix errors."
 fi
 
 echo ""

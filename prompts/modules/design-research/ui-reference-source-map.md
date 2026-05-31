@@ -70,12 +70,12 @@ Required sections:
 ## Reference Evidence
 | Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
 |---|---|---|---|---|---|---|---|
-| REF-1 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
+| REF-001 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
 
 ## Reference Map
 | Row ID | Evidence Row | Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| MAP-1 | REF-1 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+| MAP-001 | REF-001 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
 
 ## Open Design Risks
 - <risk or `none`>
@@ -106,9 +106,16 @@ Required sections:
 - `drill-down-engine.md` writes this artifact before Step 3 for greenfield
   UI-heavy projects without external design context.
 - UI task prompts cite this artifact in their UI design plan.
-- `validate-instantiation.sh` checks that the artifact exists and has the
-  required schema columns when UI-heavy task files are present without
-  project/audit design context.
+- `validate-ui-reference-source-map.sh` validates schema columns, evidence
+  row IDs, required narrative sections, minimum evidence count when no
+  existing style authority is present, map-row evidence links, state
+  coverage, non-copy boundaries, non-specific component/token values, and
+  generic-category drift.
+- `validate-instantiation.sh` checks that the artifact exists when UI-heavy
+  task files are present without project/audit design context, requires
+  task-level citations to concrete `REF-*` / `MAP-*` rows when a task names
+  the source map, then delegates the artifact contract to
+  `validate-ui-reference-source-map.sh`.
 
 ## Security Considerations
 

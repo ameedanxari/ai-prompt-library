@@ -14,6 +14,7 @@ import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const FINALIZE = path.join(REPO_ROOT, 'scripts', 'finalize.sh');
+const SCAFFOLD_SCREENSHOTS = path.join(REPO_ROOT, 'scripts', 'scaffold-screenshot-captures.sh');
 
 function run(cmd: string): { out: string; code: number } {
   try {
@@ -27,16 +28,44 @@ function run(cmd: string): { out: string; code: number } {
   }
 }
 
+function writeScreenshotFeature(dir: string): void {
+  fs.writeFileSync(
+    path.join(dir, 'features-screenshots-ios.md'),
+    [
+      '# Features — screenshots-ios',
+      '',
+      '## Screenshots iOS',
+      'Create store listing copy, privacy nutrition/data safety notes, a fastlane screenshot matrix, signing/distribution readiness, and metadata upload steps for App Store Connect.',
+      '',
+    ].join('\n'),
+  );
+}
+
+function scaffoldMinimalScreenshotMatrix(dir: string): string {
+  return execSync(
+    [
+      `bash "${SCAFFOLD_SCREENSHOTS}"`,
+      `--target "${dir}"`,
+      '--platform ios',
+      '--app-name App',
+      '--locales en-US',
+      '--devices iphone-6.7-inch',
+      '--frames home,detail,results',
+    ].join(' '),
+    { encoding: 'utf8' },
+  );
+}
+
 describe('finalize.sh', () => {
   it('exits 0 and writes a pass revise-report.md on a clean plan', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'finalize-ok-'));
     try {
       fs.writeFileSync(
-        path.join(sandbox, 'features-auth.md'),
-        '# Features — Auth\n\n## Sign up\nx\n',
+        path.join(sandbox, 'features-alpha.md'),
+        '# Features — Alpha\n\n## alpha\nx\n',
       );
       fs.writeFileSync(
-        path.join(sandbox, 'tasks-sign-up.md'),
+        path.join(sandbox, 'tasks-alpha.md'),
         [
           '## T1 · x',
           '- **Closes user story:** As a user, I want x, so that y.',
@@ -76,23 +105,23 @@ describe('finalize.sh', () => {
     try {
       fs.writeFileSync(
         path.join(sandbox, 'features-x.md'),
-        '# Features — X\n\n## sign up\nx\n',
+        '# Features — X\n\n## cancel\nx\n',
       );
       // Missing comma before "so that" — the auto-fixer should repair this.
       fs.writeFileSync(
-        path.join(sandbox, 'tasks-sign-up.md'),
+        path.join(sandbox, 'tasks-cancel.md'),
         [
-          '## T1 · sign up',
-          '- **Closes user story:** As a user, I want to sign up so that I can log in.',
+          '## T1 · cancel',
+          '- **Closes user story:** As a user, I want to cancel so that I can return to the previous workflow.',
           '- **Change type:** create-new',
-          '- **File:** `src/signup.ts`',
+          '- **File:** `src/cancel.ts`',
           '- **Depends on:** none',
-          '- **Precise change:** add signup().',
+          '- **Precise change:** add cancel().',
           '- **Acceptance:**',
           '  - A present.',
           '  - B present.',
           '  - C present.',
-          '- **Test:** `src/signup.test.ts`',
+          '- **Test:** `src/cancel.test.ts`',
           '- **Estimated LOC:** ~10',
           '- **Phase:** mvp',
           '',
@@ -108,10 +137,10 @@ describe('finalize.sh', () => {
       expect(out).toMatch(/executor_gate: pass/);
       // Verify the mechanical fix was applied.
       const taskFile = fs.readFileSync(
-        path.join(sandbox, 'tasks-sign-up.md'),
+        path.join(sandbox, 'tasks-cancel.md'),
         'utf8',
       );
-      expect(taskFile).toMatch(/I want to sign up, so that I can log in/);
+      expect(taskFile).toMatch(/I want to cancel, so that I can return to the previous workflow/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -155,6 +184,39 @@ describe('finalize.sh', () => {
       expect(out).toMatch(/Do NOT declare the drill-down complete yet/);
       // A revise-report.md must exist so the agent has a single file to act on.
       expect(fs.existsSync(path.join(sandbox, 'revise-report.md'))).toBe(true);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('promotes invalid screenshot matrices to a failing finalize gate', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'finalize-screenshot-matrix-'));
+    try {
+      scaffoldMinimalScreenshotMatrix(sandbox);
+      writeScreenshotFeature(sandbox);
+      fs.writeFileSync(
+        path.join(sandbox, 'external-accounts.md'),
+        '# External Accounts Required\n',
+      );
+      writeStreamAStubs(sandbox);
+
+      const taskPath = path.join(sandbox, 'tasks-screenshots-ios.md');
+      const body = fs.readFileSync(taskPath, 'utf8');
+      fs.writeFileSync(
+        taskPath,
+        body.replace(
+          'tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/3_home.png',
+          'tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/999_home.png',
+        ),
+        'utf8',
+      );
+
+      const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
+
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/screenshot matrix validation has/);
+      expect(out).toMatch(/executor_gate: fail/);
+      expect(out).toMatch(/expected fastlane\/screenshots\/en-US\/iphone-6\.7-inch\/3_home\.png/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

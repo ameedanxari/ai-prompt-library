@@ -76,13 +76,20 @@ When writing a task from this module:
    changes token/source files, list the HTML review artifact in precise
    changes and acceptance criteria.
 2. Include the exact reference rows or URLs/paths that must appear in the
-   HTML. Do not say "include references" generically.
+   HTML. Do not say "include references" generically. When
+   `ui-reference-source-map.md` exists, the validator expects the HTML to
+   represent the actual `REF-*` and `MAP-*` rows, product decisions,
+   non-copy boundaries, and row-derived component/token/state values.
 3. Add acceptance criteria requiring the user-facing checkpoint to present
    the HTML path plus the reference URLs/paths and ask for review feedback.
 4. Require a lightweight verification command, such as an HTML link checker,
    a Playwright smoke test, or a local file existence/content check that
    confirms the artifact includes token swatches, component states, and
    reference evidence.
+   Preferred generator:
+   `bash scripts/generate-design-system-review-artifact.sh prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html`
+   Preferred deterministic check:
+   `bash scripts/validate-design-system-review-artifact.sh . prompts/outputs/current/ui-reference-source-map.md`
 5. Keep external references as pattern evidence only. Do not copy reference
    screenshots, brand assets, exact layouts, icon sets, or proprietary
    illustrations.

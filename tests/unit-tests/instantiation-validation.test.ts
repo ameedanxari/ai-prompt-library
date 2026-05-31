@@ -2062,7 +2062,7 @@ describe('validator — UI design quality gate', () => {
         path.join(sandbox, 'remediation-dashboard.md'),
         uiTask([
           '## UI design constraints',
-          '- UI reference source map: existing-style source map from `src/styles/theme.css` and `src/components/Button.tsx`; Mobbin admin analytics references are pattern inspiration only.',
+          '- UI reference source map: cite MAP-001 plus REF-001 and REF-002 from `ui-reference-source-map.md`; Mobbin admin analytics references are pattern inspiration only.',
           '- Existing theme authority: yes; existing product style is authoritative.',
           '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
           '- Token mapping: surface, text, border, accent, spacing, radius, elevation, chart color tokens.',
@@ -2096,6 +2096,60 @@ describe('validator — UI design quality gate', () => {
       const { code, out } = runValidator(sandbox);
       expect(code).not.toBe(0);
       expect(out).toMatch(/generic UI styling language/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects UI source-map references without concrete row citations', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-no-row-citation-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: use `ui-reference-source-map.md` for dashboard design evidence.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+          '- Responsive and accessibility checks: mobile stack, desktop grid, keyboard focus, screen-reader chart summary.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+
+      const { code, out } = runValidator(sandbox);
+
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/UI source-map reference lacks row citations/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects UI source-map citations that do not exist in the source map', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-ui-missing-row-citation-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'remediation-dashboard.md'),
+        uiTask([
+          '## UI design constraints',
+          '- UI reference source map: cite MAP-999 from `ui-reference-source-map.md` for dashboard design evidence.',
+          '- Component inventory: sidebar, topbar, KPI card, filter bar, chart card, data table.',
+          '- Token mapping: surface, text, border, accent, spacing, radius, elevation.',
+          '- State matrix: default, loading, empty, error, disabled, success.',
+          '- Dashboard planning: KPI row, filter bar, chart card, table region, tooltip, legend.',
+          '- Responsive and accessibility checks: mobile stack, desktop grid, keyboard focus, screen-reader chart summary.',
+        ]),
+      );
+      writeUiSourceMap(sandbox);
+      passingCompanions(sandbox);
+
+      const { code, out } = runValidator(sandbox);
+
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/references missing row\(s\): MAP-999/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

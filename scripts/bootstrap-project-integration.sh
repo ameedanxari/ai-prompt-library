@@ -19,6 +19,20 @@ fi
 
 echo "🔧 Bootstrapping AI Prompt Library integration..."
 
+library_version() {
+  if [ -d "$LIB_DIR/.git" ] && (cd "$LIB_DIR" && git rev-parse HEAD >/dev/null 2>&1); then
+    (cd "$LIB_DIR" && git rev-parse HEAD)
+    return
+  fi
+
+  if [ -f "$LIB_DIR/package.json" ]; then
+    version="$(awk -F\" '/"version"[[:space:]]*:/ { print $4; exit }' "$LIB_DIR/package.json")"
+    if [ -n "$version" ]; then
+      echo "ai-prompt-library@$version"
+    fi
+  fi
+}
+
 mkdir -p prompts/outputs/current/planning/features
 mkdir -p prompts/outputs/current/planning/tasks
 mkdir -p prompts/outputs/current/execution/task-results
@@ -166,10 +180,9 @@ EOF
 fi
 
 # Track current library version for update validation.
-if [ -d ".git" ]; then
-  if (cd "$LIB_DIR" && git rev-parse HEAD >/dev/null 2>&1); then
-    (cd "$LIB_DIR" && git rev-parse HEAD) > .ai-prompts-version
-  fi
+current_library_version="$(library_version)"
+if [ -n "$current_library_version" ]; then
+  echo "$current_library_version" > .ai-prompts-version
 fi
 
 # Install/update project-level integration validator wrapper.

@@ -97,12 +97,24 @@ closure) and verify each task meets the schema. If any task fails:
 
 Any failure triggers `scripts/validate-instantiation.sh` — if it exits
 non-zero, stop here and report. Do NOT proceed to C5 with invalid tasks.
+The same task skeleton is also represented in `task-contract.json`, so
+`scripts/validate-task-contract.sh` blocks missing or malformed task-card
+fields before executor handoff.
 
 ### C5 — Baseline coverage (BOTH engines — greenfield AND gap-closure)
 
 Run for every run, both modes. Load
 `prompts/orchestrators/baseline-task-shapes.md` as the single source of
 truth for per-topic rules.
+
+First run `scripts/validate-baseline-task-coverage.sh <target-dir>`.
+It writes `baseline-task-coverage.md` and fails when a scoped or
+detected baseline topic is missing mechanically checkable coverage
+markers. The report records whether each topic came from `epics.md`,
+`brief-keywords.md`, or plan-file keyword detection, and it honors
+brief-keyword `out-of-scope` rows so incidental mentions do not become
+false baseline requirements. Use the report as the concrete C5 issue
+list before applying any semantic review below.
 
 **Greenfield (drill-down) scope:** evaluate each baseline epic's
 `tasks-<feature>.md` against the rules for its topic. For an epic
@@ -156,6 +168,9 @@ If any baseline topic is under-covered, surface it with a
 `remaining_issues` entry AND regenerate the affected remediation /
 tasks file via the originating engine's Step 3, scoped to just that
 gap/feature, with the specific rule cited in the regeneration prompt.
+Keep `baseline-task-coverage.md` current by rerunning
+`scripts/validate-baseline-task-coverage.sh <target-dir>` after each
+regeneration.
 
 ### C10 — UI design quality (conditional, both modes)
 
@@ -167,6 +182,8 @@ Required checks:
 - UI task includes a UI reference source map, existing-style source map,
   screen-fidelity matrix reference, or explicit statement that existing
   product style is authoritative.
+- Any UI task that names `ui-reference-source-map.md` or the UI reference
+  source map cites concrete `REF-*` or `MAP-*` rows from that artifact.
 - Greenfield UI-heavy plans without `project-context.md` Design Context
   include `ui-reference-source-map.md` with the required schema columns:
   Row ID, Evidence Row, Reference Category, Observed Pattern, Product
@@ -212,22 +229,21 @@ research, missing chart states, or unrelated redesign drift.
 
 ### C11 — Phase coverage + ordering (both modes)
 
-Reads `delivery-order.md` frontmatter (written by
-`scripts/build-delivery-order.sh` during finalize). Verifies four
-invariants that together make the plan executable in delivery order
-rather than alphabetical order:
+Run `scripts/validate-phase-order.sh <target-dir>`. It reads
+`task-contract.json`, writes `phase-order-report.md`, and verifies the
+invariants that make the plan executable in delivery order rather than
+alphabetical order:
 
-1. **Every task carries a `Phase:` field.** The frontmatter's
-   `missing_phase_field` array must be empty. Tasks without a Phase
-   defaulted to `mvp` during sorting; that masks the gap. Regenerate
-   the offending task via Step 3.7 with explicit Phase guidance.
+1. **Every task carries a `Phase:` field.** Missing Phase fields are
+   listed in `phase-order-report.md`. Regenerate the offending task via
+   Step 3.7 with explicit Phase guidance.
 
 2. **`Phase:` values are within the enum.** Anything other than
    `foundation`, `mvp`, `expand`, `polish` is a schema violation.
    The build-delivery-order script normalises case but does not
    accept arbitrary values.
 
-3. **MVP is non-empty.** For greenfield plans, `phase_counts.mvp`
+3. **MVP is non-empty.** For greenfield plans, `mvp_task_count`
    must be ≥ 1. A plan with zero MVP tasks has no walking skeleton
    and no demonstrable shippable surface — by definition the plan
    does not yet describe a product. Re-grade which features belong
@@ -235,25 +251,24 @@ rather than alphabetical order:
    audit-and-remediate (gap-closure) runs, this rule is relaxed —
    not every gap closure has an MVP feature.
 
-4. **No phase inversions.** `phase_inversions` in the frontmatter
-   must be empty. A `foundation` task that depends on an `mvp`
-   task, or any reverse-direction edge, means either the Phase
-   field is wrong on one side of the edge or the dependency is
-   wrong. Fix by re-grading the Phase or removing the inverted
-   edge. The executor cannot proceed with phase inversions —
-   running a foundation task that waits on an mvp task would either
-   block forever or skip ahead past foundations.
+4. **No mixed-phase task files.** The executor orders task files, so a
+   file containing both foundation and mvp units is ambiguous. Split
+   the file or align the phases.
 
-5. **No cycles.** `cycle_tasks` in the frontmatter must be empty.
-   Already enforced by `validate-instantiation.sh` check 6c
-   independently, but C11 also surfaces it here so the user sees
-   it next to the Phase context.
+5. **No phase inversions.** A `foundation` task that depends on an
+   `mvp` task, or any reverse-direction edge, means either the Phase
+   field is wrong on one side of the edge or the dependency is wrong.
+   Fix by re-grading the Phase or removing the inverted edge. The
+   executor cannot proceed with phase inversions.
+
+6. **No cycles.** File-level and task-unit cycles must be empty.
+   `phase-order-report.md` surfaces cycles next to the Phase context.
 
 When any C11 invariant fails:
 
 - Surface the specific tasks and the rule violated.
 - Regenerate the offending tasks-*.md via Step 3 / Step 3.7, then
-  re-run `bash .ai-prompts/scripts/build-delivery-order.sh prompts/outputs/current`.
+  re-run `bash .ai-prompts/scripts/validate-phase-order.sh prompts/outputs/current`.
 - Do NOT proceed to the executor with a failing C11 — the executor
   reads `delivery-order.md` verbatim as its iteration order.
 

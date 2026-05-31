@@ -356,5 +356,6 @@ check, a steering rule, a script) rather than prose guidance.
 
 Prior commits built up the module library, added tech-stack templates,
 experimented with a waterfall pipeline, and collected field-test
-failure modes. See `docs/rewrite-history/` for the detailed
-engineering notes.
+failure modes. Historical rewrite notes were removed from the active
+tree before the v1.0 package release to keep the library surface
+focused on supported workflows.

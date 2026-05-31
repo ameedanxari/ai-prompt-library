@@ -69,6 +69,7 @@ prompts/outputs/current/
 ├── ux-flows.md                  (Step 2.8, when greenfield UI exists)
 ├── tasks-<feature-slug>.md      (Step 3, one per feature)
 ├── delivery-order.md            (Step 3.8)
+├── phase-order-report.md        (Finalize / C11)
 ├── release-plan.md              (Step 3.9)
 ├── store-submission.md          (Step 3.95, when mobile platforms in scope)
 └── revise-report.md             (Revise Gate)
@@ -491,12 +492,12 @@ this schema:
 ## Reference Map
 | Row ID | Evidence Row | Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
 |---|---|---|---|---|---|---|---|---|---|---|
-| MAP-1 | REF-1 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
+| MAP-001 | REF-001 | <category> | <pattern> | <decision> | <boundary> | <components> | <tokens> | default, loading, empty, error, disabled, success | <notes> | <notes> |
 
 ## Reference Evidence
 | Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
 |---|---|---|---|---|---|---|---|
-| REF-1 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
+| REF-001 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
 
 ## Open Design Risks
 - <risk or `none`>
@@ -726,8 +727,10 @@ into project-specific instructions. Include:>
 
 ### UI design plan
 Include this section for UI features only:
-- UI reference source map: existing product source paths and/or 3-5
-  Mobbin-style reference categories, with a non-copy boundary for each.
+- UI reference source map: cite concrete `REF-*` and/or `MAP-*` rows
+  from `ui-reference-source-map.md` for the relevant existing product
+  source paths, platform references, or Mobbin/Figma-style evidence;
+  include the non-copy boundary for each cited row.
 - Design-system review artifact: for token/component/theme foundation
   work, create `docs/design-system/review/index.html` with token swatches,
   component gallery, state matrix, responsive previews, accessibility
@@ -1173,7 +1176,8 @@ bash .ai-prompts/scripts/finalize.sh prompts/outputs/current
 ```
 
 This wrapper:
-1. Applies the mechanical auto-fixers (`fix-user-stories.sh`) so that
+1. Applies the mechanical auto-fixers (`repair-task-schema-fields.sh`
+   and `fix-user-stories.sh`) so that explicit schema aliases and
    trivial patterns like "missing comma before 'so that'" never block
    the gate.
 2. Builds the canonical-paths ledger (`build-path-ledger.sh`) — emits
@@ -1181,11 +1185,14 @@ This wrapper:
    path under two tasks or the same source-code basename under two
    directories of the same architectural role (the field-tested
    cause of duplicate-class builds).
-3. Runs the Revise Gate (`revise.sh`), which wraps the instantiation
+3. Builds the delivery order, task contract, task graph, phase-order
+   report, baseline coverage report, user-review checkpoint report,
+   and screenshot matrix validation when screenshot task files exist.
+4. Runs the Revise Gate (`revise.sh`), which wraps the instantiation
    validator and always writes
    `prompts/outputs/current/revise-report.md` with frontmatter that
    names every failing file.
-4. Surfaces the gate verdict (`executor_gate: pass` or `fail`) and the
+5. Surfaces the gate verdict (`executor_gate: pass` or `fail`) and the
    next action. **You cannot declare the drill-down complete without
    running this and seeing `pass`.**
 
@@ -1229,6 +1236,14 @@ next_action: "User authorization required — say Execute to begin"
 re_load_files:
   - prompts/outputs/current/revise-report.md
   - prompts/outputs/current/external-accounts.md
+  - prompts/outputs/current/task-schema-repair-report.md
+  - prompts/outputs/current/path-ledger.md
+  - prompts/outputs/current/delivery-order.md
+  - prompts/outputs/current/task-contract.json
+  - prompts/outputs/current/task-graph.json
+  - prompts/outputs/current/phase-order-report.md
+  - prompts/outputs/current/baseline-task-coverage.md
+  - prompts/outputs/current/user-review-checkpoints.md
 updated_at: <current ISO 8601 timestamp>
 ---
 ```

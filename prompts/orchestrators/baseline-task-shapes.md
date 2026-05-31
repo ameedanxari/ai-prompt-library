@@ -9,6 +9,7 @@ Consulted by:
 - `drill-down-engine.md` Step 3 (greenfield)
 - `audit-and-remediate.md` Step 3 (gap-closure)
 - `revise-outputs.md` C5 (baseline coverage check)
+- `scripts/validate-baseline-task-coverage.sh` (mechanical coverage gate)
 
 The engine MUST read this file when expanding any task whose parent
 epic / gap targets one of the topics below.
@@ -18,7 +19,9 @@ epic / gap targets one of the topics below.
 ## Universal task-shape invariants (apply to every baseline and feature)
 
 Learned from six field tests. These rules are **mechanically enforced**
-by `scripts/validate-instantiation.sh`; violating them fails the gate.
+by `scripts/validate-instantiation.sh`, `scripts/validate-task-contract.sh`,
+and `scripts/validate-baseline-task-coverage.sh`; violating them fails
+the gate.
 
 1. **One File field = exactly one file path.** No comma-separated list,
    no two backticked paths in one field. If a change spans two files,

@@ -81,7 +81,7 @@ show me a summary of what was just completed, then wait for me to say
       is a complete, standalone instruction for an AI to implement
       one piece of the project. Show me progress after each epic’s
       worth of tasks and wait.
-   d. ⏸ Run the revise gate. Report the result and STOP.
+   d. ⏸ Run the finalize/readiness gate. Report the result and STOP.
 
    The output of planning is a checklist of high-quality task prompts
    under prompts/outputs/current/tasks-*.md. Each prompt contains the
@@ -89,7 +89,7 @@ show me a summary of what was just completed, then wait for me to say
    the code must do, and 3+ testable acceptance criteria.
 
    Only stop planning if a hard blocker appears (ambiguous requirement
-   that needs my decision, or the revise gate fails).
+   that needs my decision, or the finalize/readiness gate fails).
 
 7. Run the EXECUTION phase (only after I approve the plan). When I
    say "Execute" or "Continue" after the planning summary:
@@ -112,9 +112,12 @@ show me a summary of what was just completed, then wait for me to say
 
 8. When everything is done, report to me:
    - Every file under prompts/outputs/current/ with a one-line purpose.
-     Expect: project-context.md (optional), epics.md, features-*.md,
-     external-accounts.md, tasks-*.md, revise-report.md,
-     execution-log.md.
+     Expect: project-context.md (optional), epics.md, brief-keywords.md,
+     features-*.md, external-accounts.md, tasks-*.md,
+     task-schema-repair-report.md, path-ledger.md, delivery-order.md,
+     task-contract.json, task-graph.json, phase-order-report.md,
+     baseline-task-coverage.md, user-review-checkpoints.md,
+     revise-report.md, ready-to-execute-report.md, execution-log.md.
    - A tree of what got created in the app (src/, backend/, frontend/,
      android/, ios/, infrastructure/).
    - One command I can run to start the app locally.
@@ -137,10 +140,10 @@ Start now.
 3. Answer in a sentence or a paragraph. Vague is fine.
 4. The agent starts the **planning phase** and stops at each
    checkpoint (⏸) to show you what it produced:
-   - Epics → Features → Task prompts → Revise gate.
+   - Epics → Features → Task prompts → Finalize/readiness gate.
    - Say "Continue" at each checkpoint to advance.
    - If something looks wrong, give feedback and the agent adjusts.
-5. After the revise gate passes, the agent shows you the full task
+5. After the readiness gate passes, the agent shows you the full task
    checklist and asks you to say "Execute" to begin building.
 6. The agent enters the **execution phase**, implementing one task
    at a time. After each task it shows you the result and waits.
@@ -148,6 +151,43 @@ Start now.
 7. If the IDE closes or context runs out, start a new session and
    say "Continue where you left off" — the agent picks up from
    `execution-log.md`.
+
+## NPM install alternative
+
+The copy-paste prompt uses a git submodule because that gives agents a
+stable `.ai-prompts/` path. For CI, validators, and package consumers
+you can install from npm and keep the same path with a symlink:
+
+```bash
+npm install --save-dev ai-prompt-library
+ln -sfn node_modules/ai-prompt-library .ai-prompts
+bash .ai-prompts/scripts/bootstrap-project-integration.sh
+npx ai-prompt-ready prompts/outputs/current
+```
+
+Prerequisites: Node.js 20+, npm, Python 3, and Bash.
+
+Common `npx` commands:
+
+| Command | Use |
+|---|---|
+| `npx ai-prompt-ready prompts/outputs/current` | Run the full pre-executor gate. |
+| `npx ai-prompt-finalize prompts/outputs/current` | Rebuild all planning ledgers and run revise. |
+| `npx ai-prompt-build-task-contract prompts/outputs/current` | Write `task-contract.json`. |
+| `npx ai-prompt-validate-task-contract prompts/outputs/current` | Check task schema, dependencies, phases, paths, and tests. |
+| `npx ai-prompt-validate-screenshot-matrix prompts/outputs/current` | Check app-store screenshot task matrix coverage. |
+| `npx ai-prompt-generate-design-review prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html` | Generate the design review HTML artifact. |
+| `npx ai-prompt-validate-design-review docs/design-system/review/index.html prompts/outputs/current/ui-reference-source-map.md` | Validate design review HTML against the source map. |
+| `npx ai-prompt-validate-release-readiness .` | Check package metadata, docs examples, bins, and npm pack dry-run contents before release. |
+
+Programmatic API example:
+
+```js
+import { buildTaskContractReportForDirectory } from 'ai-prompt-library/task-contract';
+
+const report = buildTaskContractReportForDirectory('prompts/outputs/current');
+console.log(report.summary.blocked);
+```
 
 ## Expected output layout
 
@@ -162,7 +202,17 @@ After a successful run, `prompts/outputs/current/` contains:
 | `ui-reference-source-map.md` | drill-down Step 2 | Conditional artifact for greenfield UI-heavy apps when no design files or existing theme were supplied |
 | `external-accounts.md` | drill-down Step 2.5 | Every third-party service + signup URL + env vars (your to-do list) |
 | `tasks-<feature>.md` | drill-down Step 3 | Atomic tasks — real file paths, signatures, acceptance criteria, named test, change type |
-| `revise-report.md` | `scripts/revise.sh` (revise gate) | Coverage + schema check results. `executor_gate: pass` means execution is cleared. `scripts/step3-progress.sh` is the in-progress checklist the agent runs between task-file generations. |
+| `task-schema-repair-report.md` | `scripts/repair-task-schema-fields.sh` | Conservative field-alias repairs before validation |
+| `path-ledger.md` | `scripts/build-path-ledger.sh` | Authoritative list of planned file paths |
+| `delivery-order.md` | `scripts/build-delivery-order.sh` | Phase-aware execution order |
+| `task-contract.json` | `scripts/build-task-contract.sh` | Typed task contract, path claims, and dependency graph inputs |
+| `task-graph.json` | `scripts/build-task-graph.sh` | Machine-readable task dependency graph |
+| `phase-order-report.md` | `scripts/validate-phase-order.sh` | Phase/order validation report |
+| `baseline-task-coverage.md` | `scripts/validate-baseline-task-coverage.sh` | Scoped production baseline coverage report |
+| `user-review-checkpoints.md` | `scripts/validate-user-review-checkpoints.sh` | Design review checkpoint ordering report |
+| `tasks-*screenshots*.md` | `scripts/validate-screenshot-matrix.sh` | App-store screenshot matrix coverage when screenshot task files exist |
+| `revise-report.md` | `scripts/revise.sh` | Coverage + schema check results. `executor_gate: pass` means the plan passed revise. `scripts/step3-progress.sh` is the in-progress checklist the agent runs between task-file generations. |
+| `ready-to-execute-report.md` | `scripts/validate-ready-to-execute.sh` | Final pre-executor verdict. `ready_to_execute: true` means execution is cleared; failures include `blocking_artifacts`, `blocking_issues`, and `recommended_step`. |
 | `execution-log.md` | executor | YAML handoff envelope + per-task journal |
 
 You generally don't need to read these. The agent's final summary

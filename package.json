@@ -2,19 +2,74 @@
   "name": "ai-prompt-library",
   "version": "1.0.0",
   "description": "AI Prompt Library for generating production-ready software specifications",
-  "main": "index.js",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ameedanxari/ai-prompt-library.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ameedanxari/ai-prompt-library/issues"
+  },
+  "homepage": "https://github.com/ameedanxari/ai-prompt-library#readme",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./task-contract": {
+      "types": "./dist/task-contract/index.d.ts",
+      "import": "./dist/task-contract/index.js"
+    }
+  },
+  "files": [
+    "dist/index.*",
+    "dist/task-contract",
+    "docs",
+    "prompts",
+    "project-templates",
+    "scripts",
+    "MY_PROJECT.md.template",
+    "QUICK_START.md",
+    "README.md",
+    "LICENSE"
+  ],
+  "bin": {
+    "ai-prompt-build-task-contract": "./scripts/build-task-contract.sh",
+    "ai-prompt-finalize": "./scripts/finalize.sh",
+    "ai-prompt-generate-design-review": "./scripts/generate-design-system-review-artifact.sh",
+    "ai-prompt-ready": "./scripts/validate-ready-to-execute.sh",
+    "ai-prompt-repair-task-schema-fields": "./scripts/repair-task-schema-fields.sh",
+    "ai-prompt-validate-baseline-task-coverage": "./scripts/validate-baseline-task-coverage.sh",
+    "ai-prompt-validate-design-review": "./scripts/validate-design-system-review-artifact.sh",
+    "ai-prompt-validate-instantiation": "./scripts/validate-instantiation.sh",
+    "ai-prompt-validate-phase-order": "./scripts/validate-phase-order.sh",
+    "ai-prompt-validate-release-readiness": "./scripts/validate-release-readiness.sh",
+    "ai-prompt-validate-resumption-checkpoint": "./scripts/validate-resumption-checkpoint.sh",
+    "ai-prompt-validate-screenshot-matrix": "./scripts/validate-screenshot-matrix.sh",
+    "ai-prompt-validate-task-contract": "./scripts/validate-task-contract.sh",
+    "ai-prompt-validate-ui-reference-source-map": "./scripts/validate-ui-reference-source-map.sh",
+    "ai-prompt-validate-user-review-checkpoints": "./scripts/validate-user-review-checkpoints.sh"
+  },
   "scripts": {
+    "clean": "rm -rf dist",
+    "build": "tsc -p tsconfig.build.json",
     "test": "vitest --run",
     "test:watch": "vitest",
     "test:pbt": "vitest --run --reporter=verbose tests/property-tests",
     "prepare": "husky install",
+    "prepack": "npm run clean && npm run build",
     "lint-staged": "lint-staged",
-    "archive": "vite-node src/archive.ts",
     "safeguard-status": "bash scripts/validate-safeguards.sh",
     "safeguard-recovery": "git restore docs/optional/PREVENTION_CHECKLIST.md docs/optional/COMMIT_GUIDELINES.md docs/optional/SAFEGUARDS.md prompts/orchestrators/ && npm run safeguard-status",
     "validate:instantiation": "bash scripts/validate-instantiation.sh",
+    "validate:release": "bash scripts/validate-release-readiness.sh",
     "validate:review": "bash scripts/validate-review-enforcement.sh",
     "typecheck": "tsc -p tsconfig.typecheck.json"
+  },
+  "engines": {
+    "node": ">=20"
   },
   "devDependencies": {
     "@types/node": "^20.0.0",

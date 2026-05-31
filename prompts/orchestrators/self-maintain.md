@@ -21,7 +21,8 @@ This orchestrator is the entry point for that.
 
 - The library itself (`prompts/orchestrators/`, `prompts/modules/`,
   `prompts/AGENTS.md`, `prompts/steering/`, `scripts/`, `tests/`).
-- `docs/rewrite-history/` — previous vision-alignment reports.
+- `docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current architecture
+  direction and implemented upgrade slices.
 - Optional: `prompts/outputs/field-tests/<run-name>.md` — free-form
   observations about a specific end-to-end run, including what the
   user asked, what the agent did, what failed, what surprised the
@@ -130,4 +131,5 @@ Once self-maintain runs, the field-test file is treated as input-only
 - `external-input-handler.md` — pulls library structure into context.
 - `revise-outputs.md` — run after self-maintain to check the library
   audit's own completeness.
-- `docs/rewrite-history/` — historical self-maintenance artefacts.
+- `docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current hybrid architecture
+  upgrade plan.
