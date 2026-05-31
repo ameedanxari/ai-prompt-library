@@ -22,6 +22,13 @@ Provides comprehensive patterns for implementing message queue systems, message 
 
 Message queues are fundamental to building scalable, decoupled distributed systems. This template addresses queue management, message routing, delivery guarantees, dead letter handling, and monitoring while ensuring reliability, scalability, and fault tolerance in message-based architectures.
 
+Authority boundary: a queue is transport, not the source of truth. Any
+workflow that changes durable business, financial, clinical, legal, or
+audit state needs a database/system-of-record write plus a transactional
+outbox or equivalent atomic publication boundary. Queue messages should
+be idempotent, replayable, observable, and tied back to the durable
+record that owns the fact.
+
 ## Core Components
 
 ### Message Queue Manager

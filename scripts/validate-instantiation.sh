@@ -99,13 +99,29 @@ fi
 
 shopt -s nullglob
 files=("$TARGET_DIR"/tasks-*.md "$TARGET_DIR"/remediation-*.md)
-if [ ${#files[@]} -eq 0 ]; then
-  echo "ℹ️  no tasks-*.md or remediation-*.md files in $TARGET_DIR — nothing to validate"
-  exit 0
-fi
-
 fail=0
 ui_design_gate_needed=0
+
+# 0-arch. Regulated/cloud architecture quality gate. This runs before
+# the task-file early exit so architecture-only planning dry-runs still
+# get checked, while ordinary non-regulated plans simply skip.
+if [ -x "$SCRIPT_DIR/validate-regulated-architecture.sh" ]; then
+  if ! bash "$SCRIPT_DIR/validate-regulated-architecture.sh" "$TARGET_DIR"; then
+    echo "❌ regulated-architecture: source-ledger / regulated architecture quality gate failed"
+    fail=1
+  fi
+fi
+
+if [ ${#files[@]} -eq 0 ]; then
+  if [ $fail -eq 0 ]; then
+    echo "ℹ️  no tasks-*.md or remediation-*.md files in $TARGET_DIR — nothing to validate"
+    exit 0
+  else
+    echo ""
+    echo "🚨 instantiation issues detected — regenerate the offending architecture/source-ledger artifact(s)."
+    exit 1
+  fi
+fi
 
 # 0b. Feature→task coverage (C2). If features-*.md files exist, every
 # feature heading inside them must have a matching tasks-<slug>.md on

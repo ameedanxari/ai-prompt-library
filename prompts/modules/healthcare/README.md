@@ -1,12 +1,12 @@
 # Healthcare Module
 
 ## Purpose
-Generate comprehensive healthcare applications with HIPAA compliance, patient data management, medical records integration, and healthcare security patterns for clinical and administrative systems.
+Generate comprehensive healthcare applications with jurisdiction-aware compliance, patient data management, medical records integration, prescription governance, clinical safety, and healthcare security patterns for clinical and administrative systems.
 
 ## Instructions
 1. Analyze healthcare application requirements and regulatory compliance needs
 2. Select appropriate healthcare templates based on use case (clinical, administrative, patient-facing)
-3. Implement HIPAA-compliant patient data management and privacy controls
+3. Implement jurisdiction-specific patient data management and privacy controls; use HIPAA only when the target jurisdiction is the United States
 4. Build medical records integration with EHR systems and interoperability standards
 5. Add healthcare security measures with encryption and access controls
 6. Create telemedicine and remote patient monitoring capabilities
@@ -14,6 +14,8 @@ Generate comprehensive healthcare applications with HIPAA compliance, patient da
 8. Build appointment scheduling and healthcare administration tools
 9. Add healthcare analytics with privacy-preserving data analysis
 10. Create comprehensive audit trails and compliance reporting
+11. For UK healthcare, include UK GDPR, NHS DSPT/DTAC, CQC/GPhC/MHRA as applicable, and DCB0129/DCB0160 clinical safety where software can affect care
+12. For medical cannabis or other controlled-drug workflows, model prescription, dispensing, pharmacy verification, CD Register/evidence retention, and repeat-supply limits explicitly
 
 ## Examples
 
@@ -99,15 +101,18 @@ This module contains comprehensive healthcare application templates covering pat
 
 - **patient-data-management.md** - HIPAA-compliant patient records management
 - **hipaa-compliance.md** - Privacy controls and audit requirements
+- **uk-regulated-healthcare.md** - UK healthcare, NHS, DTAC, DSPT, UK GDPR, CQC/GPhC/MHRA planning patterns
+- **controlled-drugs-uk.md** - Medical cannabis / CBPM and controlled-drug prescription and pharmacy controls
+- **clinical-safety-dcb0129.md** - DCB0129/DCB0160 clinical safety case and human-approval guardrails
 - **medical-records.md** - EHR integration and data interoperability
 - **healthcare-security.md** - Encryption and access controls
 
 ## Compliance Focus
 
-All templates in this module are designed with healthcare compliance in mind, particularly:
-- HIPAA (Health Insurance Portability and Accountability Act)
-- HITECH (Health Information Technology for Economic and Clinical Health)
-- FDA regulations for medical software
+All templates in this module are designed with healthcare compliance in mind. Match the jurisdiction before choosing controls:
+- UK healthcare: UK GDPR, Data Protection Act 2018, NHS DSPT/DTAC where relevant, clinical safety DCB0129/DCB0160, CQC/GPhC/MHRA/Home Office considerations where applicable
+- US healthcare: HIPAA and HITECH
+- Medical software: MHRA/FDA/regional medical-device or SaMD requirements where the product function triggers them
 - State and international healthcare privacy laws
 
 ## Security Considerations

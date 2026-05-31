@@ -228,8 +228,8 @@ describe('Property-Based Tests: Healthcare Compliance Template Completeness', ()
     fc.assert(
       fc.property(
         fc.record({
-          regulatoryFramework: fc.constantFrom('HIPAA', 'HITECH', 'FDA_MEDICAL_DEVICE', 'SOC2_HEALTHCARE'),
-          jurisdictionRequirement: fc.constantFrom('us_domestic', 'international', 'multi_jurisdiction'),
+          regulatoryFramework: fc.constantFrom('HIPAA', 'HITECH', 'FDA_MEDICAL_DEVICE', 'SOC2_HEALTHCARE', 'UK_NHS', 'UK_CONTROLLED_DRUG'),
+          jurisdictionRequirement: fc.constantFrom('us_domestic', 'uk_domestic', 'international', 'multi_jurisdiction'),
           patientDataComplexity: fc.constantFrom('basic', 'comprehensive', 'multi_provider')
         }),
         (testCase) => {
@@ -259,12 +259,26 @@ describe('Property-Based Tests: Healthcare Compliance Template Completeness', ()
               expect(compliance.hasSOC2Compliance).toBe(true);
               expect(compliance.hasAuditTrails).toBe(true);
               break;
+            case 'UK_NHS':
+              expect(compliance.hasUKHealthcareCompliance).toBe(true);
+              expect(compliance.hasNHSAssurance).toBe(true);
+              expect(compliance.hasClinicalSafetyDCB0129).toBe(true);
+              break;
+            case 'UK_CONTROLLED_DRUG':
+              expect(compliance.hasUKHealthcareCompliance).toBe(true);
+              expect(compliance.hasControlledDrugGovernance).toBe(true);
+              expect(compliance.hasAuditTrails).toBe(true);
+              break;
           }
           
           // Property: International requirements should be supported
           if (testCase.jurisdictionRequirement === 'international' || testCase.jurisdictionRequirement === 'multi_jurisdiction') {
             expect(compliance.hasGDPRCompliance).toBe(true);
             expect(structure.templatesHaveComplianceGuidelines).toBe(true);
+          }
+          if (testCase.jurisdictionRequirement === 'uk_domestic') {
+            expect(compliance.hasUKHealthcareCompliance).toBe(true);
+            expect(compliance.hasNHSAssurance).toBe(true);
           }
           
           // Property: Patient data complexity should be handled

@@ -32,13 +32,24 @@ existing codebase already encodes the architecture.
   that constrain stack choices).
 - `prompts/outputs/current/project-context.md` if it exists (existing
   codebase already commits to a stack — preserve it).
+- `prompts/outputs/current/source-ledger.md` if it exists (required
+  evidence for regulated, cloud-provider, security/privacy, AI, or
+  current-best-practice claims).
 - `prompts/outputs/current/ui-reference-source-map.md` if it exists
   (UI architecture is part of the blueprint).
+- `prompts/orchestrators/research-and-fanout-policy.md` when its
+  triggers apply. Use it to decide which claims need citations and
+  whether worker fan-out should inspect specialist slices.
 - One or more **technology-stack modules** from
   `.ai-prompts/prompts/modules/technology-stacks/` selected via
   `module-selection-index.md`. These modules contain stack-specific
   best practices and patterns — load the ones that match the
   project's platform and domain.
+- Domain architecture modules from `module-selection-index.md` when
+  applicable, especially bounded-context/state-ownership, Tier 0
+  data integrity, regulated cloud landing zone, audit evidence/WORM,
+  UK healthcare, controlled drugs, clinical safety, and the selected
+  cloud provider module.
 
 Do NOT load individual feature modules — too much detail.
 
@@ -83,6 +94,16 @@ passes through, where it is persisted, where it is consumed.
 Highlight zero-network points if applicable. Highlight
 backpressure / batching / caching points.>
 
+## Bounded contexts & state ownership
+| Context | Owns / writes | Reads from | Public interface | Must not do |
+|---|---|---|---|---|
+| <Context> | <entities / commands> | <events / projections> | <API/events> | <write-boundary exclusions> |
+
+Portals, apps, dashboards, and admin consoles are UI surfaces unless
+the feature set explicitly makes them independent products. They must
+not be treated as source-of-truth boundaries. The plan must name each
+durable write owner and system of record.
+
 ## Domain entities (aggregated from features-*.md)
 | Entity | Fields | Lives in | Lifecycle |
 |---|---|---|---|
@@ -114,6 +135,56 @@ topics — but the discipline is the same: name them once.
 Budgets must be platform-specific (different devices have different
 floors). Each budget names a test or telemetry source — a budget
 that can't be measured is a wish.
+
+## Scale, availability, and data-integrity budgets
+| Workflow / component | Target | Mechanism | Validation |
+|---|---|---|---|
+| <Tier 0 workflow> | <RPO/RTO/SLO> | <transaction/outbox/idempotency/backup/DR mechanism> | <restore/replay/failover test> |
+
+For "zero data loss" language, be precise: define the Tier 0 workflows,
+their RPO/RTO, commit boundary, region failure assumptions, backup/PITR,
+restore drills, and caveats. Do not imply physics-defying zero loss
+across every outage mode.
+
+## Cloud landing zone & deployment topology
+Include when a cloud provider is in scope. For Google Cloud, name the
+chosen region(s), project/folder separation, Cloud Run/GKE/App Engine
+choice, Cloud SQL/Spanner/Firestore choice, Pub/Sub transport, Cloud
+Storage evidence/data buckets, BigQuery analytics/export role, VPC
+Service Controls/perimeters, Cloud Armor, Cloud KMS/CMEK, Secret
+Manager, IAM/PAM, Security Command Center, logging/monitoring, backup
+and DR posture. For other providers, use provider-native equivalents.
+
+## Regulated controls matrix
+| Requirement / risk | Control | Evidence artifact | Source-ledger rows |
+|---|---|---|---|
+| <e.g. UK health data residency> | <architecture control> | <log/report/config/export> | <SRC-001, SRC-002> |
+
+If the target market is UK healthcare or controlled drugs, include UK
+GDPR/Data Protection Act, DSPT/DTAC/NHS integration where applicable,
+clinical safety DCB0129/DCB0160, CQC/GPhC/MHRA/Home Office boundaries
+where applicable, and pharmacy/prescription/CD Register controls. Do
+not output HIPAA-only guidance for a UK market.
+
+## Eventing, ordering, and replay
+For event-driven systems, name the durable source of truth separately
+from transport. Pub/Sub, Kafka, SQS, and queues are delivery mechanisms,
+not legal or clinical source-of-truth stores. Include transactional
+outbox/inbox, idempotency keys, ordering keys where required, DLQs,
+replay procedure, poison-message handling, and audit linkage.
+
+## Audit, evidence, and retention
+Define which audit events are fail-closed, which store is the immutable
+legal/evidence anchor (for example locked Cloud Storage / locked Cloud
+Logging sink, not BigQuery alone), hash/sequence integrity verification,
+retention classes, export procedure, and chain-of-custody controls.
+
+## AI and human authority
+If AI automation, LLMs, triage, clinical decision support, prescribing,
+dispensing, identity verification, or high-stakes recommendations are
+in scope, define where AI may assist, where human approval is mandatory,
+what DecisionTrace/evidence is captured, kill-switch behavior, and
+which actions AI is never allowed to finalize.
 
 ## Privacy & security posture
 - **Network surface:** <what leaves the device — "none", or
@@ -152,6 +223,14 @@ Aim for 5–10 ADRs in a typical greenfield plan. Examples:
 Distinct from the product-vision risk register: those are about
 product/market; these are about the architecture itself ("Core ML
 quantisation may degrade accuracy on iPhone SE 2nd-gen").
+
+## Source-backed assumptions
+List every source-backed regulatory, cloud-provider, security, AI, or
+current-best-practice assumption used above:
+
+| Assumption | Source-ledger row(s) | Confidence | What would change the decision |
+|---|---|---|---|
+| <Assumption> | <SRC-001> | high/medium/low | <trigger to revisit> |
 ```
 
 ## Generation rules
@@ -188,6 +267,12 @@ quantisation may degrade accuracy on iPhone SE 2nd-gen").
    as the project's spine; above 600 means absorbing detail that
    belongs in tasks.
 
+8. **Provider and regulator specificity.** If the brief names Google
+   Cloud, UK healthcare, controlled drugs, or another specific provider
+   / jurisdiction, the blueprint must use that provider/jurisdiction's
+   services, obligations, and source-ledger citations. Generic cloud
+   or HIPAA-only output is a defect.
+
 ## Anti-patterns (auto-rejected by C13)
 
 - **No alternative-rejection in tech-stack rationale.** "We use
@@ -206,8 +291,31 @@ quantisation may degrade accuracy on iPhone SE 2nd-gen").
 - **Privacy posture missing the "network surface" line.** Even if
   the answer is "yes, full internet" or "no, never", that line is
   mandatory; future plans cite it.
+- **GCP request with generic cloud or AWS-only architecture.** Google
+  Cloud plans must name GCP services and account/project/network/key
+  boundaries.
+- **UK healthcare or medical cannabis plan with HIPAA-only controls.**
+  HIPAA may be a comparison point, not the governing UK framework.
+- **Portals as write owners.** Patient/clinic/pharmacy portals are UI
+  surfaces unless explicitly modelled otherwise; bounded contexts own
+  state and commands.
+- **Queue as source of truth.** Pub/Sub or any queue cannot be the
+  durable authority for prescriptions, payments, identity, or audit.
+- **Zero data loss without a scope and caveat.** Define Tier 0
+  workflows, RPO/RTO, commit boundary, and outage assumptions.
+- **AI final authority in clinical/legal/dispensing workflows.** High-
+  stakes actions require human approval and traceable evidence.
 
 ## Output checkpoint
+
+Before presenting the checkpoint, run:
+
+```bash
+bash .ai-prompts/scripts/validate-regulated-architecture.sh prompts/outputs/current
+```
+
+If it fails, revise `architecture.md` and `source-ledger.md` before
+continuing.
 
 After writing `architecture.md`, **STOP and present** to the user:
 

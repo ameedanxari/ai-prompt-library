@@ -77,6 +77,15 @@ _Derived from:_
 ## Constraints
 - <constraint>  # e.g. "offline-first", "WCAG 2.1 AA", "p95 < 200ms"
 
+## Regulatory & Research Context
+- **Regulated domain signals:** <none | healthcare | controlled drugs | payments | legal | security | ...> — <evidence path/phrase>
+- **Jurisdiction / market:** <UK | US | EU | unknown> — <evidence path/phrase>
+- **Cloud/provider signals:** <none | Google Cloud | AWS | Azure | Kubernetes | ...> — <evidence path/phrase>
+- **Sensitive data classes:** <none | patient health data | prescription data | payment data | identity data | ...>
+- **Current research required:** <yes | no> — <why, based on `research-and-fanout-policy.md` triggers>
+- **Source-ledger seed rows:** <source names or query targets to verify, not claims>
+- **Fan-out recommended:** <yes | no> — <component/domain slices worth parallel read-only inspection>
+
 ## Tech Decisions
 - <decision>  # already-committed choices only
 
@@ -106,6 +115,13 @@ Rules for each section:
   flow per role.
 - **Constraints:** only include constraints explicitly stated or strongly
   implied by the material (e.g. HIPAA badge in mockup → HIPAA constraint).
+- **Regulatory & Research Context:** identify research triggers; do not
+  answer them here. This section seeds `source-ledger.md` and worker
+  fan-out. For example, "UK medical cannabis prescriptions on Google
+  Cloud" must record UK healthcare, controlled-drug, GCP, sensitive
+  health data, and current research required. Never convert a UK
+  healthcare signal into HIPAA unless the material explicitly targets
+  the United States.
 - **Design Context:** inspect existing source and design material for
   theming before inventing UI direction. If source code already contains
   substantial UI, set **Existing theme authority: yes** unless the user
@@ -156,15 +172,27 @@ material instead of extracting. Re-read and compress to the schema above.
 ## After writing — DO NOT STOP
 
 This handler is not a terminal step. The moment `project-context.md` is
-written to disk, you MUST immediately continue with:
+written to disk, you MUST immediately continue with the engine selected
+by `ai-agent-entry-point.md`.
 
-**Next action (mandatory, no confirmation needed from the user):**
+**Next action for Greenfield / architecture-planning mode (mandatory, no confirmation needed from the user):**
 
-1. Open `prompts/orchestrators/drill-down-engine.md`.
-2. Execute **Step 1 — Seed** using `project-context.md` + the user's brief.
-3. Write `prompts/outputs/current/epics.md`.
-4. Stop at the Step 1 checkpoint defined by the drill-down engine and
+1. If `Regulatory & Research Context` says current research is required
+   or fan-out is recommended, open
+   `prompts/orchestrators/research-and-fanout-policy.md` and execute
+   the required source-ledger / worker-discovery step.
+2. Open `prompts/orchestrators/drill-down-engine.md`.
+3. Execute the next required drill-down step using `project-context.md`
+   + the user's brief. For architecture-only requests, follow the
+   engine's architecture-planning submode and stop after `architecture.md`.
+4. Stop only at the checkpoint defined by the drill-down engine and
    wait for user review.
+
+**Next action for Gap-closure mode:** open
+`prompts/orchestrators/audit-and-remediate.md` and continue with its
+Step 1 component audit. If research/fan-out triggers apply, run the
+policy before making source-backed compliance, cloud, or security
+claims.
 
 Do NOT tell the user "extraction complete, ready for next step" and wait.
 Do NOT ask "should I proceed with Step 1?". Proceed.

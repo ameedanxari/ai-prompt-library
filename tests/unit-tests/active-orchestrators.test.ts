@@ -20,6 +20,7 @@ const ACTIVE = [
   'executor.md',
   'external-input-handler.md',
   'module-selection-index.md',
+  'research-and-fanout-policy.md',
   'revise-outputs.md',
   'baseline-task-shapes.md',
   'schema-alignment-pass.md',

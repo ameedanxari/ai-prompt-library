@@ -55,6 +55,13 @@ Paths are relative to the repository root.
 | Native phone storage cleanup / Photos / MediaStore / scoped storage | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
 | Native phone storage cleanup / memory cleanup / free up space OS capability matrix | `prompts/modules/technology-stacks/mobile-os-capability-matrix.md` |
 
+## Architecture & Data Integrity
+
+| Intent | Module |
+|---|---|
+| Portals / bounded contexts / state ownership / write boundaries / source-of-truth boundaries | `prompts/modules/architecture/bounded-context-state-ownership.md` |
+| Tier 0 workflows / zero data loss / RPO/RTO / outbox / ordering / replay / audit fail-closed | `prompts/modules/architecture/tier-zero-data-integrity.md` |
+
 ## AI & ML
 
 | Intent | Module |
@@ -245,6 +252,9 @@ explicitly needs server-side or remote inference infrastructure.
 | Intent | Module |
 |---|---|
 | HIPAA scope | `prompts/modules/healthcare/hipaa-compliance.md` |
+| UK healthcare / NHS / DTAC / DSPT / CQC / DCB0129 / DCB0160 / UK GDPR | `prompts/modules/healthcare/uk-regulated-healthcare.md` |
+| Medical cannabis / CBPM / controlled drug / Schedule 2 or 3 / CD Register / FP10CD / pharmacy governance | `prompts/modules/healthcare/controlled-drugs-uk.md` |
+| Clinical safety / SaMD / DCB0129 / DCB0160 / DecisionTrace / human approval for AI or automation | `prompts/modules/healthcare/clinical-safety-dcb0129.md` |
 | Patient records | `prompts/modules/healthcare/patient-data-management.md` |
 | Electronic medical records (EMR/EHR) | `prompts/modules/healthcare/medical-records.md` |
 | Telemedicine | `prompts/modules/healthcare/telemedicine.md` |
@@ -307,6 +317,9 @@ explicitly needs server-side or remote inference infrastructure.
 | Kubernetes orchestration | `prompts/modules/deployment/kubernetes-orchestration.md` |
 | Serverless at scale (Lambda, Cloud Run) | `prompts/modules/deployment/serverless-orchestration-scale.md` |
 | Cloud hosting | `prompts/modules/deployment/cloud-deployment.md` |
+| Google Cloud / GCP / Cloud Run / Cloud SQL / Spanner / Pub/Sub / VPC-SC / CMEK / Cloud Armor | `prompts/modules/technology-stacks/cloud-gcp.md` |
+| Regulated cloud landing zone / project segmentation / data residency / non-prod synthetic data / privileged access | `prompts/modules/deployment/regulated-cloud-landing-zone.md` |
+| Immutable audit evidence / WORM / locked logs / hash chains / evidence export / chain of custody | `prompts/modules/security/audit-evidence-worm.md` |
 | Multi-cloud deployment strategies | `prompts/modules/deployment/multi-cloud-deployment-strategies.md` |
 | Edge computing deployment (CDN workers, POPs) | `prompts/modules/deployment/edge-computing-deployment.md` |
 | Zero-trust deployment architecture | `prompts/modules/deployment/zero-trust-deployment-architectures.md` |
@@ -459,6 +472,7 @@ existing codebase to production. Pick whichever is most specific to the gap.
 |---|---|
 | Firebase backend-as-a-service | `prompts/modules/technology-stacks/backend-firebase.md` |
 | AWS cloud (EC2, ECS, RDS, S3, Lambda) | `prompts/modules/technology-stacks/cloud-aws.md` |
+| Google Cloud Platform / GCP (Cloud Run, Cloud SQL, Pub/Sub, Cloud Storage, BigQuery, VPC-SC, CMEK) | `prompts/modules/technology-stacks/cloud-gcp.md` |
 
 ### Desktop / specialised hardware
 

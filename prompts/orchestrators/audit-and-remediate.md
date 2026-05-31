@@ -30,6 +30,7 @@ All written to `prompts/outputs/current/`:
 | File | Purpose |
 |---|---|
 | `project-context.md` | Produced by `external-input-handler.md` (already ran). |
+| `source-ledger.md` | Produced when research/fan-out policy triggers apply. Required before source-backed regulated/cloud/security claims. |
 | `audit-report.md` | What exists, what works, what is broken, per component. |
 | `gap-list.md` | Ordered list of gaps. Each gap is a concrete, measurable deficiency. |
 | `remediation-<gap-slug>.md` | Atomic tasks per gap. Each task names a real existing file + precise change. |
@@ -47,10 +48,11 @@ Same as the drill-down engine:
 
 Before starting or continuing work, you **MUST** read the contents of `prompts/outputs/current/` to determine the current state of the audit:
 
-1. **If `audit-report.md` is missing:** The audit has not started. Start with **Step 1 (Component Audit)**.
-2. **If `audit-report.md` exists but `gap-list.md` is missing:** Step 1 is complete. Proceed to **Step 2 (Gap List)**.
-3. **If `gap-list.md` exists but some `remediation-*.md` are missing:** Step 2 is complete. Proceed to **Step 3 (Implementation Prompts)**.
-4. **If all `remediation-*.md` exist but `revise-report.md` is missing or outdated:** Step 3 is complete. Proceed to **Step 4 (Validate)** and then **Step 4.5 (Revise)**.
+1. **If research/fan-out triggers apply and `source-ledger.md` is missing or stale:** Run the research/fan-out policy before making source-backed compliance, cloud, security, or AI claims.
+2. **If `audit-report.md` is missing:** The audit has not started. Start with **Step 1 (Component Audit)**.
+3. **If `audit-report.md` exists but `gap-list.md` is missing:** Step 1 is complete. Proceed to **Step 2 (Gap List)**.
+4. **If `gap-list.md` exists but some `remediation-*.md` are missing:** Step 2 is complete. Proceed to **Step 3 (Implementation Prompts)**.
+5. **If all `remediation-*.md` exist but `revise-report.md` is missing or outdated:** Step 3 is complete. Proceed to **Step 4 (Validate)** and then **Step 4.5 (Revise)**.
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
@@ -81,6 +83,14 @@ If you start a new chat, paste this exactly:
 - At most 5–10 key files per component (entry points, route tables,
   config, top-level manifests, build files).
 - `project-context.md`.
+- `source-ledger.md` if it exists, only for interpreting regulated,
+  cloud-provider, security, AI, or current-best-practice requirements.
+
+If the codebase is large or spans distinct specialist surfaces, use the
+fan-out policy for read-only component discovery (for example backend,
+frontend, infrastructure, data/security, compliance). Merge findings
+into the single `audit-report.md`; do not let workers produce competing
+plans.
 
 **Do NOT load:** the full source tree, test output history, git log.
 
@@ -232,6 +242,8 @@ only:
 - The single gap block from `gap-list.md`.
 - The slice of `audit-report.md` for the affected component(s).
 - `project-context.md`.
+- `source-ledger.md` if it exists and the gap touches researched
+  cloud, regulatory, security, AI, or current-best-practice claims.
 - **One or more modules** from `.ai-prompts/prompts/modules/` chosen via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md` based on gap intent
   (consult the "Ops / Readiness" section for production-readiness gaps).

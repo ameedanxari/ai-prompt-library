@@ -201,7 +201,7 @@ describe('Property-Based Tests: Deployment Infrastructure Template Completeness'
     fc.assert(
       fc.property(
         fc.record({
-          deploymentFeature: fc.constantFrom('docker', 'kubernetes', 'service_mesh', 'multi_cloud', 'iac', 'auto_scaling', 'tracing', 'metrics'),
+          deploymentFeature: fc.constantFrom('docker', 'kubernetes', 'service_mesh', 'multi_cloud', 'gcp_specific', 'iac', 'auto_scaling', 'tracing', 'metrics'),
           implementationDepth: fc.constantFrom('basic', 'intermediate', 'advanced')
         }),
         (testCase) => {
@@ -226,6 +226,9 @@ describe('Property-Based Tests: Deployment Infrastructure Template Completeness'
             case 'multi_cloud':
               expect(structure.hasCloudDeploymentTemplate).toBe(true);
               expect(features.hasMultiCloudSupport).toBe(true);
+              break;
+            case 'gcp_specific':
+              expect(features.hasGCPSpecificSupport).toBe(true);
               break;
             case 'iac':
               expect(structure.hasCloudDeploymentTemplate).toBe(true);

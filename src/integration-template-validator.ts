@@ -315,6 +315,7 @@ export class IntegrationTemplateValidator {
     hasSignatureVerificationSupport: boolean;
     hasMessageQueueSupport: boolean;
     hasDeadLetterQueueSupport: boolean;
+    hasQueueAuthorityBoundary: boolean;
     hasServiceDiscoverySupport: boolean;
     hasLoadBalancingSupport: boolean;
     hasCircuitBreakerSupport: boolean;
@@ -334,6 +335,7 @@ export class IntegrationTemplateValidator {
     let hasSignatureVerificationSupport = false;
     let hasMessageQueueSupport = false;
     let hasDeadLetterQueueSupport = false;
+    let hasQueueAuthorityBoundary = false;
     let hasServiceDiscoverySupport = false;
     let hasLoadBalancingSupport = false;
     let hasCircuitBreakerSupport = false;
@@ -358,6 +360,11 @@ export class IntegrationTemplateValidator {
       const content = readFileSync(messageQueuePath, 'utf-8').toLowerCase();
       hasMessageQueueSupport = content.includes('queue') && content.includes('message');
       hasDeadLetterQueueSupport = content.includes('dead letter') || content.includes('dlq');
+      hasQueueAuthorityBoundary = (
+        content.includes('transport, not the source of truth') ||
+        (content.includes('source of truth') && content.includes('transactional outbox')) ||
+        (content.includes('system-of-record') && content.includes('outbox'))
+      );
     }
 
     if (existsSync(serviceIntegrationPath)) {
@@ -378,6 +385,7 @@ export class IntegrationTemplateValidator {
       hasSignatureVerificationSupport,
       hasMessageQueueSupport,
       hasDeadLetterQueueSupport,
+      hasQueueAuthorityBoundary,
       hasServiceDiscoverySupport,
       hasLoadBalancingSupport,
       hasCircuitBreakerSupport,

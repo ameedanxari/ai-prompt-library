@@ -160,6 +160,7 @@ describe('package metadata', () => {
       'scripts/validate-user-review-checkpoints.sh',
       'scripts/validate-screenshot-matrix.sh',
       'scripts/validate-release-readiness.sh',
+      'scripts/validate-regulated-architecture.sh',
       'scripts/validate-ui-reference-source-map.sh',
       'scripts/generate-design-system-review-artifact.sh',
       'scripts/validate-design-system-review-artifact.sh',

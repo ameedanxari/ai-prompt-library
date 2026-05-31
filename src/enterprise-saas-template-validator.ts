@@ -130,6 +130,9 @@ export interface AuditTrailsCoverage {
   hasIntegrityVerification: boolean;
   hasSecureStorage: boolean;
   hasEncryption: boolean;
+  hasEvidenceAnchor: boolean;
+  hasChainOfCustody: boolean;
+  hasFailClosedEvents: boolean;
   
   // Compliance Features
   hasComplianceReporting: boolean;
@@ -643,6 +646,9 @@ export class EnterpriseSaaSTemplateValidator {
       hasIntegrityVerification: this.hasFeature(content, 'integrity.*verif|verif.*integrity'),
       hasSecureStorage: this.hasFeature(content, 'secure.*storage|storage.*secure'),
       hasEncryption: this.hasFeature(content, 'encrypt'),
+      hasEvidenceAnchor: this.hasFeature(content, 'evidence.*anchor|w[oa]rm|retention.*lock|immutab.*storage'),
+      hasChainOfCustody: this.hasFeature(content, 'chain.*custody|export.*manifest|manifest'),
+      hasFailClosedEvents: this.hasFeature(content, 'fail.*closed|never.*dropped|must never be dropped'),
       
       // Compliance Features
       hasComplianceReporting: this.hasFeature(content, 'compliance.*report|report.*compliance'),

@@ -33,6 +33,10 @@ export interface HealthcareComplianceCoverage {
   hasFDACompliance: boolean;
   hasSOC2Compliance: boolean;
   hasGDPRCompliance: boolean;
+  hasUKHealthcareCompliance: boolean;
+  hasNHSAssurance: boolean;
+  hasClinicalSafetyDCB0129: boolean;
+  hasControlledDrugGovernance: boolean;
   hasAuditTrails: boolean;
   hasDataEncryption: boolean;
   hasAccessControls: boolean;
@@ -65,7 +69,10 @@ export class HealthcareTemplateValidator {
       'telemedicine.md',
       'appointment-scheduling.md',
       'prescription-management.md',
-      'wearable-integration.md'
+      'wearable-integration.md',
+      'uk-regulated-healthcare.md',
+      'controlled-drugs-uk.md',
+      'clinical-safety-dcb0129.md'
     ];
 
     const templateExists = (filename: string) => 
@@ -245,7 +252,10 @@ export class HealthcareTemplateValidator {
       'telemedicine.md',
       'appointment-scheduling.md',
       'prescription-management.md',
-      'wearable-integration.md'
+      'wearable-integration.md',
+      'uk-regulated-healthcare.md',
+      'controlled-drugs-uk.md',
+      'clinical-safety-dcb0129.md'
     ];
 
     let hasHIPAACompliance = false;
@@ -253,6 +263,10 @@ export class HealthcareTemplateValidator {
     let hasFDACompliance = false;
     let hasSOC2Compliance = false;
     let hasGDPRCompliance = false;
+    let hasUKHealthcareCompliance = false;
+    let hasNHSAssurance = false;
+    let hasClinicalSafetyDCB0129 = false;
+    let hasControlledDrugGovernance = false;
     let hasAuditTrails = false;
     let hasDataEncryption = false;
     let hasAccessControls = false;
@@ -285,6 +299,18 @@ export class HealthcareTemplateValidator {
            (content.includes('patient rights') && content.includes('data portability'))) {
           hasGDPRCompliance = true;
         }
+        if (content.includes('uk gdpr') || content.includes('data protection act') || content.includes('ico')) {
+          hasUKHealthcareCompliance = true;
+        }
+        if (content.includes('nhs') || content.includes('dtac') || content.includes('dspt')) {
+          hasNHSAssurance = true;
+        }
+        if (content.includes('dcb0129') || content.includes('dcb0160') || content.includes('clinical safety')) {
+          hasClinicalSafetyDCB0129 = true;
+        }
+        if (content.includes('controlled drug') || content.includes('cd register') || content.includes('fp10cd') || content.includes('schedule 2') || content.includes('schedule 3')) {
+          hasControlledDrugGovernance = true;
+        }
         if (content.includes('audit trail') || content.includes('audit log') || content.includes('audit')) {
           hasAuditTrails = true;
         }
@@ -309,6 +335,10 @@ export class HealthcareTemplateValidator {
       hasFDACompliance,
       hasSOC2Compliance,
       hasGDPRCompliance,
+      hasUKHealthcareCompliance,
+      hasNHSAssurance,
+      hasClinicalSafetyDCB0129,
+      hasControlledDrugGovernance,
       hasAuditTrails,
       hasDataEncryption,
       hasAccessControls,

@@ -204,7 +204,7 @@ describe('Property-Based Tests: API Management Template Completeness', () => {
     fc.assert(
       fc.property(
         fc.record({
-          integrationFeature: fc.constantFrom('gateway', 'rate_limiting', 'authentication', 'documentation', 'webhook', 'retry', 'signature', 'queue', 'dlq', 'discovery', 'load_balancing', 'circuit_breaker', 'health_check'),
+          integrationFeature: fc.constantFrom('gateway', 'rate_limiting', 'authentication', 'documentation', 'webhook', 'retry', 'signature', 'queue', 'queue_authority_boundary', 'dlq', 'discovery', 'load_balancing', 'circuit_breaker', 'health_check'),
           implementationDepth: fc.constantFrom('basic', 'intermediate', 'advanced')
         }),
         (testCase) => {
@@ -245,6 +245,10 @@ describe('Property-Based Tests: API Management Template Completeness', () => {
             case 'queue':
               expect(structure.hasMessageQueuesTemplate).toBe(true);
               expect(features.hasMessageQueueSupport).toBe(true);
+              break;
+            case 'queue_authority_boundary':
+              expect(structure.hasMessageQueuesTemplate).toBe(true);
+              expect(features.hasQueueAuthorityBoundary).toBe(true);
               break;
             case 'dlq':
               expect(structure.hasMessageQueuesTemplate).toBe(true);

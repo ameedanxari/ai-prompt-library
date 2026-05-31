@@ -50,6 +50,7 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C14 — UX-flows schema | Applies when UI tasks exist | Skip |
 | C15 — Release-plan schema | Applies | Skip |
 | C16 — Store-submission schema | Applies (one-liner ok for non-mobile) | Skip |
+| C17 — Source-ledger + regulated architecture quality | Applies when research/fan-out triggers or architecture.md exists | Applies when research/fan-out triggers or architecture claims exist |
 
 `checks_run` in the report's frontmatter MUST list every check row
 marked "Applies" for the active engine. A revise report that omits an
@@ -318,6 +319,46 @@ external services ⇒ network surface = "none"; presence of
 runtime third-party services ⇒ network surface explicitly names
 those services).
 
+### C17 — Source-ledger + regulated architecture quality
+
+Run:
+
+```bash
+bash scripts/validate-regulated-architecture.sh <target-dir>
+```
+
+This check applies when the plan includes regulated healthcare,
+controlled substances, cloud-provider architecture, sensitive data,
+audit evidence, data-loss guarantees, AI automation in high-stakes
+workflows, or current/latest best-practice claims.
+
+Required outcomes:
+- `source-ledger.md` exists and backs regulated/cloud/security/AI/current
+  claims with primary or authoritative sources, or records why research
+  was unavailable and what fallback basis was used.
+- Google Cloud plans include Google Cloud-specific service choices,
+  project/network/key boundaries, observability, DR, and data-residency
+  decisions where applicable.
+- UK healthcare plans include UK-specific obligations and do not ship
+  HIPAA-only output.
+- Controlled-drug / medical cannabis plans model prescription,
+  dispensing, pharmacy verification, CD Register/evidence, and repeat
+  supply controls.
+- Portal plans define bounded contexts and state/write ownership.
+- Eventing plans keep queues/Pub/Sub as transport, not source of truth,
+  and include outbox/idempotency/replay/DLQ/ordering where needed.
+- Audit plans include immutable/tamper-evident evidence, fail-closed
+  behavior where required, export/chain-of-custody, and a legal/evidence
+  anchor that is not BigQuery alone.
+- "Zero data loss" claims define Tier 0 workflows, RPO/RTO, commit
+  boundary, restore drills, and outage caveats.
+- High-risk AI plans define human approval, traceability, and actions AI
+  cannot finalize.
+
+If C17 fails, regenerate `architecture.md`, `source-ledger.md`, or the
+affected remediation/task file through the originating engine. Do not
+waive C17 for speed; it exists to block plausible but unsafe plans.
+
 ### C14 — UX-flows schema (conditional, both modes)
 
 Runs when any feature in `features-*.md` is UI-heavy OR when
@@ -447,7 +488,7 @@ Written to `prompts/outputs/current/revise-report.md`:
 ---
 revised_at: <ISO 8601 from `date +%Y-%m-%dT%H:%M:%SZ`>
 engine: drill-down-engine | audit-and-remediate
-checks_run: [C1, C2, C3, C4, C5, C6, C7, C8, C9]
+checks_run: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C17]
 checks_passed: [C1, C4, C7, ...]
 checks_failed: [C2 (feature "Push notifications — android" has no tasks file), C5 (no app-store screenshot tasks), ...]
 regenerations_performed: [features-push-notifications-android.md, remediation-screenshots.md]

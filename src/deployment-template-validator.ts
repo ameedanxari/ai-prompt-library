@@ -316,11 +316,14 @@ export class DeploymentTemplateValidator {
     hasDistributedTracing: boolean;
     hasMetricsCollection: boolean;
     hasLogAggregation: boolean;
+    hasGCPSpecificSupport: boolean;
   } {
     const containerizationPath = join(this.deploymentModulePath, 'containerization.md');
     const kubernetesPath = join(this.deploymentModulePath, 'kubernetes-deployment.md');
     const cloudPath = join(this.deploymentModulePath, 'cloud-deployment.md');
     const monitoringPath = join(this.deploymentModulePath, 'monitoring-observability.md');
+    const gcpPath = join(this.deploymentModulePath, '..', 'technology-stacks', 'cloud-gcp.md');
+    const regulatedLandingZonePath = join(this.deploymentModulePath, 'regulated-cloud-landing-zone.md');
 
     let hasDockerSupport = false;
     let hasKubernetesSupport = false;
@@ -331,6 +334,7 @@ export class DeploymentTemplateValidator {
     let hasDistributedTracing = false;
     let hasMetricsCollection = false;
     let hasLogAggregation = false;
+    let hasGCPSpecificSupport = false;
 
     if (existsSync(containerizationPath)) {
       const content = readFileSync(containerizationPath, 'utf-8').toLowerCase();
@@ -357,6 +361,21 @@ export class DeploymentTemplateValidator {
       hasLogAggregation = content.includes('log') && (content.includes('aggregation') || content.includes('fluentd'));
     }
 
+    const gcpContent = [
+      existsSync(gcpPath) ? readFileSync(gcpPath, 'utf-8').toLowerCase() : '',
+      existsSync(regulatedLandingZonePath) ? readFileSync(regulatedLandingZonePath, 'utf-8').toLowerCase() : ''
+    ].join('\n');
+    hasGCPSpecificSupport = (
+      gcpContent.includes('cloud run') &&
+      (gcpContent.includes('cloud sql') || gcpContent.includes('spanner')) &&
+      gcpContent.includes('pub/sub') &&
+      gcpContent.includes('cloud storage') &&
+      gcpContent.includes('bigquery') &&
+      (gcpContent.includes('vpc service controls') || gcpContent.includes('vpc-sc')) &&
+      (gcpContent.includes('cmek') || gcpContent.includes('cloud kms')) &&
+      gcpContent.includes('cloud armor')
+    );
+
     return {
       hasDockerSupport,
       hasKubernetesSupport,
@@ -366,7 +385,8 @@ export class DeploymentTemplateValidator {
       hasAutoScalingSupport,
       hasDistributedTracing,
       hasMetricsCollection,
-      hasLogAggregation
+      hasLogAggregation,
+      hasGCPSpecificSupport
     };
   }
 }

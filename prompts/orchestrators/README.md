@@ -8,9 +8,10 @@
 | `drill-down-engine.md` | **Greenfield mode.** Seed → Features → Tasks. Emits user-brief feature epics PLUS the production-readiness baseline. |
 | `audit-and-remediate.md` | **Gap-closure mode.** For existing codebases. Audit → Gaps → Remediation. |
 | `executor.md` | **Execute mode.** Runs an existing plan against real code. Maintains a YAML handoff envelope in `execution-log.md` for cross-session resume. |
-| `revise-outputs.md` | Runs between the planning engine and the executor. Checks C1–C9 for coverage, schema, baseline completeness, external-services manifest, user-story linkage, platform coverage, brief-keyword coverage. Canonical `revise-report.md` is written by `scripts/revise.sh`, not by hand. |
+| `revise-outputs.md` | Runs between the planning engine and the executor. Checks coverage, schema, baseline completeness, external-services manifest, user-story linkage, platform coverage, Stream A artifacts, and source-ledger / regulated architecture quality. Canonical `revise-report.md` is written by `scripts/revise.sh`, not by hand. |
 | `external-input-handler.md` | Runs first when user provides designs / specs / existing code. |
 | `module-selection-index.md` | Intent → module lookup. Consulted at expansion time (not pre-loaded); load as many modules as the current expansion genuinely needs. |
+| `research-and-fanout-policy.md` | Mandatory research/source-ledger and worker fan-out policy for regulated, cloud, security, AI, large-corpus, and high-stakes planning. |
 | `baseline-task-shapes.md` | Schema rules for baseline epics (auth, admin, i18n, theming, a11y, tests, CI/CD, IaC, app-store, debug, privacy). Consulted during Step 3 of either engine. |
 | `self-maintain.md` | Runs the library's engines on the library itself. For maintainer use. Writes to `prompts/outputs/self-maintain/`, not `prompts/outputs/current/`. |
 

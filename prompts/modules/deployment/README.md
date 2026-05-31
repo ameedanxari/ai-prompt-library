@@ -67,6 +67,7 @@ if (featureFlag.enabled) {
 - **disaster-recovery.md** - Backup systems and failover mechanisms
 - **monitoring-observability.md** - Application and infrastructure monitoring
 - **enterprise-deployment.md** - Security, compliance, and governance controls
+- **regulated-cloud-landing-zone.md** - Regulated project/account segmentation, data residency, privileged access, non-prod synthetic data, policy-as-code, and production evidence controls
 
 ### Advanced Deployment Patterns
 - **edge-computing-deployment.md** - Intelligent edge orchestration, CDN integration, global coordination, and AI-driven optimization

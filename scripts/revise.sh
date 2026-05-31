@@ -136,9 +136,9 @@ fi
   echo "engine: $engine"
   echo "plan_files: $plan_count"
   if [ "$engine" = "drill-down-engine" ]; then
-    echo "checks_run: [C1, C2, C4, C5, C6, C7, C8, C9, C10, C11]"
+    echo "checks_run: [C1, C2, C4, C5, C6, C7, C8, C9, C10, C11, C17]"
   else
-    echo "checks_run: [C3, C4, C5, C6, C7, C8, C9, C10, C11]"
+    echo "checks_run: [C3, C4, C5, C6, C7, C8, C9, C10, C11, C17]"
   fi
   if [ "$gate" = "pass" ]; then
     echo "checks_passed: [all]"

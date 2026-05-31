@@ -248,7 +248,7 @@ describe('Property-Based Tests: Enterprise Access Control Template Completeness'
     fc.assert(
       fc.property(
         fc.record({
-          securityFeature: fc.constantFrom('authentication', 'authorization', 'audit_logging', 'data_protection'),
+          securityFeature: fc.constantFrom('authentication', 'authorization', 'audit_logging', 'audit_evidence', 'data_protection'),
           enterpriseLevel: fc.constantFrom('basic', 'advanced', 'enterprise_grade')
         }),
         (testCase) => {
@@ -274,6 +274,12 @@ describe('Property-Based Tests: Enterprise Access Control Template Completeness'
               expect(auditCoverage.hasEventCapture).toBe(true);
               expect(auditCoverage.hasSecureStorage).toBe(true);
               expect(auditCoverage.hasIntegrityVerification).toBe(true);
+              break;
+            case 'audit_evidence':
+              expect(auditCoverage.hasTamperProofing).toBe(true);
+              expect(auditCoverage.hasEvidenceAnchor).toBe(true);
+              expect(auditCoverage.hasChainOfCustody).toBe(true);
+              expect(auditCoverage.hasFailClosedEvents).toBe(true);
               break;
             case 'data_protection':
               expect(multiTenancyCoverage.hasTenantIsolation).toBe(true);

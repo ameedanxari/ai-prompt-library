@@ -46,6 +46,7 @@
     "ai-prompt-validate-instantiation": "./scripts/validate-instantiation.sh",
     "ai-prompt-validate-phase-order": "./scripts/validate-phase-order.sh",
     "ai-prompt-validate-release-readiness": "./scripts/validate-release-readiness.sh",
+    "ai-prompt-validate-regulated-architecture": "./scripts/validate-regulated-architecture.sh",
     "ai-prompt-validate-resumption-checkpoint": "./scripts/validate-resumption-checkpoint.sh",
     "ai-prompt-validate-screenshot-matrix": "./scripts/validate-screenshot-matrix.sh",
     "ai-prompt-validate-task-contract": "./scripts/validate-task-contract.sh",

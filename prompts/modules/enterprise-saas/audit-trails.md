@@ -22,6 +22,11 @@ This template provides comprehensive patterns for implementing enterprise-grade 
 
 Enterprise applications require comprehensive audit trails for security monitoring, compliance reporting, forensic analysis, and regulatory requirements. This template addresses the complexities of capturing all relevant events, ensuring data integrity, providing efficient search and reporting capabilities, and meeting various compliance frameworks like SOX, HIPAA, GDPR, and PCI DSS.
 
+For regulated or high-risk systems, audit trails must also define the
+evidence anchor and chain of custody: immutable or WORM-capable storage,
+retention lock, sequence/hash-chain verification, export manifests, and
+fail-closed behavior for events that must never be dropped.
+
 ## Core Components
 
 ### Audit Event Management

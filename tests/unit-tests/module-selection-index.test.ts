@@ -60,4 +60,15 @@ describe('module-selection-index', () => {
     expect(body).toMatch(/Sensitive document detection/);
     expect(body).toMatch(/Duplicate video detection/);
   });
+
+  it('indexes regulated architecture, UK healthcare, and GCP modules', () => {
+    expect(body).toMatch(/architecture\/bounded-context-state-ownership\.md/);
+    expect(body).toMatch(/architecture\/tier-zero-data-integrity\.md/);
+    expect(body).toMatch(/healthcare\/uk-regulated-healthcare\.md/);
+    expect(body).toMatch(/healthcare\/controlled-drugs-uk\.md/);
+    expect(body).toMatch(/healthcare\/clinical-safety-dcb0129\.md/);
+    expect(body).toMatch(/technology-stacks\/cloud-gcp\.md/);
+    expect(body).toMatch(/deployment\/regulated-cloud-landing-zone\.md/);
+    expect(body).toMatch(/security\/audit-evidence-worm\.md/);
+  });
 });

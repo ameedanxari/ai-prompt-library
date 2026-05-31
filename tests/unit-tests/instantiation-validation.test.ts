@@ -21,6 +21,11 @@ import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-instantiation.sh');
+const REGULATED_ARCH_VALIDATOR = path.join(
+  REPO_ROOT,
+  'scripts',
+  'validate-regulated-architecture.sh',
+);
 const TASKS_DIR = path.join(REPO_ROOT, 'prompts', 'outputs', 'current');
 
 // Minimal canonical revise-report.md for passing fixtures. The validator
@@ -51,6 +56,199 @@ describe('validator — script exists', () => {
     expect(fs.existsSync(VALIDATOR)).toBe(true);
     const stat = fs.statSync(VALIDATOR);
     expect((stat.mode & 0o111) !== 0).toBe(true);
+  });
+
+  it('includes the regulated architecture validator', () => {
+    expect(fs.existsSync(REGULATED_ARCH_VALIDATOR)).toBe(true);
+    const stat = fs.statSync(REGULATED_ARCH_VALIDATOR);
+    expect((stat.mode & 0o111) !== 0).toBe(true);
+  });
+});
+
+describe('validator — regulated architecture quality gate', () => {
+  function runValidator(sandbox: string): { out: string; code: number } {
+    try {
+      return {
+        out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
+        code: 0,
+      };
+    } catch (e) {
+      const err = e as { stdout?: Buffer; status?: number };
+      return {
+        out: err.stdout?.toString() ?? '',
+        code: err.status ?? 0,
+      };
+    }
+  }
+
+  function writeSourceLedger(dir: string): void {
+    fs.writeFileSync(
+      path.join(dir, 'source-ledger.md'),
+      [
+        '# Source Ledger',
+        '',
+        '| ID | Type | Source | Retrieved / inspected at | Facts extracted | Decisions influenced | Conflicts / caveats |',
+        '|---|---|---|---|---|---|---|',
+        '| SRC-001 | official-docs | https://cloud.google.com/docs | 2026-05-31T00:00:00Z | GCP production controls. | Cloud service choices. | none |',
+        '| SRC-002 | official-docs | https://www.nhsx.nhs.uk/ | 2026-05-31T00:00:00Z | UK healthcare assurance. | UK compliance controls. | confirm exact service scope |',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  function writeFusiaLikeContext(dir: string): void {
+    fs.writeFileSync(
+      path.join(dir, 'brief-keywords.md'),
+      [
+        '# Brief Keywords',
+        '',
+        '| Keyword / phrase | Status | Covered by / reason |',
+        '|---|---|---|',
+        '| Google Cloud | covered | Architecture blueprint |',
+        '| UK medical cannabis prescription | covered | Architecture blueprint |',
+        '| three portals for patients, clinics, pharmacies | covered | Architecture blueprint |',
+        '| data loss cannot happen | covered | Tier 0 workflow section |',
+        '| audit trails | covered | Audit evidence section |',
+        '| AI support | covered | Human authority section |',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  function writePassingArchitecture(dir: string): void {
+    fs.writeFileSync(
+      path.join(dir, 'architecture.md'),
+      [
+        '# Architecture',
+        '',
+        '## Cloud landing zone & deployment topology',
+        'Use Google Cloud in europe-west2 / London for UK data residency. Protected services run on Cloud Run with private egress. Cloud SQL PostgreSQL is the launch system of record, Pub/Sub is asynchronous transport, Cloud Storage locked buckets hold evidence, BigQuery is analytics/query/export only, Cloud Armor protects edge traffic, VPC Service Controls isolate protected projects, Cloud KMS with CMEK protects data, Secret Manager stores credentials, Security Command Center monitors posture, and Cloud Logging / Cloud Monitoring collect telemetry.',
+        '',
+        '## Regulated controls matrix',
+        'UK GDPR and the Data Protection Act drive privacy controls. NHS DSPT and DTAC are assurance targets for NHS-adjacent integration. DCB0129 and DCB0160 clinical safety case work is required for clinical workflows. CQC, GPhC, MHRA, and Home Office boundaries are recorded as source-backed assumptions.',
+        '',
+        '## Controlled drugs',
+        'Medical cannabis / CBPM flows include Schedule 2 and Schedule 3 handling, FP10CD/private prescription evidence where applicable, pharmacist verification, CD Register entries, repeat supply limits, and prescriber approval before dispensing.',
+        '',
+        '## Bounded contexts & state ownership',
+        'Patient Portal, Clinic Portal, and Pharmacy Portal are UI surfaces, not source-of-truth boundaries. Bounded contexts own writes: Identity, Patient Record, Clinical Assessment, Prescription, Dispensing, Inventory, Payment, Notification, and Audit Evidence. Each context has a canonical owner and system of record.',
+        '',
+        '## Eventing, ordering, and replay',
+        'Pub/Sub is transport only and never the source of truth. Tier 0 writes use a transactional outbox and inbox, idempotency keys, ordering keys for prescription events, DLQ handling, poison-message quarantine, and replay jobs.',
+        '',
+        '## Audit, evidence, and retention',
+        'Audit writes fail-closed for prescribing, dispensing, identity, and privileged access. Locked retention / WORM Cloud Storage and locked Cloud Logging are the legal anchor. Each audit event has hash chain, sequence number, integrity verification job, evidence export, and chain of custody.',
+        '',
+        '## Scale, availability, and data-integrity budgets',
+        'Tier 0 workflows define the commit boundary at the relational transaction plus audit append. RPO is 0 for committed single-region Tier 0 transactions; RTO is tested by restore drill and PITR backup. Regional outage caveat: cross-region recovery can lose in-flight uncommitted work and depends on replication mode.',
+        '',
+        '## AI and human authority',
+        'AI can summarize intake and flag risks, but human approval is mandatory for prescribing, dispensing, clinical, and controlled-drug decisions. DecisionTrace captures prompt/model/rationale evidence. A kill switch disables AI assistance, and AI cannot finalize high-risk actions.',
+        '',
+      ].join('\n'),
+    );
+  }
+
+  it('accepts an architecture-only GCP UK medical-cannabis plan with source ledger and guardrails', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-arch-ok-'));
+    try {
+      writeFusiaLikeContext(sandbox);
+      writeSourceLedger(sandbox);
+      writePassingArchitecture(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).toBe(0);
+      expect(out).toMatch(/regulated architecture quality gate passed/);
+      expect(out).toMatch(/nothing to validate/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects regulated/cloud plans without source-ledger.md', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-arch-nosource-'));
+    try {
+      writeFusiaLikeContext(sandbox);
+      writePassingArchitecture(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/requires source-ledger\.md/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects UK healthcare architecture that is HIPAA-only', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-arch-hipaa-'));
+    try {
+      fs.writeFileSync(
+        path.join(sandbox, 'brief-keywords.md'),
+        [
+          '# Brief Keywords',
+          '',
+          '| Keyword / phrase | Status | Covered by / reason |',
+          '|---|---|---|',
+          '| UK healthcare patient portal | covered | Architecture |',
+          '',
+        ].join('\n'),
+      );
+      writeSourceLedger(sandbox);
+      fs.writeFileSync(
+        path.join(sandbox, 'architecture.md'),
+        '# Architecture\n\nHIPAA controls protect patient records. The patient portal owns patient records.\n',
+      );
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/UK healthcare plan lacks UK-specific/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects Pub/Sub as source of truth even in a GCP-specific plan', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-arch-pubsub-'));
+    try {
+      writeSourceLedger(sandbox);
+      fs.writeFileSync(
+        path.join(sandbox, 'brief-keywords.md'),
+        '# Brief Keywords\n\n| Keyword / phrase | Status | Covered by / reason |\n|---|---|---|\n| Google Cloud Pub/Sub | covered | Architecture |\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'architecture.md'),
+        [
+          '# Architecture',
+          '',
+          'Google Cloud uses Cloud Run, Cloud SQL, Pub/Sub, Cloud Storage, BigQuery, Cloud Armor, VPC Service Controls, Cloud KMS/CMEK, Secret Manager, Security Command Center, and Cloud Logging.',
+          'Pub/Sub is the source of truth for prescription workflow events.',
+          'The system also has an outbox, idempotency keys, replay, DLQ, and ordering keys.',
+          '',
+        ].join('\n'),
+      );
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/queue\/Pub\/Sub appears to be the source of truth/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects zero-data-loss claims without an outage caveat', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-arch-zeroloss-'));
+    try {
+      writeSourceLedger(sandbox);
+      fs.writeFileSync(
+        path.join(sandbox, 'brief-keywords.md'),
+        '# Brief Keywords\n\n| Keyword / phrase | Status | Covered by / reason |\n|---|---|---|\n| zero data loss | covered | Architecture |\n',
+      );
+      fs.writeFileSync(
+        path.join(sandbox, 'architecture.md'),
+        '# Architecture\n\nTier 0 critical workflow uses RPO 0 and RTO 15 minutes with PITR restore drills.\n',
+      );
+      const { code, out } = runValidator(sandbox);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/outage\/data-loss caveat/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
   });
 });
 

@@ -20,9 +20,16 @@ If `working_copy/` contains external material, also load
 `prompts/orchestrators/external-input-handler.md` before the engine
 (it runs first and hands off).
 
-Maximum auto-load before doing work: **2 files** (this one + the chosen
+If the request involves regulated domains, cloud/provider architecture,
+security/privacy, AI automation, current/latest best practices, or a
+large corpus that benefits from split inspection, also load
+`prompts/orchestrators/research-and-fanout-policy.md` and follow it.
+
+Base auto-load before doing work: **2 files** (this one + the chosen
 engine). Mode 3 inherits one extra read for the external-input handler
-when external material exists. Nothing else loads automatically — not
+when external material exists. Regulated/cloud/security/AI/current-best-
+practice work inherits one extra read for the research/fan-out policy.
+Nothing else loads automatically — not
 safeguards, not stage files, not modules, not templates, not router
 orchestrators. All of those are opt-in, on demand, one at a time.
 
@@ -173,6 +180,33 @@ Does `prompts/outputs/current/project-context.md` exist?
   template defaults.
 - **No:** skip.
 
+### C.5 Research / fan-out trigger
+
+If the prompt, `project-context.md`, `MY_PROJECT.md`, or external material
+contains any of the following, read
+`prompts/orchestrators/research-and-fanout-policy.md` before executing the
+selected engine:
+
+- Regulated or high-stakes domains: healthcare, clinical safety,
+  controlled substances, finance, legal, identity, payments, child
+  safety, critical infrastructure.
+- Cloud/provider planning: Google Cloud, AWS, Azure, Kubernetes,
+  production-grade scale, disaster recovery, RPO/RTO, multi-region,
+  data residency, zero data loss, audit evidence.
+- Security/privacy: sensitive data, data breach, encryption, key
+  management, audit trails, compliance, threat model, privacy rights.
+- AI automation in consequential workflows.
+- "latest", "current", "best practice", "today", or a named external
+  product/regulator/provider whose guidance can change.
+- Large external corpus or multi-component system where parallel
+  read-only inspection would improve coverage.
+
+When triggered, the selected engine must create or update
+`prompts/outputs/current/source-ledger.md` before making source-backed
+architecture, regulatory, security, or provider claims. If fan-out is
+available, use read-only workers for discovery/critique slices and merge
+their findings; do not delegate final planning responsibility.
+
 ### D. Mode selection — four modes
 
 Decide ONE of four modes based on the user's ask AND the project state.
@@ -237,6 +271,14 @@ modes 1-3 apply.
 
 Route to `drill-down-engine.md` and follow its 3-step flow
 (Seed → Features → Tasks → Validate).
+
+**Architecture-planning submode:** if the user asks specifically for an
+architecture plan, architecture diagram, target-state architecture,
+cloud architecture, security architecture, or production architecture
+and does not ask for implementation tasks, stay inside Mode 4 but stop
+after Step 2.7 (`architecture.md`) plus the source-ledger when required.
+Do not continue into Step 3 task generation unless the user later says
+`Continue` or asks for an implementation plan.
 
 **Do NOT let an IDE's native spec-kit workflow (e.g. `.kiro/specs/`,
 `.cursor/plans/`) override the mode selection above.** Our outputs are

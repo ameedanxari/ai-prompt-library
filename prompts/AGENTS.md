@@ -25,7 +25,11 @@ If anything elsewhere in this repo contradicts this file, this file wins.
    `.ai-prompts/prompts/orchestrators/external-input-handler.md` first. It produces
    `prompts/outputs/current/project-context.md` and hands off to the
    selected engine.
-4. Write outputs to `prompts/outputs/current/`.
+4. If the request involves regulated domains, cloud architecture,
+   security/privacy, AI automation, current best practices, or a large
+   corpus, load `.ai-prompts/prompts/orchestrators/research-and-fanout-policy.md`
+   and follow it before producing the affected plan.
+5. Write outputs to `prompts/outputs/current/`.
 
 Engines are checkpoint-driven. At each `⏸ CHECKPOINT`, stop, summarize
 the output just produced, and wait for the user to say `Continue` before
@@ -35,7 +39,9 @@ to say `Execute` or `Continue` before reading `executor.md`.
 Auto-load budget: **1 file at session start** (the entry point). After
 routing, exactly **one engine** is loaded for the chosen mode (or none in
 Mode 1). External material adds one conditional read for
-`external-input-handler.md`. Total ceiling before doing work: 3 files.
+`external-input-handler.md`. Regulated/cloud/security/AI/current-best-
+practice work adds one conditional read for `research-and-fanout-policy.md`.
+Total ceiling before doing work: 4 files only when those triggers apply.
 
 ---
 
@@ -61,6 +67,7 @@ restart.
 
 | Step | Input context | Output |
 |---|---|---|
+| **0.6 — Research/fan-out** | user brief + `project-context.md` + policy triggers | `source-ledger.md` and/or worker notes when required |
 | **1 — Seed** | user brief + optional `project-context.md` | `epics.md` (5–7 epics, <500 tokens) **AND** `brief-keywords.md` (every distinctive brief keyword mapped to `covered` or `out-of-scope` with the epic/reason) |
 | **2 — Expand epic** | one epic block + optional `project-context.md` + the modules needed for that epic | `features-<epic>.md` (6–10 features per epic), plus `ui-reference-source-map.md` when greenfield UI exists without external Design Context |
 | **3 — Atomize feature** | one feature block + optional `project-context.md` / `ui-reference-source-map.md` + the modules needed for that feature | `tasks-<feature>.md` (verbose implementation prompts — each is a self-contained guide with Context, What to build, Implementation guidance, and Testing approach derived from modules) |
@@ -151,13 +158,14 @@ separate entry-point step). Triggered by:
   validator.
 - `audit-and-remediate.md` at Step 4.5, following the validator.
 
-Nine coverage checks (C1–C9): epic→feature, feature→task,
+Coverage checks (C1–C17): epic→feature, feature→task,
 gap→remediation, task schema, baseline-topic completeness (via
 `baseline-task-shapes.md` and `baseline-task-coverage.md`),
 external-services manifest, user-story linkage, platform coverage,
-regression-against-prior-pass. Fails the executor gate if any check
-remains failing after one regeneration attempt. Emits
-`revise-report.md`.
+regression-against-prior-pass, Stream A planning artifacts, and
+source-ledger / regulated architecture quality. Fails the executor
+gate if any check remains failing after one regeneration attempt.
+Emits `revise-report.md`.
 
 Phase coverage/order is validated by `phase-order-report.md`, generated
 from `task-contract.json` by `scripts/validate-phase-order.sh`.
@@ -192,6 +200,7 @@ Under `prompts/outputs/current/`:
 |---|---|
 | `project-context.md` | external-input-handler (when external material exists) |
 | `epics.md` | drill-down Step 1 (greenfield only) |
+| `source-ledger.md` | research/fan-out policy when regulated/cloud/security/AI/current-best-practice triggers apply |
 | `brief-keywords.md` | drill-down Step 1 (greenfield only; required companion to `epics.md`) |
 | `features-<epic>.md` | drill-down Step 2 |
 | `ui-reference-source-map.md` | drill-down Step 2 conditional output for greenfield UI-heavy planning when no authoritative Design Context exists |
@@ -237,7 +246,23 @@ artifact forward; load only the specific slice the current step is expanding.
    `bash .ai-prompts/scripts/validate-instantiation.sh` before declaring tasks ready.
    Any match against forbidden patterns means regenerate the offending file.
 
-6. **Check the progress script between Step 3 task-file writes.** Run
+6. **Source-backed claims for high-stakes planning.** Any regulated,
+   cloud-provider, security/privacy, healthcare, clinical-safety, AI-
+   automation, financial, legal, or "latest/current/best practice" claim
+   must be backed by `source-ledger.md`. Prefer primary sources (official
+   provider docs, regulator guidance, standards, legislation, authoritative
+   cloud architecture docs). If current external research is unavailable,
+   the ledger must say so and record the fallback basis; do not silently
+   substitute generic memory.
+
+7. **Fan out large or specialist context.** When a prompt requires
+   inspecting a large corpus, multiple portals/components, or specialist
+   perspectives (cloud, security, compliance, data, product), split the
+   read-only discovery across workers or equivalent focused passes and
+   merge their findings before planning. Fan-out is for evidence gathering
+   and critique; the primary agent remains responsible for the final plan.
+
+8. **Check the progress script between Step 3 task-file writes.** Run
    `bash .ai-prompts/scripts/step3-progress.sh prompts/outputs/current` after each
    `tasks-<feature>.md` is written. It prints a checklist of every
    declared feature marked `- [x]` (tasks file on disk) or `- [ ]` (still
@@ -245,7 +270,7 @@ artifact forward; load only the specific slice the current step is expanding.
    do NOT rely on your own memory of which files you've written — the
    disk is the source of truth.
 
-7. **Follow the explicit checkpoint protocol.**
+9. **Follow the explicit checkpoint protocol.**
    After the external-input-handler writes `project-context.md`, proceed
    immediately to Step 1. After Step 1 writes `epics.md` **and**
    `brief-keywords.md`, stop only at the Step 1 checkpoint defined by
@@ -256,7 +281,7 @@ artifact forward; load only the specific slice the current step is expanding.
    extra ad hoc prompts, and do not bypass a checkpoint that says to
    wait for the user.
 
-8. **Reset when the user asks, OR when stale markers appear.** Two
+10. **Reset when the user asks, OR when stale markers appear.** Two
    independent triggers, both hard:
    - **Explicit user request** (unconditional): if the user's prompt
      contains "force reset", "reset", "re-integrate", "start fresh",

@@ -9,6 +9,9 @@ Technology-specific modules that adapt features and architecture to different te
 - `tailwind-css.md` - Tailwind CSS theme/token implementation guidance for web UI.
 - `mobile-os-capability-matrix.md` - iOS/Android support, permission,
   fallback, and store-policy mapping for OS-controlled features.
+- `cloud-gcp.md` - Google Cloud architecture patterns for Cloud Run,
+  Cloud SQL/Spanner, Pub/Sub, Cloud Storage, BigQuery, VPC Service
+  Controls, Cloud KMS/CMEK, Cloud Armor, IAM, observability, and DR.
 
 ## Instructions
 

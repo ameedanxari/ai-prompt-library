@@ -36,6 +36,7 @@ const config: SecurityAndConfig = {
 - **privacy-controls.md** - Consent management and data portability
 - **threat-detection.md** - Anomaly detection and security monitoring
 - **zero-trust-architecture.md** - Continuous verification and network segmentation
+- **audit-evidence-worm.md** - Immutable audit evidence, locked retention, hash-chain verification, evidence export, and fail-closed audit controls
 
 ## Integration
 

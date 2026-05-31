@@ -28,15 +28,17 @@ project grows. Each step loads only what it needs; nothing else.
 Before starting or continuing work, you **MUST** read the contents of `prompts/outputs/current/` to determine the current state of the planning phase:
 
 1. **If `product-vision.md` is missing:** Planning has not started. Run **Step 0.5 (Product Vision)** first.
-2. **If `product-vision.md` exists but `epics.md` is missing:** Step 0.5 is complete. Proceed to **Step 1 (Seed)**.
-3. **If `epics.md` exists but `features-*.md` are missing:** Step 1 is complete. Proceed to **Step 2 (Expansion)**.
-4. **If `features-*.md` exist but `architecture.md` is missing:** Step 2 is complete. Proceed to **Step 2.7 (Architecture Blueprint)**.
-5. **If `architecture.md` exists, the project has UI features, and `ux-flows.md` is missing:** Proceed to **Step 2.8 (UX Blueprint)**.
-6. **If the upstream blueprints are complete but some `tasks-*.md` are missing:** Run `bash scripts/step3-progress.sh` to see which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
-7. **If all `tasks-*.md` exist but `delivery-order.md` is missing:** Step 3 is complete. Proceed to **Step 3.7 (Schema Alignment)** then **Step 3.8 (Delivery Order)**.
-8. **If `delivery-order.md` exists but `release-plan.md` is missing:** Proceed to **Step 3.9 (Release Plan)**.
-9. **If the project has mobile platforms and `store-submission.md` is missing:** Proceed to **Step 3.95 (Store Submission)**.
-10. **If all the above exist but `revise-report.md` is missing or outdated:** Proceed to the **Revise Gate**.
+2. **If research/fan-out triggers apply and `source-ledger.md` is missing or stale:** Step 0.5 is complete. Proceed to **Step 0.6 (Research & Fan-out)**.
+3. **If `product-vision.md` exists but `epics.md` is missing:** Step 0.5/0.6 is complete. Proceed to **Step 1 (Seed)**.
+4. **If `epics.md` exists but `features-*.md` are missing:** Step 1 is complete. Proceed to **Step 2 (Expansion)**.
+5. **If `features-*.md` exist but `architecture.md` is missing:** Step 2 is complete. Proceed to **Step 2.7 (Architecture Blueprint)**.
+6. **If `architecture.md` exists and the request is architecture-only:** stop at the architecture checkpoint unless the user explicitly says `Continue` or asks for implementation tasks.
+7. **If `architecture.md` exists, the project has UI features, and `ux-flows.md` is missing:** Proceed to **Step 2.8 (UX Blueprint)**.
+8. **If the upstream blueprints are complete but some `tasks-*.md` are missing:** Run `bash scripts/step3-progress.sh` to see which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
+9. **If all `tasks-*.md` exist but `delivery-order.md` is missing:** Step 3 is complete. Proceed to **Step 3.7 (Schema Alignment)** then **Step 3.8 (Delivery Order)**.
+10. **If `delivery-order.md` exists but `release-plan.md` is missing:** Proceed to **Step 3.9 (Release Plan)**.
+11. **If the project has mobile platforms and `store-submission.md` is missing:** Proceed to **Step 3.95 (Store Submission)**.
+12. **If all the above exist but `revise-report.md` is missing or outdated:** Proceed to the **Revise Gate**.
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
@@ -60,6 +62,7 @@ The entry point (`ai-agent-entry-point.md`) parses this file on `"Continue"` / `
 prompts/outputs/current/
 ├── project-context.md           (optional, from external-input-handler)
 ├── product-vision.md            (Step 0.5)
+├── source-ledger.md             (Step 0.6, when research/fan-out triggers apply)
 ├── epics.md                     (Step 1)
 ├── brief-keywords.md            (Step 1)
 ├── features-<epic-slug>.md      (Step 2, one per epic)
@@ -96,11 +99,38 @@ this step — re-reading the file is sufficient.
 
 ---
 
+## STEP 0.6 — Research & Fan-out (conditional, before epics)
+
+Run when the user brief, `project-context.md`, or external material
+contains regulated-domain, cloud-provider, security/privacy, AI
+automation, current/latest, or large-corpus triggers.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/research-and-fanout-policy.md`
+
+It produces `prompts/outputs/current/source-ledger.md` and optional
+worker-discovery notes. The ledger is mandatory before the plan makes
+claims about Google Cloud production architecture, regulated healthcare,
+controlled drugs, sensitive data, audit evidence, AI clinical
+automation, or other high-stakes/current guidance.
+
+If fan-out is available, use read-only workers for focused discovery
+slices such as cloud architecture, security/compliance, data integrity,
+domain regulation, and existing-corpus inspection. Merge their findings
+into `source-ledger.md` and planning assumptions; the primary agent
+remains accountable for final decisions.
+
+If `source-ledger.md` already exists on disk, check it still covers the
+current brief and today's date. If it is stale or missing required
+sources, update it before Step 1.
+
+---
+
 ## STEP 1 — Seed (runs once, in isolation)
 
 **Load ONLY:**
 - The user brief (`MY_PROJECT.md` or inline input)
 - `product-vision.md` (from Step 0.5)
+- `source-ledger.md` if it exists
 - `project-context.md` if it exists
 
 **Do NOT load:** stage files, modules, templates, orchestrators beyond this one.
@@ -312,6 +342,8 @@ For each epic in Step 1's output, start a **fresh context** containing only:
 
 - The single epic block (its name, goal, acceptance, complexity)
 - `project-context.md` if it exists
+- `source-ledger.md` if it exists and the epic touches a researched
+  cloud, regulatory, security, AI, or current-best-practice claim
 - **One or more modules** from `.ai-prompts/prompts/modules/` chosen via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md` (intent → module
   path). Load as many modules as needed to properly inform the epic's
@@ -543,6 +575,12 @@ to say "Continue"** before starting Step 2.8 (or Step 3 if no UI).
 If `architecture.md` already exists on disk (resumption), skip
 this step.
 
+For architecture-only requests, this is the terminal planning artifact:
+run `bash .ai-prompts/scripts/validate-regulated-architecture.sh
+prompts/outputs/current` after writing `architecture.md`, present the
+architecture checkpoint, and stop. Continue to UX/task generation only
+after an explicit `Continue` or implementation-planning request.
+
 ### STEP 2.8 — UX Blueprint (CONDITIONAL, runs once)
 
 Runs only if at least one feature in `features-*.md` is UI-heavy
@@ -635,6 +673,10 @@ For each feature, start a **fresh context** containing:
 
 - The single feature block (name, description, data model, API contract)
 - `project-context.md` if it exists
+- `source-ledger.md` if it exists and the feature touches researched
+  cloud, regulatory, security, AI, or current-best-practice claims
+- `architecture.md` as the canonical source for stack, bounded context,
+  state ownership, data-integrity, security, and deployment decisions
 - `ui-reference-source-map.md` if it exists and the feature is UI-heavy
 - **One or more modules** from `.ai-prompts/prompts/modules/` selected via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md`. Modules ARE

@@ -32,6 +32,7 @@ See `prompts/AGENTS.md` for the full engine flow.
 | [accessibility](./accessibility/README.md) | WCAG compliance, i18n, RTL, regional adaptation, responsive design |
 | [ai-native](./ai-native/README.md) | LLM integration, model serving, AI-driven autoscaling |
 | [analytics](./analytics/README.md) | Product analytics, A/B tests, cohort analysis, predictive, privacy-preserving |
+| [architecture](./architecture/README.md) | Bounded contexts, state ownership, Tier 0 workflows, data-integrity guardrails |
 | [best-practices](./best-practices/README.md) | Coding standards |
 | [blockchain](./blockchain/README.md) | Smart contracts, wallets, tokens, NFTs, DeFi, governance |
 | [commerce](./commerce/README.md) | Catalog, cart, checkout, payments, subscriptions, marketplace |
