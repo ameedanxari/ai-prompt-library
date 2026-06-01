@@ -62,7 +62,7 @@ MOBILE_CLEANUP_PATTERN='(memory cleanup|storage cleanup|storage cleaner|free up 
 CAPABILITY_MATRIX_PATTERN='(os capability matrix|capability matrix|iOS Support|Android Support|Fallback Behavior|Store Policy Risk|User-Facing Copy Constraint)'
 DESIGN_SYSTEM_FOUNDATION_PATTERN='(design tokens|token architecture|component system|component catalog|component library|reusable component library|native theme foundation|theme primitives|design-system foundation|design system foundation)'
 DESIGN_REVIEW_ARTIFACT_PATTERN='(docs/design-system/review/index\.html|design-system review artifact|design system review artifact|static HTML review artifact|visual review artifact)'
-DESIGN_REVIEW_REFERENCE_PATTERN='(Reference Evidence|Reference URLs|reference URLs|URL / Path / Availability|Mobbin|Figma|App Store|platform guideline|existing product file|existing-style source map|research-unavailable)'
+DESIGN_REVIEW_REFERENCE_PATTERN='(Reference Evidence|Reference URLs|reference URLs|URL / Path / Availability|Mobbin|Figma|App Store|Google Play|Play Store|product-site|product site|free-reference|free reference|UIguana|Scrnshts|ASOInspo|platform guideline|existing product file|existing-style source map|research-unavailable)'
 DESIGN_REVIEW_FEEDBACK_PATTERN='(user review|visual-review feedback|visual review feedback|provide feedback|review checkpoint|feedback checkpoint|ask .* feedback)'
 
 # User-story line. Each task block must contain a **Closes user story:**
@@ -752,8 +752,8 @@ for f in "${files[@]}"; do
     if ! grep -Eiq "$DESIGN_REVIEW_REFERENCE_PATTERN" "$f"; then
       echo "❌ $f: design-system review artifact lacks reference evidence"
       echo "   The HTML review artifact must include Mobbin/Figma/product/"
-      echo "   platform reference URLs or file paths from the source map,"
-      echo "   including availability notes or research-unavailable rationale."
+      echo "   platform/free-reference URLs or file paths from the source map,"
+      echo "   with public fallback evidence before research-unavailable rationale."
       fail=1
     fi
     if ! grep -Eiq "$DESIGN_REVIEW_FEEDBACK_PATTERN" "$f"; then
@@ -1226,8 +1226,9 @@ if [ "$ui_design_gate_needed" -eq 1 ]; then
     echo "❌ Design Context declares Reference/research needs but no UI reference source map exists"
     echo "   Reference/research needs: $reference_needs"
     echo "   Add prompts/outputs/current/ui-reference-source-map.md with inspected"
-    echo "   Mobbin/Figma/product/platform evidence, or record a research-unavailable"
-    echo "   evidence row with a concrete reason and fallback sources. Existing theme"
+    echo "   Mobbin/Figma/product/platform/free-reference evidence. Use a"
+    echo "   research-unavailable evidence row only after naming attempted public"
+    echo "   fallback sources and the concrete access failure. Existing theme"
     echo "   authority controls style, but it does not erase explicitly recorded"
     echo "   reference-research gaps."
     fail=1

@@ -291,7 +291,7 @@ explicitly needs server-side or remote inference infrastructure.
 
 | Intent | Module |
 |---|---|
-| Mobbin / product reference research / UI inspiration / app pattern research | `prompts/modules/design-research/mobbin-reference-intake.md` |
+| Mobbin / free public UI references / App Store screenshots / Play Store screenshots / product reference research / UI inspiration / app pattern research | `prompts/modules/design-research/mobbin-reference-intake.md` |
 | UI reference source map / greenfield design context / design research schema | `prompts/modules/design-research/ui-reference-source-map.md` |
 | Existing product UI extension / follow existing theme / preserve current styling / no redesign | `prompts/modules/design-research/mobbin-reference-intake.md` |
 | Dashboard / admin dashboard / reporting dashboard / analytics console / operational panel | `prompts/modules/design-system/dashboard-screen-patterns.md` |

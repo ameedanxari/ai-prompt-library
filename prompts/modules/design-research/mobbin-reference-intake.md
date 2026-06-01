@@ -1,4 +1,4 @@
-# Design Research: Mobbin Reference Intake
+# Design Research: Public UI Reference Intake
 
 <!-- INSTANTIATION RULES
 When the drill-down engine (or any orchestrator) uses this template:
@@ -15,9 +15,9 @@ When the drill-down engine (or any orchestrator) uses this template:
 
 ## Purpose
 
-Use Mobbin-style product references as design research input so generated
-UI tasks are grounded in mature interaction patterns while still producing
-an original interface for the current product.
+Use Mobbin-style and free/public product references as design research
+input so generated UI tasks are grounded in mature interaction patterns
+while still producing an original interface for the current product.
 
 ## Context
 
@@ -33,7 +33,7 @@ decision.
 
 ```typescript
 interface UIReferenceSource {
-  source: "mobbin" | "figma" | "existing-product" | "screenshot" | "manual-note";
+  source: "mobbin" | "figma" | "existing-product" | "app-store" | "play-store" | "product-site" | "free-reference-site" | "platform-guideline" | "screenshot" | "manual-note" | "research-unavailable";
   productOrFile: string;
   flowOrScreen: string;
   patternObserved: string;
@@ -61,18 +61,34 @@ interface UIReferencePacket {
 2. Collect and record 3-5 relevant inspected references when no canonical
    product design exists. Each reference must include source type, product
    or file name, flow/screen, URL/path or availability note, inspection date,
-   the pattern being borrowed, and the part that must not be copied. If
-   Mobbin or another intended research source is unavailable, record
-   `research-unavailable` with the concrete reason and use fallback sources
-   such as platform guidelines, App Store screenshots, local screenshots, or
-   user-provided mockups.
-3. For existing products, inspect current code/design files first and record
+   the pattern being borrowed, and the part that must not be copied.
+3. If Mobbin, Figma, or a paid/design-account source is unavailable, do
+   not stop at `research-unavailable`. First perform online research and
+   use inspectable free/public alternatives. Preferred fallback hierarchy:
+   - supplied hi-fi designs, screenshots, or source files in `working_copy/`
+   - existing product source/screenshots in the repository
+   - official platform guidelines such as Apple HIG and Android Material
+   - App Store and Google Play listings with screenshots/descriptions
+   - product marketing pages with real app screenshots or flows
+   - free UI reference libraries such as UIguana, Scrnshts, ASOInspo,
+     AppLaunchpad screenshot inspiration, Page Flows public previews,
+     UXArchive/archived flow libraries, Screenlane archives, Banani
+     references, Litscreen, Supply UI, Handheld Design, Land-book-style
+     galleries, or other inspectable public libraries relevant to the
+     product surface
+   - manually inspected competitor apps only when screenshots/pages are
+     publicly visible or supplied by the user
+4. Use `research-unavailable` only after the fallback hierarchy has been
+   attempted and no inspectable public evidence exists, or browsing is
+   unavailable. The source-map notes must state what was attempted and why
+   the fallback could not be inspected.
+5. For existing products, inspect current code/design files first and record
    existing visual language as authoritative. New design work must extend the
    current system unless the user explicitly requested redesign or rebrand.
-4. Convert references into a UI reference source map with evidence row IDs,
+6. Convert references into a UI reference source map with evidence row IDs,
    observed pattern, product-specific decision, tokens, components,
    interaction states, responsive behavior, and accessibility implications.
-5. Do not output generic phrases like "make it beautiful" or "use modern UI".
+7. Do not output generic phrases like "make it beautiful" or "use modern UI".
    Every design decision must map to a concrete layout, component, token, or
    interaction rule.
 

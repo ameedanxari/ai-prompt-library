@@ -46,7 +46,7 @@ function validSourceMap(overrides: Partial<{
     '|---|---|---|---|---|---|---|---|',
     ...(overrides.evidenceRows ?? [
       '| REF-001 | existing-product | src/styles/theme.css | design tokens | local file available | 2026-05-30 | inspected | current theme source |',
-      '| REF-002 | product-reference | Mobbin analytics dashboard | dashboard overview | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
+      '| REF-002 | free-reference-site | Public dashboard reference | dashboard overview | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
       '| REF-003 | platform-guideline | WCAG dashboard guidance | chart summaries | local accessibility checklist | 2026-05-30 | inspected | non-visual chart summary guidance |',
     ]),
     '',
@@ -121,7 +121,7 @@ describe('validate-ui-reference-source-map.sh', () => {
         '| Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |',
         '|---|---|---|---|---|---|---|---|',
         '| REF-001 | existing-product | src/styles/theme.css | design tokens | local file available | 2026-05-30 | inspected | current theme source |',
-        '| REF-002 | product-reference | Mobbin analytics dashboard | dashboard overview | research-unavailable: external catalog unavailable in unit test | 2026-05-30 | fallback | scan pattern only |',
+        '| REF-002 | free-reference-site | Public dashboard reference | dashboard overview | research-unavailable: external catalog unavailable in unit test | 2026-05-30 | fallback | scan pattern only |',
         '| REF-003 | platform-guideline | WCAG dashboard guidance | chart summaries | local accessibility checklist | 2026-05-30 | inspected | summary guidance |',
         '',
         '## Reference Map',
@@ -146,7 +146,7 @@ describe('validate-ui-reference-source-map.sh', () => {
       const sourceMapPath = writeSourceMap(sandbox, validSourceMap({
         evidenceRows: [
           '| REF-001 | existing-product | src/styles/theme.css | design tokens | local file available | 2026-05-30 | inspected | current theme source |',
-          '| REF-002 | product-reference | Mobbin analytics dashboard | dashboard overview | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
+          '| REF-002 | free-reference-site | Public dashboard reference | dashboard overview | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
         ],
       }));
 
@@ -165,7 +165,7 @@ describe('validate-ui-reference-source-map.sh', () => {
       const sourceMapPath = writeSourceMap(sandbox, validSourceMap({
         evidenceRows: [
           '| REF-001 | existing-product | src/styles/theme.css | design tokens | local file available | 2026-05-30 | inspected | current theme source |',
-          '| REF-002 | product-reference | Mobbin analytics dashboard | dashboard | research-unavailable: external | catalog unavailable | 2026-05-30 | fallback | extra shifted cell |',
+          '| REF-002 | free-reference-site | Public dashboard reference | dashboard | research-unavailable: external | catalog unavailable | 2026-05-30 | fallback | extra shifted cell |',
         ],
       }));
 
@@ -185,7 +185,7 @@ describe('validate-ui-reference-source-map.sh', () => {
       const sourceMapPath = writeSourceMap(sandbox, validSourceMap({
         evidenceRows: [
           '| REF-001 | existing-product | src/styles/theme.css | design tokens | local file available | 2026-05-30 | inspected | current theme source |',
-          '| REF-002 | product-reference | Mobbin analytics dashboard | dashboard overview \\| detail drill-in | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
+          '| REF-002 | free-reference-site | Public dashboard reference | dashboard overview \\| detail drill-in | research-unavailable: external catalog unavailable in unit test; fallback to local dashboard patterns | 2026-05-30 | fallback | scan pattern only |',
           '| REF-003 | platform-guideline | WCAG dashboard guidance | chart summaries | local accessibility checklist | 2026-05-30 | inspected | non-visual chart summary guidance |',
         ],
         mapRows: [

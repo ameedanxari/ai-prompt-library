@@ -10,7 +10,9 @@ product extensions, dashboard surfaces, and screen-level UI work.
 ## Modules
 
 - `mobbin-reference-intake.md` - Researches proven product patterns from
-  Mobbin-style references without copying another product's design.
+  Mobbin-style, free/public UI libraries, App Store/Play listings,
+  product sites, platform guidance, and existing-product references
+  without copying another product's design.
 - `ui-reference-source-map.md` - Defines the central source-map artifact
   used by greenfield UI planning before task generation.
 

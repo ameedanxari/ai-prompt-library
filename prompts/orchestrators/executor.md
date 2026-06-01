@@ -406,7 +406,7 @@ Show:
 7. **Design-system review handoff** — if the prompt created or updated
    `docs/design-system/review/index.html`, include:
    - absolute or repo-relative path to the HTML artifact
-   - Mobbin/Figma/product/platform reference URLs or file paths that
+   - Mobbin/Figma/product/platform/free-reference URLs or file paths that
      appear in the artifact
    - one explicit question asking the user for visual-review feedback
      before dependent screen-level prompts proceed

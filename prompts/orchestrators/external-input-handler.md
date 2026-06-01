@@ -131,10 +131,13 @@ Rules for each section:
   a theme. Treat **Reference/research needs** as a downstream trigger: write
   `none because existing product style is authoritative` only when current
   source/screenshots fully cover the interaction patterns. If Mobbin-style,
-  Figma, App Store, platform guideline, or comparable references are still
-  needed for missing flows, write the concrete reference categories instead
-  of `none`; the drill-down engine will generate `ui-reference-source-map.md`
-  for those gaps while preserving the existing theme.
+  Figma, App Store, Google Play, product-site, platform guideline, free UI
+  gallery, or comparable references are still needed for missing flows,
+  write the concrete reference categories instead of `none`; the
+  drill-down engine will generate `ui-reference-source-map.md` for those
+  gaps while preserving the existing theme. When the user supplies no
+  hi-fi designs and UI quality depends on design inspiration, default to
+  naming online/public reference needs rather than leaving the field empty.
 - **Tech Decisions:** only include decisions the user has already made. If
   the material shows Tailwind classes, record "Tailwind CSS". Do NOT invent
   decisions. Include version numbers when visible (e.g. "Node.js 18+").

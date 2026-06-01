@@ -529,7 +529,7 @@ this schema:
 ## Reference Evidence
 | Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
 |---|---|---|---|---|---|---|---|
-| REF-001 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
+| REF-001 | mobbin \| figma \| existing-product \| app-store \| play-store \| product-site \| free-reference-site \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
 
 ## Open Design Risks
 - <risk or `none`>
@@ -537,9 +537,20 @@ this schema:
 
 Rules:
 - Do not claim exact Mobbin/Figma/source references unless they were
-  actually supplied or inspected. If research was not possible, record a
-  `research-unavailable` evidence row with the reason and use fallback
-  sources; do not silently replace research with generic categories.
+  actually supplied or inspected.
+- If no hi-fi designs are supplied and UI-heavy planning is required,
+  online/public design research is the default. Before using
+  `research-unavailable`, inspect free/public alternatives where possible:
+  App Store listings, Google Play listings, product marketing pages with
+  real screenshots, official platform guidelines, UIguana, Scrnshts,
+  ASOInspo, AppLaunchpad screenshot inspiration, Page Flows public
+  previews, UXArchive/archived flow libraries, Screenlane archives, Banani
+  references, Litscreen, Supply UI, Handheld Design, or comparable public
+  galleries relevant to the product surface.
+- If research was not possible after those attempts, record a
+  `research-unavailable` evidence row with the concrete reason and the
+  fallback sources attempted; do not silently replace research with generic
+  categories.
 - Use product-specific reference categories such as "mobile photo review
   swipe flows" rather than generic "modern UI".
 - Every Reference Map row must cite a Reference Evidence row ID.

@@ -58,6 +58,20 @@ MAP_REQUIRED = [
 ]
 
 REQUIRED_STATES = ["default", "loading", "empty", "error", "disabled", "success"]
+ALLOWED_SOURCE_TYPES = {
+    "mobbin",
+    "figma",
+    "existing-product",
+    "app-store",
+    "play-store",
+    "product-site",
+    "free-reference-site",
+    "platform-guideline",
+    "screenshot",
+    "manual-note",
+    "research-unavailable",
+}
+INSPECTED_QUALITIES = {"inspected", "fallback"}
 REQUIRED_SECTIONS = [
     "Product Design Direction",
     "Reference Evidence",
@@ -253,6 +267,13 @@ has_unavailable_evidence = any(
     for row in evidence_rows
 )
 
+inspectable_evidence_rows = [
+    row
+    for row in evidence_rows
+    if row.get("Source Type", "").strip().lower() != "research-unavailable"
+    and row.get("Evidence Quality", "").strip().lower() in INSPECTED_QUALITIES
+]
+
 if evidence_rows and not evidence_ids and not has_unavailable_evidence:
     issues.append(
         f"{source_map}: no reference evidence rows found; add REF-* rows or a "
@@ -263,11 +284,46 @@ for row in evidence_rows:
     label = row_label(row)
     if "Row ID" in row and row["Row ID"].strip() and not re.fullmatch(r"REF-[0-9]+", row["Row ID"].strip()):
         issues.append(f"{source_map}: evidence row {label} Row ID must use REF-* format")
+    source_type = row.get("Source Type", "").strip().lower()
+    if source_type and source_type not in ALLOWED_SOURCE_TYPES:
+        issues.append(
+            f"{source_map}: evidence row {label} Source Type '{row.get('Source Type', '')}' "
+            "is not recognized; use mobbin, figma, existing-product, app-store, "
+            "play-store, product-site, free-reference-site, platform-guideline, "
+            "screenshot, manual-note, or research-unavailable"
+        )
     for column in EVIDENCE_REQUIRED:
         if column in row and not row[column].strip():
             issues.append(f"{source_map}: evidence row {label} has empty '{column}'")
     if PLACEHOLDER_RE.search(" ".join(row.values())):
         issues.append(f"{source_map}: evidence row {label} still contains placeholder text")
+    if source_type == "research-unavailable":
+        attempted_context = " ".join(
+            [
+                row.get("URL / Path / Availability", ""),
+                row.get("Notes", ""),
+            ]
+        )
+        if not re.search(r"attempt|fallback|searched|tried|network|unavailable|not inspectable", attempted_context, re.IGNORECASE):
+            issues.append(
+                f"{source_map}: evidence row {label} uses research-unavailable "
+                "without naming attempted fallback sources or the concrete access failure"
+            )
+
+if has_unavailable_evidence and not inspectable_evidence_rows:
+    issues.append(
+        f"{source_map}: research-unavailable cannot be the only design evidence; "
+        "add inspected local, platform, App Store, Play Store, product-site, or "
+        "free-reference fallback evidence"
+    )
+
+if existing_style_authority.lower() in {"no", "none", "false", "not supplied", "not provided"} and len(inspectable_evidence_rows) < 3:
+    issues.append(
+        f"{source_map}: no existing style authority requires at least 3 inspected "
+        "or fallback evidence rows from supplied designs, existing product files, "
+        "platform guidelines, App Store, Play Store, product sites, or free "
+        "reference libraries"
+    )
 
 for row in map_rows:
     label = row_label(row)

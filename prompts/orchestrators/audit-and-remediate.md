@@ -307,15 +307,22 @@ Include this section for UI remediation only:
   references only for missing patterns and only with a non-copy boundary.
   If `project-context.md` records non-none `Reference/research needs`, the
   remediation must include or create `ui-reference-source-map.md` with
-  inspected Mobbin/Figma/product/platform evidence, or a
-  `research-unavailable` row with the concrete reason and fallback sources.
+  inspected Mobbin/Figma/product/platform evidence. When Mobbin/Figma is
+  unavailable and no hi-fi design was supplied, use online/public
+  alternatives first: App Store, Google Play, product sites, official
+  platform guidelines, UIguana, Scrnshts, ASOInspo, AppLaunchpad
+  screenshot inspiration, Page Flows public previews, UXArchive/archived
+  flow libraries, Screenlane archives, Banani references, Litscreen,
+  Supply UI, Handheld Design, or comparable inspectable galleries. Use a
+  `research-unavailable` row only after naming what fallback sources were
+  attempted and why none were inspectable.
 - Component inventory and token mapping.
 - Design-system review artifact: if remediation creates or materially
   changes tokens, theme primitives, component catalog, or a reusable
   component library, create or update
   `docs/design-system/review/index.html` and include linked
-  Mobbin/Figma/product/platform reference URLs or paths that led to the
-  design choices.
+  Mobbin/Figma/product/platform/free-reference URLs or paths that led to
+  the design choices.
 - State matrix: default, loading, empty, error, disabled, success.
 - Responsive, accessibility, and screenshot/visual QA checks.
 

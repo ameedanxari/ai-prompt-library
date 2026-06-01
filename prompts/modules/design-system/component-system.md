@@ -39,7 +39,7 @@ Ensure `design-system-component-catalog.md` includes:
 - Token usage map per component
 - UI reference source map or existing-style source map
 - Static HTML review artifact path (`docs/design-system/review/index.html`)
-  with linked Mobbin/Figma/product/platform reference URLs or paths
+  with linked Mobbin/Figma/product/platform/free-reference URLs or paths
 - Interaction/accessibility notes
 - Dependencies and composition rules
 

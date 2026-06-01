@@ -242,9 +242,15 @@ specific tools depend on whether the app has network access.
 - Task that creates `docs/design-system/review/index.html` as a static
   visual review artifact for the design system, including token swatches,
   component gallery, state matrix, responsive previews, accessibility notes,
-  and Mobbin/Figma/product/platform reference URLs or paths with non-copy
-  boundaries. Dependent screen work should not proceed until this artifact
-  has been presented for user feedback at the executor checkpoint.
+  and Mobbin/Figma/product/platform/free-reference URLs or paths with
+  non-copy boundaries. If no hi-fi designs were supplied, cite inspected
+  online/public references when available, such as App Store, Google Play,
+  product sites, official platform guidelines, UIguana, Scrnshts,
+  ASOInspo, AppLaunchpad screenshot inspiration, Page Flows public
+  previews, UXArchive/archived flow libraries, Screenlane archives,
+  Banani references, Litscreen, Supply UI, Handheld Design, or comparable
+  public galleries. Dependent screen work should not proceed until this
+  artifact has been presented for user feedback at the executor checkpoint.
 - Existing products must extend the current token/theme source unless
   the user explicitly requested redesign, rebrand, or a theme migration.
 - Task that implements dark-mode toggle respecting OS preference.

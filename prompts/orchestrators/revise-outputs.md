@@ -199,7 +199,13 @@ Required checks:
   product/file, flow/screen, URL/path/availability, inspected date, and
   evidence quality. Generic reference categories alone are not enough;
   if Mobbin/Figma/product research was unavailable, the map must say so
-  explicitly and name fallback sources.
+  explicitly only after online/public fallback sources were attempted.
+  Acceptable fallback sources include App Store, Google Play, product
+  sites, official platform guidelines, UIguana, Scrnshts, ASOInspo,
+  AppLaunchpad screenshot inspiration, Page Flows public previews,
+  UXArchive/archived flow libraries, Screenlane archives, Banani
+  references, Litscreen, Supply UI, Handheld Design, or comparable
+  inspectable galleries. Generic categories alone are not sources.
 - Component inventory and token mapping are present for screen-level UI.
 - State matrix covers default, loading, empty, error, disabled, and success.
 - Dashboard/chart tasks define KPI, filter, chart/table region,
@@ -212,8 +218,8 @@ Required checks:
   reusable component libraries include `docs/design-system/review/index.html`
   as a static HTML review artifact. The artifact must show token swatches,
   component gallery, state matrix, responsive previews, accessibility notes,
-  and the Mobbin/Figma/product/platform reference URLs or paths that led to
-  the design choices.
+  and the Mobbin/Figma/product/platform/free-reference URLs or paths that
+  led to the design choices.
 - Those design-system foundation tasks require the executor checkpoint to
   present the HTML artifact path plus reference evidence links/paths and ask
   the user for visual-review feedback before dependent screen-level work.

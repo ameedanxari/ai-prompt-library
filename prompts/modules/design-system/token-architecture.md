@@ -35,7 +35,8 @@ Ensure `design-system-foundation.md` includes:
 - Theming strategy (brand/light/dark if applicable)
 - Accessibility guardrails tied to tokens
 - Static HTML review artifact path (`docs/design-system/review/index.html`)
-  with token swatches and linked Mobbin/Figma/product/platform references
+  with token swatches and linked Mobbin/Figma/product/platform/free-reference
+  references
 
 ## Acceptance Criteria
 - No major UI style is left "free-form" outside token usage.

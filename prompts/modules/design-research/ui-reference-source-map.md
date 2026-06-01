@@ -25,9 +25,9 @@ gaps.
 Use this module when a project includes UI-heavy features and either no
 authoritative `project-context.md` Design Context exists, or Design Context
 exists but `Reference/research needs` names missing Mobbin/Figma/product/
-platform reference patterns. It turns product brief language and reference
-research into a traceable source map that screen, dashboard, component, and
-chart tasks must cite.
+platform reference patterns. It turns product brief language, supplied
+designs, public product references, and platform guidance into a traceable
+source map that screen, dashboard, component, and chart tasks must cite.
 
 Existing products should prefer the extracted Design Context or audit
 theme findings. This source map may still be used for missing patterns,
@@ -70,7 +70,7 @@ Required sections:
 ## Reference Evidence
 | Row ID | Source Type | Product / File | Flow / Screen | URL / Path / Availability | Inspected At | Evidence Quality | Notes |
 |---|---|---|---|---|---|---|---|
-| REF-001 | mobbin \| figma \| existing-product \| app-store \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
+| REF-001 | mobbin \| figma \| existing-product \| app-store \| play-store \| product-site \| free-reference-site \| platform-guideline \| manual-note \| research-unavailable | <name> | <flow> | <url/path or unavailable reason> | <date> | inspected \| fallback \| unavailable | <why this source is relevant> |
 
 ## Reference Map
 | Row ID | Evidence Row | Reference Category | Observed Pattern | Product Decision | Non-copy Boundary | Components Affected | Tokens Affected | States Affected | Responsive Notes | Accessibility Notes |
@@ -86,19 +86,33 @@ Required sections:
 1. Record 3-5 inspected reference evidence rows when no canonical
    product design exists. For existing products with named reference needs,
    cite current product files/screenshots first, then add evidence for only
-   the missing patterns. If external research is unavailable, include a
-   `research-unavailable` evidence row with the concrete reason and use
-   fallback sources such as platform HIG/Material guidance, App Store
-   screenshots, local product screenshots, or user-provided mockups.
-2. Use product-specific reference categories, not vague phrases such as
+   the missing patterns.
+2. If no hi-fi designs were supplied and the project contains UI-heavy
+   work, online/public design research is required unless the user
+   explicitly forbids browsing or network access is unavailable. Do not use
+   `research-unavailable` merely because Mobbin is inaccessible.
+3. Preferred no-cost/public reference sources, in order:
+   user-supplied designs; existing repo screens/source; official platform
+   guidelines; App Store listings; Google Play listings; product marketing
+   pages with real screenshots; free reference libraries such as UIguana,
+   Scrnshts, ASOInspo, AppLaunchpad screenshot inspiration, Page Flows
+   public previews, UXArchive/archived flow libraries, Screenlane archives,
+   Banani references, Litscreen, Supply UI, Handheld Design, and comparable
+   inspectable galleries.
+4. If external research is unavailable after those attempts, include a
+   `research-unavailable` evidence row with the concrete reason, the
+   fallback sources attempted, and at least one fallback row from local
+   product evidence or platform guidelines when any UI will still be
+   planned.
+5. Use product-specific reference categories, not vague phrases such as
    "modern apps" or "nice UI".
-3. Every map row must point to an evidence row ID.
-4. Every row must include a product decision and a non-copy boundary.
-5. Every UI row must list components, tokens, all six states, responsive
+6. Every map row must point to an evidence row ID.
+7. Every row must include a product decision and a non-copy boundary.
+8. Every UI row must list components, tokens, all six states, responsive
    notes, and accessibility notes.
-6. Native products must distinguish iOS and Android behavior when platform
+9. Native products must distinguish iOS and Android behavior when platform
    conventions differ.
-7. Dashboard/chart rows must include chart states, legend/tooltip behavior,
+10. Dashboard/chart rows must include chart states, legend/tooltip behavior,
    and non-visual summaries.
 
 ## Integration Points
