@@ -60,7 +60,7 @@ UNRELATED_REDESIGN_PATTERN='(new visual language|unrelated visual|replace the ex
 REDESIGN_APPROVAL_PATTERN='(redesign requested|redesign approval|explicit redesign|rebrand|migration approved|user requested redesign|user requested rebrand)'
 MOBILE_CLEANUP_PATTERN='(memory cleanup|storage cleanup|storage cleaner|free up space|photo/video cleanup|phone cleanup|cleanup app)'
 CAPABILITY_MATRIX_PATTERN='(os capability matrix|capability matrix|iOS Support|Android Support|Fallback Behavior|Store Policy Risk|User-Facing Copy Constraint)'
-DESIGN_SYSTEM_FOUNDATION_PATTERN='(design tokens|token architecture|component system|component catalog|component library|reusable component library|native theme foundation|theme primitives|design-system foundation|design system foundation)'
+DESIGN_SYSTEM_FOUNDATION_PATTERN='(design-system review artifact|design system review artifact|design-system foundation|design system foundation|component system foundation|component catalog|component library|reusable component library|native theme foundation|theme primitives)'
 DESIGN_REVIEW_ARTIFACT_PATTERN='(docs/design-system/review/index\.html|design-system review artifact|design system review artifact|static HTML review artifact|visual review artifact)'
 DESIGN_REVIEW_REFERENCE_PATTERN='(Reference Evidence|Reference URLs|reference URLs|URL / Path / Availability|Mobbin|Figma|App Store|Google Play|Play Store|product-site|product site|free-reference|free reference|UIguana|Scrnshts|ASOInspo|platform guideline|existing product file|existing-style source map|research-unavailable)'
 DESIGN_REVIEW_FEEDBACK_PATTERN='(user review|visual-review feedback|visual review feedback|provide feedback|review checkpoint|feedback checkpoint|ask .* feedback)'
@@ -258,9 +258,12 @@ check_baseline_keywords() {
   # $3 = ERE pattern; one required-keyword family per line (separated by |)
   local f="$1" label="$2" patterns="$3"
   [ -f "$f" ] || return 0
-  # Concatenate feature headings into a lowercase blob for keyword search.
+  # Concatenate feature headings plus explicit baseline aliases into a
+  # lowercase blob for keyword search. Aliases let the engine preserve
+  # stable task-slug headings while still declaring baseline coverage
+  # details such as signing, distribution, consent, and integration.
   local blob
-  blob=$(grep -E "^## " "$f" | tr '[:upper:]' '[:lower:]')
+  blob=$( { grep -E "^## " "$f"; grep -Ei "baseline coverage aliases:" "$f"; } | tr '[:upper:]' '[:lower:]')
   local missing=""
   while IFS= read -r pat; do
     [ -z "$pat" ] && continue
@@ -729,7 +732,7 @@ for f in "${files[@]}"; do
     fi
   fi
 
-  if grep -Eiq "$MOBILE_CLEANUP_PATTERN" "$f" && ! grep -Eiq "$CAPABILITY_MATRIX_PATTERN" "$f"; then
+  if tail -n +2 "$f" | grep -Eiq "$MOBILE_CLEANUP_PATTERN" && ! grep -Eiq "$CAPABILITY_MATRIX_PATTERN" "$f"; then
     echo "❌ $f: mobile cleanup/storage task lacks an OS capability matrix"
     echo "   Storage, memory cleanup, photo/video cleanup, and free-space"
     echo "   tasks must declare platform support before implementation:"

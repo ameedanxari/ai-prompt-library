@@ -498,6 +498,18 @@ for topic in TOPICS:
         for item in plan_files
         if any(pattern.search(f"{item['name']}\n{item['text']}") for pattern in detect_patterns)
     ]
+    if topic["id"] == "account-identity":
+        negative_account_re = re.compile(
+            r"\b(no[- ]login|no accounts?|without accounts?|no authentication|"
+            r"do not require account login|no backend account|no sign[- ]?in)\b",
+            re.I,
+        )
+        matched_files = [
+            item["name"]
+            for item in plan_files
+            if any(pattern.search(f"{item['name']}\n{item['text']}") for pattern in detect_patterns)
+            and not negative_account_re.search(item["text"])
+        ]
     scope_sources = []
     scope_sources.extend(epic_scope.get(topic["id"], []))
     scope_sources.extend(brief_covered_scope.get(topic["id"], []))

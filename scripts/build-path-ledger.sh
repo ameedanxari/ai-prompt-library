@@ -10,9 +10,12 @@
 # file it must read before writing any source file.
 #
 # The script also refuses to pass when the plan itself declares
-# collisions: two tasks naming the same path, or the same basename in
-# two different directories of the same platform's source tree (which
-# is the duplicate pattern that broke the StorageCleaner field test).
+# create-path collisions: two tasks creating the same path, or the same
+# basename in two different directories of the same platform's source
+# tree (which is the duplicate pattern that broke the StorageCleaner
+# field test). Multiple `modify-existing` tasks may intentionally touch
+# the same existing file during a refinement plan and are recorded in
+# the ledger without blocking execution.
 #
 # Usage:
 #   bash scripts/build-path-ledger.sh [prompts/outputs/current]
@@ -50,7 +53,7 @@ fi
 LEDGER="$TARGET_DIR/path-ledger.md"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Extract one row per task: feature-slug|task-id|path
+# Extract one row per task: feature-slug|task-id|change-type|path
 # The task-id is the nearest preceding "## T<n>" or "## R<n>" heading.
 rows_file=$(mktemp)
 for pf in "${plan_files[@]}"; do
@@ -59,6 +62,7 @@ for pf in "${plan_files[@]}"; do
   slug="${base#tasks-}"
   slug="${slug#remediation-}"
   awk -v slug="$slug" '
+    BEGIN { change = "unknown" }
     /^## [TR][0-9]+/ {
       # Grab the task id (T1, R2, …)
       match($0, /[TR][0-9]+/)
@@ -67,6 +71,13 @@ for pf in "${plan_files[@]}"; do
       } else {
         tid = "?"
       }
+      next
+    }
+    /\*\*Change type:\*\*/ {
+      change = $0
+      sub(/.*\*\*Change type:\*\*[[:space:]]*/, "", change)
+      sub(/[[:space:]].*$/, "", change)
+      change = tolower(change)
       next
     }
     /\*\*File:\*\*/ {
@@ -91,7 +102,7 @@ for pf in "${plan_files[@]}"; do
         # Skip empty segments or segments that still look like prose.
         if (p == "") continue
         if (p ~ /[[:space:]]/) continue
-        printf("%s|%s|%s\n", slug, tid, p)
+        printf("%s|%s|%s|%s\n", slug, tid, change, p)
       }
     }
   ' "$pf" >> "$rows_file"
@@ -104,11 +115,12 @@ total_paths=$(wc -l < "$rows_file" | tr -d ' ')
 # Collision A: the same path is claimed by two different (slug, tid)
 # pairs. This is the "two tasks write the same file" case.
 collision_a=$(awk -F'|' '{
-  key = $3
-  pairs[key] = pairs[key] ? pairs[key]"; "$1":"$2 : $1":"$2
+  key = $4
+  pairs[key] = pairs[key] ? pairs[key]"; "$1":"$2"("$3")" : $1":"$2"("$3")"
   count[key]++
+  if ($3 != "modify-existing") blocking[key] = 1
 } END {
-  for (k in count) if (count[k] > 1) print k"\t"pairs[k]
+  for (k in count) if (count[k] > 1 && blocking[k]) print k"\t"pairs[k]
 }' "$rows_file" | sort)
 
 # Collision B: the same basename is declared in two different
@@ -145,7 +157,8 @@ collision_b=$(awk -F'|' '
     return p ~ /\.(kt|swift|ts|tsx|js|jsx|py|go|java|rs|rb|cs|cpp|c|h|hpp|mm|m|php|sol)$/
   }
   {
-    path = $3
+    if ($3 == "modify-existing") next
+    path = $4
     if (!is_source(path)) next
     n = split(path, segs, "/")
     if (n < 2) next
@@ -244,14 +257,14 @@ fi
   else
     current_slug=""
     # Sort rows by slug then task id then path for a stable ledger.
-    sort -t'|' -k1,1 -k2,2 -k3,3 "$rows_file" | while IFS='|' read -r slug tid path; do
+    sort -t'|' -k1,1 -k2,2 -k4,4 "$rows_file" | while IFS='|' read -r slug tid change path; do
       if [ "$slug" != "$current_slug" ]; then
         [ -n "$current_slug" ] && echo ""
         echo "### $slug"
         echo ""
         current_slug="$slug"
       fi
-      echo "- \`$path\` — tasks-$slug.md:$tid"
+      echo "- \`$path\` — tasks-$slug.md:$tid ($change)"
     done
   fi
   echo ""
