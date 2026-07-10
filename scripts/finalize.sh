@@ -52,6 +52,90 @@ resolve_script_dir() {
   cd -P "$(dirname "$source")" && pwd
 }
 SCRIPT_DIR="$(resolve_script_dir)"
+PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=scripts/lib/toolchain.sh
+source "$SCRIPT_DIR/lib/toolchain.sh"
+
+FAILED_ATTEMPT_REPORT="$TARGET_DIR/finalize.failed-attempt.json"
+PROVENANCE_REPORT="$TARGET_DIR/finalize-provenance.json"
+
+if ! require_tool node resolve_node; then
+  resolver_decision="$TOOLCHAIN_LAST_DECISION"
+  write_toolchain_failure_report \
+    "$FAILED_ATTEMPT_REPORT" \
+    "scripts/finalize.sh" \
+    "bash $SCRIPT_DIR/finalize.sh $TARGET_DIR" \
+    "node" \
+    "$resolver_decision" >/dev/null 2>&1 || true
+  exit 2
+fi
+NODE_BIN="$RESOLVED_NODE"
+NODE_DECISION="$TOOLCHAIN_LAST_DECISION"
+
+if ! require_tool npm resolve_npm; then
+  resolver_decision="$TOOLCHAIN_LAST_DECISION"
+  write_toolchain_failure_report \
+    "$FAILED_ATTEMPT_REPORT" \
+    "scripts/finalize.sh" \
+    "bash $SCRIPT_DIR/finalize.sh $TARGET_DIR" \
+    "npm" \
+    "$resolver_decision" >/dev/null 2>&1 || true
+  exit 2
+fi
+NPM_BIN="$RESOLVED_NPM"
+NPM_DECISION="$TOOLCHAIN_LAST_DECISION"
+
+export AI_PROMPT_NODE_PATH="$NODE_BIN"
+export AI_PROMPT_NPM_PATH="$NPM_BIN"
+export AI_PROMPT_PACKAGE_ROOT="$PACKAGE_ROOT"
+
+NODE_VERSION="$(tool_version "$NODE_BIN")"
+NPM_VERSION="$(tool_version "$NPM_BIN")"
+LIBRARY_VERSION="$("$NODE_BIN" -p "require(process.argv[1]).version" "$PACKAGE_ROOT/package.json" 2>/dev/null || printf 'unknown')"
+GIT_COMMIT="unavailable"
+if command -v git >/dev/null 2>&1; then
+  GIT_COMMIT="$(git -C "$PACKAGE_ROOT" rev-parse --verify HEAD 2>/dev/null || printf 'unavailable')"
+fi
+
+SANITIZED_PATH_STATUS="pass"
+SANITIZED_PATH_REASON="configured Node and npm resolve with PATH=/usr/bin:/bin"
+if ! /usr/bin/env -i \
+  PATH="/usr/bin:/bin" \
+  AI_PROMPT_NODE_PATH="$NODE_BIN" \
+  AI_PROMPT_NPM_PATH="$NPM_BIN" \
+  AI_PROMPT_PACKAGE_ROOT="$PACKAGE_ROOT" \
+  /bin/bash -c 'source "$1"; require_tool node resolve_node >/dev/null 2>&1 && require_tool npm resolve_npm >/dev/null 2>&1' \
+  _ "$SCRIPT_DIR/lib/toolchain.sh"
+then
+  SANITIZED_PATH_STATUS="prerequisite-failed"
+  SANITIZED_PATH_REASON="configured Node/npm pair did not resolve with PATH=/usr/bin:/bin"
+fi
+
+echo "Toolchain provenance: library=$LIBRARY_VERSION node=$NODE_VERSION npm=$NPM_VERSION"
+echo "Toolchain provenance: git=$GIT_COMMIT sanitized_path=$SANITIZED_PATH_STATUS"
+
+write_finalize_provenance() {
+  local temporary_report="$1"
+  local final_gate="$2"
+  {
+    printf '{\n'
+    printf '  "generated_by": "scripts/finalize.sh",\n'
+    printf '  "generated_at": "%s",\n' "$(json_escape "$(toolchain_timestamp)")"
+    printf '  "library_version": "%s",\n' "$(json_escape "$LIBRARY_VERSION")"
+    printf '  "git_commit": "%s",\n' "$(json_escape "$GIT_COMMIT")"
+    printf '  "node_version": "%s",\n' "$(json_escape "$NODE_VERSION")"
+    printf '  "npm_version": "%s",\n' "$(json_escape "$NPM_VERSION")"
+    printf '  "node_resolver_decision": "%s",\n' "$(json_escape "$NODE_DECISION")"
+    printf '  "npm_resolver_decision": "%s",\n' "$(json_escape "$NPM_DECISION")"
+    printf '  "script_path": "%s",\n' "$(json_escape "$SCRIPT_DIR/finalize.sh")"
+    printf '  "target_dir": "%s",\n' "$(json_escape "$TARGET_DIR")"
+    printf '  "sanitized_path_check": "%s",\n' "$(json_escape "$SANITIZED_PATH_STATUS")"
+    printf '  "sanitized_path_reason": "%s",\n' "$(json_escape "$SANITIZED_PATH_REASON")"
+    printf '  "atomic_write_status": "success",\n'
+    printf '  "executor_gate": "%s"\n' "$(json_escape "$final_gate")"
+    printf '}\n'
+  } > "$temporary_report"
+}
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
@@ -179,6 +263,15 @@ fi
 
 echo ""
 echo "=== finalize: done ==="
+final_gate="fail"
+if [ $gate_status -eq 0 ]; then
+  final_gate="pass"
+fi
+if ! write_atomic_report "$PROVENANCE_REPORT" write_finalize_provenance "$final_gate"; then
+  echo "❌ finalize provenance report failed: $ATOMIC_REPORT_STATUS"
+  gate_status=2
+fi
+echo "Provenance report: $PROVENANCE_REPORT (atomic_write_status=$ATOMIC_REPORT_STATUS)"
 if [ $gate_status -eq 0 ]; then
   echo "✅ executor_gate: pass"
   echo "The plan is ready for the executor. Report to the user with:"

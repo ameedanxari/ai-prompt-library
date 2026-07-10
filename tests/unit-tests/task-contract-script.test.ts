@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
@@ -18,6 +18,17 @@ function run(command: string): { code: number; out: string } {
       out: `${err.stdout?.toString() ?? ''}${err.stderr?.toString() ?? ''}`,
     };
   }
+}
+
+function runWithEnv(command: string, env: NodeJS.ProcessEnv): { code: number; out: string } {
+  const result = spawnSync('/bin/bash', ['-c', command], {
+    encoding: 'utf8',
+    env,
+  });
+  return {
+    code: result.status ?? 1,
+    out: `${result.stdout ?? ''}${result.stderr ?? ''}`,
+  };
 }
 
 function writeTask(dir: string, filename: string, lines: string[]) {
@@ -107,6 +118,74 @@ describe('build-task-contract.sh', () => {
           test: '`npm test -- feature`',
         });
       expect(run(`bash "${VALIDATE_CONTRACT}" "${sandbox}"`).code).toBe(0);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('produces equivalent contracts with normal and sanitized PATH resolution', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'contract-sanitized-'));
+    try {
+      writeTask(sandbox, 'tasks-feature.md', taskLines({
+        title: 'Feature',
+        file: '`src/feature.ts`',
+        phase: 'mvp',
+        depends: 'none',
+        test: '`npm test -- feature`',
+      }));
+      const normalOut = path.join(sandbox, 'normal.json');
+      const sanitizedOut = path.join(sandbox, 'sanitized.json');
+
+      expect(run(`bash "${BUILD_CONTRACT}" "${sandbox}" "${normalOut}"`).code).toBe(0);
+      const sanitized = runWithEnv(
+        `/bin/bash "${BUILD_CONTRACT}" "${sandbox}" "${sanitizedOut}"`,
+        {
+          HOME: os.homedir(),
+          PATH: '/usr/bin:/bin',
+          AI_PROMPT_NODE_PATH: process.execPath,
+          AI_PROMPT_TOOLCHAIN_LOCAL_LOOKUP: '0',
+        },
+      );
+
+      expect(sanitized.code).toBe(0);
+      expect(JSON.parse(fs.readFileSync(sanitizedOut, 'utf8')))
+        .toEqual(JSON.parse(fs.readFileSync(normalOut, 'utf8')));
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('preserves the last valid contract and records a missing-Node attempt separately', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'contract-prerequisite-'));
+    try {
+      const contractPath = path.join(sandbox, 'task-contract.json');
+      fs.writeFileSync(contractPath, '{"state":"last-valid"}\n', 'utf8');
+
+      const result = runWithEnv(
+        `/bin/bash "${BUILD_CONTRACT}" "${sandbox}" "${contractPath}"`,
+        {
+          HOME: os.homedir(),
+          PATH: '/usr/bin:/bin',
+          AI_PROMPT_TOOLCHAIN_LOCAL_LOOKUP: '0',
+          AI_PROMPT_TOOLCHAIN_PATH_LOOKUP: '0',
+        },
+      );
+
+      expect(result.code).toBe(2);
+      expect(result.out.match(/toolchain prerequisite error:/g)).toHaveLength(1);
+      expect(fs.readFileSync(contractPath, 'utf8')).toBe('{"state":"last-valid"}\n');
+      expect(fs.readdirSync(sandbox).filter((name) => name.includes('.tmp.'))).toEqual([]);
+      const attempt = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'task-contract.failed-attempt.json'), 'utf8'),
+      );
+      expect(attempt).toMatchObject({
+        status: 'prerequisite-failed',
+        script_name: 'scripts/build-task-contract.sh',
+        missing_tool: 'node',
+      });
+      expect(attempt.attempted_command).toContain('dist/task-contract/cli.js');
+      expect(attempt.resolver_decision).toMatch(/node unresolved/);
+      expect(attempt.timestamp).toMatch(/^\d{4}-\d{2}-\d{2}T/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

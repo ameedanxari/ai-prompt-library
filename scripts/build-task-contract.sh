@@ -32,33 +32,89 @@ resolve_script_dir() {
   cd -P "$(dirname "$source")" && pwd
 }
 
+SCRIPT_DIR="$(resolve_script_dir)"
+PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+# shellcheck source=scripts/lib/toolchain.sh
+source "$SCRIPT_DIR/lib/toolchain.sh"
+
+FAILED_ATTEMPT_REPORT="${AI_PROMPT_TOOLCHAIN_FAILED_ATTEMPT_REPORT:-$TARGET_DIR/task-contract.failed-attempt.json}"
+CLI="$PACKAGE_ROOT/dist/task-contract/cli.js"
+ATTEMPTED_COMMAND="node $CLI $TARGET_DIR $OUT"
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "task contract: target directory does not exist: $TARGET_DIR" >&2
   exit 2
 fi
 
-if ! command -v node >/dev/null 2>&1; then
-  echo "task contract: node not found" >&2
+if ! require_tool node resolve_node; then
+  resolver_decision="$TOOLCHAIN_LAST_DECISION"
+  write_toolchain_failure_report \
+    "$FAILED_ATTEMPT_REPORT" \
+    "scripts/build-task-contract.sh" \
+    "$ATTEMPTED_COMMAND" \
+    "node" \
+    "$resolver_decision" >/dev/null 2>&1 || true
   exit 2
 fi
 
-SCRIPT_DIR="$(resolve_script_dir)"
-PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-CLI="$PACKAGE_ROOT/dist/task-contract/cli.js"
-needs_build=0
+NODE_BIN="$RESOLVED_NODE"
+NODE_DECISION="$TOOLCHAIN_LAST_DECISION"
+ISOLATED_BUILD_DIR=""
 
-if [ ! -f "$CLI" ]; then
-  needs_build=1
-elif [ -d "$PACKAGE_ROOT/src/task-contract" ] \
-  && find "$PACKAGE_ROOT/src/task-contract" -type f -newer "$CLI" | grep -q .; then
-  needs_build=1
-fi
+cleanup_isolated_build() {
+  if [ -n "$ISOLATED_BUILD_DIR" ] && [ -d "$ISOLATED_BUILD_DIR" ]; then
+    rm -rf "$ISOLATED_BUILD_DIR"
+  fi
+}
+trap cleanup_isolated_build EXIT
 
-if [ "$needs_build" -eq 1 ] && [ -f "$PACKAGE_ROOT/package.json" ] && [ -f "$PACKAGE_ROOT/tsconfig.build.json" ]; then
-  (cd "$PACKAGE_ROOT" && npm run build --silent) >/dev/null 2>&1 || {
-    echo "task contract: failed to build TypeScript CLI" >&2
-    exit 2
-  }
+if [ -d "$PACKAGE_ROOT/src/task-contract" ] && [ -f "$PACKAGE_ROOT/tsconfig.build.json" ]; then
+  TYPESCRIPT_CLI="$PACKAGE_ROOT/node_modules/typescript/bin/tsc"
+  if [ -f "$TYPESCRIPT_CLI" ]; then
+    ISOLATED_BUILD_DIR="$(mktemp -d "${TMPDIR:-/tmp}/ai-prompt-contract.XXXXXX")" || {
+      echo "task contract: failed to create isolated build directory" >&2
+      exit 2
+    }
+    ISOLATED_BUILD_DIR="$(cd "$ISOLATED_BUILD_DIR" && pwd -P)"
+    printf '{"type":"module"}\n' > "$ISOLATED_BUILD_DIR/package.json"
+    if ! "$NODE_BIN" "$TYPESCRIPT_CLI" \
+      -p "$PACKAGE_ROOT/tsconfig.build.json" \
+      --outDir "$ISOLATED_BUILD_DIR" >/dev/null 2>&1
+    then
+      echo "task contract: failed to build isolated TypeScript CLI" >&2
+      write_toolchain_failure_report \
+        "$FAILED_ATTEMPT_REPORT" \
+        "scripts/build-task-contract.sh" \
+        "node typescript/bin/tsc -p tsconfig.build.json --outDir <isolated>" \
+        "node" \
+        "$NODE_DECISION" >/dev/null 2>&1 || true
+      exit 2
+    fi
+    CLI="$ISOLATED_BUILD_DIR/task-contract/cli.js"
+  elif [ ! -f "$CLI" ]; then
+    if ! require_tool npm resolve_npm; then
+      resolver_decision="$TOOLCHAIN_LAST_DECISION"
+      write_toolchain_failure_report \
+        "$FAILED_ATTEMPT_REPORT" \
+        "scripts/build-task-contract.sh" \
+        "npm run build --silent" \
+        "npm" \
+        "$resolver_decision" >/dev/null 2>&1 || true
+      exit 2
+    fi
+    NPM_BIN="$RESOLVED_NPM"
+    NODE_DIR="$(dirname "$NODE_BIN")"
+    (cd "$PACKAGE_ROOT" && PATH="$NODE_DIR:$PATH" "$NPM_BIN" run build --silent) >/dev/null 2>&1 || {
+      echo "task contract: failed to build TypeScript CLI" >&2
+      write_toolchain_failure_report \
+        "$FAILED_ATTEMPT_REPORT" \
+        "scripts/build-task-contract.sh" \
+        "npm run build --silent" \
+        "npm" \
+        "$TOOLCHAIN_LAST_DECISION" >/dev/null 2>&1 || true
+      exit 2
+    }
+  fi
 fi
 
 if [ ! -f "$CLI" ]; then
@@ -67,4 +123,17 @@ if [ ! -f "$CLI" ]; then
   exit 2
 fi
 
-node "$CLI" "$TARGET_DIR" "$OUT"
+generate_task_contract() {
+  local temporary_report="$1"
+  "$NODE_BIN" "$CLI" "$TARGET_DIR" "$temporary_report"
+}
+
+if ! write_atomic_report "$OUT" generate_task_contract; then
+  echo "task contract: generation failed; previous report preserved" >&2
+  exit 2
+fi
+
+printf 'task contract report committed atomically: %s (node: %s; resolver: %s)\n' \
+  "$OUT" \
+  "$(tool_version "$NODE_BIN")" \
+  "$NODE_DECISION"

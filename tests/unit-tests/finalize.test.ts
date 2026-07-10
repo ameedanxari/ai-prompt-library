@@ -95,6 +95,22 @@ describe('finalize.sh', () => {
       const report = fs.readFileSync(path.join(sandbox, 'revise-report.md'), 'utf8');
       expect(report.split('\n')[0]).toBe('---');
       expect(report).toMatch(/executor_gate: pass/);
+      expect(out).toMatch(/Toolchain provenance: library=1\.0\.0 node=v?\d+/);
+      expect(out).toMatch(/sanitized_path=pass/);
+      const provenance = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'finalize-provenance.json'), 'utf8'),
+      );
+      expect(provenance).toMatchObject({
+        generated_by: 'scripts/finalize.sh',
+        library_version: '1.0.0',
+        sanitized_path_check: 'pass',
+        atomic_write_status: 'success',
+        executor_gate: 'pass',
+      });
+      expect(provenance.node_version).toMatch(/^v?\d+/);
+      expect(provenance.npm_version).not.toBe('unavailable');
+      expect(provenance.script_path).toBe(FINALIZE);
+      expect(provenance.target_dir).toBe(sandbox);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -268,5 +284,44 @@ describe('finalize.sh', () => {
     const { code, out } = run(`bash "${FINALIZE}" "/nonexistent/dir-that-does-not-exist"`);
     expect(code).not.toBe(0);
     expect(out).toMatch(/target directory does not exist/);
+  });
+
+  it('fails before mutating plan reports when Node discovery is unavailable', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'finalize-prerequisite-'));
+    try {
+      const taskPath = path.join(sandbox, 'tasks-alpha.md');
+      const priorReport = '---\nexecutor_gate: pass\n---\n';
+      const uncorrectedTask = [
+        '## T1 - alpha',
+        '- **Closes user story:** As a user, I want alpha so that beta.',
+      ].join('\n');
+      fs.writeFileSync(path.join(sandbox, 'revise-report.md'), priorReport, 'utf8');
+      fs.writeFileSync(taskPath, uncorrectedTask, 'utf8');
+
+      const command = [
+        '/usr/bin/env -i',
+        `HOME="${os.homedir()}"`,
+        'PATH="/usr/bin:/bin"',
+        'AI_PROMPT_TOOLCHAIN_LOCAL_LOOKUP=0',
+        'AI_PROMPT_TOOLCHAIN_PATH_LOOKUP=0',
+        `/bin/bash "${FINALIZE}" "${sandbox}" 2>&1`,
+      ].join(' ');
+      const { out, code } = run(command);
+
+      expect(code).toBe(2);
+      expect(out.match(/toolchain prerequisite error:/g)).toHaveLength(1);
+      expect(fs.readFileSync(path.join(sandbox, 'revise-report.md'), 'utf8')).toBe(priorReport);
+      expect(fs.readFileSync(taskPath, 'utf8')).toBe(uncorrectedTask);
+      const attempt = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'finalize.failed-attempt.json'), 'utf8'),
+      );
+      expect(attempt).toMatchObject({
+        status: 'prerequisite-failed',
+        script_name: 'scripts/finalize.sh',
+        missing_tool: 'node',
+      });
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
   });
 });
