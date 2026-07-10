@@ -175,6 +175,30 @@ could not see):
   silent skip; the executor cannot declare the run complete until
   each one is either executed or explicitly marked.
 
+## Completion semantics
+
+The library treats completion as a set of independent dimensions, not
+one product-facing word. A run can be planning-complete or
+artifact-complete while still lacking production-flow verification or
+release readiness.
+
+| Dimension | Meaning |
+|---|---|
+| Planning | The engine produced instantiated plan files and the revise gate passed. |
+| Artifact accounting | Every declared `File:` path exists or is explicitly blocked, failed, or deferred. |
+| Fixture verification | Fixture or harness evidence passed for the declared fixture graph. |
+| Production verification | Required production composition roots and primary flows passed their evidence gates. |
+| Partial / blocked state | Blocked, failed, deferred, or unresolved external tasks remain visible. |
+| Release readiness | Machine-readable release and promotion gates passed. |
+
+`next_task: null` means only that no locally runnable task remains. It
+does not imply verified production behavior, release readiness, store
+approval, external-account completion, or human-review approval. Older
+path-only reports should be interpreted as artifact accounting evidence
+only. When unresolved blockers remain, the handoff state is `partial`
+or `blocked`; the executor must not collapse that state into bare
+product completion.
+
 **Stage guard during Step 3:** `scripts/step3-progress.sh` scans the
 features files on disk and lists every feature with `[x]` (tasks file
 present) or `[ ]` (still missing). The engine consults it between

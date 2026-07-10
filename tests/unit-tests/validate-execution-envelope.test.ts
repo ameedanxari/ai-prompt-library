@@ -105,6 +105,11 @@ describe('validate-execution-envelope.sh', () => {
       expect(code).toBe(0);
       expect(report!).toMatch(/envelope_state: honest/);
       expect(report!).toMatch(/silent_skips: 0/);
+      expect(report!).toMatch(/artifact_accounting: pass/);
+      expect(report!).toMatch(/production_verification: fail/);
+      expect(report!).toMatch(/release_ready: false/);
+      expect(report!).toMatch(/next_task: null means no locally runnable task remains/);
+      expect(report!).not.toMatch(/declare the run\s+complete/);
     } finally {
       fs.rmSync(projectRoot, { recursive: true, force: true });
     }
@@ -137,6 +142,8 @@ describe('validate-execution-envelope.sh', () => {
       expect(code).toBe(1);
       expect(report!).toMatch(/envelope_state: silent_skips_detected/);
       expect(report!).toMatch(/silent_skips: 1/);
+      expect(report!).toMatch(/artifact_accounting: fail/);
+      expect(report!).toMatch(/release_ready: false/);
       expect(report!).toMatch(/auth:T2/);
       expect(report!).toMatch(/src\/auth\/login\.ts/);
     } finally {
@@ -169,6 +176,7 @@ describe('validate-execution-envelope.sh', () => {
       const { code, report } = run(planDir, projectRoot);
       expect(code).toBe(0);
       expect(report!).toMatch(/excused_blocked_failed_deferred: 1/);
+      expect(report!).toMatch(/partial_blocked_state: fail/);
     } finally {
       fs.rmSync(projectRoot, { recursive: true, force: true });
     }
