@@ -270,6 +270,62 @@ Any new agent can produce correct continuation behaviour by following
 A weak model must not re-run the audit when an envelope exists. The
 envelope is the source of truth for "where we are".
 
+### Canonical task-unit execution records
+
+Journal prose is a human-readable summary, not the source of truth for
+task status. After every prompt, append one fenced
+`execution-status-record` JSON object for **each R/T unit** in that prompt.
+The `taskId` must equal the unit's `canonicalId` in `task-contract.json`
+(for example `tasks-cleanup.md#T2`). Use this exact shape:
+
+```execution-status-record
+{
+  "taskId": "tasks-cleanup.md#T2",
+  "status": "done",
+  "requiredEvidenceLevel": "integration",
+  "testEvidence": [
+    {
+      "id": "cleanup-integration-test",
+      "level": "integration",
+      "outcome": "pass",
+      "command": "npm test -- cleanup",
+      "recordedAt": "2026-04-19T22:45:03Z",
+      "artifact": "reports/cleanup-integration.json",
+      "environment": "local test runtime"
+    }
+  ],
+  "acceptance": [
+    {
+      "id": "A1",
+      "met": true,
+      "evidenceIds": ["cleanup-integration-test"]
+    }
+  ],
+  "buildEvidence": {
+    "outcome": "pass",
+    "command": "bash scripts/build-gate.sh .",
+    "recordedAt": "2026-04-19T22:46:00Z",
+    "current": true,
+    "sourceRevision": "<git revision or worktree fingerprint>"
+  },
+  "risks": ["integration", "destructive-action"]
+}
+```
+
+`requiredEvidenceLevel` MUST equal the task contract's declared `Evidence
+level`. Every acceptance item needs an evidence link. `done` requires
+passing test evidence at the declared level, current passing build evidence,
+and no unmet acceptance item. Primary-flow, security, privacy, destructive,
+persistence, integration, and data-integrity units fail closed when their
+required evidence record is absent. File existence and path accounting are
+necessary, but they are never sufficient evidence of behavior.
+
+The journal `Status`, canonical record status, and envelope lists must agree.
+Derive the journal status from the unit records: all units `done` permits a
+done prompt; any blocker/failure/deferment must remain visible in both the
+journal and the matching envelope list. Never edit the record to make prose
+look clean.
+
 `status` values:
 - `done` — code changed, test passed, all acceptance met.
 - `blocked` — cannot proceed without user decision (e.g. API mismatch
@@ -317,10 +373,14 @@ repeat:
          retry; only after recovery fails does the prompt become
          `failed` or `blocked`.
       4. Verify the implementation matches the prompt's guidance.
-      5. Run the **Auto-commit pipeline** (see below). It validates
+      5. Build one canonical `execution-status-record` per R/T unit,
+         linking acceptance to test evidence at the unit's declared
+         Evidence level and recording current build evidence.
+      6. Run the **Auto-commit pipeline** (see below). It validates
          the diff against the task's declared scope, then commits.
-      6. Append a log entry.
-      7. Present the ⏸ CHECKPOINT (see below).
+      7. Append the journal entry and canonical records. Derive the
+         journal/envelope status from those records.
+      8. Present the ⏸ CHECKPOINT (see below).
 
     if status != `done`:
       surface the blocker to the user and stop the current phase.
@@ -403,6 +463,10 @@ Show:
 5. **Status** (done / blocked / failed).
 6. **Overall progress** — `N / M prompts complete (P%)`.
    Include counts: `done: X, blocked: Y, failed: Z, remaining: W`.
+   Confirm that every R/T unit in the prompt has a canonical record and
+   that its evidence satisfies the declared `Evidence level`. A missing
+   record or missing required evidence makes the checkpoint `blocked` or
+   `partial`; it cannot be reported as done.
 7. **Design-system review handoff** — if the prompt created or updated
    `docs/design-system/review/index.html`, include:
    - absolute or repo-relative path to the HTML artifact
@@ -635,6 +699,7 @@ null` in the envelope — run:
 bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-order.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-execution-status.sh prompts/outputs/current
 ```
 
 The graph/order checks ensure the executor did not run dependents
@@ -647,6 +712,14 @@ task id is listed in `blocked_tasks` / `failed_tasks` /
 "silent skip" — the executor produced no file for it and did not
 explain why.
 
+The execution-status validator then reads `execution-log.md`,
+`task-contract.json`, `task-graph.json`, and available completion/release
+reports. It rejects done-with-failing-test entries, unmet acceptance,
+missing or stale build evidence, evidence below the declared level, blocker
+drift, dependency drift, and completion/release claims that disagree with
+their gates. **If this validator fails, final handoff is forbidden.** Do not
+set a clean terminal envelope or suppress blockers to make it pass.
+
 Exit codes:
 - `0` → every plan task is accounted for. `next_task: null` is
   permitted. Produce the final summary.
@@ -655,6 +728,13 @@ Exit codes:
   listed row, either execute the task now or add it to
   `blocked_tasks` / `failed_tasks` / `deferred_tasks` with a one-line
   reason and a matching journal entry.
+
+For `validate-execution-status.sh`, exit `0` means records and handoff
+artifacts agree; its report may still classify the run as `partial` or
+`blocked` when unresolved work is honestly represented. Exit `1` means the
+records contradict the handoff and forbids finalization. `next_task: null`
+still means only that no locally runnable task remains; it never upgrades a
+`partial` or `blocked` run to verified production.
 
 Field tests repeatedly produced an envelope reporting
 `next_task: null` with 167/167 done while ~70% of planned files were

@@ -264,6 +264,19 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/resumption contract|any new agent/);
   });
 
+  it('executor fail-closes handoff from canonical execution evidence', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+
+    expect(body).toMatch(/execution-status-record/);
+    expect(body).toMatch(/requiredEvidenceLevel/);
+    expect(body).toMatch(/testEvidence/);
+    expect(body).toMatch(/buildEvidence/);
+    expect(body).toMatch(/validate-execution-status\.sh/);
+    expect(body).toMatch(/final handoff is forbidden/i);
+    expect(body).toMatch(/File existence and path accounting are\s+necessary, but they are never sufficient/);
+    expect(body).toMatch(/next_task: null[\s\S]*never upgrades/);
+  });
+
   it('revise-outputs enumerates coverage checks', () => {
     const body = fs.readFileSync(
       path.join(ORCH, 'revise-outputs.md'),
