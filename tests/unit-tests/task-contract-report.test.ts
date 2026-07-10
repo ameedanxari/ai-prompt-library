@@ -21,6 +21,10 @@ function taskFile(
     evidenceLevel?: string;
     runtimeReachability?: string;
     productionOwner?: string;
+    compositionMap?: string;
+    fixtureAllowance?: string;
+    fixtureRetirementTask?: string;
+    releaseExclusionCheck?: string;
     legacy?: boolean;
   },
 ) {
@@ -59,6 +63,10 @@ function taskFile(
     lines.push(`- **Evidence level:** ${opts.evidenceLevel ?? 'unit'}`);
     lines.push(`- **Runtime reachability:** ${opts.runtimeReachability ?? 'production runtime path'}`);
     if (opts.productionOwner !== undefined) lines.push(`- **Production owner:** ${opts.productionOwner}`);
+    if (opts.compositionMap !== undefined) lines.push(`- **Composition map:** ${opts.compositionMap}`);
+    if (opts.fixtureAllowance !== undefined) lines.push(`- **Fixture allowance:** ${opts.fixtureAllowance}`);
+    if (opts.fixtureRetirementTask !== undefined) lines.push(`- **Fixture retirement task:** ${opts.fixtureRetirementTask}`);
+    if (opts.releaseExclusionCheck !== undefined) lines.push(`- **Release exclusion check:** ${opts.releaseExclusionCheck}`);
   }
 
   return parsePlanTaskFile(filename, lines.join('\n'));
@@ -388,6 +396,30 @@ describe('task contract report', () => {
       'missing-artifact-kind',
       'missing-evidence-level',
       'missing-runtime-reachability',
+    ]);
+  });
+
+  it('reports invalid fixture composition and incomplete allowance contracts', () => {
+    const report = buildTaskContractReport([
+      taskFile('tasks-fixture.md', {
+        file: '`src/fixture.ts`',
+        phase: 'mvp',
+        depends: 'none',
+        test: '`npm test -- fixture`',
+        compositionMap: 'temporary-ish',
+        fixtureAllowance: 'owner=Platform; expiry=2099-12-31',
+      }),
+    ]);
+
+    expect(report.units[0]).toMatchObject({
+      invalidCompositionMap: 'temporary-ish',
+      fixtureAllowanceMissingRetirementTask: true,
+      fixtureAllowanceMissingReleaseExclusionCheck: true,
+    });
+    expect(report.issues.map((issue) => issue.code)).toEqual([
+      'fixture-allowance-missing-release-exclusion-check',
+      'fixture-allowance-missing-retirement-task',
+      'invalid-composition-map',
     ]);
   });
 

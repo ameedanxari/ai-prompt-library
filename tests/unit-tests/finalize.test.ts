@@ -119,6 +119,14 @@ describe('finalize.sh', () => {
         applicable: false,
       });
       expect(out).toMatch(/Walking-skeleton report: .*walking-skeleton-report\.json/);
+      const fixtureIsolation = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'fixture-isolation-report.json'), 'utf8'),
+      );
+      expect(fixtureIsolation).toMatchObject({
+        status: 'not-applicable',
+        applicable: false,
+      });
+      expect(out).toMatch(/Fixture-isolation report: .*fixture-isolation-report\.json/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -284,6 +292,73 @@ describe('finalize.sh', () => {
       expect(report.issues).toContainEqual(expect.objectContaining({
         code: 'missing-walking-skeleton',
         surface: 'ios',
+      }));
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('promotes unresolved fixture-only production evidence to a failing finalize gate', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'finalize-fixture-isolation-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'features-fixture.md'), '# Features — Fixture\n\n## fixture\nx\n');
+      fs.writeFileSync(path.join(sandbox, 'tasks-fixture.md'), [
+        '## T1 · temporary fixture wiring',
+        '- **Closes user story:** As a developer, I want temporary wiring, so that UI work can proceed.',
+        '- **Requirement IDs:** REQ-FIXTURE-001',
+        '- **Artifact kind:** runtime-source',
+        '- **Evidence level:** ui-fixture',
+        '- **Runtime reachability:** primary-flow composition root',
+        '- **Production owner:** Application shell',
+        '- **Composition map:** test-fixture',
+        '- **Fixture allowance:** owner=Platform; expiry=2099-12-31; reason=service pending',
+        '- **Fixture retirement task:** `tasks-fixture.md#T2`',
+        '- **Release exclusion check:** `npm run verify:no-fixtures`',
+        '- **Change type:** create-new',
+        '- **File:** `src/fixture.ts`',
+        '- **Depends on:** none',
+        '- **Precise change:** add isolated fixture composition.',
+        '- **Acceptance:**',
+        '  - Fixture composition is isolated.',
+        '  - The allowance is explicit.',
+        '  - UI fixture evidence passes.',
+        '- **Test:** `npm test -- fixture`',
+        '- **Estimated LOC:** ~10',
+        '- **Phase:** mvp',
+        '',
+        '## T2 · production replacement',
+        '- **Closes user story:** As a user, I want production wiring, so that the shipped flow uses real adapters.',
+        '- **Requirement IDs:** REQ-FIXTURE-002',
+        '- **Artifact kind:** runtime-source',
+        '- **Evidence level:** unit',
+        '- **Runtime reachability:** production composition root',
+        '- **Production owner:** Application shell',
+        '- **Composition map:** production',
+        '- **Change type:** create-new',
+        '- **File:** `src/production.ts`',
+        '- **Depends on:** T1 (retires temporary fixture wiring)',
+        '- **Precise change:** replace fixture construction with production adapters.',
+        '- **Acceptance:**',
+        '  - Production adapters are constructed.',
+        '  - Fixture wiring is excluded.',
+        '  - Production behavior is tested.',
+        '- **Test:** `npm test -- production`',
+        '- **Estimated LOC:** ~10',
+        '- **Phase:** mvp',
+        '',
+      ].join('\n'));
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# External Accounts Required\n');
+      writeStreamAStubs(sandbox);
+
+      const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/fixture-isolation validation failed/);
+      expect(out).toMatch(/fixture-isolation-report\.json/);
+      const report = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'fixture-isolation-report.json'), 'utf8'),
+      );
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'fixture-only-production-verification',
       }));
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });

@@ -21,10 +21,18 @@ export const EVIDENCE_LEVELS = [
   'manual-review',
   'external',
 ] as const;
+export const COMPOSITION_MAPS = [
+  'production',
+  'test-fixture',
+  'screenshot',
+  'preview',
+  'demo',
+] as const;
 
 export type TaskPhase = (typeof PHASES)[number];
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
 export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
+export type CompositionMap = (typeof COMPOSITION_MAPS)[number];
 export type TaskSchemaVersion = 2 | 'legacy';
 export type PlanFileKind = 'tasks' | 'remediation';
 
@@ -60,6 +68,13 @@ export interface ParsedTaskUnit {
   invalidEvidenceLevel?: string;
   runtimeReachability?: string;
   productionOwner?: string;
+  compositionMap?: CompositionMap;
+  invalidCompositionMap?: string;
+  fixtureAllowance?: string;
+  fixtureRetirementTask?: string;
+  releaseExclusionCheck?: string;
+  fixtureAllowanceMissingRetirementTask?: true;
+  fixtureAllowanceMissingReleaseExclusionCheck?: true;
 }
 
 export interface ParsedPlanFile {
@@ -373,7 +388,34 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
         hasTypedMetadata = true;
         unit.productionOwner = value;
         break;
+      case 'composition map': {
+        hasTypedMetadata = true;
+        const compositionMapValue = normalizeEnumValue(value);
+        if (isCompositionMap(compositionMapValue)) {
+          unit.compositionMap = compositionMapValue;
+        } else {
+          unit.invalidCompositionMap = value;
+        }
+        break;
+      }
+      case 'fixture allowance':
+        hasTypedMetadata = true;
+        unit.fixtureAllowance = value;
+        break;
+      case 'fixture retirement task':
+        hasTypedMetadata = true;
+        unit.fixtureRetirementTask = value.replace(/^`|`$/g, '').trim();
+        break;
+      case 'release exclusion check':
+        hasTypedMetadata = true;
+        unit.releaseExclusionCheck = value;
+        break;
     }
+  }
+
+  if (unit.fixtureAllowance) {
+    if (!unit.fixtureRetirementTask) unit.fixtureAllowanceMissingRetirementTask = true;
+    if (!unit.releaseExclusionCheck) unit.fixtureAllowanceMissingReleaseExclusionCheck = true;
   }
 
   unit.schemaVersion = hasTypedMetadata ? 2 : 'legacy';
@@ -471,6 +513,10 @@ function isArtifactKind(value: string): value is ArtifactKind {
 
 function isEvidenceLevel(value: string): value is EvidenceLevel {
   return (EVIDENCE_LEVELS as readonly string[]).includes(value);
+}
+
+function isCompositionMap(value: string): value is CompositionMap {
+  return (COMPOSITION_MAPS as readonly string[]).includes(value);
 }
 
 function normalizeEnumValue(raw: string): string {

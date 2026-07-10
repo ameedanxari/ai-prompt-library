@@ -371,6 +371,45 @@ Run the following commands to verify:
 - **Depends on:** none
 ```
 
+### Fixture allowance and retirement contract (MANDATORY)
+
+When audit evidence finds fixture, fake, demo, screenshot, or preview wiring,
+keep the production and non-production composition maps as separate bounded
+contexts. Fixtures are allowed, but a fixture used by a production-owned or
+primary-flow task is a temporary exception and must automatically generate
+retirement work in the same remediation prompt.
+
+Use `Composition map` with exactly one of `production`, `test-fixture`,
+`screenshot`, `preview`, or `demo`. A production-owned fixture task must carry
+all four fields below; do not leave retirement as prose in `What NOT to do`:
+
+```markdown
+- **Composition map:** test-fixture
+- **Fixture allowance:** owner=<team/person>; expiry=<YYYY-MM-DD>; reason=<bounded reason>
+- **Fixture retirement task:** tasks-production-wiring.md#T1
+- **Release exclusion check:** <executable command proving fixtures are absent from release wiring>
+- **Evidence level:** ui-fixture
+```
+
+The referenced retirement unit is mandatory, uses
+`Composition map: production`, owns the real production composition root, and
+requires `Evidence level: integration` or `device`. It must depend on the
+fixture-introducing unit; every release/promotion task must in turn depend on
+the retirement unit. Its test must construct the shipped entry point with real
+production adapters and prove the primary flow. Interface conformance,
+screenshots, previews, and fixture-only UI tests cannot satisfy
+`production_verification`.
+
+Fixture tests must label `Evidence level: ui-fixture`; that label is evidence
+classification, never a production-verification claim.
+
+For each fixture-related gap, mirror this policy into the generated
+`remediation-<gap>.md` requirements and acceptance bullets. Run
+`bash .ai-prompts/scripts/validate-fixture-isolation.sh prompts/outputs/current`
+after task-contract generation. Regenerate the remediation prompt if the
+report lacks an owner, future expiry, replacement task, dependency edge,
+release-build exclusion check, or production-wiring integration evidence.
+
 ### Hard stop conditions
 
 Do not declare the remediation prompt ready if any of these are true:
@@ -385,6 +424,9 @@ Do not declare the remediation prompt ready if any of these are true:
 - A prompt contains no implementation guidance from the loaded module
   (no patterns, no formulas, no code examples).
 - A prompt references a module path that does not exist on disk.
+- A primary-flow fixture default lacks explicit retirement metadata, a
+  dependency edge, a release exclusion check, or production-wiring integration
+  evidence, or a fixture test declares evidence other than `ui-fixture`.
 
 **Write to:** `prompts/outputs/current/remediation-<gap-slug>.md`.
 
@@ -468,7 +510,8 @@ This is the single planning handoff command. It rebuilds
 `phase-order-report.md`,
 `baseline-task-coverage.md`, and
 `user-review-checkpoints.md`, validates screenshot matrices when
-screenshot task files exist, then runs the Revise Gate and writes
+screenshot task files exist, validates fixture-isolation retirement contracts,
+then runs the Revise Gate and writes
 `revise-report.md`.
 
 **`revise-report.md` is a canonical machine-produced artifact.** Line 1

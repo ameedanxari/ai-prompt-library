@@ -8,6 +8,7 @@ import {
   type ParsedPlanFile,
   type ParsedTaskUnit,
   type ArtifactKind,
+  type CompositionMap,
   type EvidenceLevel,
   type PlanGraph,
   type TaskDependencyRef,
@@ -42,6 +43,9 @@ export type TaskContractIssueCode =
   | 'missing-requirement-ids'
   | 'missing-evidence-level'
   | 'invalid-evidence-level'
+  | 'invalid-composition-map'
+  | 'fixture-allowance-missing-retirement-task'
+  | 'fixture-allowance-missing-release-exclusion-check'
   | 'missing-runtime-reachability'
   | 'static-only-behavioral-closure'
   | 'artifact-runtime-path-mismatch'
@@ -123,6 +127,13 @@ export interface TaskContractUnitEntry {
   invalidEvidenceLevel?: string;
   runtimeReachability?: string;
   productionOwner?: string;
+  compositionMap?: CompositionMap;
+  invalidCompositionMap?: string;
+  fixtureAllowance?: string;
+  fixtureRetirementTask?: string;
+  releaseExclusionCheck?: string;
+  fixtureAllowanceMissingRetirementTask?: true;
+  fixtureAllowanceMissingReleaseExclusionCheck?: true;
 }
 
 export interface TaskContractPathOwner {
@@ -236,6 +247,13 @@ function toUnitEntry(file: ParsedPlanFile, unit: ParsedTaskUnit): TaskContractUn
     invalidEvidenceLevel: unit.invalidEvidenceLevel,
     runtimeReachability: unit.runtimeReachability,
     productionOwner: unit.productionOwner,
+    compositionMap: unit.compositionMap,
+    invalidCompositionMap: unit.invalidCompositionMap,
+    fixtureAllowance: unit.fixtureAllowance,
+    fixtureRetirementTask: unit.fixtureRetirementTask,
+    releaseExclusionCheck: unit.releaseExclusionCheck,
+    fixtureAllowanceMissingRetirementTask: unit.fixtureAllowanceMissingRetirementTask,
+    fixtureAllowanceMissingReleaseExclusionCheck: unit.fixtureAllowanceMissingReleaseExclusionCheck,
   };
 }
 
@@ -440,6 +458,36 @@ function buildIssues(
             'missing-runtime-reachability',
             'error',
             `${unit.canonicalId} is missing a Runtime reachability field.`,
+          ));
+        }
+
+        if (unit.invalidCompositionMap) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'invalid-composition-map',
+            'error',
+            `${unit.canonicalId} declares invalid Composition map ${unit.invalidCompositionMap}.`,
+          ));
+        }
+
+        if (unit.fixtureAllowanceMissingRetirementTask) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'fixture-allowance-missing-retirement-task',
+            'error',
+            `${unit.canonicalId} declares a Fixture allowance without a Fixture retirement task.`,
+          ));
+        }
+
+        if (unit.fixtureAllowanceMissingReleaseExclusionCheck) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'fixture-allowance-missing-release-exclusion-check',
+            'error',
+            `${unit.canonicalId} declares a Fixture allowance without a Release exclusion check.`,
           ));
         }
 

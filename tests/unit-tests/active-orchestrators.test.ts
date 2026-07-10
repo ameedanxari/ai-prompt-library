@@ -208,6 +208,18 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/validate-walking-skeleton\.sh/);
   });
 
+  it('audit remediation turns primary-flow fixtures into expiring retirement contracts', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'audit-and-remediate.md'), 'utf8');
+    expect(body).toMatch(/Composition map.*production.*test-fixture.*screenshot.*preview.*demo/s);
+    expect(body).toMatch(/Fixture allowance.*owner=<team\/person>; expiry=<YYYY-MM-DD>/);
+    expect(body).toMatch(/Fixture retirement task/);
+    expect(body).toMatch(/Release exclusion check/);
+    expect(body).toMatch(/Evidence level: ui-fixture/);
+    expect(body).toMatch(/production_verification/);
+    expect(body).toMatch(/production-wiring integration evidence/);
+    expect(body).toMatch(/validate-fixture-isolation\.sh/);
+  });
+
   it('revise.sh exists, is executable, and writes revise-report.md', () => {
     const script = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
     expect(fs.existsSync(script)).toBe(true);

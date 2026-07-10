@@ -116,6 +116,41 @@ describe('task contract parser', () => {
     });
   });
 
+  it('parses fixture composition metadata and exposes incomplete allowance markers', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-fixture.md',
+      [
+        '## T1 - temporary fixture wiring',
+        '- **Composition map:** test-fixture',
+        '- **Fixture allowance:** owner=Platform; expiry=2099-12-31; reason=backend pending',
+        '',
+        '## T2 - complete screenshot allowance',
+        '- **Composition map:** screenshot',
+        '- **Fixture allowance:** owner=Release; expiry=2099-11-30; reason=store capture',
+        '- **Fixture retirement task:** `tasks-production-wiring.md#T1`',
+        '- **Release exclusion check:** `npm run verify:no-fixtures`',
+        '',
+        '## T3 - invalid map',
+        '- **Composition map:** staging-ish',
+      ].join('\n'),
+    );
+
+    expect(parsed.units[0]).toMatchObject({
+      schemaVersion: 2,
+      compositionMap: 'test-fixture',
+      fixtureAllowance: 'owner=Platform; expiry=2099-12-31; reason=backend pending',
+      fixtureAllowanceMissingRetirementTask: true,
+      fixtureAllowanceMissingReleaseExclusionCheck: true,
+    });
+    expect(parsed.units[1]).toMatchObject({
+      compositionMap: 'screenshot',
+      fixtureRetirementTask: 'tasks-production-wiring.md#T1',
+      releaseExclusionCheck: '`npm run verify:no-fixtures`',
+    });
+    expect(parsed.units[1].fixtureAllowanceMissingRetirementTask).toBeUndefined();
+    expect(parsed.units[2]).toMatchObject({ invalidCompositionMap: 'staging-ish' });
+  });
+
   it('extracts pipe-separated platform paths from one File field', () => {
     expect(
       extractFilePaths(
