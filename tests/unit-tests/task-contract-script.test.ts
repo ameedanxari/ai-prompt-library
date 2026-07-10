@@ -146,6 +146,8 @@ describe('build-task-contract.sh', () => {
         'missing-test',
         'missing-test',
         'duplicate-file-path',
+        'legacy-task-schema',
+        'legacy-task-schema',
       ]);
       const validation = run(`bash "${VALIDATE_CONTRACT}" "${sandbox}"`);
       expect(validation.code).toBe(1);

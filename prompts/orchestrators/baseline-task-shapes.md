@@ -60,7 +60,7 @@ the gate.
    (`build-path-ledger.sh`) splits on `|` and registers both paths.
    Files that are inherently single-platform (`.xcprivacy`, `fastlane/`,
    `.github/workflows/`, `AndroidManifest.xml`) are exempt.
-8. **All 7 metadata fields are mandatory.** Every task file MUST
+8. **The original 7 metadata fields remain mandatory.** Every task file MUST
    carry: `Closes user story`, `Change type`, `File`, `Depends on`,
    `Test`, `Estimated LOC`, and `Phase`. The validator enforces this
    as a hard gate — files missing any field will fail.
@@ -71,6 +71,50 @@ the gate.
    foundations behind feature tasks — the Phase field, combined with
    the executor's phase-aware topological sort, is what makes
    filesystem listing and delivery order one and the same.
+10. **Classify the artifact and its evidence.** New tasks MUST also carry
+    `Artifact kind`, `Requirement IDs`, `Evidence level`, and `Runtime
+    reachability`; `Production owner` is optional. Allowed artifact kinds
+    are `runtime-source`, `test-source`, `docs`, `config`, `asset`,
+    `generated-evidence`, and `external-action`. Allowed evidence levels
+    are `static`, `compile`, `unit`, `integration`, `ui-fixture`, `device`,
+    `manual-review`, and `external`. Requirement IDs are comma-separated
+    stable identifiers. Runtime reachability names the production path or
+    explicitly says the artifact is not runtime-reachable.
+
+### Artifact-specific task shapes
+
+Choose fields, paths, tests, and evidence that match the artifact being
+produced. Never use `runtime-source` as a default for artifact-only work.
+
+| Artifact kind | Appropriate shape | Minimum useful evidence |
+|---|---|---|
+| `runtime-source` | Production code on a named runtime path with a production owner when ownership matters. | `compile`, `unit`, `integration`, `ui-fixture`, or `device`, according to behavior risk. |
+| `test-source` | Test harnesses, fixtures, and assertions under canonical test paths. | `unit`, `integration`, `ui-fixture`, or `device`. |
+| `docs` | Documentation or policy text at a documentation path; runtime reachability states `not runtime-reachable`. | `static` or `manual-review`. |
+| `config` | Build, CI, manifest, policy-as-code, store, or release configuration at its real config path. | `static`, `compile`, `integration`, `manual-review`, or `external`. |
+| `asset` | A concrete image, localization catalog, media file, or design asset. | `static`, `ui-fixture`, `device`, or `manual-review`. |
+| `generated-evidence` | A concrete report, screenshot, scan result, or review artifact produced by a named command. | The producing level, usually `integration`, `ui-fixture`, `device`, `manual-review`, or `external`. |
+| `external-action` | A named action in an external console or service, with the account/owner and verification result recorded. | `external` or `manual-review`. |
+
+Documentation, policy, store-listing, release, generated-evidence, and
+external-action tasks MUST use paths and verification appropriate to those
+artifacts. Non-runtime work MUST NOT inject repository, persistence, UI,
+platform-source, Swift, Kotlin, or other runtime boilerplate merely to fit a
+feature template. Behavior-heavy runtime, persistence, permission, deletion,
+security, and data-integrity work cannot close with `Evidence level: static`
+alone.
+
+### Legacy schema migration
+
+Existing seven-field plans that contain none of the typed metadata fields are
+classified as `schemaVersion: legacy`. They continue to parse and validate
+without typed-field errors, but the task-contract report emits an explicit
+`legacy-task-schema` warning for every legacy unit. Migrate a unit atomically:
+once any typed field is added, add `Artifact kind`, `Requirement IDs`,
+`Evidence level`, and `Runtime reachability` together. Missing or invalid
+typed values then become blocking schema-version 2 errors. Do not infer
+`runtime-source`, evidence strength, reachability, or production ownership
+from a filename during migration.
 
 ---
 

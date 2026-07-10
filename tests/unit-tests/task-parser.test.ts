@@ -69,6 +69,53 @@ describe('task contract parser', () => {
     expect(parsed.units[1].dependencies).toEqual([{ raw: 'R1', localTaskId: 'R1' }]);
   });
 
+  it('parses typed artifact and evidence metadata and marks unknown enum values', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-contract.md',
+      [
+        '## T1 - typed task',
+        '- **Artifact kind:** runtime-source',
+        '- **Requirement IDs:** REQ-001, REQ-002, REQ-001',
+        '- **Evidence level:** integration',
+        '- **Runtime reachability:** production composition root',
+        '- **Production owner:** Platform team',
+        '',
+        '## T2 - invalid task',
+        '- **Artifact kind:** executable-prose',
+        '- **Requirement IDs:** REQ-003',
+        '- **Evidence level:** screenshot-ish',
+        '- **Runtime reachability:** not runtime-reachable',
+      ].join('\n'),
+    );
+
+    expect(parsed.units[0]).toMatchObject({
+      schemaVersion: 2,
+      artifactKind: 'runtime-source',
+      requirementIds: ['REQ-001', 'REQ-002'],
+      evidenceLevel: 'integration',
+      runtimeReachability: 'production composition root',
+      productionOwner: 'Platform team',
+    });
+    expect(parsed.units[1]).toMatchObject({
+      schemaVersion: 2,
+      invalidArtifactKind: 'executable-prose',
+      requirementIds: ['REQ-003'],
+      invalidEvidenceLevel: 'screenshot-ish',
+    });
+  });
+
+  it('keeps plans without typed metadata parseable as legacy schema', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-legacy.md',
+      ['## T1 - legacy task', '- **File:** `docs/legacy.md`'].join('\n'),
+    );
+
+    expect(parsed.units[0]).toMatchObject({
+      schemaVersion: 'legacy',
+      requirementIds: [],
+    });
+  });
+
   it('extracts pipe-separated platform paths from one File field', () => {
     expect(
       extractFilePaths(

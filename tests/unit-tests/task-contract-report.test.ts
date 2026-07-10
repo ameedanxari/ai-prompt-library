@@ -16,6 +16,12 @@ function taskFile(
     depends?: string;
     test?: string;
     estimatedLoc?: string;
+    artifactKind?: string;
+    requirementIds?: string;
+    evidenceLevel?: string;
+    runtimeReachability?: string;
+    productionOwner?: string;
+    legacy?: boolean;
   },
 ) {
   const lines = [
@@ -46,6 +52,14 @@ function taskFile(
   if (opts.estimatedLoc !== undefined) lines.push(`- **Estimated LOC:** ${opts.estimatedLoc}`);
   else lines.push('- **Estimated LOC:** +10');
   if (opts.phase !== undefined) lines.push(`- **Phase:** ${opts.phase}`);
+  if (!opts.legacy) {
+    lines.push(`- **Artifact kind:** ${opts.artifactKind ?? 'runtime-source'}`);
+    if (opts.requirementIds !== undefined) lines.push(`- **Requirement IDs:** ${opts.requirementIds}`);
+    else lines.push('- **Requirement IDs:** REQ-DEFAULT-001');
+    lines.push(`- **Evidence level:** ${opts.evidenceLevel ?? 'unit'}`);
+    lines.push(`- **Runtime reachability:** ${opts.runtimeReachability ?? 'production runtime path'}`);
+    if (opts.productionOwner !== undefined) lines.push(`- **Production owner:** ${opts.productionOwner}`);
+  }
 
   return parsePlanTaskFile(filename, lines.join('\n'));
 }
@@ -67,7 +81,7 @@ describe('task contract report', () => {
       }),
     ], { sourceDirectory: 'prompts/outputs/current' });
 
-    expect(report.schemaVersion).toBe(1);
+    expect(report.schemaVersion).toBe(2);
     expect(report.sourceDirectory).toBe('prompts/outputs/current');
     expect(report.summary).toMatchObject({
       fileCount: 2,
@@ -80,6 +94,9 @@ describe('task contract report', () => {
         expand: 0,
         polish: 0,
       },
+      schemaVersionCounts: { current: 2, legacy: 0 },
+      artifactKindCounts: expect.objectContaining({ 'runtime-source': 2 }),
+      evidenceLevelCounts: expect.objectContaining({ unit: 2 }),
       blocked: false,
     });
     expect(report.issues).toEqual([]);
@@ -166,6 +183,10 @@ describe('task contract report', () => {
           '- **Test:** `npm test -- shared-b`',
           '- **Estimated LOC:** +10',
           '- **Phase:** mvp',
+          '- **Artifact kind:** runtime-source',
+          '- **Requirement IDs:** REQ-SHARED-002',
+          '- **Evidence level:** unit',
+          '- **Runtime reachability:** shared runtime module',
         ].join('\n'),
       ),
     ]);
@@ -244,6 +265,10 @@ describe('task contract report', () => {
           '- **Test:** `npm test -- one`',
           '- **Estimated LOC:** +10',
           '- **Phase:** mvp',
+          '- **Artifact kind:** runtime-source',
+          '- **Requirement IDs:** REQ-CYCLE-001',
+          '- **Evidence level:** unit',
+          '- **Runtime reachability:** production runtime path',
           '',
           '## T2 - second',
           '- **Closes user story:** As a user, I want the second task, so that the cycle fixture is complete.',
@@ -258,6 +283,10 @@ describe('task contract report', () => {
           '- **Test:** `npm test -- two`',
           '- **Estimated LOC:** +10',
           '- **Phase:** mvp',
+          '- **Artifact kind:** runtime-source',
+          '- **Requirement IDs:** REQ-CYCLE-002',
+          '- **Evidence level:** unit',
+          '- **Runtime reachability:** production runtime path',
         ].join('\n'),
       ),
     ]);
@@ -274,5 +303,132 @@ describe('task contract report', () => {
         owners: ['tasks-cycle.md#T1', 'tasks-cycle.md#T2'],
       }),
     ]);
+  });
+
+  it('warns without blocking when a complete old task uses the legacy schema', () => {
+    const report = buildTaskContractReport([
+      taskFile('tasks-legacy.md', {
+        file: '`docs/legacy.md`',
+        phase: 'foundation',
+        depends: 'none',
+        test: '`npm test -- legacy`',
+        legacy: true,
+      }),
+    ]);
+
+    expect(report.summary).toMatchObject({
+      schemaVersionCounts: { current: 0, legacy: 1 },
+      blocked: false,
+      issueCounts: { error: 0, warning: 1 },
+    });
+    expect(report.units[0].schemaVersion).toBe('legacy');
+    expect(report.issues).toEqual([
+      expect.objectContaining({
+        code: 'legacy-task-schema',
+        severity: 'warning',
+        canonicalId: 'tasks-legacy.md#T1',
+      }),
+    ]);
+  });
+
+  it('blocks missing and invalid typed metadata without hiding actual values', () => {
+    const report = buildTaskContractReport([
+      taskFile('tasks-invalid-metadata.md', {
+        file: '`src/feature.ts`',
+        phase: 'mvp',
+        depends: 'none',
+        test: '`npm test -- feature`',
+        artifactKind: 'unknown-kind',
+        requirementIds: '',
+        evidenceLevel: 'unknown-level',
+        runtimeReachability: '',
+      }),
+    ]);
+
+    expect(report.summary.blocked).toBe(true);
+    expect(report.units[0]).toMatchObject({
+      schemaVersion: 2,
+      invalidArtifactKind: 'unknown-kind',
+      requirementIds: [],
+      invalidEvidenceLevel: 'unknown-level',
+      runtimeReachability: '',
+    });
+    expect(report.issues.map((issue) => issue.code)).toEqual([
+      'invalid-artifact-kind',
+      'invalid-evidence-level',
+      'missing-requirement-ids',
+      'missing-runtime-reachability',
+    ]);
+  });
+
+  it('blocks partially migrated tasks until every required typed field is present', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-partial.md',
+      [
+        '## T1 - partial migration',
+        '- **Closes user story:** As a planner, I want typed metadata, so that task evidence is explicit.',
+        '- **Change type:** create-new',
+        '- **File:** `src/partial.ts`',
+        '- **Precise change:** add the partial implementation contract.',
+        '- **Acceptance:**',
+        '  - The implementation has a named file.',
+        '  - The contract is machine-readable.',
+        '  - The named test covers the contract.',
+        '- **Depends on:** none',
+        '- **Test:** `npm test -- partial`',
+        '- **Estimated LOC:** +10',
+        '- **Phase:** foundation',
+        '- **Requirement IDs:** REQ-PARTIAL-001',
+      ].join('\n'),
+    );
+    const report = buildTaskContractReport([parsed]);
+
+    expect(report.units[0].schemaVersion).toBe(2);
+    expect(report.issues.map((issue) => issue.code)).toEqual([
+      'missing-artifact-kind',
+      'missing-evidence-level',
+      'missing-runtime-reachability',
+    ]);
+  });
+
+  it('blocks non-runtime artifacts that claim Swift or Kotlin runtime paths', () => {
+    const report = buildTaskContractReport([
+      taskFile('tasks-docs.md', {
+        file: '`ios/App/StoragePolicy.swift` | `android/app/src/main/java/app/StoragePolicy.kt`',
+        phase: 'foundation',
+        depends: 'none',
+        test: '`npm test -- docs`',
+        artifactKind: 'docs',
+        evidenceLevel: 'manual-review',
+        runtimeReachability: 'not runtime-reachable',
+      }),
+    ]);
+
+    expect(report.summary.artifactKindCounts.docs).toBe(1);
+    expect(report.summary.evidenceLevelCounts['manual-review']).toBe(1);
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      code: 'artifact-runtime-path-mismatch',
+      severity: 'error',
+    }));
+  });
+
+  it('rejects static-only evidence for behavior-heavy work', () => {
+    const report = buildTaskContractReport([
+      taskFile('tasks-deletion.md', {
+        title: 'safe deletion behavior',
+        file: '`src/delete.ts`',
+        phase: 'mvp',
+        depends: 'none',
+        test: '`npm test -- deletion`',
+        artifactKind: 'runtime-source',
+        evidenceLevel: 'static',
+        runtimeReachability: 'deletion service runtime path',
+      }),
+    ]);
+
+    expect(report.issues).toContainEqual(expect.objectContaining({
+      code: 'static-only-behavioral-closure',
+      severity: 'error',
+    }));
   });
 });

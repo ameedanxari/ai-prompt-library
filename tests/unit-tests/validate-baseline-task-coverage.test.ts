@@ -6,6 +6,7 @@ import { execSync } from 'node:child_process';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-baseline-task-coverage.sh');
+const BASELINE_RULES = path.join(REPO_ROOT, 'prompts', 'orchestrators', 'baseline-task-shapes.md');
 
 function runValidator(targetDir: string): { code: number; out: string } {
   try {
@@ -32,6 +33,37 @@ function withSandbox(run: (sandbox: string) => void) {
 }
 
 describe('validate-baseline-task-coverage.sh', () => {
+  it('documents every artifact kind, evidence level, and legacy migration rule', () => {
+    const rules = fs.readFileSync(BASELINE_RULES, 'utf8');
+
+    for (const kind of [
+      'runtime-source',
+      'test-source',
+      'docs',
+      'config',
+      'asset',
+      'generated-evidence',
+      'external-action',
+    ]) {
+      expect(rules).toContain(`\`${kind}\``);
+    }
+    for (const level of [
+      'static',
+      'compile',
+      'unit',
+      'integration',
+      'ui-fixture',
+      'device',
+      'manual-review',
+      'external',
+    ]) {
+      expect(rules).toContain(`\`${level}\``);
+    }
+    expect(rules).toMatch(/Non-runtime work MUST NOT inject repository, persistence, UI/);
+    expect(rules).toMatch(/classified as `schemaVersion: legacy`/);
+    expect(rules).toMatch(/legacy-task-schema/);
+  });
+
   it('is executable', () => {
     expect(fs.existsSync(VALIDATOR)).toBe(true);
   });

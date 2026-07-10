@@ -1,13 +1,18 @@
 import {
+  ARTIFACT_KINDS,
+  EVIDENCE_LEVELS,
   PHASES,
   buildFileDependencyGraph,
   buildTaskUnitDependencyGraph,
   parsePlanTaskDirectory,
   type ParsedPlanFile,
   type ParsedTaskUnit,
+  type ArtifactKind,
+  type EvidenceLevel,
   type PlanGraph,
   type TaskDependencyRef,
   type TaskPhase,
+  type TaskSchemaVersion,
 } from './task-parser.js';
 
 export type TaskContractIssueSeverity = 'error' | 'warning';
@@ -32,6 +37,15 @@ export type TaskContractIssueCode =
   | 'missing-phase'
   | 'missing-file-path'
   | 'missing-test'
+  | 'missing-artifact-kind'
+  | 'invalid-artifact-kind'
+  | 'missing-requirement-ids'
+  | 'missing-evidence-level'
+  | 'invalid-evidence-level'
+  | 'missing-runtime-reachability'
+  | 'static-only-behavioral-closure'
+  | 'artifact-runtime-path-mismatch'
+  | 'legacy-task-schema'
   | 'duplicate-file-path';
 
 export interface TaskContractReportOptions {
@@ -46,6 +60,9 @@ export interface TaskContractSummary {
   phaseCounts: Record<TaskPhase, number>;
   missingPhaseCount: number;
   invalidPhaseCount: number;
+  schemaVersionCounts: Record<'current' | 'legacy', number>;
+  artifactKindCounts: Record<ArtifactKind, number>;
+  evidenceLevelCounts: Record<EvidenceLevel, number>;
   issueCounts: Record<TaskContractIssueSeverity, number>;
   blocked: boolean;
 }
@@ -75,6 +92,9 @@ export interface TaskContractFileEntry {
   filePaths: string[];
   phases: TaskPhase[];
   invalidPhases: string[];
+  schemaVersions: TaskSchemaVersion[];
+  artifactKinds: ArtifactKind[];
+  evidenceLevels: EvidenceLevel[];
 }
 
 export interface TaskContractUnitEntry {
@@ -95,6 +115,14 @@ export interface TaskContractUnitEntry {
   estimatedLoc?: string;
   phase?: TaskPhase;
   invalidPhase?: string;
+  schemaVersion: TaskSchemaVersion;
+  artifactKind?: ArtifactKind;
+  invalidArtifactKind?: string;
+  requirementIds: string[];
+  evidenceLevel?: EvidenceLevel;
+  invalidEvidenceLevel?: string;
+  runtimeReachability?: string;
+  productionOwner?: string;
 }
 
 export interface TaskContractPathOwner {
@@ -109,7 +137,7 @@ export interface TaskContractPathClaim {
 }
 
 export interface TaskContractReport {
-  schemaVersion: 1;
+  schemaVersion: 2;
   generatedBy: 'src/task-contract/task-contract-report.ts';
   sourceDirectory?: string;
   summary: TaskContractSummary;
@@ -137,7 +165,7 @@ export function buildTaskContractReport(
   const issues = buildIssues(sortedFiles, fileGraph, taskUnitGraph, duplicatePathClaims);
 
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     generatedBy: 'src/task-contract/task-contract-report.ts',
     sourceDirectory: options.sourceDirectory,
     summary: buildSummary(sortedFiles, issues),
@@ -175,6 +203,9 @@ function toFileEntry(file: ParsedPlanFile, graph: PlanGraph): TaskContractFileEn
     filePaths: uniqueSorted(file.units.flatMap((unit) => unit.filePaths)),
     phases: uniqueSorted(file.units.map((unit) => unit.phase).filter(isDefined)),
     invalidPhases: uniqueSorted(file.units.map((unit) => unit.invalidPhase).filter(isDefined)),
+    schemaVersions: uniqueSchemaVersions(file.units.map((unit) => unit.schemaVersion)),
+    artifactKinds: uniqueSorted(file.units.map((unit) => unit.artifactKind).filter(isDefined)),
+    evidenceLevels: uniqueSorted(file.units.map((unit) => unit.evidenceLevel).filter(isDefined)),
   };
 }
 
@@ -197,6 +228,14 @@ function toUnitEntry(file: ParsedPlanFile, unit: ParsedTaskUnit): TaskContractUn
     estimatedLoc: unit.estimatedLoc,
     phase: unit.phase,
     invalidPhase: unit.invalidPhase,
+    schemaVersion: unit.schemaVersion,
+    artifactKind: unit.artifactKind,
+    invalidArtifactKind: unit.invalidArtifactKind,
+    requirementIds: [...unit.requirementIds],
+    evidenceLevel: unit.evidenceLevel,
+    invalidEvidenceLevel: unit.invalidEvidenceLevel,
+    runtimeReachability: unit.runtimeReachability,
+    productionOwner: unit.productionOwner,
   };
 }
 
@@ -205,10 +244,20 @@ function buildSummary(
   issues: TaskContractIssue[],
 ): TaskContractSummary {
   const phaseCounts = Object.fromEntries(PHASES.map((phase) => [phase, 0])) as Record<TaskPhase, number>;
+  const artifactKindCounts = Object.fromEntries(
+    ARTIFACT_KINDS.map((kind) => [kind, 0]),
+  ) as Record<ArtifactKind, number>;
+  const evidenceLevelCounts = Object.fromEntries(
+    EVIDENCE_LEVELS.map((level) => [level, 0]),
+  ) as Record<EvidenceLevel, number>;
+  const schemaVersionCounts = { current: 0, legacy: 0 };
   let missingPhaseCount = 0;
   let invalidPhaseCount = 0;
 
   for (const unit of files.flatMap((file) => file.units)) {
+    schemaVersionCounts[unit.schemaVersion === 2 ? 'current' : 'legacy'] += 1;
+    if (unit.artifactKind) artifactKindCounts[unit.artifactKind] += 1;
+    if (unit.evidenceLevel) evidenceLevelCounts[unit.evidenceLevel] += 1;
     if (unit.phase) {
       phaseCounts[unit.phase] += 1;
     } else if (unit.invalidPhase) {
@@ -229,6 +278,9 @@ function buildSummary(
     phaseCounts,
     missingPhaseCount,
     invalidPhaseCount,
+    schemaVersionCounts,
+    artifactKindCounts,
+    evidenceLevelCounts,
     issueCounts: {
       error: errorCount,
       warning: warningCount,
@@ -326,6 +378,97 @@ function buildIssues(
     }
 
     for (const unit of file.units) {
+      if (unit.schemaVersion === 'legacy') {
+        issues.push(unitIssue(
+          file,
+          unit,
+          'legacy-task-schema',
+          'warning',
+          `${unit.canonicalId} uses the legacy task schema; add Artifact kind, Requirement IDs, Evidence level, and Runtime reachability to migrate to schema version 2.`,
+        ));
+      } else {
+        if (unit.invalidArtifactKind) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'invalid-artifact-kind',
+            'error',
+            `${unit.canonicalId} declares invalid Artifact kind ${unit.invalidArtifactKind}.`,
+          ));
+        } else if (!unit.artifactKind) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'missing-artifact-kind',
+            'error',
+            `${unit.canonicalId} is missing an Artifact kind field.`,
+          ));
+        }
+
+        if (unit.requirementIds.length === 0) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'missing-requirement-ids',
+            'error',
+            `${unit.canonicalId} is missing stable Requirement IDs.`,
+          ));
+        }
+
+        if (unit.invalidEvidenceLevel) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'invalid-evidence-level',
+            'error',
+            `${unit.canonicalId} declares invalid Evidence level ${unit.invalidEvidenceLevel}.`,
+          ));
+        } else if (!unit.evidenceLevel) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'missing-evidence-level',
+            'error',
+            `${unit.canonicalId} is missing an Evidence level field.`,
+          ));
+        }
+
+        if (!unit.runtimeReachability?.trim()) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'missing-runtime-reachability',
+            'error',
+            `${unit.canonicalId} is missing a Runtime reachability field.`,
+          ));
+        }
+
+        if (
+          unit.evidenceLevel === 'static'
+          && unit.artifactKind
+          && isImplementationArtifact(unit.artifactKind)
+          && describesBehavioralClosure(unit)
+        ) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'static-only-behavioral-closure',
+            'error',
+            `${unit.canonicalId} uses static evidence for behavior-heavy work; require compile, unit, integration, UI, device, manual-review, or external evidence.`,
+          ));
+        }
+
+        if (unit.artifactKind && isNonRuntimeArtifact(unit.artifactKind) && claimsRuntimeSource(unit)) {
+          issues.push(unitIssue(
+            file,
+            unit,
+            'artifact-runtime-path-mismatch',
+            'error',
+            `${unit.canonicalId} classifies non-runtime work as ${unit.artifactKind} but claims a Swift, Kotlin, or production runtime source path.`,
+          ));
+        }
+      }
+
       if (unit.invalidPhase) {
         issues.push({
           code: 'invalid-phase',
@@ -522,6 +665,56 @@ function hasDependencyReason(raw: string): boolean {
 function isTautologicalAcceptance(raw: string): boolean {
   return /^(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?$/i
     .test(raw.trim());
+}
+
+function unitIssue(
+  file: ParsedPlanFile,
+  unit: ParsedTaskUnit,
+  code: TaskContractIssueCode,
+  severity: TaskContractIssueSeverity,
+  message: string,
+): TaskContractIssue {
+  return {
+    code,
+    severity,
+    message,
+    file: file.filename,
+    unitId: unit.id,
+    canonicalId: unit.canonicalId,
+  };
+}
+
+function describesBehavioralClosure(unit: ParsedTaskUnit): boolean {
+  const text = [
+    unit.title,
+    unit.closesUserStory,
+    unit.preciseChange,
+    ...unit.acceptanceBullets,
+  ].filter(isDefined).join(' ').toLowerCase();
+
+  return /\b(runtime behavior|behaviou?r|persistence|persist(?:s|ed|ence)?|permission|delet(?:e|es|ed|ion)|security|secure|data[ -]integrity|integrity)\b/.test(text);
+}
+
+function isNonRuntimeArtifact(kind: ArtifactKind): boolean {
+  return !['runtime-source', 'test-source'].includes(kind);
+}
+
+function isImplementationArtifact(kind: ArtifactKind): boolean {
+  return ['runtime-source', 'test-source', 'config'].includes(kind);
+}
+
+function claimsRuntimeSource(unit: ParsedTaskUnit): boolean {
+  const reachability = unit.runtimeReachability ?? '';
+  return unit.filePaths.some((filePath) => (
+    /(?:^|[\/])(?:src[\/]main|Sources)[\/]/i.test(filePath)
+    || /\.(?:swift|kt)$/i.test(filePath)
+  ))
+    || /\b(?:Swift|Kotlin)\b.*\b(?:runtime|source|path)\b/i.test(reachability)
+    || /\b(?:runtime|source|path)\b.*\b(?:Swift|Kotlin)\b/i.test(reachability);
+}
+
+function uniqueSchemaVersions(values: TaskSchemaVersion[]): TaskSchemaVersion[] {
+  return [...new Set(values)].sort((a, b) => String(a).localeCompare(String(b)));
 }
 
 function uniqueSorted<T extends string>(values: T[]): T[] {

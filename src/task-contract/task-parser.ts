@@ -2,8 +2,30 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 
 export const PHASES = ['foundation', 'mvp', 'expand', 'polish'] as const;
+export const ARTIFACT_KINDS = [
+  'runtime-source',
+  'test-source',
+  'docs',
+  'config',
+  'asset',
+  'generated-evidence',
+  'external-action',
+] as const;
+export const EVIDENCE_LEVELS = [
+  'static',
+  'compile',
+  'unit',
+  'integration',
+  'ui-fixture',
+  'device',
+  'manual-review',
+  'external',
+] as const;
 
 export type TaskPhase = (typeof PHASES)[number];
+export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
+export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
+export type TaskSchemaVersion = 2 | 'legacy';
 export type PlanFileKind = 'tasks' | 'remediation';
 
 export interface TaskDependencyRef {
@@ -29,6 +51,15 @@ export interface ParsedTaskUnit {
   estimatedLoc?: string;
   phase?: TaskPhase;
   invalidPhase?: string;
+  schemaVersion: TaskSchemaVersion;
+  artifactKind?: ArtifactKind;
+  invalidArtifactKind?: string;
+  requirementIdsRaw?: string;
+  requirementIds: string[];
+  evidenceLevel?: EvidenceLevel;
+  invalidEvidenceLevel?: string;
+  runtimeReachability?: string;
+  productionOwner?: string;
 }
 
 export interface ParsedPlanFile {
@@ -255,7 +286,10 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
     acceptanceBullets: [],
     filePaths: [],
     dependencies: [],
+    schemaVersion: 'legacy',
+    requirementIds: [],
   };
+  let hasTypedMetadata = false;
 
   for (let index = 0; index < section.lines.length; index += 1) {
     const line = section.lines[index];
@@ -303,9 +337,46 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
         }
         break;
       }
+      case 'artifact kind': {
+        hasTypedMetadata = true;
+        const artifactKindValue = normalizeEnumValue(value);
+        if (isArtifactKind(artifactKindValue)) {
+          unit.artifactKind = artifactKindValue;
+        } else {
+          unit.invalidArtifactKind = value;
+        }
+        break;
+      }
+      case 'requirement ids':
+        hasTypedMetadata = true;
+        unit.requirementIdsRaw = value;
+        unit.requirementIds = unique(value
+          .split(',')
+          .map((requirementId) => requirementId.trim())
+          .filter(Boolean));
+        break;
+      case 'evidence level': {
+        hasTypedMetadata = true;
+        const evidenceLevelValue = normalizeEnumValue(value);
+        if (isEvidenceLevel(evidenceLevelValue)) {
+          unit.evidenceLevel = evidenceLevelValue;
+        } else {
+          unit.invalidEvidenceLevel = value;
+        }
+        break;
+      }
+      case 'runtime reachability':
+        hasTypedMetadata = true;
+        unit.runtimeReachability = value;
+        break;
+      case 'production owner':
+        hasTypedMetadata = true;
+        unit.productionOwner = value;
+        break;
     }
   }
 
+  unit.schemaVersion = hasTypedMetadata ? 2 : 'legacy';
   return unit;
 }
 
@@ -392,6 +463,18 @@ function normalizeFieldName(raw: string): string {
 
 function isTaskPhase(value: string): value is TaskPhase {
   return (PHASES as readonly string[]).includes(value);
+}
+
+function isArtifactKind(value: string): value is ArtifactKind {
+  return (ARTIFACT_KINDS as readonly string[]).includes(value);
+}
+
+function isEvidenceLevel(value: string): value is EvidenceLevel {
+  return (EVIDENCE_LEVELS as readonly string[]).includes(value);
+}
+
+function normalizeEnumValue(raw: string): string {
+  return raw.replace(/[.。]$/, '').trim().toLowerCase();
 }
 
 function unique<T>(values: T[]): T[] {
