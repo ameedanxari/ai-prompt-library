@@ -8,6 +8,7 @@
 #   3. Rewrites project-level AGENTS.md to the current drill-down flow.
 #   4. Clears prompts/outputs/current/ so the engine starts clean.
 #   5. Leaves MY_PROJECT.md untouched if it exists; creates from template if not.
+#   6. Writes clean-state-preflight.md with reset provenance and tool readiness.
 #
 # What it does NOT touch:
 #   - Your application source (src/, backend/, frontend/, android/, ios/, …)
@@ -47,6 +48,8 @@ STALE_ROOT_FILES=(
   ARCHITECTURE_DECISIONS.md
   KNOWN_ISSUES.md
 )
+OUTPUT_ROOT="prompts/outputs/current"
+REMOVED_ARTIFACTS=()
 
 echo "🧹 AI Prompt Library — reset integration"
 echo "========================================"
@@ -71,17 +74,18 @@ fi
 
 # 1. Purge stale state files
 echo ""
-echo "[1/5] Purging stale state files…"
+echo "[1/6] Purging stale state files…"
 for f in "${STALE_ROOT_FILES[@]}"; do
   if [ -e "$f" ]; then
     rm -f "$f"
+    REMOVED_ARTIFACTS+=("$f")
     echo "   removed: $f"
   fi
 done
 
 # 2. Refresh IDE steering (copies, overwriting old)
 echo ""
-echo "[2/5] Refreshing IDE steering files…"
+echo "[2/6] Refreshing IDE steering files…"
 STEERING_SRC="$LIB_DIR/prompts/steering"
 for dest in .kiro/steering .cursor/rules .windsurf/rules .continue/rules .vscode/ai-steering .ai-steering; do
   if [ -d "$dest" ]; then
@@ -92,7 +96,7 @@ done
 
 # 3. Rewrite project-level AGENTS.md
 echo ""
-echo "[3/5] Rewriting project-level AGENTS.md…"
+echo "[3/6] Rewriting project-level AGENTS.md…"
 # Preserve user-written content under a "## Project-specific" section if it exists.
 USER_BLOCK=""
 if [ -f AGENTS.md ]; then
@@ -153,37 +157,127 @@ fi
 
 # 4. Clear engine outputs
 echo ""
-echo "[4/5] Clearing previous engine outputs…"
-if [ -d prompts/outputs/current ]; then
-  rm -rf prompts/outputs/current
-  mkdir -p prompts/outputs/current/planning/features \
-           prompts/outputs/current/planning/tasks \
-           prompts/outputs/current/execution/task-results \
-           prompts/outputs/current/logs/build-gate \
-           prompts/outputs/current/logs/harness \
-           prompts/outputs/current/logs/revise \
-           prompts/outputs/current/logs/safety
-  echo "   reset: prompts/outputs/current/"
+echo "[4/6] Clearing previous engine outputs…"
+if [ -d "$OUTPUT_ROOT" ]; then
+  while IFS= read -r artifact; do
+    [ -n "$artifact" ] && REMOVED_ARTIFACTS+=("$artifact")
+  done < <(find "$OUTPUT_ROOT" \( -type f -o -type l \) -print | LC_ALL=C sort)
+  rm -rf "$OUTPUT_ROOT"
+  mkdir -p "$OUTPUT_ROOT/planning/features" \
+           "$OUTPUT_ROOT/planning/tasks" \
+           "$OUTPUT_ROOT/execution/task-results" \
+           "$OUTPUT_ROOT/logs/build-gate" \
+           "$OUTPUT_ROOT/logs/harness" \
+           "$OUTPUT_ROOT/logs/revise" \
+           "$OUTPUT_ROOT/logs/safety"
+  echo "   reset: $OUTPUT_ROOT/"
 else
-  mkdir -p prompts/outputs/current/planning/features \
-           prompts/outputs/current/planning/tasks \
-           prompts/outputs/current/execution/task-results \
-           prompts/outputs/current/logs/build-gate \
-           prompts/outputs/current/logs/harness \
-           prompts/outputs/current/logs/revise \
-           prompts/outputs/current/logs/safety
-  echo "   created: prompts/outputs/current/"
+  mkdir -p "$OUTPUT_ROOT/planning/features" \
+           "$OUTPUT_ROOT/planning/tasks" \
+           "$OUTPUT_ROOT/execution/task-results" \
+           "$OUTPUT_ROOT/logs/build-gate" \
+           "$OUTPUT_ROOT/logs/harness" \
+           "$OUTPUT_ROOT/logs/revise" \
+           "$OUTPUT_ROOT/logs/safety"
+  echo "   created: $OUTPUT_ROOT/"
 fi
 
 # 5. Ensure MY_PROJECT.md exists
 echo ""
-echo "[5/5] Ensuring MY_PROJECT.md exists…"
+echo "[5/6] Ensuring MY_PROJECT.md exists…"
 if [ -f MY_PROJECT.md ]; then
   echo "   kept: MY_PROJECT.md (unchanged)"
 else
   cp "$LIB_DIR/MY_PROJECT.md.template" MY_PROJECT.md
   echo "   created: MY_PROJECT.md from template — edit it and fill in your brief"
 fi
+
+# 6. Prove the next run starts from authoritative inputs and clean outputs.
+echo ""
+echo "[6/6] Writing clean-state preflight report…"
+LIBRARY_VERSION="${AI_PROMPT_LIBRARY_VERSION:-}"
+if [ -z "$LIBRARY_VERSION" ] && [ -f "$LIB_DIR/package.json" ]; then
+  LIBRARY_VERSION=$(sed -n 's/^[[:space:]]*"version"[[:space:]]*:[[:space:]]*"\([^"]*\)".*/\1/p' "$LIB_DIR/package.json" | head -n 1)
+fi
+LIBRARY_VERSION="${LIBRARY_VERSION:-unavailable}"
+
+LIBRARY_REVISION="${AI_PROMPT_LIBRARY_REVISION:-}"
+if [ -z "$LIBRARY_REVISION" ] && command -v git >/dev/null 2>&1; then
+  LIBRARY_REVISION=$(git -C "$LIB_DIR" rev-parse --short HEAD 2>/dev/null || true)
+fi
+LIBRARY_REVISION="${LIBRARY_REVISION:-unavailable}"
+
+tool_readiness() {
+  local tool="$1"
+  local resolved
+  resolved=$(command -v "$tool" 2>/dev/null || true)
+  if [ -n "$resolved" ]; then
+    printf 'ready (`%s`)' "$resolved"
+  else
+    printf 'missing'
+  fi
+}
+
+PREFLIGHT_PATH="$OUTPUT_ROOT/clean-state-preflight.md"
+PREFLIGHT_TMP=$(mktemp "$OUTPUT_ROOT/.clean-state-preflight.XXXXXX")
+cat > "$PREFLIGHT_TMP" <<EOF
+# Clean-State Preflight
+
+- **Generated at:** $(date -u +%Y-%m-%dT%H:%M:%SZ)
+- **Library path:** \`$LIB_DIR\`
+- **Library version:** \`$LIBRARY_VERSION\`
+- **Library revision:** \`$LIBRARY_REVISION\`
+- **Reset result:** pass
+
+## Authoritative Inputs Retained
+
+- \`MY_PROJECT.md\` — intended fresh brief; preserved byte-for-byte when pre-existing.
+EOF
+
+for input_dir in working_copy prompts/working_copy; do
+  if [ -d "$input_dir" ]; then
+    printf -- '- `%s/` — external/reference material retained outside generated outputs.\n' "$input_dir" >> "$PREFLIGHT_TMP"
+  fi
+done
+
+cat >> "$PREFLIGHT_TMP" <<'EOF'
+
+All prior files under `prompts/outputs/current/` are treated as generated state, including task graphs, envelopes, reports, and product assumptions. They are not authoritative inputs for the next canary.
+
+## Removed Stale Artifacts
+
+EOF
+
+if [ "${#REMOVED_ARTIFACTS[@]}" -eq 0 ]; then
+  echo "- None; the output tree was already clean." >> "$PREFLIGHT_TMP"
+else
+  for artifact in "${REMOVED_ARTIFACTS[@]}"; do
+    printf -- '- `%s`\n' "$artifact" >> "$PREFLIGHT_TMP"
+  done
+fi
+
+cat >> "$PREFLIGHT_TMP" <<EOF
+
+## Expected Output Locations
+
+- \`$OUTPUT_ROOT/planning/features/\`
+- \`$OUTPUT_ROOT/planning/tasks/\`
+- \`$OUTPUT_ROOT/execution/task-results/\`
+- \`$OUTPUT_ROOT/logs/{build-gate,harness,revise,safety}/\`
+- \`$PREFLIGHT_PATH\`
+
+## Tool Readiness
+
+- **bash:** $(tool_readiness bash)
+- **git:** $(tool_readiness git)
+- **node:** $(tool_readiness node)
+- **npm:** $(tool_readiness npm)
+
+Promotion evaluation must retain this report with the unchanged original brief and generated canary evidence.
+EOF
+
+mv "$PREFLIGHT_TMP" "$PREFLIGHT_PATH"
+echo "   wrote: $PREFLIGHT_PATH"
 
 echo ""
 echo "🟢 Reset complete."

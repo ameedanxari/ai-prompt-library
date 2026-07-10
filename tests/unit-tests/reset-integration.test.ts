@@ -19,16 +19,8 @@ describe('reset-integration.sh', () => {
 
   beforeEach(() => {
     sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'reset-test-'));
-    // Simulate a consumer project:
-    fs.mkdirSync(path.join(sandbox, '.ai-prompts'));
-    fs.symlinkSync(
-      path.join(REPO_ROOT, 'prompts'),
-      path.join(sandbox, '.ai-prompts', 'prompts'),
-    );
-    fs.symlinkSync(
-      path.join(REPO_ROOT, 'MY_PROJECT.md.template'),
-      path.join(sandbox, '.ai-prompts', 'MY_PROJECT.md.template'),
-    );
+    // Simulate a consumer project with this checkout installed as its library.
+    fs.symlinkSync(REPO_ROOT, path.join(sandbox, '.ai-prompts'), 'dir');
     // Stale state files
     fs.writeFileSync(path.join(sandbox, 'NEXT_ACTION.md'), '# old');
     fs.writeFileSync(path.join(sandbox, 'PROJECT_STATE.md'), '# old');
@@ -50,6 +42,18 @@ describe('reset-integration.sh', () => {
     fs.writeFileSync(
       path.join(sandbox, 'prompts', 'outputs', 'current', 'epics.md'),
       '# old epics',
+    );
+    fs.writeFileSync(
+      path.join(sandbox, 'prompts', 'outputs', 'current', 'task-graph.json'),
+      '{}',
+    );
+    fs.writeFileSync(
+      path.join(sandbox, 'prompts', 'outputs', 'current', 'execution-log.md'),
+      '# stale envelope',
+    );
+    fs.writeFileSync(
+      path.join(sandbox, 'prompts', 'outputs', 'current', 'ready-to-execute-report.md'),
+      '# stale report',
     );
   });
 
@@ -96,7 +100,12 @@ describe('reset-integration.sh', () => {
     const remaining = fs.readdirSync(
       path.join(sandbox, 'prompts', 'outputs', 'current'),
     );
-    expect(remaining.sort()).toEqual(['execution', 'logs', 'planning']);
+    expect(remaining.sort()).toEqual([
+      'clean-state-preflight.md',
+      'execution',
+      'logs',
+      'planning',
+    ]);
     expect(
       fs.existsSync(path.join(sandbox, 'prompts', 'outputs', 'current', 'planning', 'features')),
     ).toBe(true);
@@ -121,5 +130,46 @@ describe('reset-integration.sh', () => {
     const agents = fs.readFileSync(path.join(sandbox, 'AGENTS.md'), 'utf8');
     expect(agents).toMatch(/## Project-specific/);
     expect(agents).toMatch(/My custom rules for this app/);
+  });
+
+  it('writes a clean-state preflight with provenance, removals, and tool readiness', () => {
+    fs.writeFileSync(path.join(sandbox, 'MY_PROJECT.md'), '# Original canary brief\n');
+
+    execSync(`bash "${SCRIPT}" --yes`, { cwd: sandbox });
+
+    const report = fs.readFileSync(
+      path.join(sandbox, 'prompts', 'outputs', 'current', 'clean-state-preflight.md'),
+      'utf8',
+    );
+    expect(report).toMatch(/Library version:.*`\d+\.\d+\.\d+`/);
+    expect(report).toMatch(/Library revision:.*`[a-f0-9]+`/);
+    expect(report).toMatch(/Authoritative Inputs Retained/);
+    expect(report).toMatch(/`MY_PROJECT\.md`.*preserved byte-for-byte/);
+    expect(report).toMatch(/prompts\/outputs\/current\/task-graph\.json/);
+    expect(report).toMatch(/prompts\/outputs\/current\/execution-log\.md/);
+    expect(report).toMatch(/prompts\/outputs\/current\/ready-to-execute-report\.md/);
+    expect(report).toMatch(/Expected Output Locations/);
+    expect(report).toMatch(/Tool Readiness/);
+    expect(fs.readFileSync(path.join(sandbox, 'MY_PROJECT.md'), 'utf8'))
+      .toBe('# Original canary brief\n');
+  });
+
+  it('is idempotent across consecutive resets', () => {
+    fs.writeFileSync(path.join(sandbox, 'MY_PROJECT.md'), '# Unchanged brief\n');
+
+    execSync(`bash "${SCRIPT}" --yes`, { cwd: sandbox });
+    execSync(`bash "${SCRIPT}" --yes`, { cwd: sandbox });
+
+    const outputRoot = path.join(sandbox, 'prompts', 'outputs', 'current');
+    expect(fs.readdirSync(outputRoot).sort()).toEqual([
+      'clean-state-preflight.md',
+      'execution',
+      'logs',
+      'planning',
+    ]);
+    expect(fs.readFileSync(path.join(sandbox, 'MY_PROJECT.md'), 'utf8'))
+      .toBe('# Unchanged brief\n');
+    expect(fs.readFileSync(path.join(outputRoot, 'clean-state-preflight.md'), 'utf8'))
+      .toMatch(/clean-state-preflight\.md/);
   });
 });
