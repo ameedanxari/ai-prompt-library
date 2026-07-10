@@ -11,8 +11,8 @@
 #
 #   1. Applies mechanical auto-fixers (missing-comma user stories).
 #   2. Builds path, delivery-order, task-contract, and task-graph ledgers.
-#   3. Validates phase order, baseline coverage, user-review checkpoints,
-#      and screenshot matrices when screenshot task files exist.
+#   3. Validates phase order, baseline coverage, production walking
+#      skeletons, user-review checkpoints, and screenshot matrices.
 #   4. Runs the Revise Gate (writes canonical revise-report.md).
 #   5. Surfaces the gate verdict so the agent cannot declare done
 #      without seeing whether executor_gate is pass or fail.
@@ -162,12 +162,14 @@ echo "--------------------------------------------"
 delivery_status=0
 bash "$SCRIPT_DIR/build-delivery-order.sh" "$TARGET_DIR" || delivery_status=$?
 echo ""
-echo "Step 4/5 — build and validate contracts, graph, phase order, baseline, review checkpoints, and screenshot matrices"
-echo "----------------------------------------------------------------------------------------------------------------"
+echo "Step 4/5 — build and validate contracts, graph, phase order, baseline, walking skeletons, review checkpoints, and screenshot matrices"
+echo "-----------------------------------------------------------------------------------------------------------------------------------"
 graph_status=0
 bash "$SCRIPT_DIR/build-task-graph.sh" "$TARGET_DIR" || graph_status=$?
 contract_status=0
 bash "$SCRIPT_DIR/validate-task-contract.sh" "$TARGET_DIR" || contract_status=$?
+walking_skeleton_status=0
+bash "$SCRIPT_DIR/validate-walking-skeleton.sh" "$TARGET_DIR" || walking_skeleton_status=$?
 phase_order_status=0
 bash "$SCRIPT_DIR/validate-phase-order.sh" "$TARGET_DIR" || phase_order_status=$?
 baseline_status=0
@@ -228,6 +230,13 @@ if [ $gate_status -eq 0 ] && [ $contract_status -ne 0 ]; then
   echo "   blocking contract issues; promoting overall gate to fail."
 fi
 
+if [ $gate_status -eq 0 ] && [ $walking_skeleton_status -ne 0 ]; then
+  gate_status=$walking_skeleton_status
+  echo ""
+  echo "ℹ️  revise gate alone passed, but production walking-skeleton validation failed;"
+  echo "   promoting overall gate to fail. Open $TARGET_DIR/walking-skeleton-report.json."
+fi
+
 if [ $gate_status -eq 0 ] && [ $phase_order_status -ne 0 ]; then
   gate_status=$phase_order_status
   echo ""
@@ -286,5 +295,6 @@ else
   echo "  1. Regenerate each file listed in failing_files."
   echo "  2. Fill any feature listed in coverage_gap_count."
   echo "  3. Re-run: bash $SCRIPT_DIR/finalize.sh $TARGET_DIR"
+  echo "Also inspect $TARGET_DIR/walking-skeleton-report.json when the walking-skeleton gate failed."
   exit $gate_status
 fi

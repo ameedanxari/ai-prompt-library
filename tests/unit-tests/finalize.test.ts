@@ -111,6 +111,14 @@ describe('finalize.sh', () => {
       expect(provenance.npm_version).not.toBe('unavailable');
       expect(provenance.script_path).toBe(FINALIZE);
       expect(provenance.target_dir).toBe(sandbox);
+      const walkingSkeleton = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'walking-skeleton-report.json'), 'utf8'),
+      );
+      expect(walkingSkeleton).toMatchObject({
+        status: 'not-applicable',
+        applicable: false,
+      });
+      expect(out).toMatch(/Walking-skeleton report: .*walking-skeleton-report\.json/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
@@ -233,6 +241,50 @@ describe('finalize.sh', () => {
       expect(out).toMatch(/screenshot matrix validation has/);
       expect(out).toMatch(/executor_gate: fail/);
       expect(out).toMatch(/expected fastlane\/screenshots\/en-US\/iphone-6\.7-inch\/3_home\.png/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('promotes a missing production walking skeleton to a failing finalize gate', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'finalize-walking-skeleton-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'features-home.md'), '# Features — Home\n\n## home\nx\n');
+      fs.writeFileSync(path.join(sandbox, 'tasks-home.md'), [
+        '## T1 · home',
+        '- **Closes user story:** As a user, I want a home surface, so that I can start.',
+        '- **Requirement IDs:** REQ-HOME-001',
+        '- **Artifact kind:** runtime-source',
+        '- **Evidence level:** integration',
+        '- **Runtime reachability:** product-surface=ios; production-composition-root=ios/App/App.swift',
+        '- **Production owner:** iOS application shell',
+        '- **Change type:** create-new',
+        '- **File:** `ios/App/Home.swift`',
+        '- **Depends on:** none',
+        '- **Precise change:** add the production home surface.',
+        '- **Acceptance:**',
+        '  - Home is reachable.',
+        '  - Production wiring is used.',
+        '  - Integration evidence passes.',
+        '- **Test:** `npm test`',
+        '- **Estimated LOC:** ~10',
+        '- **Phase:** mvp',
+        '',
+      ].join('\n'));
+      fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# External Accounts Required\n');
+      writeStreamAStubs(sandbox);
+
+      const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/production walking-skeleton validation failed/);
+      expect(out).toMatch(/walking-skeleton-report\.json/);
+      const report = JSON.parse(
+        fs.readFileSync(path.join(sandbox, 'walking-skeleton-report.json'), 'utf8'),
+      );
+      expect(report.issues).toContainEqual(expect.objectContaining({
+        code: 'missing-walking-skeleton',
+        surface: 'ios',
+      }));
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

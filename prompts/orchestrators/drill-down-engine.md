@@ -1044,6 +1044,59 @@ module — all rewritten for the specific project.
 
 ### Stop conditions (before proceeding past Step 3)
 
+### Production walking skeleton (MANDATORY before breadth)
+
+Before generating ordinary feature prompts, identify every independently
+shipped product/platform surface (for example `web`, `ios`, `android`, or a
+separately deployed worker UI) and write exactly one
+`tasks-mvp-walking-skeleton-<surface>.md` prompt for each surface. A product
+surface is not a package, library, test harness, documentation set, preview,
+or fixture. Docs-only and library-maintenance plans with no shipped user
+surface are exempt; the machine gate records that exemption as not applicable.
+
+The walking skeleton is a first-class cross-feature composition task. It must
+exercise the primary user flow through real application wiring and must own or
+modify the **production composition root**: the executable entry point where
+the shipped process constructs concrete adapters, repositories, services, and
+experience coordinators. A preview provider, screenshot harness, fixture
+factory, test dependency container, interface-only composition map, or mock
+application shell is not a production composition root.
+
+Every skeleton task must preserve the primary `FLOW-*` and `REQ-*` identifiers,
+name the accountable `Production owner`, use `Artifact kind: runtime-source`
+(or pair a cross-feature composition task with a named runtime-source wiring
+unit), and declare evidence stronger than `static`. Integration or device
+evidence must cross the real boundaries used by the primary flow. Encode the
+release-gate metadata in the task contract's preserved `Runtime reachability`
+field using this exact semicolon-delimited shape:
+
+```markdown
+- **Artifact kind:** runtime-source
+- **Requirement IDs:** REQ-PRIMARY-001
+- **Evidence level:** integration
+- **Runtime reachability:** task-type=cross-feature-composition; product-surface=ios; primary-flow=FLOW-CLEANUP-001; production-composition-root=ios/App/App.swift; release-gate=mvp-walking-skeleton
+- **Production owner:** iOS application shell
+```
+
+Rules enforced during Step 3:
+
+1. Generate and validate all surface skeleton prompts before any `expand` or
+   `polish` task prompt. If a surface skeleton does not exist, stop generation;
+   do not create breadth tasks and promise to add wiring later.
+2. Every runtime-reachable expansion task repeats
+   `product-surface=<surface>` and directly depends on that surface's
+   `tasks-mvp-walking-skeleton-<surface>.md` prompt. The dependency is a release
+   gate, not an ordering suggestion.
+3. Experiences may compose bounded-context capabilities, but capability
+   packages do not own app wiring. The named production composition-root owner
+   owns concrete construction and the primary-flow lifecycle.
+4. Fixture or preview wiring may be used only by an explicitly test-only task
+   that names a separate production-wiring evidence task. Fixture evidence
+   never satisfies `release-gate=mvp-walking-skeleton` by itself.
+5. Run `bash .ai-prompts/scripts/validate-walking-skeleton.sh prompts/outputs/current`
+   after task-contract generation. Any failing surface blocks Step 3 completion
+   and all expansion work.
+
 Do **not** declare prompts ready if any of these are true:
 - The output contains `.ai-prompts/prompts/` anywhere.
 - Any placeholder pattern remains (`{{...}}`, `<TBD>`, `[project name]`).
@@ -1068,6 +1121,9 @@ Do **not** declare prompts ready if any of these are true:
   `docs/design-system/review/index.html`, does not include reference
   URLs/paths/availability from the source map, or does not require a
   user visual-review feedback checkpoint before dependent screen work.
+- A shipped product surface lacks a production `mvp-walking-skeleton`, its
+  primary `FLOW-*` IDs, a production composition-root owner, or integration
+  evidence, or an expansion task bypasses that skeleton dependency.
 
 If any stop condition trips, reload the module and regenerate the
 prompt before the validation gate below.

@@ -196,6 +196,18 @@ describe('active orchestrators', () => {
     expect(audit.toLowerCase()).toMatch(/regenerate/);
   });
 
+  it('drill-down blocks expansion until each product surface has a production walking skeleton', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'drill-down-engine.md'), 'utf8');
+    expect(body).toMatch(/tasks-mvp-walking-skeleton-<surface>\.md/);
+    expect(body).toMatch(/production composition root/i);
+    expect(body).toMatch(/task-type=cross-feature-composition/);
+    expect(body).toMatch(/release-gate=mvp-walking-skeleton/);
+    expect(body).toMatch(/primary-flow=FLOW-/);
+    expect(body).toMatch(/before any `expand` or\s+`polish` task prompt/);
+    expect(body).toMatch(/Fixture evidence\s+never satisfies/);
+    expect(body).toMatch(/validate-walking-skeleton\.sh/);
+  });
+
   it('revise.sh exists, is executable, and writes revise-report.md', () => {
     const script = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
     expect(fs.existsSync(script)).toBe(true);
