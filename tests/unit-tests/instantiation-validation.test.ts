@@ -2154,6 +2154,141 @@ describe('validator — final-delivery quality checks', () => {
 
 });
 
+describe('validator — semantic traceability', () => {
+  function runValidator(sandbox: string): { out: string; code: number } {
+    fs.writeFileSync(path.join(sandbox, 'external-accounts.md'), '# External Accounts Required\n');
+    fs.writeFileSync(path.join(sandbox, 'revise-report.md'), passingReviseReport());
+    writeStreamAStubs(sandbox);
+    try {
+      return {
+        out: execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' }),
+        code: 0,
+      };
+    } catch (e) {
+      const err = e as { stdout?: Buffer; status?: number };
+      return {
+        out: err.stdout?.toString() ?? '',
+        code: err.status ?? 0,
+      };
+    }
+  }
+
+  function writeFeature(dir: string, artifactKind = 'artifact-only'): void {
+    fs.writeFileSync(
+      path.join(dir, 'features-checkout.md'),
+      [
+        '# Features — Checkout',
+        '',
+        '## checkout',
+        '- **Feature ID:** FEAT-CHECKOUT',
+        '- **Requirement IDs:** REQ-CHECKOUT-001',
+        '- **Flow IDs:** FLOW-CHECKOUT',
+        '- **Feature dependencies:** FEAT-CART',
+        `- **Artifact kind:** ${artifactKind}`,
+        '',
+      ].join('\n'),
+    );
+  }
+
+  function writeCheckoutTask(
+    dir: string,
+    options: {
+      featureDependencies?: string;
+      artifactKind?: string;
+      override?: string;
+    } = {},
+  ): void {
+    fs.writeFileSync(
+      path.join(dir, 'tasks-checkout.md'),
+      [
+        '# Prompt — Checkout',
+        '',
+        '## T1 - Checkout implementation',
+        '- **Closes user story:** As a shopper, I want checkout coverage, so that semantic traceability is preserved.',
+        '- **Requirement IDs:** REQ-CHECKOUT-001',
+        '- **Flow IDs:** FLOW-CHECKOUT',
+        '- **Feature IDs:** FEAT-CHECKOUT',
+        `- **Feature dependencies:** ${options.featureDependencies ?? 'FEAT-CART'}`,
+        `- **Artifact kind:** ${options.artifactKind ?? 'artifact-only'}`,
+        options.override ? `- **Semantic override:** ${options.override}` : '',
+        '- **Change type:** create-new',
+        '- **File:** `src/checkout.ts`',
+        '- **Depends on:** none',
+        '- **Precise change:** add checkout traceability fixture implementation.',
+        '- **Acceptance:**',
+        '  - Requirement metadata remains present.',
+        '  - Feature dependency metadata remains present.',
+        '  - Artifact contract metadata remains present.',
+        '- **Test:** `npm test -- tests/unit-tests/checkout.test.ts`',
+        '- **Estimated LOC:** +20',
+        '- **Phase:** mvp',
+        '',
+      ].filter(Boolean).join('\n'),
+    );
+  }
+
+  it('rejects dropped feature dependencies in task metadata', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'semantic-dep-'));
+    try {
+      writeFeature(sandbox);
+      writeCheckoutTask(sandbox, { featureDependencies: 'none' });
+
+      const { code, out } = runValidator(sandbox);
+
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/semantic-loss/);
+      expect(out).toMatch(/missing-feature-dependency-metadata/);
+      expect(out).toMatch(/FEAT-CART/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects artifact contract changes without a reviewed override', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'semantic-contract-'));
+    try {
+      writeFeature(sandbox);
+      writeCheckoutTask(sandbox, { artifactKind: 'runtime-source' });
+
+      const { code, out } = runValidator(sandbox);
+
+      expect(code).not.toBe(0);
+      expect(out).toMatch(/artifact-contract-changed-without-override/);
+      expect(out).toMatch(/artifact-only -> runtime-source/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts reviewed overrides only when every required field is present', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'semantic-override-'));
+    try {
+      writeFeature(sandbox);
+      writeCheckoutTask(sandbox, {
+        artifactKind: 'runtime-source',
+        override: [
+          'source=FEAT-CHECKOUT:artifactContract:artifact-only->runtime-source',
+          'old=artifact-only',
+          'new=runtime-source',
+          'rationale=runtime implementation is explicitly approved',
+          'affected_flows=FLOW-CHECKOUT',
+          'compensating_evidence=tests/unit-tests/checkout.test.ts',
+          'approval=planning-review',
+          'scope=checkout task',
+          'expiry=before release readiness',
+        ].join('; '),
+      });
+
+      const { code, out } = runValidator(sandbox);
+
+      expect(code).toBe(0);
+      expect(out).toMatch(/all engine outputs are fully instantiated/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+});
+
 describe('validator — UI design quality gate', () => {
   function runValidator(sandbox: string): { out: string; code: number } {
     writeStreamAStubs(sandbox);

@@ -199,6 +199,228 @@ if [ ${#feature_files[@]} -gt 0 ]; then
   rm -f "$declared" "$produced"
 fi
 
+# 0b-iii. Semantic traceability matrix. When feature-level requirement
+# metadata exists, preserve stable IDs and artifact contracts from
+# features into task metadata. This catches semantic loss that path
+# accounting cannot see: dropped feature dependencies, primary-flow
+# task coverage gaps, artifact-contract changes without reviewed
+# overrides, and incomplete override records.
+semantic_traceability_tmp=$(mktemp)
+if python3 - "$TARGET_DIR" > "$semantic_traceability_tmp" 2>/dev/null <<'PY'
+import os
+import re
+import sys
+
+target_dir = sys.argv[1]
+feature_files = sorted(
+    fn for fn in os.listdir(target_dir)
+    if fn.startswith("features-") and fn.endswith(".md")
+)
+task_files = sorted(
+    fn for fn in os.listdir(target_dir)
+    if (fn.startswith("tasks-") or fn.startswith("remediation-")) and fn.endswith(".md")
+)
+
+field_re = re.compile(r"^\s*[-*]?\s*\*\*([^:*]+):\*\*\s*(.*)$")
+heading_re = re.compile(r"^##\s+(.+?)\s*$")
+task_heading_re = re.compile(r"^##\s+([TR][0-9]+)\b.*$")
+
+def slugify(value):
+    value = value.lower()
+    value = re.sub(r"[^a-z0-9 -]", "", value)
+    value = re.sub(r"\s+", "-", value).strip("-")
+    return value
+
+def split_ids(raw):
+    raw = re.sub(r"`", "", raw or "")
+    raw = re.sub(r"\([^)]*\)", "", raw)
+    if re.match(r"^\s*(none|n/a|na|~|-)?\s*$", raw, re.I):
+        return []
+    return sorted(set(
+        part.strip()
+        for part in re.split(r"[,|;]", raw)
+        if part.strip() and not re.match(r"^(none|n/a|na|~|-)$", part.strip(), re.I)
+    ))
+
+def parse_sections(path, task_like=False):
+    sections = []
+    current = None
+    with open(path, encoding="utf-8") as handle:
+        for line_no, line in enumerate(handle, start=1):
+            match = (task_heading_re if task_like else heading_re).match(line)
+            if match:
+                if current:
+                    sections.append(current)
+                current = {"heading": match.group(1).strip(), "line": line_no, "fields": {}}
+                continue
+            if current:
+                field = field_re.match(line)
+                if field:
+                    key = field.group(1).strip().lower()
+                    current["fields"][key] = field.group(2).strip()
+    if current:
+        sections.append(current)
+    return sections
+
+def parse_overrides(raw):
+    overrides = []
+    if not raw:
+        return overrides
+    for chunk in re.split(r"\s*\|\s*", raw):
+        fields = {}
+        for part in chunk.split(";"):
+            if "=" not in part:
+                continue
+            key, value = part.split("=", 1)
+            fields[key.strip().lower().replace("-", "_")] = value.strip()
+        if fields:
+            overrides.append(fields)
+    return overrides
+
+features = {}
+requirements_seen = False
+for fn in feature_files:
+    for section in parse_sections(os.path.join(target_dir, fn)):
+        fields = section["fields"]
+        feature_id = fields.get("feature id") or f"FEAT-{slugify(section['heading']).upper()}"
+        metadata_present = any(key in fields for key in (
+            "feature id", "requirement ids", "flow ids", "depends on",
+            "feature dependencies", "artifact kind", "artifact contract", "critical", "primary flow"
+        ))
+        if not metadata_present:
+            continue
+        requirement_ids = split_ids(fields.get("requirement ids", ""))
+        requirements_seen = requirements_seen or bool(requirement_ids)
+        feature_dependencies = split_ids(fields.get("feature dependencies") or fields.get("depends on", ""))
+        artifact_contract = fields.get("artifact contract") or fields.get("artifact kind") or ""
+        features[feature_id] = {
+            "id": feature_id,
+            "file": fn,
+            "line": section["line"],
+            "requirement_ids": requirement_ids,
+            "flow_ids": split_ids(fields.get("flow ids", "")),
+            "dependencies": feature_dependencies,
+            "artifact_contract": artifact_contract.strip(),
+            "critical": re.search(r"^(true|yes|critical)$", fields.get("critical", ""), re.I) is not None,
+            "primary_flow": re.search(r"^(true|yes|primary)$", fields.get("primary flow", ""), re.I) is not None,
+        }
+
+if not features or not requirements_seen:
+    print("ok")
+    raise SystemExit(0)
+
+tasks = []
+for fn in task_files:
+    for section in parse_sections(os.path.join(target_dir, fn), task_like=True):
+        fields = section["fields"]
+        feature_ids = split_ids(fields.get("feature ids") or fields.get("feature id", ""))
+        tasks.append({
+            "id": f"{fn}#{section['heading']}",
+            "file": fn,
+            "line": section["line"],
+            "requirement_ids": split_ids(fields.get("requirement ids", "")),
+            "flow_ids": split_ids(fields.get("flow ids", "")),
+            "feature_ids": feature_ids,
+            "feature_dependencies": split_ids(fields.get("feature dependencies", "")),
+            "artifact_contract": (fields.get("artifact contract") or fields.get("artifact kind") or "").strip(),
+            "test": fields.get("test", "").strip(),
+            "release_gates": split_ids(fields.get("release gate ids") or fields.get("release gates", "")),
+            "overrides": parse_overrides(fields.get("semantic override") or fields.get("reviewed override", "")),
+        })
+
+required_override_fields = [
+    "source", "old", "new", "rationale", "affected_flows",
+    "compensating_evidence", "approval", "scope", "expiry",
+]
+valid_overrides = set()
+issues = []
+
+for task in tasks:
+    for override in task["overrides"]:
+        missing = [
+            field for field in required_override_fields
+            if not override.get(field) or override.get(field, "").lower() in {"none", "n/a"}
+        ]
+        source = override.get("source") or override.get("source_id") or "<unknown>"
+        if missing:
+            issues.append((
+                "invalid-reviewed-override",
+                source,
+                "override missing required field(s): " + ", ".join(missing),
+            ))
+        else:
+            valid_overrides.add(source)
+
+for feature_id, feature in sorted(features.items()):
+    covering_tasks = [
+        task for task in tasks
+        if feature_id in task["feature_ids"]
+        or set(feature["requirement_ids"]).intersection(task["requirement_ids"])
+        or set(feature["flow_ids"]).intersection(task["flow_ids"])
+    ]
+
+    if (feature["critical"] or feature["primary_flow"]) and not covering_tasks:
+        issues.append((
+            "missing-primary-flow-coverage",
+            feature_id,
+            "critical/primary-flow feature has no task coverage",
+        ))
+
+    for dependency_id in feature["dependencies"]:
+        if not covering_tasks:
+            continue
+        preserved = any(dependency_id in task["feature_dependencies"] for task in covering_tasks)
+        override_key = f"{feature_id}:dependsOnFeatureIds:{dependency_id}"
+        if not preserved and override_key not in valid_overrides:
+            issues.append((
+                "missing-feature-dependency-metadata",
+                feature_id,
+                f"dependency {dependency_id} is not preserved in covering task metadata",
+            ))
+
+    source_contract = feature["artifact_contract"]
+    if source_contract:
+        for task in covering_tasks:
+            task_contract = task["artifact_contract"]
+            if not task_contract or task_contract == source_contract:
+                continue
+            override_key = f"{feature_id}:artifactContract:{source_contract}->{task_contract}"
+            if override_key not in valid_overrides:
+                issues.append((
+                    "artifact-contract-changed-without-override",
+                    feature_id,
+                    f"{task['id']} changes artifact contract {source_contract} -> {task_contract}",
+                ))
+
+if issues:
+    print("fail")
+    for code, source, message in sorted(set(issues)):
+        print(f"{code}\t{source}\t{message}")
+else:
+    print("ok")
+PY
+then
+  semantic_traceability_result=$(cat "$semantic_traceability_tmp")
+else
+  semantic_traceability_result="skip"
+fi
+rm -f "$semantic_traceability_tmp"
+if [ "$semantic_traceability_result" = "skip" ]; then
+  echo "⚠️  semantic traceability check skipped (python3 not available)"
+else
+  if printf "%s\n" "$semantic_traceability_result" | head -n 1 | grep -q '^fail$'; then
+    echo "❌ semantic-loss: traceability matrix found blocking issue(s)"
+    printf "%s\n" "$semantic_traceability_result" | tail -n +2 | while IFS="$(printf '\t')" read -r code source message; do
+      [ -z "$code" ] && continue
+      echo "   - $code: $source — $message"
+    done
+    echo "   Regenerate from drill-down Step 2/3 so requirement IDs,"
+    echo "   flow IDs, feature dependencies, artifact contracts, and reviewed"
+    echo "   overrides are preserved mechanically."
+    fail=1
+  fi
+fi
+
 # 0. Required-companion-files check. When plan files exist, two more files
 # MUST also exist in the same directory — skipping them is a structural
 # defect that blocks execution regardless of per-task validity.

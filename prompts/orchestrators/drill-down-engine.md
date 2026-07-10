@@ -384,6 +384,16 @@ Use the epic's complexity as a rough guide — a Small epic typically needs
 this set of features deliver what the end user needs from this epic?"
 
 Each feature has:
+- `feature_id` — stable ID in the form `FEAT-<SLUG>`. This ID is the
+  traceability owner for the feature and must not change between Step 2
+  and Step 3.
+- `requirement_ids` — stable requirement IDs in the form
+  `REQ-<AREA>-<NNN>` for the user stories or brief requirements the
+  feature satisfies. Every requirement introduced here must be carried
+  into at least one task unit's `Requirement IDs` field.
+- `flow_ids` — stable primary-flow IDs in the form `FLOW-<SLUG>` when
+  the feature participates in a user or release flow. Critical or
+  primary flows must trace to task evidence before execution.
 - `name` — noun-phrase, unique within the epic
 - `description` — one-sentence purpose
 - `user_stories` — 1–3 user stories in "As a [role], I want [action], so that [value]" format. These are the anchor points that define what success looks like for this feature from the end user's perspective.
@@ -395,6 +405,14 @@ Each feature has:
 - `api_contract` — endpoints: `METHOD /path → request/response shape`
   (omit if the feature has no API surface; note why)
 - `dependencies` — other features this depends on (by name), or `none`
+  Also record referenced features' stable IDs under
+  `feature_dependencies`; Step 3 task metadata must preserve those IDs
+  or add a reviewed override.
+- `artifact_contract` — the feature's artifact shape, such as
+  `runtime-source`, `config`, `docs`, `test`, `fixture`, or
+  `release-gate`. Step 3 may not convert artifact-only work into
+  runtime work, or runtime work into docs/config only, without a
+  reviewed semantic override.
 - `external_services` — third-party services this feature requires, if
   any. Each entry: service name + signup URL + env vars needed + brief
   role in the feature. Use `none` if the feature needs no external
@@ -417,6 +435,11 @@ Each feature has:
 # Features — <Epic Name>
 
 ## <Feature Name>
+**Feature ID:** FEAT-<SLUG>
+**Requirement IDs:** REQ-<AREA>-001
+**Flow IDs:** FLOW-<SLUG> (or none)
+**Artifact contract:** runtime-source
+
 **Description:** <one sentence>
 
 **Data model:**
@@ -428,6 +451,7 @@ Each feature has:
 - `POST /auth/login`  → req `{email, password}` → res `{token}`
 
 **Dependencies:** none
+**Feature dependencies:** none
 
 **Phase:** mvp
 ```
@@ -1064,12 +1088,20 @@ Step 3 prioritized **creative density** (narrative implementation prompts). Step
    - The **Change type** (`create-new` or `modify-existing`).
    - The **User Story** it fulfills (e.g., "As a user, I want...").
    - The **Dependencies** (which other `tasks-*.md` files must exist before this code can be written).
+   - The stable **Requirement IDs**, **Flow IDs**, **Feature IDs**,
+     **Feature dependencies**, and **Artifact contract** inherited from
+     Step 2. These are semantic contracts, not prose hints.
 3. **Inject the Metadata Block** at the top of each file, immediately following the H1 title. Use the strict Markdown bullet format:
 
 ```markdown
 # Prompt — <Feature Name> for <Project Name>
 
 - **Closes user story:** As a <role>, I <want/need> <action>, so that <value>.
+- **Requirement IDs:** REQ-<AREA>-001[, REQ-<AREA>-002]
+- **Flow IDs:** FLOW-<SLUG> (or none)
+- **Feature IDs:** FEAT-<SLUG>[, FEAT-<SLUG-2>]
+- **Feature dependencies:** FEAT-<UPSTREAM> (or none)
+- **Artifact contract:** <same value from Step 2 unless reviewed override below>
 - **Change type:** <create-new | modify-existing>
 - **File:** `<ios_path>` | `<android_path>`
 - **Depends on:** <tasks-other-feature.md | none> (reason if not none)
@@ -1078,9 +1110,23 @@ Step 3 prioritized **creative density** (narrative implementation prompts). Step
 - **Phase:** <foundation | mvp | expand | polish>
 ```
 
-4. **ALL 7 FIELDS ARE MANDATORY.** The validator (`validate-instantiation.sh`) will reject any task file missing even one field. Do not omit `Estimated LOC:`, `Test:`, or `Phase:` — all three are required by the executor.
+4. **ALL metadata fields are mandatory for traceable task units.** The
+   validator (`validate-instantiation.sh`) rejects the core executor
+   fields and, when Step 2 feature requirement metadata exists, also
+   rejects semantic loss in the traceability matrix. Do not omit
+   `Requirement IDs`, `Feature IDs`, `Feature dependencies`,
+   `Artifact contract`, `Estimated LOC:`, `Test:`, or `Phase:` — they
+   are required by the executor and the semantic-loss validator.
 
    The `Phase:` value comes from the parent feature's `phase` (Step 2 schema). A task only overrides its feature's phase when the task is materially earlier or later than its feature's other tasks — e.g. an `mvp` feature whose first task scaffolds a shared module legitimately marks that one task `foundation`. See `baseline-task-shapes.md` § Phase enum for the assignment rule. A task MUST NOT depend on a task in a later phase (phase inversion) — the revise gate rejects such cases.
+
+   If Step 3 must intentionally change a semantic contract, add a
+   `Semantic override` metadata line instead of silently weakening the
+   plan. Required reviewed override fields are: `source`, `old`, `new`,
+   `rationale`, `affected_flows`, `compensating_evidence`, `approval`,
+   `scope`, and `expiry`. Overrides are scoped records, not permanent
+   comments; when semantic-loss validation fails, regenerate the task
+   from Step 2/3 instead of hand-editing the failing task file.
 
 5. **Cross-Platform File Paths (MANDATORY for multi-platform projects):**
    Read the `_Project platforms:_` line in `epics.md`. If the project targets both iOS and Android (or any two platforms), then every task that contains platform-specific source code MUST include paths for BOTH platforms in the `File:` field, separated by a pipe `|`:

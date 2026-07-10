@@ -381,6 +381,22 @@ describe('active orchestrators', () => {
     expect(body.toLowerCase()).toMatch(/testing approach/);
   });
 
+  it('drill-down preserves requirement, flow, dependency, and artifact-contract IDs', () => {
+    const body = fs.readFileSync(
+      path.join(ORCH, 'drill-down-engine.md'),
+      'utf8',
+    );
+
+    expect(body).toMatch(/Feature ID/);
+    expect(body).toMatch(/Requirement IDs/);
+    expect(body).toMatch(/Flow IDs/);
+    expect(body).toMatch(/Feature dependencies/);
+    expect(body).toMatch(/Artifact contract/);
+    expect(body).toMatch(/Semantic override/);
+    expect(body).toMatch(/source.*old.*new.*rationale.*affected_flows.*compensating_evidence.*approval.*scope.*expiry/s);
+    expect(body.toLowerCase()).toMatch(/regenerate[\s\S]*step 2\/3/);
+  });
+
   it('drill-down and audit-remediate both require clear closure references', () => {
     const drill = fs.readFileSync(
       path.join(ORCH, 'drill-down-engine.md'),
