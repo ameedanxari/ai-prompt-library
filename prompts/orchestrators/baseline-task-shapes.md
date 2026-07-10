@@ -104,6 +104,129 @@ feature template. Behavior-heavy runtime, persistence, permission, deletion,
 security, and data-integrity work cannot close with `Evidence level: static`
 alone.
 
+#### `docs` task shape
+
+Use for policy text, privacy/data inventories, store-listing copy, release
+notes, operating procedures, and package documentation. The `File` must be the
+real document path, never a placeholder source directory.
+
+```markdown
+## T1 · Privacy data inventory
+- **Artifact kind:** docs
+- **File:** `docs/privacy/data-inventory.md`
+- **Evidence level:** static
+- **Runtime reachability:** not runtime-reachable; reviewed policy artifact
+- **Test:** `markdownlint docs/privacy/data-inventory.md && rg "Data category|Purpose|Retention" docs/privacy/data-inventory.md`
+- **Acceptance:**
+  - Every collected data category names purpose, retention, and deletion owner.
+  - Claims match the audited production adapters and manifests.
+  - The document contains no placeholders or unresolved policy decisions.
+```
+
+Do not add Swift/Kotlin classes, repositories, persistence layers, UI state,
+or source directories to make a documentation or policy task look executable.
+
+#### `config` task shape
+
+Use for CI, manifests, policy-as-code, package metadata, store metadata files,
+release automation, and build configuration. Name the exact config file and a
+parser or tool that validates its syntax and behavior.
+
+```markdown
+## T1 · Package publication metadata
+- **Artifact kind:** config
+- **File:** `package.json`
+- **Evidence level:** integration
+- **Runtime reachability:** npm publication configuration, not application runtime
+- **Test:** `node -e 'JSON.parse(require("fs").readFileSync("package.json"))' && npm pack --dry-run --json`
+- **Acceptance:**
+  - Package name, exports, files, repository, license, and engines are explicit.
+  - The dry-run archive contains required files and excludes tests and local state.
+  - Publication configuration does not introduce an in-app repository or UI layer.
+```
+
+Use `jq`, JSON Schema, `plutil`, `actionlint`, `bash -n`, Gradle/Xcode config
+checks, or provider validation according to the file. A config task may affect
+runtime behavior, but it is not `runtime-source` unless it also owns real
+application code; split that code into a separate task.
+
+#### `asset` task shape
+
+Use for images, icons, localization catalogs, media, design tokens exported as
+assets, and store screenshots. Name dimensions, format, locale/device variants,
+source rights, and the verifier.
+
+```markdown
+## T1 · App Store screenshot asset
+- **Artifact kind:** asset
+- **File:** `fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`
+- **Evidence level:** ui-fixture
+- **Runtime reachability:** store asset only; excluded from application targets
+- **Test:** `tools/app-store/verify-screenshot.sh fastlane/screenshots/en-US/iphone-6.7-inch/1_dashboard.png`
+- **Acceptance:**
+  - Dimensions, format, locale, device class, and scenario match the matrix.
+  - The image is produced from the approved capture flow and baseline.
+  - Provenance and usage rights are recorded beside the asset manifest.
+```
+
+`Test: N/A (image asset)` is allowed only when no deterministic verifier is
+possible and `Evidence level: manual-review` records the reviewer and result.
+Assets do not justify view models, repositories, or persistence boilerplate.
+
+#### `generated-evidence` task shape
+
+Use for generated reports, scan output, scorecards, screenshots used as proof,
+and review artifacts. A generated-evidence task must name both its provenance
+inputs and an idempotent regeneration command.
+
+```markdown
+## T1 · Release scorecard evidence
+- **Artifact kind:** generated-evidence
+- **File:** `reports/release/scorecard.json`
+- **Evidence level:** integration
+- **Runtime reachability:** generated promotion evidence; consumed by release gate
+- **Test:** `npm run release:scorecard -- --output reports/release/scorecard.json && jq -e '.dimensions and .sourceRevision' reports/release/scorecard.json`
+- **Acceptance:**
+  - Provenance records generator version, source revision, inputs, and timestamp.
+  - The documented command regenerates the artifact from clean inputs.
+  - Schema and threshold assertions fail when evidence is missing or stale.
+```
+
+Never hand-author a generated report or treat its path existing as proof. Do
+not add app runtime layers unless a separately classified task names the real
+consumer and its behavioral evidence.
+
+#### `external-action` task shape
+
+Use for Apple/Google console actions, DNS/provider settings, external account
+creation, approvals, and publication actions that cannot be completed in the
+repository. The `File` points to the authoritative account/action checklist.
+
+```markdown
+## T1 · Create production store account
+- **Artifact kind:** external-action
+- **File:** `prompts/outputs/current/external-accounts.md`
+- **Evidence level:** manual-review
+- **Runtime reachability:** external account prerequisite; no runtime source
+- **Test:** `N/A (external account action)`
+- **Acceptance:**
+  - The checklist names account owner, console URL, required role, and target environment.
+  - Manual-review evidence records actor, timestamp, resulting account/project ID, and status.
+  - Dependent release tasks reference this action and remain blocked until evidence passes.
+```
+
+The N/A form is valid only with `manual-review` or `external` evidence and a
+linked `external-accounts.md` checklist. External actions never create fake
+repository, persistence, UI, or platform-source work as a proxy for the action.
+
+#### Mixed artifact rule
+
+One task unit owns one artifact kind. If a concern changes policy text and app
+behavior, split it into a `docs` unit and a `runtime-source` unit with an
+explicit dependency. A reviewed artifact-shape override is exceptional and
+must record `source`, `artifact_kind`, `runtime_consumer`, `rationale`,
+`approval`, `scope`, and `expiry`; it cannot merely relabel a mixed path list.
+
 ### Legacy schema migration
 
 Existing seven-field plans that contain none of the typed metadata fields are

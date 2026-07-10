@@ -6,17 +6,44 @@ Step 3).
 
 ## How to use
 
-1. Identify the epic or feature's intents.
-2. Match each relevant intent keyword below to its module path.
-3. Load as many matched modules as the current task genuinely needs.
+1. Classify the task's artifact kind using the routing table below.
+2. Identify the epic or feature's intents only after the artifact shape is fixed.
+3. Match each relevant intent keyword below to its module path.
+4. Load as many matched modules as the current task genuinely needs.
    Prefer the modules with the most domain-specific constraints (e.g.
    `healthcare/hipaa-compliance` beats `security/data-encryption` for a
    patient records feature), but do not discard a second module when it
    carries a separate required concern.
-4. If no intent matches, skip module loading — the engine can proceed without
+5. If no intent matches, skip module loading — the engine can proceed without
    one.
 
 Paths are relative to the repository root.
+
+## Artifact-kind routing (run before domain-module lookup)
+
+Artifact ownership chooses the task shape before intent keywords choose domain
+knowledge. Start with `prompts/orchestrators/baseline-task-shapes.md` and use
+this routing table. Domain modules may supply content constraints, but they do
+not change a non-runtime task into a runtime feature.
+
+| Intent or output | Artifact kind / route | Module-selection rule |
+|---|---|---|
+| Policy, privacy inventory, data-safety narrative, terms, support boundaries | `docs` | Use the docs/policy shape. A privacy/security module may inform required content, but do not inherit repositories, persistence, UI state, or platform source. |
+| App Store / Play listing copy, release notes, package README, publication guide | `docs` | Route to document assertions and length/content checks. Store upload itself is a separate `external-action`. |
+| Store-console upload, account creation, signing approval, DNS/provider console action | `external-action` | Require account checklist linkage and `manual-review` or `external` evidence. Do not create source code as a proxy. |
+| CI workflow, package metadata, manifest, policy-as-code, release configuration | `config` | Use syntax/schema/provider checks. Load deployment modules only for concrete config semantics. |
+| Icon, localization catalog, store screenshot, static media | `asset` | Use dimensions, format, matrix, provenance, and visual/manual evidence. UI modules do not imply an in-app screen task. |
+| Generated report, scan, scorecard, screenshot evidence, review artifact | `generated-evidence` | Require provenance, schema assertions, and an idempotent regeneration command. |
+| Test harness, fixture, assertion source | `test-source` | Load testing modules only; production modules require a separate runtime consumer task. |
+| Executable app/service behavior with a named in-app or deployed consumer | `runtime-source` | Consult domain/runtime modules and name the real production path, owner, and behavioral evidence. |
+
+Runtime modules are permitted only when the unit names a real in-app or
+deployed consumer. The presence of words such as privacy, store, release,
+analytics, or policy does not itself justify runtime code. If one requested
+outcome mixes runtime and non-runtime artifacts, split it into separate task
+units with dependency edges. A reviewed override record must name `source`,
+`artifact_kind`, `runtime_consumer`, `rationale`, `approval`, `scope`, and
+`expiry`; an unreviewed mixed `File` list is rejected.
 
 ## Auth & Identity
 

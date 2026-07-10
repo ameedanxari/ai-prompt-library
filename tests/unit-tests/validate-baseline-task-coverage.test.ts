@@ -62,6 +62,18 @@ describe('validate-baseline-task-coverage.sh', () => {
     expect(rules).toMatch(/Non-runtime work MUST NOT inject repository, persistence, UI/);
     expect(rules).toMatch(/classified as `schemaVersion: legacy`/);
     expect(rules).toMatch(/legacy-task-schema/);
+    expect(rules).toMatch(/#### `docs` task shape/);
+    expect(rules).toMatch(/docs\/privacy\/data-inventory\.md/);
+    expect(rules).toMatch(/#### `config` task shape/);
+    expect(rules).toMatch(/npm pack --dry-run --json/);
+    expect(rules).toMatch(/#### `asset` task shape/);
+    expect(rules).toMatch(/verify-screenshot\.sh/);
+    expect(rules).toMatch(/#### `generated-evidence` task shape/);
+    expect(rules).toMatch(/idempotent regeneration command/);
+    expect(rules).toMatch(/#### `external-action` task shape/);
+    expect(rules).toMatch(/N\/A \(external account action\)/);
+    expect(rules).toMatch(/manual-review.*external-accounts\.md/s);
+    expect(rules).toMatch(/One task unit owns one artifact kind/);
   });
 
   it('is executable', () => {
