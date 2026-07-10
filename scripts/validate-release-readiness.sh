@@ -97,6 +97,195 @@ def normalize_repo_url(raw: str) -> str:
     return value
 
 
+def atomic_write(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    temporary = path.with_name(f"{path.name}.tmp.{os.getpid()}")
+    temporary.write_text(content, encoding="utf-8")
+    os.replace(temporary, path)
+
+
+def load_release_gates():
+    configured = os.environ.get("RELEASE_GATE_FILE", "").strip()
+    json_candidates = []
+    if configured:
+        configured_path = Path(configured)
+        json_candidates.append(configured_path if configured_path.is_absolute() else root / configured_path)
+    json_candidates.extend([
+        root / "release-gates.json",
+        root / "prompts" / "outputs" / "current" / "release-gates.json",
+    ])
+    for candidate in json_candidates:
+        if not candidate.exists():
+            continue
+        try:
+            document = json.loads(candidate.read_text(encoding="utf-8"))
+            return document, candidate
+        except Exception as exc:
+            issues.append(f"{candidate} is not valid release-gate JSON: {exc}")
+            return {"schemaVersion": 1, "gates": []}, candidate
+
+    plan_candidates = [
+        root / "release-plan.md",
+        root / "prompts" / "outputs" / "current" / "release-plan.md",
+    ]
+    for candidate in plan_candidates:
+        if not candidate.exists():
+            continue
+        match = re.search(r"```release-gates\s*(\{.*?\})\s*```", candidate.read_text(encoding="utf-8"), re.S)
+        if not match:
+            continue
+        try:
+            return json.loads(match.group(1)), candidate
+        except Exception as exc:
+            issues.append(f"{candidate} contains invalid release-gates JSON: {exc}")
+            return {"schemaVersion": 1, "gates": []}, candidate
+    return None, None
+
+
+def evaluate_release_gates(document: dict) -> dict:
+    allowed_kinds = {
+        "walking-skeleton", "beta", "production", "store-package",
+        "security", "privacy", "destructive-action", "data-integrity",
+        "scorecard", "canary-promotion",
+    }
+    tier_zero = {"security", "privacy", "destructive-action", "data-integrity"}
+    raw_gates = document.get("gates") if isinstance(document, dict) else None
+    if not isinstance(raw_gates, list) or not raw_gates:
+        issues.append("release gate document must contain a non-empty gates array")
+        raw_gates = []
+    results = []
+
+    for index, raw_gate in enumerate(raw_gates):
+        if not isinstance(raw_gate, dict):
+            issues.append(f"release gate at index {index} must be an object")
+            continue
+        gate_id = str(raw_gate.get("id") or f"gate-index-{index}").strip()
+        kind = str(raw_gate.get("kind") or "").strip()
+        dimension = str(raw_gate.get("dimension") or "").strip()
+        owner = str(raw_gate.get("owner") or "").strip()
+        blocking = raw_gate.get("blocking") is True
+        hard_gate = blocking or kind in tier_zero
+        requirement_ids = raw_gate.get("requirementIds") if isinstance(raw_gate.get("requirementIds"), list) else []
+        task_ids = raw_gate.get("taskIds") if isinstance(raw_gate.get("taskIds"), list) else []
+        required_evidence = raw_gate.get("requiredEvidence") if isinstance(raw_gate.get("requiredEvidence"), list) else []
+        actual_evidence = raw_gate.get("actualEvidence") if isinstance(raw_gate.get("actualEvidence"), list) else []
+        evidence_by_id = {
+            str(item.get("id")): item
+            for item in actual_evidence
+            if isinstance(item, dict) and item.get("id")
+        }
+        missing_evidence = [
+            str(evidence_id) for evidence_id in required_evidence
+            if evidence_by_id.get(str(evidence_id), {}).get("outcome") != "pass"
+            or not str(evidence_by_id.get(str(evidence_id), {}).get("source") or "").strip()
+        ]
+        reasons = []
+
+        if not re.fullmatch(r"GATE-[A-Z0-9-]+", gate_id):
+            reasons.append("gate ID must match GATE-[A-Z0-9-]+")
+        if kind not in allowed_kinds:
+            reasons.append(f"unknown gate kind {kind or '<missing>'}")
+        if not dimension:
+            reasons.append("scorecard dimension is missing")
+        if not owner:
+            reasons.append("gate owner is missing")
+        if not requirement_ids:
+            reasons.append("requirement IDs are missing")
+        if kind in {"walking-skeleton", "production"} and not task_ids:
+            reasons.append("walking-skeleton and production gates require task IDs")
+        if not isinstance(raw_gate.get("blocking"), bool):
+            reasons.append("blocking flag must be boolean")
+
+        threshold = raw_gate.get("threshold")
+        actual_value = raw_gate.get("actualValue")
+        if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
+            reasons.append("threshold is missing or non-numeric")
+            threshold = 0
+        if not isinstance(actual_value, (int, float)) or isinstance(actual_value, bool):
+            reasons.append("actual value is missing")
+            actual_value = None
+        effective_threshold = 100 if kind in tier_zero else threshold
+        if actual_value is not None and actual_value < effective_threshold:
+            reasons.append(f"actual {actual_value} is below threshold {effective_threshold}")
+        if missing_evidence:
+            reasons.append(f"missing required evidence: {', '.join(missing_evidence)}")
+
+        decision = "pass" if not reasons else "fail"
+        result = {
+            "id": gate_id,
+            "kind": kind,
+            "dimension": dimension,
+            "threshold": threshold,
+            "effectiveThreshold": effective_threshold,
+            "actualValue": actual_value,
+            "blocking": blocking,
+            "hardGate": hard_gate,
+            "owner": owner,
+            "requirementIds": requirement_ids,
+            "taskIds": task_ids,
+            "requiredEvidence": required_evidence,
+            "actualEvidence": actual_evidence,
+            "missingEvidence": missing_evidence,
+            "decision": decision,
+            "blockingReason": "; ".join(reasons) if reasons else None,
+        }
+        results.append(result)
+        if decision == "fail" and hard_gate:
+            issues.append(f"{gate_id}: {result['blockingReason']}")
+
+    actual_values = [item["actualValue"] for item in results if item["actualValue"] is not None]
+    aggregate_score = sum(actual_values) / len(actual_values) if actual_values else None
+    blocking_gate_ids = sorted(
+        item["id"] for item in results if item["hardGate"] and item["decision"] == "fail"
+    )
+    promotion_allowed = bool(results) and not blocking_gate_ids
+    return {
+        "promotion_allowed": promotion_allowed,
+        "aggregate_score": aggregate_score,
+        "blocking_gate_ids": blocking_gate_ids,
+        "gates": results,
+    }
+
+
+def write_release_gate_reports(source_path: Path, evaluation: dict, package_ready: bool) -> tuple[Path, Path]:
+    report_dir = source_path.parent
+    release_ready = package_ready and evaluation["promotion_allowed"]
+    json_report = {
+        "schema_version": 1,
+        "generated_by": "scripts/validate-release-readiness.sh",
+        "package_ready": package_ready,
+        "release_ready": release_ready,
+        **evaluation,
+    }
+    json_path = report_dir / "release-readiness-report.json"
+    markdown_path = report_dir / "release-gate-report.md"
+    rows = []
+    for gate in evaluation["gates"]:
+        reason = gate["blockingReason"] or "all threshold and evidence checks passed"
+        rows.append(
+            f"| {gate['id']} | {gate['dimension']} | {gate['effectiveThreshold']} | "
+            f"{gate['actualValue'] if gate['actualValue'] is not None else 'missing'} | "
+            f"{'yes' if gate['hardGate'] else 'no'} | {gate['decision']} | {reason} |"
+        )
+    markdown = "\n".join([
+        "# Release Gate Report",
+        "",
+        f"- **Package ready:** {'yes' if package_ready else 'no'}",
+        f"- **Product gates allow promotion:** {'yes' if evaluation['promotion_allowed'] else 'no'}",
+        f"- **Release ready:** {'yes' if release_ready else 'no'}",
+        f"- **Aggregate score:** {evaluation['aggregate_score'] if evaluation['aggregate_score'] is not None else 'not available'}",
+        f"- **Blocking gate IDs:** {', '.join(evaluation['blocking_gate_ids']) or 'none'}",
+        "",
+        "| Gate ID | Dimension | Threshold | Actual | Hard | Decision | Evidence / blocking reason |",
+        "|---|---|---:|---:|---|---|---|",
+        *rows,
+        "",
+    ])
+    atomic_write(json_path, json.dumps(json_report, indent=2, sort_keys=True) + "\n")
+    atomic_write(markdown_path, markdown)
+    return markdown_path, json_path
+
+
 pkg = load_json("package.json")
 readme = read_text("README.md")
 quick = read_text("QUICK_START.md")
@@ -232,10 +421,20 @@ if pack_json:
                 issues.append(f"npm pack dry-run includes forbidden file: {packed_path}")
                 break
 
+gate_document, gate_source = load_release_gates()
+gate_reports = None
+if gate_document is not None and gate_source is not None:
+    package_issues_before_gates = list(issues)
+    gate_evaluation = evaluate_release_gates(gate_document)
+    gate_reports = write_release_gate_reports(gate_source, gate_evaluation, not package_issues_before_gates)
+
 if issues:
     print("❌ release readiness: fail")
     for issue in issues:
         print(f"   - {issue}")
+    if gate_reports:
+        print(f"release gate report: {gate_reports[0]}")
+        print(f"release readiness report: {gate_reports[1]}")
     sys.exit(1)
 
 print("✅ release readiness: pass")
@@ -243,6 +442,9 @@ if pack_json:
     print("npm pack dry-run: checked")
 else:
     print("npm pack dry-run: skipped by RELEASE_READINESS_SKIP_PACK=1")
+if gate_reports:
+    print(f"release gate report: {gate_reports[0]}")
+    print(f"release readiness report: {gate_reports[1]}")
 PY
 status=$?
 rm -f "$PACK_JSON"

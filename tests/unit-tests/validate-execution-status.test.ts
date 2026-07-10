@@ -211,4 +211,27 @@ describe('validate-execution-status.sh', () => {
       fs.rmSync(planDir, { recursive: true, force: true });
     }
   });
+
+  it('consumes release readiness reports before accepting a release-ready completion claim', () => {
+    const planDir = fixture();
+    try {
+      fs.writeFileSync(path.join(planDir, 'completion-report.json'), JSON.stringify({
+        state: 'release_ready',
+      }), 'utf8');
+      fs.writeFileSync(path.join(planDir, 'release-readiness-report.json'), JSON.stringify({
+        release_ready: false,
+        blocking_gate_ids: ['GATE-PRIVACY-001'],
+      }), 'utf8');
+
+      const result = run(planDir);
+
+      expect(result.code).toBe(1);
+      expect(result.report.release_gate_passed).toBe(false);
+      expect(result.report.issues).toContainEqual(expect.objectContaining({
+        code: 'completion-release-disagreement',
+      }));
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
 });

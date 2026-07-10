@@ -220,6 +220,21 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/validate-fixture-isolation\.sh/);
   });
 
+  it('release-plan emits one machine-readable contract for product and package gates', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'release-plan.md'), 'utf8');
+    expect(body).toMatch(/```release-gates/);
+    expect(body).toMatch(/prompts\/outputs\/current\/release-gates\.json/);
+    expect(body).toMatch(/GATE-WALKING-SKELETON-001/);
+    expect(body).toMatch(/GATE-BETA-001/);
+    expect(body).toMatch(/GATE-PRODUCTION-001/);
+    expect(body).toMatch(/GATE-PRIVACY-001/);
+    expect(body).toMatch(/GATE-STORE-PACKAGE-001/);
+    expect(body).toMatch(/requirement and task\s+IDs/);
+    expect(body).toMatch(/threshold `100`/);
+    expect(body).toMatch(/unchecked Markdown alone is advisory and is forbidden/);
+    expect(body).toMatch(/failed hard gate blocks promotion regardless of aggregate score/);
+  });
+
   it('revise.sh exists, is executable, and writes revise-report.md', () => {
     const script = path.resolve(REPO_ROOT, 'scripts', 'revise.sh');
     expect(fs.existsSync(script)).toBe(true);

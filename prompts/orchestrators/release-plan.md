@@ -63,6 +63,103 @@ Stage-to-phase mapping (default; override only with explicit reason):
 - **GA** ⊇ all `mvp` + `expand` + `polish` tasks
 - **Post-GA** ⊇ tasks deferred from the original plan + new feature work
 
+## Machine-readable release gates (required)
+
+The release criteria below are the canonical promotion contract. Emit this
+fenced block in `release-plan.md` and write the identical JSON object to
+`prompts/outputs/current/release-gates.json`; do not leave any ship criterion
+only as an unchecked Markdown item.
+
+```release-gates
+{
+  "schemaVersion": 1,
+  "gates": [
+    {
+      "id": "GATE-WALKING-SKELETON-001",
+      "kind": "walking-skeleton",
+      "dimension": "primary-flow",
+      "threshold": 100,
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<production composition-root owner>",
+      "requirementIds": ["<REQ-primary-flow>"],
+      "taskIds": ["tasks-mvp-walking-skeleton-<surface>.md#T1"],
+      "requiredEvidence": ["walking-skeleton-integration"],
+      "actualEvidence": []
+    },
+    {
+      "id": "GATE-BETA-001",
+      "kind": "beta",
+      "dimension": "beta-quality",
+      "threshold": "<exact product-vision or audit threshold>",
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<beta owner>",
+      "requirementIds": ["<REQ-beta>"],
+      "taskIds": ["<canonical beta task ID>"],
+      "requiredEvidence": ["beta-scorecard"],
+      "actualEvidence": []
+    },
+    {
+      "id": "GATE-PRODUCTION-001",
+      "kind": "production",
+      "dimension": "production-flow",
+      "threshold": 100,
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<production owner>",
+      "requirementIds": ["<REQ-production-flow>"],
+      "taskIds": ["<canonical production-flow task ID>"],
+      "requiredEvidence": ["production-flow-integration"],
+      "actualEvidence": []
+    },
+    {
+      "id": "GATE-PRIVACY-001",
+      "kind": "privacy",
+      "dimension": "privacy",
+      "threshold": 100,
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<privacy owner>",
+      "requirementIds": ["<REQ-privacy>"],
+      "taskIds": ["<canonical privacy task ID>"],
+      "requiredEvidence": ["privacy-review"],
+      "actualEvidence": []
+    },
+    {
+      "id": "GATE-STORE-PACKAGE-001",
+      "kind": "store-package",
+      "dimension": "store-package",
+      "threshold": 100,
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<release owner>",
+      "requirementIds": ["<REQ-store-package>"],
+      "taskIds": ["<canonical store/package task ID>"],
+      "requiredEvidence": ["package-validation", "store-readiness"],
+      "actualEvidence": []
+    }
+  ]
+}
+```
+
+Replace every placeholder before writing the project release plan. Every gate
+must contain a stable `GATE-*` ID, kind, scorecard dimension, numeric threshold,
+actual value, blocking flag, owner, requirement IDs, canonical task IDs,
+required evidence IDs, and evidence records with source, outcome, and level.
+Walking-skeleton and production-flow gates must name both requirement and task
+IDs. Security, privacy, destructive-action, and data-integrity gates always use
+threshold `100` and are hard gates even if a generated block mistakenly marks
+them non-blocking.
+
+Copy scorecard thresholds exactly from reviewed product-vision metrics or audit
+decisions. Never improve, average, or invent a threshold during release-plan
+generation. A failed hard gate blocks promotion regardless of aggregate score.
+Before promotion, attach each passing evidence source to `actualEvidence`, then
+run `RELEASE_GATE_FILE="$PWD/prompts/outputs/current/release-gates.json" bash
+.ai-prompts/scripts/validate-release-readiness.sh .ai-prompts` so package and
+product gates are evaluated together.
+
 ## Stage details
 
 ### Alpha
@@ -174,6 +271,8 @@ review rounds); "ML model accuracy regresses on real-user data"
    `[ ]` checklist item that can be ticked from a single
    command, log, or human verification step. "Quality is high"
    is not a gate. "Crash-free rate ≥ 99.5%" is.
+   Each checklist item must also map to a `GATE-*` entry in the machine block;
+   unchecked Markdown alone is advisory and is forbidden.
 
 3. **Every stage has a rollback.** Even Alpha. Especially Alpha.
    Internal builds need a clear "what we do if Alpha collapses"

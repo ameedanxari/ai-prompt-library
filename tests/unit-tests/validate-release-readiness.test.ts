@@ -112,6 +112,35 @@ function validPackageJson(): Record<string, unknown> {
   };
 }
 
+function writeGates(dir: string, gates: Record<string, unknown>[]): void {
+  fs.writeFileSync(path.join(dir, 'release-gates.json'), JSON.stringify({
+    schemaVersion: 1,
+    gates,
+  }, null, 2), 'utf8');
+}
+
+function releaseGate(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    id: 'GATE-PRODUCTION-001',
+    kind: 'production',
+    dimension: 'production-flow',
+    threshold: 100,
+    actualValue: 100,
+    blocking: true,
+    owner: 'Release engineering',
+    requirementIds: ['REQ-FLOW-001'],
+    taskIds: ['tasks-production-flow.md#T1'],
+    requiredEvidence: ['production-flow-integration'],
+    actualEvidence: [{
+      id: 'production-flow-integration',
+      source: 'reports/production-flow.json',
+      outcome: 'pass',
+      level: 'integration',
+    }],
+    ...overrides,
+  };
+}
+
 describe('validate-release-readiness.sh', () => {
   it('is executable', () => {
     expect(fs.existsSync(SCRIPT)).toBe(true);
@@ -136,6 +165,83 @@ describe('validate-release-readiness.sh', () => {
 
       expect(result.code).toBe(1);
       expect(result.out).toMatch(/repository\.url is required/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('fails a release-plan gate with a precise missing-evidence message', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-gate-missing-'));
+    try {
+      writeFixtureRoot(dir, validPackageJson());
+      writeGates(dir, [releaseGate({ actualEvidence: [] })]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/GATE-PRODUCTION-001: missing required evidence: production-flow-integration/);
+      expect(result.out).toMatch(/release-gate-report\.md/);
+      const report = JSON.parse(
+        fs.readFileSync(path.join(dir, 'release-readiness-report.json'), 'utf8'),
+      );
+      expect(report).toMatchObject({
+        package_ready: true,
+        release_ready: false,
+        blocking_gate_ids: ['GATE-PRODUCTION-001'],
+      });
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not let passing package checks override a failed privacy gate', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-privacy-'));
+    try {
+      writeFixtureRoot(dir, validPackageJson());
+      writeGates(dir, [releaseGate({
+        id: 'GATE-PRIVACY-001',
+        kind: 'privacy',
+        threshold: 80,
+        actualValue: 99,
+        blocking: false,
+        requiredEvidence: ['privacy-review'],
+        actualEvidence: [{
+          id: 'privacy-review',
+          source: 'reports/privacy-review.json',
+          outcome: 'pass',
+          level: 'manual-review',
+        }],
+      })]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/actual 99 is below threshold 100/);
+      const markdown = fs.readFileSync(path.join(dir, 'release-gate-report.md'), 'utf8');
+      expect(markdown).toMatch(/GATE-PRIVACY-001.*100.*99.*yes.*fail/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('writes release-ready reports when package and hard gates pass', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-pass-'));
+    try {
+      writeFixtureRoot(dir, validPackageJson());
+      writeGates(dir, [releaseGate()]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(0);
+      expect(result.out).toMatch(/release readiness: pass/);
+      expect(JSON.parse(
+        fs.readFileSync(path.join(dir, 'release-readiness-report.json'), 'utf8'),
+      )).toMatchObject({
+        package_ready: true,
+        promotion_allowed: true,
+        release_ready: true,
+        blocking_gate_ids: [],
+      });
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }
