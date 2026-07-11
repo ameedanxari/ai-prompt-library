@@ -371,6 +371,8 @@ if exports.get("./execution-status", {}).get("import") != "./dist/execution/exec
     issues.append("package execution-status export must point at dist/execution/execution-status.js")
 if exports.get("./release-gates", {}).get("import") != "./dist/release/release-gates.js":
     issues.append("package release-gates export must point at dist/release/release-gates.js")
+if exports.get("./semantic-review", {}).get("import") != "./dist/review/index.js":
+    issues.append("package semantic-review export must point at dist/review/index.js")
 if exports.get("./task-contract", {}).get("import") != "./dist/task-contract/index.js":
     issues.append("package task-contract export must point at dist/task-contract/index.js")
 if exports.get("./traceability", {}).get("import") != "./dist/traceability/traceability-matrix.js":
@@ -380,6 +382,7 @@ required_bins = {
     "ai-prompt-ready": "./scripts/validate-ready-to-execute.sh",
     "ai-prompt-finalize": "./scripts/finalize.sh",
     "ai-prompt-validate-release-readiness": "./scripts/validate-release-readiness.sh",
+    "ai-prompt-validate-semantic-review": "./scripts/validate-semantic-review.sh",
 }
 bins = pkg.get("bin") or {}
 for name, expected_path in required_bins.items():
@@ -418,6 +421,11 @@ if pack_json:
         "dist/execution/execution-status.d.ts",
         "dist/release/release-gates.js",
         "dist/release/release-gates.d.ts",
+        "dist/review/index.js",
+        "dist/review/index.d.ts",
+        "dist/review/semantic-review.js",
+        "dist/review/semantic-review.d.ts",
+        "dist/review/cli.js",
         "dist/task-contract/index.js",
         "dist/task-contract/index.d.ts",
         "dist/task-contract/cli.js",
@@ -427,6 +435,7 @@ if pack_json:
         "QUICK_START.md",
         "LICENSE",
         "scripts/validate-release-readiness.sh",
+        "scripts/validate-semantic-review.sh",
         "scripts/validate-ready-to-execute.sh",
         "scripts/finalize.sh",
         "prompts/orchestrators/ai-agent-entry-point.md",

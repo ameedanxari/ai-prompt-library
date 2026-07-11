@@ -94,6 +94,59 @@ describe('validate-resumption-checkpoint.sh', () => {
     }
   });
 
+  it('accepts a semantic-review checkpoint with the trusted orchestrator', () => {
+    const dir = makeOutputDir();
+    try {
+      writeFile(dir, 'execution-log.md');
+      writeCheckpoint(dir, [
+        '---',
+        'phase: execution',
+        'engine: executor',
+        'step: "Semantic review"',
+        'last_completed: "tasks-final.md"',
+        'next_action: "Run semantic review and validation"',
+        're_load_files:',
+        '  - prompts/outputs/current/execution-log.md',
+        '  - prompts/orchestrators/semantic-review-and-validation.md',
+        'updated_at: 2026-05-30T20:00:00Z',
+        '---',
+      ]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(0);
+      expect(result.out).toMatch(/resumption checkpoint valid/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects a semantic-review checkpoint without the trusted orchestrator', () => {
+    const dir = makeOutputDir();
+    try {
+      writeFile(dir, 'execution-log.md');
+      writeCheckpoint(dir, [
+        '---',
+        'phase: execution',
+        'engine: executor',
+        'step: "Semantic review"',
+        'last_completed: "tasks-final.md"',
+        'next_action: "Run semantic review and validation"',
+        're_load_files:',
+        '  - prompts/outputs/current/execution-log.md',
+        'updated_at: 2026-05-30T20:00:00Z',
+        '---',
+      ]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/trusted semantic-review orchestrator/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects missing required fields and bad timestamps', () => {
     const dir = makeOutputDir();
     try {

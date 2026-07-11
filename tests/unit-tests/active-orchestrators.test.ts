@@ -24,6 +24,7 @@ const ACTIVE = [
   'revise-outputs.md',
   'baseline-task-shapes.md',
   'schema-alignment-pass.md',
+  'semantic-review-and-validation.md',
   'self-maintain.md',
   // Stream A upstream planning artifacts (run from drill-down-engine):
   'product-vision.md',
@@ -61,6 +62,7 @@ describe('active orchestrators', () => {
     );
     expect(body).toMatch(/drill-down-engine\.md/);
     expect(body).toMatch(/audit-and-remediate\.md/);
+    expect(body).toMatch(/semantic-review-and-validation\.md/);
   });
 
   it('entry point mode selection names all four modes', () => {
@@ -280,6 +282,17 @@ describe('active orchestrators', () => {
     expect(body).toMatch(/gap-list\.md|epics\.md/);
     // Hard requirement: never execute an unready plan.
     expect(body).toMatch(/validate-ready-to-execute\.sh/);
+  });
+
+  it('executor requires semantic review before honest handoff', () => {
+    const body = fs.readFileSync(path.join(ORCH, 'executor.md'), 'utf8');
+    const gate = body.indexOf('## Semantic-review gate');
+    const handoff = body.indexOf('## Honest-handoff gate');
+
+    expect(gate).toBeGreaterThan(-1);
+    expect(handoff).toBeGreaterThan(gate);
+    expect(body).toMatch(/validate-semantic-review\.sh/);
+    expect(body).toMatch(/completion-decision\.json/);
   });
 
   it('executor surfaces design-system review artifacts for feedback', () => {

@@ -252,9 +252,13 @@ harness_recoveries: []     # appended by the diagnose-harness pipeline; each ent
   append-only for journal entries and atomic-replace for the envelope.
 - `updated_at` ticks on every task transition.
 - `next_task` is computed: first task in dependency+severity order that
-  is not in `done` / `blocked` / `deferred` / `failed`.
+  is not in `done` / `blocked` / `deferred` / `failed`; when no implementation
+  task remains, use
+  `.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md` until
+  the semantic and honest-handoff gates permit `null`.
 - A new agent resuming work reads ONLY the envelope first. If every
-  task is `done`, report done. Otherwise continue from `next_task`.
+  implementation task is `done`, continue from the semantic-review gate.
+  Otherwise continue from `next_task`.
 
 ### Session resumption contract
 
@@ -262,9 +266,12 @@ Any new agent can produce correct continuation behaviour by following
 **only** these steps:
 
 1. Read the YAML frontmatter of `execution-log.md` (lines between `---`).
-2. Parse `next_task`. If `null`, the plan is complete — run a final
-   regression check and report.
-3. Open the remediation/tasks file that contains `next_task`.
+2. Parse `next_task`. If it names the semantic-review orchestrator, resume that
+   gate. If it is `null`, rerun the semantic-review validator and all
+   honest-handoff gates before reporting; a missing or non-passing semantic
+   decision makes the envelope invalid and restores the semantic-review next
+   action.
+3. Otherwise open the remediation/tasks file that contains `next_task`.
 4. Resume the execution loop from that task.
 
 A weak model must not re-run the audit when an envelope exists. The
@@ -392,10 +399,11 @@ repeat:
     task in the list belongs to a later phase): run broader
     regression check (see below).
 
-  when every task in delivery-order.md is accounted for: run the
-    honest-handoff gate (see below). It validates execution-log order
-    against task-graph.json before allowing `next_task: null`, and
-    only then produce the summary.
+  when every implementation task in delivery-order.md is accounted for:
+    checkpoint into the semantic-review phase (see below). Only a passing
+    semantic completion decision may proceed to the honest-handoff gate.
+    Review findings that require remediation return to this execution loop
+    through generated remediation-review task files.
 ```
 
 ### Why delivery-order.md and task-graph.json
@@ -452,7 +460,7 @@ re_load_files:
 updated_at: <current ISO 8601 timestamp>
 ---
 ```
-*(If this was the final task, set `next_action: "Run honest-handoff gate"` and list only `execution-log.md` in `re_load_files`.)*
+*(If this was the final implementation task, set `next_action: "Run semantic review and validation"` and reload `execution-log.md` plus `.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md`.)*
 
 Show:
 
@@ -690,6 +698,32 @@ Stop the loop and report when any of the following is true:
   probably wrong for this codebase; re-audit).
 - The user interrupted.
 
+## Semantic-review gate (MANDATORY after implementation)
+
+After all planned implementation tasks are accounted for, do not run honest
+handoff yet. Write the semantic-review checkpoint described in
+`.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md`, stop, and wait for
+`Continue`. The review phase must use independent context packets and at least
+one reviewer blind to the implementation narrative.
+
+Run the seven dimension prompts, synthesis, completion challenge, and, when
+needed, remediation planner. The challenge must write
+`prompts/outputs/current/review/completion-decision.json`. Then run:
+
+```bash
+bash .ai-prompts/scripts/validate-semantic-review.sh prompts/outputs/current
+```
+
+- Exit `0`: semantic completion is verified; proceed to honest handoff.
+- Exit `1`: review is valid but work remains. Add generated
+  `remediation-review-*.md` files to the task contract, graph, delivery order,
+  execution log, and checkpoint. Resume the normal task loop.
+- Exit `2`: review artifacts are missing or inconsistent. Repair the review
+  process and rerun; do not rewrite findings to make the gate green.
+
+Mechanical checks, a clean diff, file accounting, and the implementer's own
+summary cannot replace this gate.
+
 ## Honest-handoff gate (MANDATORY before setting `next_task: null`)
 
 Before declaring a run complete — that is, before setting `next_task:
@@ -700,6 +734,7 @@ bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-order.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-status.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-semantic-review.sh prompts/outputs/current
 ```
 
 The graph/order checks ensure the executor did not run dependents
@@ -719,6 +754,13 @@ missing or stale build evidence, evidence below the declared level, blocker
 drift, dependency drift, and completion/release claims that disagree with
 their gates. **If this validator fails, final handoff is forbidden.** Do not
 set a clean terminal envelope or suppress blockers to make it pass.
+
+The semantic-review validator verifies all seven independent reports,
+source-revision agreement, evidence-backed findings, lossless synthesis,
+dissent preservation, functional scenarios, a blind completion challenge, and
+remediation coverage. It is the only gate that may authorize the semantic
+completion claim. If it returns remediation-required or invalid, `next_task`
+must remain non-null.
 
 Exit codes:
 - `0` → every plan task is accounted for. `next_task: null` is

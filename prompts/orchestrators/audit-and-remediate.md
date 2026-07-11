@@ -35,6 +35,11 @@ All written to `prompts/outputs/current/`:
 | `gap-list.md` | Ordered list of gaps. Each gap is a concrete, measurable deficiency. |
 | `remediation-<gap-slug>.md` | Atomic tasks per gap. Each task names a real existing file + precise change. |
 
+When the user requests semantic review, functional validation, completion
+challenge, or review-driven planning, also produce the canonical artifacts
+under `review/` defined by
+`prompts/orchestrators/semantic-review-and-validation.md`.
+
 ## Context-isolation rules
 
 Same as the drill-down engine:
@@ -76,6 +81,20 @@ If you start a new chat, paste this exactly:
 ---
 
 ## STEP 1 — Component audit (runs once, per-component)
+
+### Semantic-review augmentation
+
+For requests that ask whether existing work is correct, functional, complete,
+or ready to stop, load and run
+`prompts/orchestrators/semantic-review-and-validation.md` as part of Step 1.
+Use the existing implementation as the reviewed source revision. If no prior
+execution artifacts exist, record unavailable evidence honestly and produce a
+nonterminal completion decision.
+
+The seven independent dimension reports supplement this component audit. They
+do not replace source inspection, mechanical gates, or runtime validation.
+Every open semantic finding must flow into Step 2 as a gap or carry an explicit
+reviewed disposition with evidence.
 
 **Load (per component):**
 - The component's root directory listing (e.g. `ls ios/`,
@@ -161,6 +180,13 @@ _Audited: <today's ISO date — obtain via `date +%Y-%m-%d`, do not guess>_
 **Produce:** an ordered list of gaps, each with a slug, severity, and a
 one-line description. Gap granularity: one gap = one cohesive remediation
 effort (roughly equivalent to one epic in the greenfield engine).
+
+When `review/review-synthesis.json` exists, preserve every unresolved finding
+ID in `gap-list.md`. Add `- **Finding IDs:** ...` to each covered gap and include
+a coverage table proving every unresolved finding maps to a gap. Do not drop a
+minority finding or average away a blocker. If semantic review recommends
+`verified_complete`, record why each original requirement is proved before
+emitting an empty gap list.
 
 ```markdown
 # Gap List

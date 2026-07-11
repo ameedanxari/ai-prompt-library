@@ -110,6 +110,12 @@ show me a summary of what was just completed, then wait for me to say
    block consecutively, external credentials are needed, or I
    interrupt.
 
+   After the final implementation task, checkpoint into the semantic-review
+   phase. Run all seven independent review dimensions, functional validation,
+   synthesis, and the blind completion challenge. If findings remain, create
+   remediation tasks and resume execution. Do not claim completion until
+   validate-semantic-review.sh exits 0.
+
 8. When everything is done, report to me:
    - Every file under prompts/outputs/current/ with a one-line purpose.
      Expect: project-context.md (optional), epics.md, brief-keywords.md,
@@ -118,6 +124,8 @@ show me a summary of what was just completed, then wait for me to say
      task-contract.json, task-graph.json, phase-order-report.md,
      baseline-task-coverage.md, user-review-checkpoints.md,
      revise-report.md, ready-to-execute-report.md, execution-log.md.
+     Also expect review/*.json and review/remediation-plan.md when findings
+     require follow-up.
    - A tree of what got created in the app (src/, backend/, frontend/,
      android/, ios/, infrastructure/).
    - One command I can run to start the app locally.
@@ -151,6 +159,9 @@ Start now.
 7. If the IDE closes or context runs out, start a new session and
    say "Continue where you left off" — the agent picks up from
    `execution-log.md`.
+8. After implementation, the agent performs independent semantic review. A
+   verified decision proceeds to honest handoff; unresolved findings become
+   the next remediation tasks.
 
 ## NPM install alternative
 
@@ -178,6 +189,7 @@ Common `npx` commands:
 | `npx ai-prompt-validate-screenshot-matrix prompts/outputs/current` | Check app-store screenshot task matrix coverage. |
 | `npx ai-prompt-generate-design-review prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html` | Generate the design review HTML artifact. |
 | `npx ai-prompt-validate-design-review docs/design-system/review/index.html prompts/outputs/current/ui-reference-source-map.md` | Validate design review HTML against the source map. |
+| `npx ai-prompt-validate-semantic-review prompts/outputs/current` | Validate semantic reports and the completion decision before honest handoff. |
 | `npx ai-prompt-validate-release-readiness .` | Check package metadata, docs examples, bins, and npm pack dry-run contents before release. |
 
 Programmatic API example:
@@ -214,6 +226,8 @@ After a successful run, `prompts/outputs/current/` contains:
 | `revise-report.md` | `scripts/revise.sh` | Coverage + schema check results. `executor_gate: pass` means the plan passed revise. `scripts/step3-progress.sh` is the in-progress checklist the agent runs between task-file generations. |
 | `ready-to-execute-report.md` | `scripts/validate-ready-to-execute.sh` | Final pre-executor verdict. `ready_to_execute: true` means execution is cleared; failures include `blocking_artifacts`, `blocking_issues`, and `recommended_step`. |
 | `execution-log.md` | executor | YAML handoff envelope + per-task journal |
+| `review/*.json` | semantic-review orchestrator | Independent dimension reports, synthesis, completion decision, and validator report |
+| `review/remediation-plan.md` | remediation planner (when needed) | Finding-linked next tasks when completion is not verified |
 
 You generally don't need to read these. The agent's final summary
 tells you everything you need to act on (start command, test command,

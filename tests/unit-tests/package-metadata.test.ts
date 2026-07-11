@@ -33,6 +33,10 @@ describe('package metadata', () => {
         types: './dist/release/release-gates.d.ts',
         import: './dist/release/release-gates.js',
       },
+      './semantic-review': {
+        types: './dist/review/index.d.ts',
+        import: './dist/review/index.js',
+      },
       './task-contract': {
         types: './dist/task-contract/index.d.ts',
         import: './dist/task-contract/index.js',
@@ -84,6 +88,7 @@ describe('package metadata', () => {
       'src/completion/**/*.ts',
       'src/execution/**/*.ts',
       'src/release/**/*.ts',
+      'src/review/**/*.ts',
       'src/task-contract/**/*.ts',
       'src/traceability/**/*.ts',
     ]);
@@ -92,6 +97,8 @@ describe('package metadata', () => {
       .toMatch(/export \* from '\.\/task-contract\/index\.js'/);
     expect(fs.readFileSync(path.join(REPO_ROOT, 'src', 'index.ts'), 'utf8'))
       .toMatch(/export \* from '\.\/release\/release-gates\.js'/);
+    expect(fs.readFileSync(path.join(REPO_ROOT, 'src', 'index.ts'), 'utf8'))
+      .toMatch(/export \* from '\.\/review\/index\.js'/);
   });
 
   it('publishes the library assets and executable shell tools', () => {
@@ -102,6 +109,7 @@ describe('package metadata', () => {
       'dist/completion',
       'dist/execution',
       'dist/release',
+      'dist/review',
       'dist/task-contract',
       'dist/traceability',
       'prompts',
@@ -121,6 +129,7 @@ describe('package metadata', () => {
       'ai-prompt-validate-instantiation': './scripts/validate-instantiation.sh',
       'ai-prompt-validate-phase-order': './scripts/validate-phase-order.sh',
       'ai-prompt-validate-release-readiness': './scripts/validate-release-readiness.sh',
+      'ai-prompt-validate-semantic-review': './scripts/validate-semantic-review.sh',
       'ai-prompt-validate-resumption-checkpoint': './scripts/validate-resumption-checkpoint.sh',
       'ai-prompt-validate-screenshot-matrix': './scripts/validate-screenshot-matrix.sh',
       'ai-prompt-validate-task-contract': './scripts/validate-task-contract.sh',
@@ -158,6 +167,7 @@ describe('package metadata', () => {
     const completion = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'completion', 'completion-state.js')));
     const executionStatus = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'execution', 'execution-status.js')));
     const releaseGates = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'release', 'release-gates.js')));
+    const semanticReview = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'review', 'index.js')));
     const taskContract = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'task-contract', 'index.js')));
     const traceability = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'traceability', 'traceability-matrix.js')));
 
@@ -165,6 +175,7 @@ describe('package metadata', () => {
     expect(completion.deriveCompletionState).toBeTypeOf('function');
     expect(executionStatus.deriveExecutionTerminalState).toBeTypeOf('function');
     expect(releaseGates.evaluateReleaseGates).toBeTypeOf('function');
+    expect(semanticReview.validateSemanticReviewBundle).toBeTypeOf('function');
     expect(taskContract.parsePlanTaskFile).toBeTypeOf('function');
     expect(traceability.buildTraceabilityMatrix).toBeTypeOf('function');
   });
@@ -191,6 +202,11 @@ describe('package metadata', () => {
       'dist/execution/execution-status.d.ts',
       'dist/release/release-gates.js',
       'dist/release/release-gates.d.ts',
+      'dist/review/index.js',
+      'dist/review/index.d.ts',
+      'dist/review/semantic-review.js',
+      'dist/review/semantic-review.d.ts',
+      'dist/review/cli.js',
       'dist/task-contract/index.js',
       'dist/task-contract/index.d.ts',
       'dist/task-contract/cli.js',
@@ -205,6 +221,7 @@ describe('package metadata', () => {
       'scripts/validate-user-review-checkpoints.sh',
       'scripts/validate-screenshot-matrix.sh',
       'scripts/validate-release-readiness.sh',
+      'scripts/validate-semantic-review.sh',
       'scripts/validate-regulated-architecture.sh',
       'scripts/validate-ui-reference-source-map.sh',
       'scripts/generate-design-system-review-artifact.sh',
@@ -291,11 +308,13 @@ describe('package metadata', () => {
         [
           "const root = await import('ai-prompt-library');",
           "const releaseGates = await import('ai-prompt-library/release-gates');",
+          "const semanticReview = await import('ai-prompt-library/semantic-review');",
           "const taskContract = await import('ai-prompt-library/task-contract');",
           'console.log(JSON.stringify({',
           '  rootReport: typeof root.buildTaskContractReport,',
           '  completion: typeof root.deriveCompletionState,',
           '  releaseGate: typeof releaseGates.evaluateReleaseGates,',
+          '  semanticReview: typeof semanticReview.validateSemanticReviewBundle,',
           '  parser: typeof taskContract.parsePlanTaskFile,',
           '  directoryReport: typeof taskContract.buildTaskContractReportForDirectory,',
           '}));',
@@ -309,6 +328,7 @@ describe('package metadata', () => {
         rootReport: 'function',
         completion: 'function',
         releaseGate: 'function',
+        semanticReview: 'function',
         parser: 'function',
         directoryReport: 'function',
       });

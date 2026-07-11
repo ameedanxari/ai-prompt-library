@@ -61,6 +61,7 @@ function writeFixtureRoot(dir: string, packageJson: Record<string, unknown>): vo
     'validate-ready-to-execute.sh',
     'finalize.sh',
     'validate-release-readiness.sh',
+    'validate-semantic-review.sh',
   ]) {
     const full = path.join(dir, 'scripts', script);
     fs.writeFileSync(full, '#!/usr/bin/env bash\n', 'utf8');
@@ -101,6 +102,10 @@ function validPackageJson(): Record<string, unknown> {
         types: './dist/release/release-gates.d.ts',
         import: './dist/release/release-gates.js',
       },
+      './semantic-review': {
+        types: './dist/review/index.d.ts',
+        import: './dist/review/index.js',
+      },
       './task-contract': {
         types: './dist/task-contract/index.d.ts',
         import: './dist/task-contract/index.js',
@@ -114,6 +119,7 @@ function validPackageJson(): Record<string, unknown> {
       'ai-prompt-ready': './scripts/validate-ready-to-execute.sh',
       'ai-prompt-finalize': './scripts/finalize.sh',
       'ai-prompt-validate-release-readiness': './scripts/validate-release-readiness.sh',
+      'ai-prompt-validate-semantic-review': './scripts/validate-semantic-review.sh',
     },
     scripts: {
       clean: 'rm -rf dist',

@@ -42,6 +42,15 @@ and logs progress.
                                             ▼
                                        executor
                                 (code + tests + execution-log.md)
+                                            │
+                                            ▼
+                              independent semantic review
+                         (7 dimensions + completion challenge)
+                                            │
+                         verified ──────────┴──────── remediation
+                            │                            │
+                            ▼                            └──► executor
+                      honest handoff
 ```
 
 ---
@@ -108,6 +117,7 @@ CLI bins:
 | `npx ai-prompt-generate-design-review <source-map> <output-html>` | Generates the design-system review HTML artifact. |
 | `npx ai-prompt-validate-design-review <html> [source-map]` | Validates design-review HTML structure and source-map traceability. |
 | `npx ai-prompt-validate-resumption-checkpoint <file>` | Validates selective context reload checkpoints. |
+| `npx ai-prompt-validate-semantic-review [target-dir]` | Validates independent semantic reports, functional evidence, synthesis, completion challenge, and remediation coverage. |
 | `npx ai-prompt-validate-release-readiness [repo-root]` | Checks package metadata, docs examples, bin executability, and npm pack dry-run contents before tagging or publishing. |
 | `npx ai-prompt-repair-task-schema-fields [target-dir]` | Normalizes explicit task-card field aliases before validation. |
 | `npx ai-prompt-validate-instantiation [target-dir]` | Runs the broad plan instantiation validator. |
@@ -134,6 +144,7 @@ and produces these files under `prompts/outputs/current/`:
 | Finalize | `phase-order-report.md`, `baseline-task-coverage.md`, `user-review-checkpoints.md` | Deterministic checks for lifecycle order, scoped baseline topics, design-review approval before dependent UI work, and screenshot matrices when present. |
 | Validate | `revise-report.md`, `ready-to-execute-report.md` | Final gate reports. `executor_gate: pass` and `ready_to_execute: true` mean execution is cleared. |
 | Execute | `execution-log.md` | Per-task journal + YAML handoff envelope (session_id, next_task, blocked, failed, test suite state). Any new session resumes from this envelope alone. |
+| Review | `review/*.json`, optional `review/remediation-plan.md` | Seven independent semantic dimensions, lossless synthesis, blind completion challenge, and machine-validated final decision. |
 
 **Mechanical gates:** `scripts/finalize.sh` is the canonical
 post-planning gate. It runs task schema repair, path ledger generation,
@@ -174,6 +185,11 @@ could not see):
   `next_task: null`. Any task with no file on disk and no excuse is a
   silent skip; the executor cannot declare the run complete until
   each one is either executed or explicitly marked.
+- **Semantic review gate** (`scripts/validate-semantic-review.sh`) — requires
+  seven independent review dimensions, executable functional scenarios,
+  evidence-backed findings, lossless synthesis, preserved dissent, and a blind
+  completion challenge. Open work returns to the executor through a remediation
+  plan instead of being averaged into a completion claim.
 
 ## Completion semantics
 
@@ -188,6 +204,7 @@ release readiness.
 | Artifact accounting | Every declared `File:` path exists or is explicitly blocked, failed, or deferred. |
 | Fixture verification | Fixture or harness evidence passed for the declared fixture graph. |
 | Production verification | Required production composition roots and primary flows passed their evidence gates. |
+| Semantic verification | Independent reviewers found the implementation faithful, correct, integrated, evidence-backed, and useful to the user; a blind challenger accepted the completion claim. |
 | Partial / blocked state | Blocked, failed, deferred, or unresolved external tasks remain visible. |
 | Release readiness | Machine-readable release and promotion gates passed. |
 
@@ -251,6 +268,7 @@ preference menu — you already authorised the run.
 | `prompts/orchestrators/drill-down-engine.md` | Greenfield engine: Seed → Features → Tasks. |
 | `prompts/orchestrators/audit-and-remediate.md` | Gap-closure engine: Audit → Gaps → Remediation. |
 | `prompts/orchestrators/executor.md` | Runs the plan against real code. Maintains `execution-log.md` with handoff envelope. |
+| `prompts/orchestrators/semantic-review-and-validation.md` | Runs independent semantic and functional review before honest handoff and routes unresolved findings into remediation. |
 | `prompts/orchestrators/revise-outputs.md` | Nine coverage + schema checks on engine outputs. Regenerates failures once; blocks the executor if still failing. |
 | `prompts/orchestrators/baseline-task-shapes.md` | Per-topic schema rules for the 12 baseline epics (enforces per-locale × per-device screenshots, per-platform auth tasks, etc.). |
 | `prompts/orchestrators/external-input-handler.md` | Runs first when user supplies designs/specs/code. |
@@ -275,6 +293,7 @@ preference menu — you already authorised the run.
 | `scripts/generate-design-system-review-artifact.sh` | Generates `docs/design-system/review/index.html` from a UI reference source map. |
 | `scripts/validate-design-system-review-artifact.sh` | Validates design-review HTML and source-map traceability. |
 | `scripts/validate-resumption-checkpoint.sh` | Validates selective context reload checkpoints. |
+| `scripts/validate-semantic-review.sh` | Validates the semantic review bundle and exits distinctly for verified completion, remediation, or invalid evidence. |
 | `scripts/validate-release-readiness.sh` | Pre-tag / pre-publish package gate for metadata, docs examples, executable bins, and npm pack dry-run contents. |
 | `scripts/repair-task-schema-fields.sh` | Normalizes explicit task-card field aliases and mechanical shorthands before validation. |
 | `scripts/build-path-ledger.sh` | Emits `path-ledger.md` — the one authoritative list of every `**File:**` path the plan owns. Detects collisions (same path under two tasks; same source basename under two directories of the same role). Executor consults before writing any source file. |

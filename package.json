@@ -30,6 +30,10 @@
       "types": "./dist/release/release-gates.d.ts",
       "import": "./dist/release/release-gates.js"
     },
+    "./semantic-review": {
+      "types": "./dist/review/index.d.ts",
+      "import": "./dist/review/index.js"
+    },
     "./task-contract": {
       "types": "./dist/task-contract/index.d.ts",
       "import": "./dist/task-contract/index.js"
@@ -44,6 +48,7 @@
     "dist/completion",
     "dist/execution",
     "dist/release",
+    "dist/review",
     "dist/task-contract",
     "dist/traceability",
     "docs",
@@ -61,6 +66,7 @@
     "ai-prompt-generate-design-review": "./scripts/generate-design-system-review-artifact.sh",
     "ai-prompt-ready": "./scripts/validate-ready-to-execute.sh",
     "ai-prompt-repair-task-schema-fields": "./scripts/repair-task-schema-fields.sh",
+    "ai-prompt-validate-semantic-review": "./scripts/validate-semantic-review.sh",
     "ai-prompt-validate-baseline-task-coverage": "./scripts/validate-baseline-task-coverage.sh",
     "ai-prompt-validate-design-review": "./scripts/validate-design-system-review-artifact.sh",
     "ai-prompt-validate-instantiation": "./scripts/validate-instantiation.sh",

@@ -127,6 +127,10 @@ if scalars.get("updated_at") and not re.fullmatch(r"\d{4}-\d{2}-\d{2}T\d{2}:\d{2
     issues.append("updated_at must be an ISO 8601 UTC timestamp")
 
 placeholder_re = re.compile(r"\{\{[^}]+\}\}|<[^>]+>|\*|\.\.\.|#")
+trusted_orchestrators = {
+    "prompts/orchestrators/semantic-review-and-validation.md",
+    ".ai-prompts/prompts/orchestrators/semantic-review-and-validation.md",
+}
 seen_reload_files: set[str] = set()
 for reload_file in reload_files:
     if reload_file in seen_reload_files:
@@ -138,8 +142,9 @@ for reload_file in reload_files:
     if not (
         reload_file.startswith("prompts/outputs/current/")
         or Path(reload_file).is_absolute()
+        or reload_file in trusted_orchestrators
     ):
-        issues.append(f"re_load_files entry must be absolute or under prompts/outputs/current/: {reload_file}")
+        issues.append(f"re_load_files entry must be absolute, under prompts/outputs/current/, or a trusted orchestrator: {reload_file}")
     if not path_exists_for_reload(reload_file, checkpoint):
         issues.append(f"re_load_files entry does not exist on disk: {reload_file}")
 
@@ -147,10 +152,14 @@ if phase == "execution":
     has_log = any(path.endswith("/execution-log.md") or path == "prompts/outputs/current/execution-log.md" for path in reload_files)
     has_task = any(re.search(r"/(?:tasks|remediation)-[a-z0-9][a-z0-9-]*\.md$", path) for path in reload_files)
     is_final = re.search(r"honest-handoff|complete|final", next_action, re.IGNORECASE) is not None
+    is_semantic_review = re.search(r"semantic review", next_action, re.IGNORECASE) is not None
+    has_semantic_orchestrator = any(path in trusted_orchestrators for path in reload_files)
     if not has_log:
         issues.append("execution checkpoints must reload execution-log.md")
-    if not has_task and not is_final:
-        issues.append("execution checkpoints must reload the next task unless next_action is final")
+    if is_semantic_review and not has_semantic_orchestrator:
+        issues.append("semantic-review checkpoints must reload the trusted semantic-review orchestrator")
+    if not has_task and not is_final and not is_semantic_review:
+        issues.append("execution checkpoints must reload the next task unless next_action is final or semantic review")
 
 if phase == "planning":
     has_planning_artifact = any(

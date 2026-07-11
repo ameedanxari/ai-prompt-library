@@ -258,6 +258,12 @@ Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
 5-step flow (Component audit → Gap list checkpoint → Remediation tasks
 → Validate/revise → Planning hard stop).
 
+When the request specifically asks to review completed work, validate
+functionality, challenge a completion claim, or plan work from semantic
+findings, the gap-closure engine MUST load
+`prompts/orchestrators/semantic-review-and-validation.md` during its audit.
+Mechanical checks alone are not a substitute for this review path.
+
 The orchestrator ends with a planning hard stop after the revise gate
 passes. Do not auto-chain into the executor from the user's original
 prompt. The user must explicitly authorize execution after reviewing the

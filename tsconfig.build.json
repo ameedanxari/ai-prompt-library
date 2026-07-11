@@ -13,6 +13,7 @@
     "src/completion/**/*.ts",
     "src/execution/**/*.ts",
     "src/release/**/*.ts",
+    "src/review/**/*.ts",
     "src/task-contract/**/*.ts",
     "src/traceability/**/*.ts"
   ],
