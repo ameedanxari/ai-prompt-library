@@ -87,6 +87,27 @@ describe('traceability matrix', () => {
     expect(findTraceabilityGaps(reviewed)).toEqual([]);
   });
 
+  it('keeps the feature contract as the override source regardless of sort order', () => {
+    const input: TraceabilityMatrixInput = {
+      features: [{ id: 'FEAT-SETTINGS', artifactContract: 'runtime-source' }],
+      tasks: [{
+        id: 'tasks-settings.md#T1',
+        featureIds: ['FEAT-SETTINGS'],
+        artifactContract: 'docs',
+      }],
+    };
+    const sourceId = 'FEAT-SETTINGS:artifactContract:runtime-source->docs';
+
+    expect(findTraceabilityGaps(buildTraceabilityMatrix(input))).toMatchObject([{
+      code: 'artifact-contract-changed-without-override',
+      sourceId: 'FEAT-SETTINGS',
+    }]);
+    expect(findTraceabilityGaps(buildTraceabilityMatrix({
+      ...input,
+      overrides: [completeOverride(sourceId, 'runtime-source', 'docs')],
+    }))).toEqual([]);
+  });
+
   it('validates reviewed override fields', () => {
     const matrix = buildTraceabilityMatrix({
       overrides: [

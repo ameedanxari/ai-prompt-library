@@ -21,9 +21,25 @@ describe('package metadata', () => {
         types: './dist/index.d.ts',
         import: './dist/index.js',
       },
+      './completion': {
+        types: './dist/completion/completion-state.d.ts',
+        import: './dist/completion/completion-state.js',
+      },
+      './execution-status': {
+        types: './dist/execution/execution-status.d.ts',
+        import: './dist/execution/execution-status.js',
+      },
+      './release-gates': {
+        types: './dist/release/release-gates.d.ts',
+        import: './dist/release/release-gates.js',
+      },
       './task-contract': {
         types: './dist/task-contract/index.d.ts',
         import: './dist/task-contract/index.js',
+      },
+      './traceability': {
+        types: './dist/traceability/traceability-matrix.d.ts',
+        import: './dist/traceability/traceability-matrix.js',
       },
     });
   });
@@ -63,10 +79,19 @@ describe('package metadata', () => {
       rootDir: 'src',
       sourceMap: false,
     });
-    expect(buildConfig.include).toEqual(['src/index.ts', 'src/task-contract/**/*.ts']);
+    expect(buildConfig.include).toEqual([
+      'src/index.ts',
+      'src/completion/**/*.ts',
+      'src/execution/**/*.ts',
+      'src/release/**/*.ts',
+      'src/task-contract/**/*.ts',
+      'src/traceability/**/*.ts',
+    ]);
     expect(buildConfig.exclude).toContain('src/**/*.test.ts');
     expect(fs.readFileSync(path.join(REPO_ROOT, 'src', 'index.ts'), 'utf8'))
       .toMatch(/export \* from '\.\/task-contract\/index\.js'/);
+    expect(fs.readFileSync(path.join(REPO_ROOT, 'src', 'index.ts'), 'utf8'))
+      .toMatch(/export \* from '\.\/release\/release-gates\.js'/);
   });
 
   it('publishes the library assets and executable shell tools', () => {
@@ -74,7 +99,11 @@ describe('package metadata', () => {
 
     expect(pkg.files).toEqual(expect.arrayContaining([
       'dist/index.*',
+      'dist/completion',
+      'dist/execution',
+      'dist/release',
       'dist/task-contract',
+      'dist/traceability',
       'prompts',
       'project-templates',
       'scripts',
@@ -126,10 +155,18 @@ describe('package metadata', () => {
     execSync('npm run build', { cwd: REPO_ROOT, stdio: 'pipe' });
 
     const root = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'index.js')));
+    const completion = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'completion', 'completion-state.js')));
+    const executionStatus = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'execution', 'execution-status.js')));
+    const releaseGates = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'release', 'release-gates.js')));
     const taskContract = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'task-contract', 'index.js')));
+    const traceability = await import(pathToFileUrl(path.join(REPO_ROOT, 'dist', 'traceability', 'traceability-matrix.js')));
 
     expect(root.buildTaskContractReport).toBeTypeOf('function');
+    expect(completion.deriveCompletionState).toBeTypeOf('function');
+    expect(executionStatus.deriveExecutionTerminalState).toBeTypeOf('function');
+    expect(releaseGates.evaluateReleaseGates).toBeTypeOf('function');
     expect(taskContract.parsePlanTaskFile).toBeTypeOf('function');
+    expect(traceability.buildTraceabilityMatrix).toBeTypeOf('function');
   });
 
   it('packs the published docs, declarations, and runnable scripts', () => {
@@ -148,9 +185,17 @@ describe('package metadata', () => {
     for (const expectedPath of [
       'dist/index.js',
       'dist/index.d.ts',
+      'dist/completion/completion-state.js',
+      'dist/completion/completion-state.d.ts',
+      'dist/execution/execution-status.js',
+      'dist/execution/execution-status.d.ts',
+      'dist/release/release-gates.js',
+      'dist/release/release-gates.d.ts',
       'dist/task-contract/index.js',
       'dist/task-contract/index.d.ts',
       'dist/task-contract/cli.js',
+      'dist/traceability/traceability-matrix.js',
+      'dist/traceability/traceability-matrix.d.ts',
       'scripts/validate-ready-to-execute.sh',
       'scripts/finalize.sh',
       'scripts/build-task-contract.sh',
@@ -245,9 +290,12 @@ describe('package metadata', () => {
         '-e',
         [
           "const root = await import('ai-prompt-library');",
+          "const releaseGates = await import('ai-prompt-library/release-gates');",
           "const taskContract = await import('ai-prompt-library/task-contract');",
           'console.log(JSON.stringify({',
           '  rootReport: typeof root.buildTaskContractReport,',
+          '  completion: typeof root.deriveCompletionState,',
+          '  releaseGate: typeof releaseGates.evaluateReleaseGates,',
           '  parser: typeof taskContract.parsePlanTaskFile,',
           '  directoryReport: typeof taskContract.buildTaskContractReportForDirectory,',
           '}));',
@@ -259,6 +307,8 @@ describe('package metadata', () => {
       });
       expect(JSON.parse(importOutput)).toEqual({
         rootReport: 'function',
+        completion: 'function',
+        releaseGate: 'function',
         parser: 'function',
         directoryReport: 'function',
       });

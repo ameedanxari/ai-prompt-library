@@ -34,6 +34,10 @@ describe('canary promotion protocol', () => {
     expect(protocol).toMatch(/HookLedger/);
   });
 
+  it('uses canonical GATE identifiers in the scorecard schema', () => {
+    expect(protocol).toMatch(/"id": "GATE-PRODUCTION-PRIMARY-FLOW"/);
+  });
+
   it('requires immutable evidence and reruns from an unchanged brief', () => {
     expect(protocol).toMatch(/immutable run ID/);
     expect(protocol).toMatch(/clean reset/);

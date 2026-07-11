@@ -119,7 +119,7 @@ uses `schemaVersion: 1`, and contains:
   },
   "hardGates": [
     {
-      "id": "production-primary-flow",
+      "id": "GATE-PRODUCTION-PRIMARY-FLOW",
       "passed": true,
       "evidence": "reports/production-primary-flow.json"
     }

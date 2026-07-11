@@ -16,12 +16,17 @@ interface CanaryScorecard {
 }
 
 function evidence(id: string, source: string, passed = true) {
-  return [{ id, source, outcome: passed ? 'pass' as const : 'fail' as const }];
+  return [{
+    id,
+    source,
+    outcome: passed ? 'pass' as const : 'fail' as const,
+    level: 'integration',
+  }];
 }
 
 function evaluateCanaryScorecard(scorecard: CanaryScorecard) {
   const gates: ReleaseGate[] = [{
-    id: 'CANARY-OVERALL',
+    id: 'GATE-CANARY-OVERALL',
     kind: 'canary-promotion',
     dimension: 'overall',
     threshold: 90,
@@ -37,7 +42,7 @@ function evaluateCanaryScorecard(scorecard: CanaryScorecard) {
   for (const [dimension, actualValue] of Object.entries(scorecard.dimensions)) {
     const tierZero = TIER_ZERO.has(dimension);
     gates.push({
-      id: `CANARY-DIMENSION-${dimension.toUpperCase()}`,
+      id: `GATE-CANARY-DIMENSION-${dimension.toUpperCase()}`,
       kind: (tierZero ? dimension : 'scorecard') as ReleaseGateKind,
       dimension,
       threshold: tierZero ? 100 : 85,
@@ -87,7 +92,7 @@ function scorecard(overrides: Partial<CanaryScorecard> = {}): CanaryScorecard {
       'data-integrity': 100,
     },
     hardGates: [{
-      id: 'CANARY-PRODUCTION-FLOW',
+      id: 'GATE-CANARY-PRODUCTION-FLOW',
       passed: true,
       evidence: 'evidence/production-flow.json',
     }],
@@ -107,14 +112,14 @@ describe('canary scorecard promotion', () => {
   it('rejects overall 94 when one hard gate fails', () => {
     const result = evaluateCanaryScorecard(scorecard({
       hardGates: [{
-        id: 'CANARY-PRODUCTION-FLOW',
+        id: 'GATE-CANARY-PRODUCTION-FLOW',
         passed: false,
         evidence: 'evidence/production-flow.json',
       }],
     }));
 
     expect(result.promotionAllowed).toBe(false);
-    expect(result.blockingGateIds).toContain('CANARY-PRODUCTION-FLOW');
+    expect(result.blockingGateIds).toContain('GATE-CANARY-PRODUCTION-FLOW');
   });
 
   it('rejects a non-tier-zero dimension at 84', () => {
@@ -123,7 +128,7 @@ describe('canary scorecard promotion', () => {
     }));
 
     expect(result.promotionAllowed).toBe(false);
-    expect(result.blockingGateIds).toContain('CANARY-DIMENSION-PLANNING-QUALITY');
+    expect(result.blockingGateIds).toContain('GATE-CANARY-DIMENSION-PLANNING-QUALITY');
   });
 
   it('rejects privacy at 99 because tier-zero dimensions require 100', () => {

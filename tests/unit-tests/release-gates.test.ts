@@ -77,6 +77,37 @@ describe('release gate evaluation', () => {
     expect(result.missingEvidence).toEqual(['production-flow-test']);
   });
 
+  it('turns a structurally invalid soft gate into a blocking failure', () => {
+    const result = evaluateReleaseGates([
+      gate(),
+      gate({
+        id: 'GATE-SCORE-001',
+        kind: 'scorecard',
+        blocking: false,
+        taskIds: [],
+        requiredEvidence: [],
+      }),
+    ]);
+
+    expect(result.promotionAllowed).toBe(false);
+    expect(result.blockingGateIds).toEqual(['GATE-SCORE-001']);
+    expect(result.results[1]).toMatchObject({
+      schemaValid: false,
+      hardGate: true,
+      decision: 'fail',
+    });
+    expect(result.results[1].blockingReason).toContain('canonical task IDs are missing');
+    expect(result.results[1].blockingReason).toContain('required evidence IDs are missing');
+  });
+
+  it('rejects score values outside the 0 to 100 contract', () => {
+    const result = evaluateReleaseGate(gate({ threshold: -1, actualValue: 101 }));
+
+    expect(result).toMatchObject({ schemaValid: false, hardGate: true, decision: 'fail' });
+    expect(result.blockingReason).toContain('threshold must be between 0 and 100');
+    expect(result.blockingReason).toContain('actual value must be between 0 and 100');
+  });
+
   it('allows a failed non-blocking scorecard dimension without overriding hard gates', () => {
     const result = evaluateReleaseGates([
       gate(),

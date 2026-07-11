@@ -89,9 +89,25 @@ function validPackageJson(): Record<string, unknown> {
         types: './dist/index.d.ts',
         import: './dist/index.js',
       },
+      './completion': {
+        types: './dist/completion/completion-state.d.ts',
+        import: './dist/completion/completion-state.js',
+      },
+      './execution-status': {
+        types: './dist/execution/execution-status.d.ts',
+        import: './dist/execution/execution-status.js',
+      },
+      './release-gates': {
+        types: './dist/release/release-gates.d.ts',
+        import: './dist/release/release-gates.js',
+      },
       './task-contract': {
         types: './dist/task-contract/index.d.ts',
         import: './dist/task-contract/index.js',
+      },
+      './traceability': {
+        types: './dist/traceability/traceability-matrix.d.ts',
+        import: './dist/traceability/traceability-matrix.js',
       },
     },
     bin: {
@@ -219,6 +235,35 @@ describe('validate-release-readiness.sh', () => {
       expect(result.out).toMatch(/actual 99 is below threshold 100/);
       const markdown = fs.readFileSync(path.join(dir, 'release-gate-report.md'), 'utf8');
       expect(markdown).toMatch(/GATE-PRIVACY-001.*100.*99.*yes.*fail/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('blocks malformed non-blocking gates instead of reporting release ready', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-malformed-soft-'));
+    try {
+      writeFixtureRoot(dir, validPackageJson());
+      writeGates(dir, [releaseGate({
+        id: 'GATE-SCORE-001',
+        kind: 'scorecard',
+        blocking: false,
+        taskIds: [],
+        requiredEvidence: [],
+      })]);
+
+      const result = run(dir);
+
+      expect(result.code).toBe(1);
+      expect(result.out).toMatch(/canonical task IDs are missing/);
+      expect(result.out).toMatch(/required evidence IDs are missing/);
+      expect(JSON.parse(
+        fs.readFileSync(path.join(dir, 'release-readiness-report.json'), 'utf8'),
+      )).toMatchObject({
+        promotion_allowed: false,
+        release_ready: false,
+        blocking_gate_ids: ['GATE-SCORE-001'],
+      });
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

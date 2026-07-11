@@ -102,6 +102,8 @@ export interface TraceabilityMatrixRow {
   testIds: TestId[];
   releaseGateIds: ReleaseGateId[];
   featureDependencyIds: FeatureId[];
+  sourceArtifactContract?: string;
+  taskArtifactContracts: string[];
   artifactContracts: string[];
   reviewedOverrideIds: string[];
 }
@@ -214,10 +216,11 @@ export function findTraceabilityGaps(matrix: TraceabilityMatrix): TraceabilityGa
         });
       }
 
-      if (row.artifactContracts.length > 1) {
-        const [sourceContract] = row.artifactContracts;
-        const missingOverride = row.artifactContracts.slice(1).some(
-          (taskContract) => !rowReviewed(row, `${row.sourceId}:artifactContract:${sourceContract}->${taskContract}`),
+      if (row.sourceArtifactContract && row.taskArtifactContracts.length > 0) {
+        const sourceContract = row.sourceArtifactContract;
+        const missingOverride = row.taskArtifactContracts.some(
+          (taskContract) => taskContract !== sourceContract
+            && !rowReviewed(row, `${row.sourceId}:artifactContract:${sourceContract}->${taskContract}`),
         );
         if (missingOverride) {
           gaps.push({
@@ -341,12 +344,17 @@ function rowForFeature(
     testIds: evidenceIds(tests, undefined, feature.flowIds ?? [], taskIds),
     releaseGateIds: evidenceIds(releaseGates, undefined, feature.flowIds ?? [], taskIds),
     featureDependencyIds: missingDependencyIds,
+    sourceArtifactContract: feature.artifactContract,
+    taskArtifactContracts: uniqueSorted(taskContracts),
     artifactContracts: uniqueSorted([feature.artifactContract, ...taskContracts].filter(isString)),
     reviewedOverrideIds: overrideIdsFor(overrides, feature.id),
   });
 }
 
-function baseRow(row: Omit<TraceabilityMatrixRow, 'featureDependencyIds' | 'artifactContracts'> & Partial<TraceabilityMatrixRow>): TraceabilityMatrixRow {
+function baseRow(
+  row: Omit<TraceabilityMatrixRow, 'featureDependencyIds' | 'taskArtifactContracts' | 'artifactContracts'>
+    & Partial<TraceabilityMatrixRow>,
+): TraceabilityMatrixRow {
   return {
     ...row,
     requirementIds: uniqueSorted(row.requirementIds),
@@ -356,6 +364,7 @@ function baseRow(row: Omit<TraceabilityMatrixRow, 'featureDependencyIds' | 'arti
     testIds: uniqueSorted(row.testIds),
     releaseGateIds: uniqueSorted(row.releaseGateIds),
     featureDependencyIds: uniqueSorted(row.featureDependencyIds ?? []),
+    taskArtifactContracts: uniqueSorted(row.taskArtifactContracts ?? []),
     artifactContracts: uniqueSorted(row.artifactContracts ?? []),
     reviewedOverrideIds: uniqueSorted(row.reviewedOverrideIds),
   };

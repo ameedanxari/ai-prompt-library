@@ -18,7 +18,7 @@ export interface ReleaseGateEvidence {
   id: string;
   source: string;
   outcome: 'pass' | 'fail' | 'missing';
-  level?: string;
+  level: string;
 }
 
 export interface ReleaseGate {
@@ -37,6 +37,7 @@ export interface ReleaseGate {
 
 export interface ReleaseGateResult extends ReleaseGate {
   effectiveThreshold: number;
+  schemaValid: boolean;
   hardGate: boolean;
   decision: ReleaseGateDecision;
   missingEvidence: string[];
@@ -83,17 +84,34 @@ export function evaluateReleaseGates(gates: ReleaseGate[]): ReleaseGateEvaluatio
 
 export function evaluateReleaseGate(gate: ReleaseGate): ReleaseGateResult {
   const tierZero = TIER_ZERO_GATE_KINDS.has(gate.kind);
-  const hardGate = gate.blocking || tierZero;
   const effectiveThreshold = tierZero ? 100 : gate.threshold;
   const evidenceById = new Map(gate.actualEvidence.map((evidence) => [evidence.id, evidence]));
   const missingEvidence = gate.requiredEvidence.filter((evidenceId) => (
     evidenceById.get(evidenceId)?.outcome !== 'pass'
     || !evidenceById.get(evidenceId)?.source.trim()
+    || !evidenceById.get(evidenceId)?.level.trim()
   ));
-  const reasons: string[] = [];
+  const schemaReasons: string[] = [];
 
-  if (!gate.owner.trim()) reasons.push('gate owner is missing');
-  if (gate.requirementIds.length === 0) reasons.push('requirement IDs are missing');
+  if (!/^GATE-[A-Z0-9-]+$/.test(gate.id)) schemaReasons.push('gate ID must match GATE-[A-Z0-9-]+');
+  if (!gate.dimension.trim()) schemaReasons.push('scorecard dimension is missing');
+  if (!gate.owner.trim()) schemaReasons.push('gate owner is missing');
+  if (gate.requirementIds.length === 0) schemaReasons.push('requirement IDs are missing');
+  if (gate.taskIds.length === 0) schemaReasons.push('canonical task IDs are missing');
+  if (gate.requiredEvidence.length === 0) schemaReasons.push('required evidence IDs are missing');
+  if (!Number.isFinite(gate.threshold) || gate.threshold < 0 || gate.threshold > 100) {
+    schemaReasons.push('threshold must be between 0 and 100');
+  }
+  if (
+    gate.actualValue !== null
+    && (!Number.isFinite(gate.actualValue) || gate.actualValue < 0 || gate.actualValue > 100)
+  ) {
+    schemaReasons.push('actual value must be between 0 and 100');
+  }
+
+  const schemaValid = schemaReasons.length === 0;
+  const hardGate = gate.blocking || tierZero || !schemaValid;
+  const reasons = [...schemaReasons];
   if (gate.actualValue === null || !Number.isFinite(gate.actualValue)) {
     reasons.push('actual value is missing');
   } else if (gate.actualValue < effectiveThreshold) {
@@ -106,6 +124,7 @@ export function evaluateReleaseGate(gate: ReleaseGate): ReleaseGateResult {
   return {
     ...gate,
     effectiveThreshold,
+    schemaValid,
     hardGate,
     decision: reasons.length === 0 ? 'pass' : 'fail',
     missingEvidence,

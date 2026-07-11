@@ -105,7 +105,7 @@ export function deriveExecutionTerminalState(
   const blockingReasons: string[] = [];
   const taskReasons: Record<string, string[]> = {};
   const missingEvidenceByTask: Record<string, EvidenceLevel> = {};
-  const recordsById = new Map(records.map((record) => [record.taskId, record]));
+  const recordsById = new Map<string, TaskUnitExecutionRecord>();
 
   const addTaskReason = (taskId: string, reason: string, blocking = false): void => {
     const taskEntries = taskReasons[taskId] ?? [];
@@ -113,6 +113,14 @@ export function deriveExecutionTerminalState(
     taskReasons[taskId] = taskEntries;
     (blocking ? blockingReasons : reasons).push(`${taskId}: ${reason}`);
   };
+
+  for (const record of records) {
+    if (recordsById.has(record.taskId)) {
+      addTaskReason(record.taskId, 'duplicate canonical execution record', true);
+    } else {
+      recordsById.set(record.taskId, record);
+    }
+  }
 
   for (const requiredTaskId of gates.requiredTaskIds ?? []) {
     if (!recordsById.has(requiredTaskId)) {
@@ -143,11 +151,14 @@ export function deriveExecutionTerminalState(
     if (record.acceptance.length === 0) {
       addTaskReason(record.taskId, 'done task has no acceptance records');
     }
+    const evidenceIds = new Set(record.testEvidence.map((evidence) => evidence.id));
     for (const acceptance of record.acceptance) {
       if (!acceptance.met) {
         addTaskReason(record.taskId, `acceptance ${acceptance.id} is unmet`);
       } else if (acceptance.evidenceIds.length === 0) {
         addTaskReason(record.taskId, `acceptance ${acceptance.id} has no evidence links`);
+      } else if (acceptance.evidenceIds.some((evidenceId) => !evidenceIds.has(evidenceId))) {
+        addTaskReason(record.taskId, `acceptance ${acceptance.id} links unknown evidence`);
       }
     }
 

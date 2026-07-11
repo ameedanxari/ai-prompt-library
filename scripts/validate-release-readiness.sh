@@ -60,6 +60,7 @@ fi
 
 python3 - "$ROOT" "$PACK_JSON" <<'PY'
 import json
+import math
 import os
 import re
 import stat
@@ -164,7 +165,6 @@ def evaluate_release_gates(document: dict) -> dict:
         dimension = str(raw_gate.get("dimension") or "").strip()
         owner = str(raw_gate.get("owner") or "").strip()
         blocking = raw_gate.get("blocking") is True
-        hard_gate = blocking or kind in tier_zero
         requirement_ids = raw_gate.get("requirementIds") if isinstance(raw_gate.get("requirementIds"), list) else []
         task_ids = raw_gate.get("taskIds") if isinstance(raw_gate.get("taskIds"), list) else []
         required_evidence = raw_gate.get("requiredEvidence") if isinstance(raw_gate.get("requiredEvidence"), list) else []
@@ -178,32 +178,50 @@ def evaluate_release_gates(document: dict) -> dict:
             str(evidence_id) for evidence_id in required_evidence
             if evidence_by_id.get(str(evidence_id), {}).get("outcome") != "pass"
             or not str(evidence_by_id.get(str(evidence_id), {}).get("source") or "").strip()
+            or not str(evidence_by_id.get(str(evidence_id), {}).get("level") or "").strip()
         ]
-        reasons = []
+        schema_reasons = []
 
         if not re.fullmatch(r"GATE-[A-Z0-9-]+", gate_id):
-            reasons.append("gate ID must match GATE-[A-Z0-9-]+")
+            schema_reasons.append("gate ID must match GATE-[A-Z0-9-]+")
         if kind not in allowed_kinds:
-            reasons.append(f"unknown gate kind {kind or '<missing>'}")
+            schema_reasons.append(f"unknown gate kind {kind or '<missing>'}")
         if not dimension:
-            reasons.append("scorecard dimension is missing")
+            schema_reasons.append("scorecard dimension is missing")
         if not owner:
-            reasons.append("gate owner is missing")
+            schema_reasons.append("gate owner is missing")
         if not requirement_ids:
-            reasons.append("requirement IDs are missing")
-        if kind in {"walking-skeleton", "production"} and not task_ids:
-            reasons.append("walking-skeleton and production gates require task IDs")
+            schema_reasons.append("requirement IDs are missing")
+        if not task_ids:
+            schema_reasons.append("canonical task IDs are missing")
+        if not required_evidence:
+            schema_reasons.append("required evidence IDs are missing")
         if not isinstance(raw_gate.get("blocking"), bool):
-            reasons.append("blocking flag must be boolean")
+            schema_reasons.append("blocking flag must be boolean")
 
         threshold = raw_gate.get("threshold")
         actual_value = raw_gate.get("actualValue")
-        if not isinstance(threshold, (int, float)) or isinstance(threshold, bool):
-            reasons.append("threshold is missing or non-numeric")
+        if (
+            not isinstance(threshold, (int, float))
+            or isinstance(threshold, bool)
+            or not math.isfinite(threshold)
+            or not 0 <= threshold <= 100
+        ):
+            schema_reasons.append("threshold must be numeric and between 0 and 100")
             threshold = 0
-        if not isinstance(actual_value, (int, float)) or isinstance(actual_value, bool):
-            reasons.append("actual value is missing")
+        if actual_value is not None and (
+            not isinstance(actual_value, (int, float))
+            or isinstance(actual_value, bool)
+            or not math.isfinite(actual_value)
+            or not 0 <= actual_value <= 100
+        ):
+            schema_reasons.append("actual value must be numeric and between 0 and 100")
             actual_value = None
+        schema_valid = not schema_reasons
+        hard_gate = blocking or kind in tier_zero or not schema_valid
+        reasons = list(schema_reasons)
+        if actual_value is None:
+            reasons.append("actual value is missing")
         effective_threshold = 100 if kind in tier_zero else threshold
         if actual_value is not None and actual_value < effective_threshold:
             reasons.append(f"actual {actual_value} is below threshold {effective_threshold}")
@@ -219,6 +237,7 @@ def evaluate_release_gates(document: dict) -> dict:
             "effectiveThreshold": effective_threshold,
             "actualValue": actual_value,
             "blocking": blocking,
+            "schemaValid": schema_valid,
             "hardGate": hard_gate,
             "owner": owner,
             "requirementIds": requirement_ids,
@@ -346,8 +365,16 @@ if types != "./dist/index.d.ts":
     issues.append("package.json types must be ./dist/index.d.ts")
 if exports.get(".", {}).get("import") != "./dist/index.js":
     issues.append("package root export must point at dist/index.js")
+if exports.get("./completion", {}).get("import") != "./dist/completion/completion-state.js":
+    issues.append("package completion export must point at dist/completion/completion-state.js")
+if exports.get("./execution-status", {}).get("import") != "./dist/execution/execution-status.js":
+    issues.append("package execution-status export must point at dist/execution/execution-status.js")
+if exports.get("./release-gates", {}).get("import") != "./dist/release/release-gates.js":
+    issues.append("package release-gates export must point at dist/release/release-gates.js")
 if exports.get("./task-contract", {}).get("import") != "./dist/task-contract/index.js":
     issues.append("package task-contract export must point at dist/task-contract/index.js")
+if exports.get("./traceability", {}).get("import") != "./dist/traceability/traceability-matrix.js":
+    issues.append("package traceability export must point at dist/traceability/traceability-matrix.js")
 
 required_bins = {
     "ai-prompt-ready": "./scripts/validate-ready-to-execute.sh",
@@ -385,9 +412,17 @@ if pack_json:
     required_packed = {
         "dist/index.js",
         "dist/index.d.ts",
+        "dist/completion/completion-state.js",
+        "dist/completion/completion-state.d.ts",
+        "dist/execution/execution-status.js",
+        "dist/execution/execution-status.d.ts",
+        "dist/release/release-gates.js",
+        "dist/release/release-gates.d.ts",
         "dist/task-contract/index.js",
         "dist/task-contract/index.d.ts",
         "dist/task-contract/cli.js",
+        "dist/traceability/traceability-matrix.js",
+        "dist/traceability/traceability-matrix.d.ts",
         "README.md",
         "QUICK_START.md",
         "LICENSE",

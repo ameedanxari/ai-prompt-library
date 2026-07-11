@@ -95,6 +95,26 @@ describe('execution status derivation', () => {
     });
   });
 
+  it('rejects acceptance links to unknown evidence', () => {
+    const report = deriveExecutionTerminalState([doneRecord({
+      acceptance: [{ id: 'A1', met: true, evidenceIds: ['missing-evidence'] }],
+    })], passingGates);
+
+    expect(report.state).toBe('partial');
+    expect(report.taskReasons['tasks-cleanup.md#T1']).toContain(
+      'acceptance A1 links unknown evidence',
+    );
+  });
+
+  it('fails closed on duplicate canonical execution records', () => {
+    const report = deriveExecutionTerminalState([doneRecord(), doneRecord()], passingGates);
+
+    expect(report.state).toBe('blocked');
+    expect(report.taskReasons['tasks-cleanup.md#T1']).toContain(
+      'duplicate canonical execution record',
+    );
+  });
+
   it('fails closed on missing evidence for tier-zero risks', () => {
     const report = deriveExecutionTerminalState([doneRecord({
       requiredEvidenceLevel: 'device',
