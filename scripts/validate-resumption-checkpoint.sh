@@ -32,6 +32,8 @@ if ! command -v python3 >/dev/null 2>&1; then
 fi
 
 python3 - "$CHECKPOINT" <<'PY'
+from __future__ import annotations
+
 import re
 import sys
 from pathlib import Path

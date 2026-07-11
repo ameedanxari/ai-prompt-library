@@ -47,6 +47,8 @@ bash "$SCRIPT_DIR/validate-ui-reference-source-map.sh" "$SOURCE_MAP" || exit $?
 mkdir -p "$(dirname "$OUTPUT_HTML")"
 
 python3 - "$SOURCE_MAP" "$OUTPUT_HTML" <<'PY'
+from __future__ import annotations
+
 import html
 import re
 import sys
