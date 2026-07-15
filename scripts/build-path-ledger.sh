@@ -156,6 +156,9 @@ collision_b=$(awk -F'|' '
   function is_source(p) {
     return p ~ /\.(kt|swift|ts|tsx|js|jsx|py|go|java|rs|rb|cs|cpp|c|h|hpp|mm|m|php|sol)$/
   }
+  function is_framework_route(p, basename) {
+    return p ~ /\/app\// && basename ~ /^(page|layout|route|loading|error|not-found|template|default)\.(ts|tsx|js|jsx)$/
+  }
   {
     if ($3 == "modify-existing") next
     path = $4
@@ -164,6 +167,10 @@ collision_b=$(awk -F'|' '
     if (n < 2) next
     root = segs[1]
     basename = segs[n]
+    # Next.js App Router reserves these basenames for route-local modules.
+    # Reuse under distinct route directories is required framework structure,
+    # not a duplicate production owner.
+    if (is_framework_route(path, basename)) next
     dir = path; sub("/"basename"$", "", dir)
     r = role(path)
     key = root"|"basename"|"r
