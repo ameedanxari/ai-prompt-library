@@ -51,6 +51,7 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C15 — Release-plan schema | Applies | Skip |
 | C16 — Store-submission schema | Applies (one-liner ok for non-mobile) | Skip |
 | C17 — Source-ledger + regulated architecture quality | Applies when research/fan-out triggers or architecture.md exists | Applies when research/fan-out triggers or architecture claims exist |
+| C18 — Content-system schema | Applies when UI tasks exist | Applies when remediation touches user-visible copy, first-run state, or seed data |
 
 `checks_run` in the report's frontmatter MUST list every check row
 marked "Applies" for the active engine. A revise report that omits an
@@ -388,6 +389,41 @@ sections:
 Mechanical state-matrix check: every screen subsection must
 contain the words `default`, `loading`, `empty`, `error`,
 `disabled`, `success`. A screen missing any state is rejected.
+
+### C18 — Content-system schema (conditional, both modes)
+
+Runs when C14 runs (UI tasks exist), or in gap-closure when any
+remediation touches user-visible copy, first-run state, or seed data.
+Verifies `prompts/outputs/current/content-system.md` and
+`prompts/outputs/current/content-lint.config.json` exist and match
+the schema declared in
+`.ai-prompts/prompts/orchestrators/content-system.md`. Required
+sections:
+
+- **Persona voice pack** — one subsection per product-vision persona,
+  with "words they use" and "words they never say".
+- **Voice and tone** — voice adjectives, tone-by-moment table, and
+  ≥ 6 example rewrites (internal phrasing → user-facing rewrite).
+- **Terminology glossary** — covers EVERY `invariants` entry from
+  every `features-*.md` (translation or `Never display ✓`) and every
+  mode/badge/status with explanation copy.
+- **Content model** — one subsection per ux-flows screen
+  (`screens_covered` equals ux-flows `total_screens`); String IDs
+  unique; declared keyboard shortcuts unique across the model; empty
+  and error states carry real copy.
+- **First-run experience** — activation milestone, first-value
+  journey, per-screen fresh-account state, identity-capture rule
+  (display names never derived from identifiers), empty-state
+  inventory.
+- **Seed and demo data policy** — production accounts never receive
+  demo content; demo accounts (if any) are named, README-documented
+  with credentials and roles, and UI-labeled.
+
+Mechanical checks: every string in the content model is scanned
+against `content-lint.config.json` `bannedSurfaceTerms` (zero hits
+allowed); rewrite-table count ≥ 6; screen-count equality. A failing
+C18 regenerates through `content-system.md`, never by hand-editing
+strings into compliance without re-running the persona read.
 
 ### C15 — Release-plan schema (greenfield only)
 

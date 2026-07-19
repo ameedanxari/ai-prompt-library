@@ -34,11 +34,12 @@ Before starting or continuing work, you **MUST** read the contents of `prompts/o
 5. **If `features-*.md` exist but `architecture.md` is missing:** Step 2 is complete. Proceed to **Step 2.7 (Architecture Blueprint)**.
 6. **If `architecture.md` exists and the request is architecture-only:** stop at the architecture checkpoint unless the user explicitly says `Continue` or asks for implementation tasks.
 7. **If `architecture.md` exists, the project has UI features, and `ux-flows.md` is missing:** Proceed to **Step 2.8 (UX Blueprint)**.
-8. **If the upstream blueprints are complete but some `tasks-*.md` are missing:** Run `bash scripts/step3-progress.sh` to see which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
-9. **If all `tasks-*.md` exist but `delivery-order.md` is missing:** Step 3 is complete. Proceed to **Step 3.7 (Schema Alignment)** then **Step 3.8 (Delivery Order)**.
-10. **If `delivery-order.md` exists but `release-plan.md` is missing:** Proceed to **Step 3.9 (Release Plan)**.
-11. **If the project has mobile platforms and `store-submission.md` is missing:** Proceed to **Step 3.95 (Store Submission)**.
-12. **If all the above exist but `revise-report.md` is missing or outdated:** Proceed to the **Revise Gate**.
+8. **If `ux-flows.md` exists but `content-system.md` is missing:** Proceed to **Step 2.9 (Content System)**.
+9. **If the upstream blueprints are complete but some `tasks-*.md` are missing:** Run `bash scripts/step3-progress.sh` to see which feature task files remain. Proceed to **Step 3 (Prompt Generation)**.
+10. **If all `tasks-*.md` exist but `delivery-order.md` is missing:** Step 3 is complete. Proceed to **Step 3.7 (Schema Alignment)** then **Step 3.8 (Delivery Order)**.
+11. **If `delivery-order.md` exists but `release-plan.md` is missing:** Proceed to **Step 3.9 (Release Plan)**.
+12. **If the project has mobile platforms and `store-submission.md` is missing:** Proceed to **Step 3.95 (Store Submission)**.
+13. **If all the above exist but `revise-report.md` is missing or outdated:** Proceed to the **Revise Gate**.
 
 Rely on the files on disk, NOT your context history, to decide which step to execute.
 
@@ -70,6 +71,8 @@ prompts/outputs/current/
 ├── ui-reference-source-map.md   (Step 2.6, when greenfield UI exists)
 ├── architecture.md              (Step 2.7)
 ├── ux-flows.md                  (Step 2.8, when greenfield UI exists)
+├── content-system.md            (Step 2.9, when greenfield UI exists)
+├── content-lint.config.json     (Step 2.9, when greenfield UI exists)
 ├── tasks-<feature-slug>.md      (Step 3, one per feature)
 ├── delivery-order.md            (Step 3.8)
 ├── phase-order-report.md        (Finalize / C11)
@@ -644,6 +647,29 @@ step.
 
 ---
 
+## STEP 2.9 — Content System (runs when greenfield UI exists)
+
+Runs after Step 2.8, whenever `ux-flows.md` was produced. Skip only
+for projects with no user-facing surface.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/content-system.md`
+
+It produces `prompts/outputs/current/content-system.md` (persona voice
+pack, voice-and-tone guide, terminology glossary, page-level content
+model, first-run experience, seed/demo policy) and
+`prompts/outputs/current/content-lint.config.json`. Step 3 UI tasks
+cite content-model String IDs instead of inventing copy; the executor
+enforces this via surface-copy hygiene (rule 6) and
+`scripts/validate-content-lint.sh`.
+
+After writing the files and presenting the checkpoint, **wait for the
+user to say "Continue"** before starting Step 3.
+
+If `content-system.md` already exists on disk (resumption), skip this
+step.
+
+---
+
 ### ⏸ CHECKPOINT — Features review
 
 After writing all `features-*.md` files, `external-accounts.md`, and
@@ -723,6 +749,12 @@ For each feature, start a **fresh context** containing:
 - `architecture.md` as the canonical source for stack, bounded context,
   state ownership, data-integrity, security, and deployment decisions
 - `ui-reference-source-map.md` if it exists and the feature is UI-heavy
+- `ux-flows.md` (the feature's screen sections) and `content-system.md`
+  (the same screens' content-model sections, glossary, and voice guide)
+  if they exist and the feature is UI-heavy. The prompt instructs the
+  implementer to render strings from cited String IDs — a UI task that
+  invents copy instead of citing or extending the content model is
+  malformed
 - **One or more modules** from `.ai-prompts/prompts/modules/` selected via
   `.ai-prompts/prompts/orchestrators/module-selection-index.md`. Modules ARE
   the source of the prompt's quality — they contain the patterns, code

@@ -213,6 +213,9 @@ expensive.
 
 ## See also
 
+- `content-system.md` — Step 2.9, runs immediately after this
+  orchestrator; turns this screen map into the persona voice pack,
+  glossary, page-level content model, and first-run experience spec.
 - `drill-down-engine.md` Step 3 — consumes this file when emitting
   UI-heavy tasks.
 - `ui-reference-source-map.md` — design-language reference,

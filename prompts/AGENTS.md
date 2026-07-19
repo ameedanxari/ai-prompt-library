@@ -205,6 +205,8 @@ Under `prompts/outputs/current/`:
 | `features-<epic>.md` | drill-down Step 2 |
 | `ui-reference-source-map.md` | drill-down Step 2 conditional output for greenfield UI-heavy planning when no authoritative Design Context exists |
 | `external-accounts.md` | drill-down Step 2.5 / audit-remediate Step 3.5 |
+| `ux-flows.md` | ux-blueprint (drill-down Step 2.8, greenfield UI) |
+| `content-system.md` + `content-lint.config.json` | content-system (drill-down Step 2.9, greenfield UI; audit runs when remediation touches copy/first-run/seed data) |
 | `tasks-<feature>.md` | drill-down Step 3 |
 | `audit-report.md` | audit-remediate Step 1 (gap-closure only) |
 | `gap-list.md` | audit-remediate Step 2 |
