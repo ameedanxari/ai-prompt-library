@@ -751,7 +751,18 @@ bash .ai-prompts/scripts/validate-execution-order.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-envelope.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-execution-status.sh prompts/outputs/current
 bash .ai-prompts/scripts/validate-semantic-review.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-content-lint.sh prompts/outputs/current .
 ```
+
+The content lint runs whenever the plan produced a content system
+(`content-system.md`). It scans the BUILT application source for banned
+surface terms, identifier-derived display names, fixture data reaching
+UI source, and duplicate keyboard shortcuts, and cross-checks
+`content-inventory.json` — the string table with provenance that UI
+tasks must emit and keep current — against the content model. A failing
+content lint forbids `next_task: null` exactly like the other gates; it
+is never `not-applicable` for a project whose plan includes
+`content-system.md`.
 
 The graph/order checks ensure the executor did not run dependents
 before their declared prerequisites. The envelope script reads every

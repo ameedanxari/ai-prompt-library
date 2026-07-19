@@ -40,7 +40,11 @@ Follow `prompts/review/README.md` exactly.
 1. Capture one source revision for the complete review bundle. If the worktree
    is dirty, use a deterministic fingerprint and record the changed paths.
 2. Run the applicable mechanical gates. Retain commands, outcomes, and report
-   paths for the completion challenge's `mechanicalGates` evidence.
+   paths for the completion challenge's `mechanicalGates` evidence. For any
+   project whose plan includes `content-system.md`, the gates include
+   `bash .ai-prompts/scripts/validate-content-lint.sh prompts/outputs/current .`
+   (banned surface terms, identifier-derived display names, fixture data in
+   UI source, duplicate shortcuts, content-inventory cross-check).
 3. Build seven context packets. Each packet contains only the inputs needed for
    its dimension.
 4. Assign unique `contextId` values and at least three reviewer perspectives.
