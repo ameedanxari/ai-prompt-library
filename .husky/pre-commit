@@ -1,8 +1,12 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
-# Run tests before commit
-npm test
+# git exports GIT_DIR/GIT_INDEX_FILE/GIT_WORK_TREE into hook children.
+# The test suite spawns nested git operations in temp repos (finalize,
+# commit-task, safety-check-commit tests); inheriting these vars points
+# those nested gits at THIS repo's locked index and the hook never
+# finishes. Run the suite with a clean git environment.
+env -u GIT_DIR -u GIT_INDEX_FILE -u GIT_WORK_TREE -u GIT_PREFIX npm test
 
 # Run the same review-enforcement gates used by CI.
 bash scripts/validate-review-enforcement.sh
