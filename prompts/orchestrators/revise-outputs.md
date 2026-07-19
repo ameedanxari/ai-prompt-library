@@ -292,6 +292,9 @@ sections (any missing → fail):
   goal, frustration, "what good looks like".
 - **Success metrics** — at least 3 measurable metrics, each with
   a target value and a measurement source.
+- **Activation milestone** — exactly one, with first-value action,
+  target (share of new accounts + time window), and measurement
+  source.
 - **Non-goals** — at least 3 explicit exclusions.
 - **Risks & assumptions** — at least 3 ranked risks, each with
   impact + mitigation.

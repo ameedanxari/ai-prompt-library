@@ -93,6 +93,18 @@ the section anchor below). Example:
 - Back-stack expectations.
 - Deep-link entry points (if any).
 - "Where the user lands after kill-and-relaunch" (resumption).
+- **Journey-first grouping:** primary navigation is organized around
+  the `## User journeys` list in `epics.md` — the things the user
+  came to do — with supporting/governance surfaces (audit, jobs,
+  workflow health, trust, settings) as secondary structure. A nav
+  whose top level mirrors internal capabilities instead of journeys
+  is rejected.
+- **Activation-first landing:** the post-auth landing screen's FIRST
+  suggested action advances the activation journey (the product
+  vision's Activation milestone). Consent and boundary education
+  appear as required in-line steps or reassurance copy along the
+  journey — never as the primary card while the first-value action
+  sits below it.
 
 ## Per-screen specifications
 

@@ -64,6 +64,22 @@ These metrics MUST be measurable. "Users love the product" is not
 a metric. "Day-7 retention ≥ 35%" is. If a metric needs new
 instrumentation to measure, name the instrumentation source.
 
+## Activation milestone (exactly one)
+- **First value:** <the single user action that constitutes first
+  value — stated as something the USER gets, not something the
+  system does. "First researched lead with a drafted outreach"
+  , not "onboarding completed">
+- **Target:** <percentage of new accounts reaching it and within
+  what time, e.g. "≥ 60% of new accounts within 24 hours">
+- **Measured by:** <instrumentation source>
+
+This milestone is the spine of downstream planning: the drill-down
+engine's activation journey traces to it, the UX blueprint's
+post-auth landing must point its FIRST suggested action at it, the
+content system's first-run spec is designed around it, and the
+release plan carries it as a gate. A vision without an activation
+milestone plans a product with no defined first value.
+
 ## Non-goals (explicit, 3–5)
 - <thing the product is NOT trying to do, and why that's deliberate>
 

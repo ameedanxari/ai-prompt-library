@@ -138,12 +138,48 @@ sources, update it before Step 1.
 
 **Do NOT load:** stage files, modules, templates, orchestrators beyond this one.
 
+### Enumerate user journeys FIRST (before any epic)
+
+Decomposition starts from what the user is trying to get done, not
+from the system's internal surfaces. Before writing epics, list the
+product's user journeys (3–7 for a typical product) in `epics.md`
+under a `## User journeys` heading. Each journey has:
+
+- `flow_id` — stable `FLOW-<SLUG>` (these are the same FLOW-IDs
+  features and tasks trace to later)
+- `persona` — which product-vision persona runs it
+- `trigger → outcome` — one line: what starts it and what the user
+  has when it ends
+- `screens` — the surfaces it crosses (names only; the UX blueprint
+  details them)
+
+Exactly ONE journey is marked `activation: true` — the journey that
+reaches the product-vision **Activation milestone**. For a
+lead-research product that is "sign up → first researched lead →
+first drafted outreach in the approval queue", not "sign up → read
+the boundaries". Governance, consent, and education steps appear
+INSIDE journeys as required in-line steps or reassurance — a
+compliance reading exercise is never itself a journey, and never the
+first suggested action.
+
+The journey list is the organizing spine: epics declare which
+journeys they serve, the UX blueprint's screen map and primary
+navigation group by journey (not by internal capability), and the
+release plan's first-value gate traces to the activation journey.
+
 ### Produce two groups of epics
 
 **(a) Feature epics** — the user's brief turned into a variable number of epics based strictly on the project's actual size and needs. Each epic covers a primary user
 capability. Examples: for a music app → "Playback engine", "Library &
 playlists", "Discovery & recommendations"; for a marketplace → "Product
 catalog", "Checkout", "Order fulfilment". Do NOT artificially invent epics just to hit a specific count.
+
+Every feature epic names the journeys it serves (`serves_journeys`).
+An epic that serves no journey is either baseline infrastructure or
+scope creep — decide which, explicitly. Internal concepts (jobs,
+audit, workflow health, trust) are supporting structure around
+journeys; they do not get first-class navigation billing ahead of the
+journeys they support.
 
 **(b) Production-readiness baseline epics** — selected from the master list
 below based on what is **actually relevant** to this project. The library
@@ -192,6 +228,8 @@ If no platforms are specified, use the default platform set: web + android + ios
 Each epic entry has exactly:
 - `name` — short, noun-phrase, unique
 - `category` — `feature` | `baseline`
+- `serves_journeys` — list of `FLOW-<SLUG>` journey IDs this epic
+  serves (`none` only for baseline scaffolding with no user surface)
 - `goal` — one sentence, starts with a verb
 - `acceptance_criteria` — 2–4 bullets, each measurable/testable
 - `complexity` — `S` (<1 week) | `M` (1–2 weeks) | `L` (2+ weeks)
