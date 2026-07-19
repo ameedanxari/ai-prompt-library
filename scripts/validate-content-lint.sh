@@ -8,6 +8,8 @@
 # Usage: validate-content-lint.sh [outputs-dir] [app-root]
 #   outputs-dir  default prompts/outputs/current
 #   app-root     default . (the application repository root)
+#
+# Exit codes: 0 pass / not-applicable, 1 blocking findings, 2 prerequisite error.
 
 set -uo pipefail
 

@@ -427,7 +427,11 @@ screenshots, previews, and fixture-only UI tests cannot satisfy
 `production_verification`.
 
 Fixture tests must label `Evidence level: ui-fixture`; that label is evidence
-classification, never a production-verification claim.
+classification, never a production-verification claim. The two fields
+cross-check each other: any unit carrying `Evidence level: ui-fixture` MUST
+also declare its `Composition map` — the isolation validator fails such a
+unit rather than skipping it, so a contract full of ui-fixture evidence can
+never make the gate report not-applicable.
 
 For each fixture-related gap, mirror this policy into the generated
 `remediation-<gap>.md` requirements and acceptance bullets. Run

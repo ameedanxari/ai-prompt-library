@@ -1144,7 +1144,22 @@ Rules enforced during Step 3:
 4. Fixture or preview wiring may be used only by an explicitly test-only task
    that names a separate production-wiring evidence task. Fixture evidence
    never satisfies `release-gate=mvp-walking-skeleton` by itself.
-5. Run `bash .ai-prompts/scripts/validate-walking-skeleton.sh prompts/outputs/current`
+5. **Deferred routes are user-facing states, not internal notes.** A skeleton
+   may reserve routes for later feature tasks, but every reserved route is
+   machine-tracked and honest:
+   - the skeleton task lists each reserved route under a `Deferred routes:`
+     metadata bullet (path + owning future task file);
+   - a reserved route that stays reachable renders the content model's
+     coming-soon entry for that surface (`STR-<SCREEN>-COMING-SOON` in
+     `content-system.md`) — plain-language copy about what the area will do
+     and what to use meanwhile. Internal delivery vocabulary ("walking
+     skeleton", "owning feature task", "planned capability", task-file names)
+     never renders to users; the content lint bans it mechanically;
+   - navigation may only link to a reserved route if that honest state is
+     what renders; otherwise the entry is hidden or disabled with copy.
+   The readiness gate fails a build whose reachable navigation lands on an
+   unmarked stub.
+6. Run `bash .ai-prompts/scripts/validate-walking-skeleton.sh prompts/outputs/current`
    after task-contract generation. Any failing surface blocks Step 3 completion
    and all expansion work.
 

@@ -46,7 +46,13 @@ const [contractPath, reportPath] = process.argv.slice(2);
 const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
 const units = Array.isArray(contract.units) ? contract.units : [];
 const fixtureMaps = new Set(['test-fixture', 'screenshot', 'preview', 'demo']);
-const fixtureUnits = units.filter((unit) => fixtureMaps.has(String(unit.compositionMap || '').toLowerCase()));
+// A unit is fixture-relevant when EITHER signal says so. Keying off the
+// composition map alone let a real build (SignalForge, 2026-07) carry
+// `Evidence level: ui-fixture` on 47 units while this gate reported
+// not-applicable — the two fields must cross-check each other.
+const fixtureUnits = units.filter((unit) =>
+  fixtureMaps.has(String(unit.compositionMap || '').toLowerCase()) ||
+  String(unit.evidenceLevel || '').toLowerCase() === 'ui-fixture');
 const issues = [];
 const allowances = [];
 
@@ -99,7 +105,7 @@ if (fixtureUnits.length === 0) {
     generatedAt: new Date().toISOString(),
     status: 'not-applicable',
     applicable: false,
-    reason: 'task contract declares no fixture, screenshot, preview, or demo composition maps',
+    reason: 'task contract declares no fixture, screenshot, preview, or demo composition maps and no ui-fixture evidence levels',
     allowances: [],
     issues: [],
   }, null, 2) + '\n');
@@ -109,6 +115,13 @@ if (fixtureUnits.length === 0) {
 for (const unit of fixtureUnits) {
   const map = lower(unit.compositionMap);
   const isProductionOwned = productionOwned(unit);
+  if (!map) {
+    addIssue('missing-composition-map', 'Unit declares Evidence level: ui-fixture but no Composition map; declare production, test-fixture, screenshot, preview, or demo so fixture isolation can be verified.', unit);
+  } else if (!fixtureMaps.has(map) && map !== 'production') {
+    addIssue('unknown-composition-map', `Composition map "${map}" is not one of production, test-fixture, screenshot, preview, demo.`, unit);
+  } else if (map === 'production' && lower(unit.evidenceLevel) === 'ui-fixture') {
+    addIssue('production-map-fixture-evidence', 'A production composition map cannot rest on Evidence level: ui-fixture; provide integration or device evidence, or reclassify the unit as a fixture map with a retirement contract.', unit);
+  }
   const metadata = allowanceMetadata(unit.fixtureAllowance);
   const owner = metadata.owner || '';
   const expiry = metadata.expiry || '';
