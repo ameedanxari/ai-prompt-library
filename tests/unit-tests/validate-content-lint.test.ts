@@ -199,6 +199,7 @@ describe('content lint — clean pass and pair integrity', () => {
         bannedSurfaceTerms: [
           { term: 'composition root', reason: 'implementation noun', allowedContexts: [] },
           { term: 'walking skeleton', reason: 'delivery vocabulary', allowedContexts: [] },
+          { term: 'canonical', reason: 'implementation noun', allowedContexts: [] },
         ],
       },
       contentSystem,
@@ -209,6 +210,7 @@ describe('content lint — clean pass and pair integrity', () => {
           'export default function Layout() {',
           '  {/* the walking skeleton wired this */}',
           '  const docs = "https://example.com/path"; // composition root note',
+          '  const label = `Select ${candidate.canonicalName} for review`;',
           '  return <main>Welcome back</main>;',
           '}',
         ].join('\n'),

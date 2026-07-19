@@ -168,7 +168,9 @@ const MARKUP_EXTENSIONS = new Set(['.tsx', '.jsx', '.html', '.vue', '.svelte']);
 const scannableSpans = (line, markup) => {
   const spans = [];
   const quoted = line.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g);
-  for (const match of quoted) spans.push(match[2]);
+  // Template-literal interpolation source (`${candidate.canonicalName}`)
+  // is code, not user-visible copy — scan only the literal text around it.
+  for (const match of quoted) spans.push(match[2].replace(/\$\{[^}]*\}/g, ' '));
   if (markup) {
     for (const match of line.matchAll(/>([^<>{}]+)</g)) spans.push(match[1]);
     const trailing = line.match(/>\s*([^<>{}"'`]+)\s*$/);
