@@ -689,6 +689,22 @@ pause, surface the regression, and do not proceed to the next gap.
    (environment missing, credentials unavailable), the prompt is
    `blocked`, not `done`.
 
+6. **Surface-copy hygiene (MANDATORY for any user-visible string).**
+   Requirement, acceptance, invariant, and delivery vocabulary is
+   internal. Never render it verbatim into UI copy: no acceptance
+   criterion, `never-display` invariant, stage jargon ("walking
+   skeleton", "owning feature task", "planned capability"), or
+   implementation noun ("persisted", "server-owned", "adapter",
+   "canonical") may appear in a user-visible string. When a screen
+   must communicate a guarantee, translate it in the product's voice
+   using the glossary in `content-system.md`. Every new user-visible
+   string traces to the page-level content model when one exists; if a
+   needed string has no model entry, add the entry (ID + provenance)
+   in the same task — never invent surface copy ad hoc. Display names
+   shown to users are never derived from identifiers (no UUID
+   fragments, no slug-as-name); if a human name is missing, that is a
+   data-model gap to fix, not a formatting problem to paper over.
+
 ## When to stop
 
 Stop the loop and report when any of the following is true:

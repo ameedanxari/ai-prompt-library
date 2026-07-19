@@ -420,7 +420,17 @@ Each feature has:
 - `constraints` — any project-specific constraints that affect how this
   feature must be built (e.g. "no network access", "on-device only",
   "must work offline")
-- `phase` — `foundation` | `mvp` | `expand` | `polish`. Inherits from
+- `invariants` — system guarantees this feature must uphold (security,
+  governance, data-integrity, session, compliance rules), or `none`.
+  Every invariant is tagged `never-display`: it shapes behaviour,
+  architecture, and tests, but its wording is INTERNAL. Invariant
+  language may never be transcribed into a user-visible string. When a
+  screen needs to communicate a guarantee to the user, the string is
+  *translated* through the content system's glossary and voice guide
+  (`content-system.md`) — e.g. the invariant "sessions are server-owned
+  and verified" surfaces, if at all, as "You're securely signed in",
+  never as the invariant's own words. Requirement and acceptance
+  wording is under the same never-display rule by default.
   the parent epic's `phase` unless this feature is materially earlier
   or later than its siblings (e.g. a "design tokens" feature inside an
   mvp epic legitimately moves to `foundation`; an "advanced filters"
@@ -817,6 +827,15 @@ Include this section for UI features only:
 - Token mapping: colors, typography, spacing, radius, elevation, motion,
   and chart colors if applicable.
 - State matrix: default, loading, empty, error, disabled, success.
+- Surface copy: every user-visible string is written in the end-user
+  persona's voice and cites its entry in the page-level content model
+  (`content-system.md` § Content model) when that artifact exists.
+  Never transcribe requirement, acceptance-criterion, or `invariants`
+  wording into UI strings — translate through the terminology glossary.
+  Respect the project's banned-surface-term list
+  (`content-lint.config.json`); internal delivery vocabulary ("walking
+  skeleton", "owning feature task", "planned capability", "persisted",
+  "server-owned", "adapter") never reaches a user-visible string.
 - Responsive behavior: mobile, tablet, desktop, and large desktop.
 - Accessibility and screenshot/visual QA criteria.
 - Mobile OS capability matrix for storage, memory cleanup, media access,
