@@ -7,6 +7,7 @@ export const RELEASE_GATE_KINDS = [
   'privacy',
   'destructive-action',
   'data-integrity',
+  'fresh-account',
   'scorecard',
   'canary-promotion',
 ] as const;
@@ -57,6 +58,7 @@ const TIER_ZERO_GATE_KINDS = new Set<ReleaseGateKind>([
   'privacy',
   'destructive-action',
   'data-integrity',
+  'fresh-account',
 ]);
 
 export function evaluateReleaseGates(gates: ReleaseGate[]): ReleaseGateEvaluation {

@@ -138,19 +138,47 @@ only as an unchecked Markdown item.
       "taskIds": ["<canonical store/package task ID>"],
       "requiredEvidence": ["package-validation", "store-readiness"],
       "actualEvidence": []
+    },
+    {
+      "id": "GATE-FRESH-ACCOUNT-001",
+      "kind": "fresh-account",
+      "dimension": "content-experience",
+      "threshold": 100,
+      "actualValue": null,
+      "blocking": true,
+      "owner": "<content-experience owner>",
+      "requirementIds": ["<REQ-onboarding-or-first-value>"],
+      "taskIds": ["<canonical first-value journey task ID>"],
+      "requiredEvidence": ["fresh-account-dry-run", "content-lint-report"],
+      "actualEvidence": []
     }
   ]
 }
 ```
+
+The fresh-account gate is the production-readiness checklist evaluated
+against a brand-new account: no identifier-derived strings, zero
+banned-term/fixture/duplicate-shortcut lint hits, every string traced to the
+content model and passing the persona read, every badge and mode explained,
+every navigation target landing on real content or an honest coming-soon
+state, all empty/loading/error/partial states rendered, the signed-in user
+present in their own rosters and the active workspace in its list, the
+first-value journey completable end to end within governance constraints,
+and the build's content inventory and readiness report emitted. Its
+evidence comes from `review/content-experience-review.json`
+(`fresh-account-dry-run`) and `content-lint-report.json`
+(`content-lint-report`). Ship criteria for user-facing products include
+this gate whenever the plan has a content system; a run that fails any
+checklist item is not done, regardless of generation success.
 
 Replace every placeholder before writing the project release plan. Every gate
 must contain a stable `GATE-*` ID, kind, scorecard dimension, numeric threshold,
 actual value, blocking flag, owner, requirement IDs, canonical task IDs,
 required evidence IDs, and evidence records with source, outcome, and level.
 Walking-skeleton and production-flow gates must name both requirement and task
-IDs. Security, privacy, destructive-action, and data-integrity gates always use
-threshold `100` and are hard gates even if a generated block mistakenly marks
-them non-blocking.
+IDs. Security, privacy, destructive-action, data-integrity, and fresh-account
+gates always use threshold `100` and are hard gates even if a generated block
+mistakenly marks them non-blocking.
 
 Copy scorecard thresholds exactly from reviewed product-vision metrics or audit
 decisions. Never improve, average, or invent a threshold during release-plan

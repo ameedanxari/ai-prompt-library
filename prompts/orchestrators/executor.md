@@ -722,7 +722,7 @@ handoff yet. Write the semantic-review checkpoint described in
 `Continue`. The review phase must use independent context packets and at least
 one reviewer blind to the implementation narrative.
 
-Run the seven dimension prompts, synthesis, completion challenge, and, when
+Run the eight dimension prompts, synthesis, completion challenge, and, when
 needed, remediation planner. The challenge must write
 `prompts/outputs/current/review/completion-decision.json`. Then run:
 
@@ -782,7 +782,7 @@ drift, dependency drift, and completion/release claims that disagree with
 their gates. **If this validator fails, final handoff is forbidden.** Do not
 set a clean terminal envelope or suppress blockers to make it pass.
 
-The semantic-review validator verifies all seven independent reports,
+The semantic-review validator verifies all eight independent reports,
 source-revision agreement, evidence-backed findings, lossless synthesis,
 dissent preservation, functional scenarios, a blind completion challenge, and
 remediation coverage. It is the only gate that may authorize the semantic

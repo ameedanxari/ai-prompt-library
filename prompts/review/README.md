@@ -16,6 +16,7 @@ completion.
 | `adversarial-edge-cases` | `adversarial-edge-case-review.md` | `review/adversarial-review.json` |
 | `evidence-quality` | `evidence-quality-audit.md` | `review/evidence-audit.json` |
 | `user-outcome` | `user-outcome-validation.md` | `review/user-outcome-review.json` |
+| `content-experience` | `content-experience-review.md` | `review/content-experience-review.json` |
 
 All paths are relative to `prompts/outputs/current/`.
 
@@ -23,7 +24,7 @@ All paths are relative to `prompts/outputs/current/`.
 
 - Run each dimension in a distinct independent context packet with a unique
   `contextId`.
-- Use at least three reviewer identities or perspectives across the seven
+- Use at least three reviewer identities or perspectives across the eight
   dimensions.
 - At least one reviewer MUST be blind to the implementer's completion summary
   and implementation narrative. That report sets

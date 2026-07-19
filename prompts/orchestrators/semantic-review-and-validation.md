@@ -29,9 +29,10 @@ Write under `prompts/outputs/current/review/`:
 5. `adversarial-review.json`
 6. `evidence-audit.json`
 7. `user-outcome-review.json`
-8. `review-synthesis.json`
-9. `completion-decision.json`
-10. `remediation-plan.md` when completion is not verified
+8. `content-experience-review.json`
+9. `review-synthesis.json`
+10. `completion-decision.json`
+11. `remediation-plan.md` when completion is not verified
 
 Follow `prompts/review/README.md` exactly.
 
@@ -45,7 +46,7 @@ Follow `prompts/review/README.md` exactly.
    `bash .ai-prompts/scripts/validate-content-lint.sh prompts/outputs/current .`
    (banned surface terms, identifier-derived display names, fixture data in
    UI source, duplicate shortcuts, content-inventory cross-check).
-3. Build seven context packets. Each packet contains only the inputs needed for
+3. Build eight context packets. Each packet contains only the inputs needed for
    its dimension.
 4. Assign unique `contextId` values and at least three reviewer perspectives.
 5. Mark at least one packet blind: omit the implementation narrative and set
@@ -63,6 +64,7 @@ Run these prompts independently:
 5. `prompts/review/adversarial-edge-case-review.md`
 6. `prompts/review/evidence-quality-audit.md`
 7. `prompts/review/user-outcome-validation.md`
+8. `prompts/review/content-experience-review.md`
 
 Parallel read-only reviewers are preferred when available. Each reviewer writes
 only its own report and cannot edit implementation files, plans, evidence, or
@@ -70,7 +72,7 @@ another report.
 
 ## Phase 2: Review synthesis
 
-Run `prompts/review/review-synthesis.md` with all seven reports.
+Run `prompts/review/review-synthesis.md` with all eight reports.
 
 The synthesizer must:
 

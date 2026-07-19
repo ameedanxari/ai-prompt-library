@@ -9,6 +9,7 @@ export const SEMANTIC_REVIEW_DIMENSIONS = [
   'adversarial-edge-cases',
   'evidence-quality',
   'user-outcome',
+  'content-experience',
 ] as const;
 
 export const SEMANTIC_FINDING_SEVERITIES = [
@@ -184,6 +185,7 @@ export const SEMANTIC_REVIEW_REPORT_FILES: Record<SemanticReviewDimension, strin
   'adversarial-edge-cases': 'adversarial-review.json',
   'evidence-quality': 'evidence-audit.json',
   'user-outcome': 'user-outcome-review.json',
+  'content-experience': 'content-experience-review.json',
 };
 
 const BLOCKING_SEVERITIES = new Set<SemanticFindingSeverity>(['critical', 'high']);

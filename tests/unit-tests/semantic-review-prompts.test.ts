@@ -12,6 +12,7 @@ const PROMPTS = [
   'adversarial-edge-case-review.md',
   'evidence-quality-audit.md',
   'user-outcome-validation.md',
+  'content-experience-review.md',
   'review-synthesis.md',
   'completion-challenge.md',
   'remediation-planner.md',

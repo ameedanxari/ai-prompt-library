@@ -30,6 +30,7 @@ const ACTIVE = [
   'product-vision.md',
   'architecture-blueprint.md',
   'ux-blueprint.md',
+  'content-system.md',
   'release-plan.md',
   'store-submission.md',
 ];
