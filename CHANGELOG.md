@@ -5,6 +5,79 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — content-experience layer (SignalForge audit remediation)
+
+A forensic audit of the SignalForge build (2026-07) showed the library
+propagating requirements into structure flawlessly while shipping
+engineering acceptance criteria as UI copy, hardcoded fixture people
+as live rosters, a display name derived from a UUID fragment, a
+catch-all stub route speaking delivery vocabulary, a duplicate
+keyboard shortcut, and compliance-first onboarding. Seven review
+dimensions ran and failed the build — but none owned what the user
+SEES, the fixture gate keyed off the wrong field and self-disabled,
+and no gate covered the fresh-account experience. This release adds
+the missing audience-facing layer end to end.
+
+### Added — Step 2.9 `content-system.md` orchestrator
+
+Persona voice pack, voice-and-tone guide (≥6 internal→user rewrites),
+terminology glossary exhaustive over feature `invariants`, page-level
+content model (String IDs, unique shortcuts/headings, honest
+coming-soon entries), first-run experience spec (activation milestone,
+per-screen fresh-account state, identity capture — display names never
+derived from identifiers), and the seed/demo policy: production
+signups never receive demo content; demo data lives only behind
+README-documented demo accounts and is labeled in the UI. Validated by
+new revise check C18. Emits `content-lint.config.json`.
+
+### Added — `scripts/validate-content-lint.sh`
+
+Mechanical surface-copy gate over the built app source: banned surface
+terms (quoted strings + JSX/HTML text nodes), identifier-derived
+display names, fixture markers (`.test` addresses, all-zeros UUIDs) in
+UI source, duplicate shortcuts, and a `content-inventory.json`
+cross-check (string table with provenance every UI build must emit).
+Not-applicable only when the project has no content system — a
+half-declared pair fails instead of skipping. Replayed against the
+SignalForge codebase: 102 true findings.
+
+### Added — `content-experience` review dimension + `fresh-account` gate
+
+Eighth independent review dimension running the fresh-account dry-run
+checklist (persona read-aloud, live-data-is-live, navigation honesty,
+states rendered, modes explained, first action advances activation,
+demo policy, inventory). Fixture-as-live-data is CRITICAL and may not
+be softened into a wiring backlog item. New tier-zero `fresh-account`
+release-gate kind (forced threshold 100) wired to the review report
+and lint report as evidence (`GATE-FRESH-ACCOUNT-001`).
+
+### Changed — channels, journeys, stubs, fixture keying
+
+- Feature schema gains never-display `invariants`; executor rule 6
+  (surface-copy hygiene): internal wording is translated, never
+  transcribed; strings trace to the content model.
+- Planning enumerates user journeys before epics (`serves_journeys`,
+  exactly one `activation: true`); product vision requires an
+  Activation milestone; UX blueprint requires journey-first navigation
+  and an activation-first post-auth landing.
+- Walking-skeleton rules: reserved routes are declared under
+  `Deferred routes:`, render honest coming-soon copy, and nav may not
+  link to unmarked stubs.
+- `validate-fixture-isolation.sh` keys off `Evidence level: ui-fixture`
+  as well as `Composition map` — a contract full of ui-fixture
+  evidence can no longer make the gate report not-applicable
+  (replayed on the SignalForge contract: not-applicable → 323 issues).
+- `.husky/pre-commit` runs `npm test` with a clean git environment
+  (nested-git test hang fix).
+
+### Added — eval scenarios
+
+Regression evals replaying every SignalForge defect class against the
+content lint and fixture gate, a hold-out scenario on a different
+stack (static HTML/Vue, custom vocabulary and shortcut syntax) so the
+lint generalizes, and template-contract guards for every changed
+orchestrator/review prompt.
+
 ## [Unreleased] — executor-side safeguards
 
 Field test on a StorageCleaner (native Android + iOS) brief exposed
