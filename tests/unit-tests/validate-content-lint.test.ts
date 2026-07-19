@@ -192,6 +192,31 @@ describe('content lint — clean pass and pair integrity', () => {
     expect(code).toBe(0);
   });
 
+  it('ignores multiword banned terms inside code comments of markup files', () => {
+    const { report } = run({
+      config: {
+        ...baseConfig,
+        bannedSurfaceTerms: [
+          { term: 'composition root', reason: 'implementation noun', allowedContexts: [] },
+          { term: 'walking skeleton', reason: 'delivery vocabulary', allowedContexts: [] },
+        ],
+      },
+      contentSystem,
+      inventory: validInventory,
+      appFiles: {
+        'src/layout.tsx': [
+          '// Production composition root for the shell.',
+          'export default function Layout() {',
+          '  {/* the walking skeleton wired this */}',
+          '  const docs = "https://example.com/path"; // composition root note',
+          '  return <main>Welcome back</main>;',
+          '}',
+        ].join('\n'),
+      },
+    });
+    expect(report.status).toBe('pass');
+  });
+
   it('is not-applicable only when neither artifact exists', () => {
     const { code, report } = run({ appFiles: { 'src/a.tsx': 'export {};' } });
     expect(report.status).toBe('not-applicable');

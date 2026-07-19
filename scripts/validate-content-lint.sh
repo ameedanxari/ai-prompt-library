@@ -179,6 +179,13 @@ const scannableSpans = (line, markup) => {
   return spans;
 };
 const termRegExp = (term) => new RegExp(term.split(/\s+/).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
+// Multiword terms scan whole markup lines (JSX text is unquoted), but code
+// comments are not user-visible copy — strip them first. "//" after
+// whitespace or at line start is a comment; "://" in URLs is not.
+const stripComments = (line) => line
+  .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
+  .replace(/^\s*(?:\/\/|\/?\*).*$/, ' ')
+  .replace(/(^|\s)\/\/.*$/, '$1');
 const identifierRegs = identifierPatterns.map((pattern) => new RegExp(pattern));
 const fixtureRegs = fixtureMarkers.map((pattern) => new RegExp(pattern, 'i'));
 const shortcutsByFile = new Map();
@@ -202,7 +209,7 @@ for (const file of files) {
       if (allowed.length > 0 && matchesAny(allowed, file.relative)) continue;
       const regExp = termRegExp(banned.term);
       const multiword = /\s/.test(banned.term.trim());
-      const haystack = multiword ? `${spanText} ${markup ? line : ''}` : spanText;
+      const haystack = multiword ? `${spanText} ${markup ? stripComments(line) : ''}` : spanText;
       if (haystack && regExp.test(haystack)) {
         issues.push({ code: 'banned-surface-term', file: file.relative, line: lineNumber, term: banned.term, message: `Banned surface term "${banned.term}" in user-visible copy${banned.reason ? ` (${banned.reason})` : ''}.` });
       }
