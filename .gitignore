@@ -56,3 +56,5 @@ prompts/working_copy/*
 .state/
 test-perf-outputs/
 docs/dry-runs/*.md
+*.stderr
+safety-report.json

@@ -163,7 +163,7 @@ if phase == "execution":
 
 if phase == "planning":
     has_planning_artifact = any(
-        re.search(r"/(epics|brief-keywords|features-[^/]+|tasks-[^/]+|remediation-[^/]+|audit-report|gap-list|revise-report|external-accounts|delivery-order|task-contract|task-graph|phase-order-report|user-review-checkpoints)\.(md|json)$", path)
+        re.search(r"/(project-context|product-vision|source-ledger|epics|brief-keywords|features-[^/]+|architecture|ux-flows|content-system|content-lint\.config|tasks-[^/]+|remediation-[^/]+|audit-report|gap-list|revise-report|external-accounts|delivery-order|release-plan|store-submission|task-contract|task-graph|phase-order-report|user-review-checkpoints)\.(md|json)$", path)
         for path in reload_files
     )
     if not has_planning_artifact:

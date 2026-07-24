@@ -106,7 +106,13 @@ if [ "$research_signal" -eq 1 ]; then
   require_arch_file "research-triggered plan needs a source-backed architecture blueprint" >/dev/null || true
 fi
 
-if has '(Google Cloud|GCP|Cloud Run|Cloud SQL|Spanner|Pub/Sub|VPC Service Controls|VPC-SC|Cloud KMS|CMEK|Cloud Armor|Security Command Center|BigQuery|Cloud Storage)'; then
+gcp_architecture_signal=0
+if has '(GCP|Cloud Run|Cloud SQL|Spanner|Pub/Sub|VPC Service Controls|VPC-SC|Cloud KMS|CMEK|Cloud Armor|Security Command Center|BigQuery|Cloud Storage)' \
+  || has 'Google Cloud.{0,80}(hosting|deployment|deploy(ed|ment)?|landing zone|workload|infrastructure|primary region)|(hosting|deployment|deploy(ed|ment)?|landing zone|workload|infrastructure|primary region).{0,80}Google Cloud'; then
+  gcp_architecture_signal=1
+fi
+
+if [ "$gcp_architecture_signal" -eq 1 ]; then
   if require_arch_file "Google Cloud architecture requested"; then
     gcp_terms=$(count_arch_terms \
       'Cloud Run|GKE|Google Kubernetes Engine|App Engine' \
