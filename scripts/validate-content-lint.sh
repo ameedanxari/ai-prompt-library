@@ -165,12 +165,26 @@ walk(appRoot);
 const MARKUP_EXTENSIONS = new Set(['.tsx', '.jsx', '.html', '.vue', '.svelte']);
 // User-visible spans on a line: quoted string bodies plus, for
 // markup-capable files, JSX/HTML text nodes (text between > and <).
+const HEADER_TOKEN_LITERAL = /^[A-Z][A-Za-z0-9]*(?:-[A-Z0-9][A-Za-z0-9]*)+$/;
 const scannableSpans = (line, markup) => {
   const spans = [];
+  // A comment line is never user-visible copy. Multiword terms already strip
+  // comments before matching; doing it here extends the same rule to
+  // single-word terms, whose backtick-quoted identifiers in JSDoc
+  // (`idempotencyKey`) would otherwise read as a quoted string.
+  if (/^\s*(?:\/\/|\/\*|\*\/|\*(?!\/))/.test(line)) return spans;
   const quoted = line.matchAll(/(["'`])((?:\\.|(?!\1).)*)\1/g);
   // Template-literal interpolation source (`${candidate.canonicalName}`)
   // is code, not user-visible copy — scan only the literal text around it.
-  for (const match of quoted) spans.push(match[2].replace(/\$\{[^}]*\}/g, ' '));
+  for (const match of quoted) {
+    const body = match[2].replace(/\$\{[^}]*\}/g, ' ');
+    // A quoted literal in canonical HTTP-header casing ("Idempotency-Key",
+    // "X-Correlation-ID") is a wire identifier, not prose. Requiring each
+    // segment to start uppercase keeps lowercase hyphenated copy — including
+    // banned terms like "server-owned" — fully checked.
+    if (HEADER_TOKEN_LITERAL.test(body.trim())) continue;
+    spans.push(body);
+  }
   if (markup) {
     for (const match of line.matchAll(/>([^<>{}]+)</g)) spans.push(match[1]);
     const trailing = line.match(/>\s*([^<>{}"'`]+)\s*$/);
