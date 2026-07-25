@@ -165,6 +165,7 @@ walk(appRoot);
 const MARKUP_EXTENSIONS = new Set(['.tsx', '.jsx', '.html', '.vue', '.svelte']);
 // User-visible spans on a line: quoted string bodies plus, for
 // markup-capable files, JSX/HTML text nodes (text between > and <).
+const HEADER_CONTEXT = /\bheaders?\b|setRequestHeader/i;
 const HEADER_TOKEN_LITERAL = /^[A-Z][A-Za-z0-9]*(?:-[A-Z0-9][A-Za-z0-9]*)+$/;
 const scannableSpans = (line, markup) => {
   const spans = [];
@@ -182,7 +183,13 @@ const scannableSpans = (line, markup) => {
     // "X-Correlation-ID") is a wire identifier, not prose. Requiring each
     // segment to start uppercase keeps lowercase hyphenated copy — including
     // banned terms like "server-owned" — fully checked.
-    if (HEADER_TOKEN_LITERAL.test(body.trim())) continue;
+    // Exempt only a header-cased literal used as a key or index --
+    // headers["Idempotency-Key"] or { "Content-Type": ... }. Requiring the
+    // syntactic position too keeps visible Title-Case text such as a
+    // {"Server-Owned"} badge label or aria-label="Adapter-Status" in scope.
+    const after = line.slice(match.index + match[0].length, match.index + match[0].length + 1);
+    const headerContext = HEADER_CONTEXT.test(line) || after === ']' || after === ':';
+    if (HEADER_TOKEN_LITERAL.test(body.trim()) && headerContext) continue;
     spans.push(body);
   }
   if (markup) {
