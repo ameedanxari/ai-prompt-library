@@ -2,7 +2,7 @@
 # safety-check-commit.sh — validate a proposed per-task commit.
 #
 # The executor calls this after a task's build-gate passes but BEFORE
-# `commit-task.sh`. The check prevents two failure modes that turn an
+# `commit-task.sh`. The check prevents three failure modes that turn an
 # automated commit cadence from a feature into a hazard:
 #
 #   1. Scope drift — the task's declared `**File:**` paths are X and Y
@@ -11,6 +11,14 @@
 #      removes files that aren't named in the task scope. Often a
 #      symptom of an AI step that re-wrote a file from scratch and
 #      lost prior logic.
+#   3. Artifact pollution — the diff includes build artifacts, caches,
+#      or dependency trees (node_modules/, .next/, .next-visual/,
+#      .terraform/, *.sst, ...). Usually caused by `git add -A`
+#      running with an incomplete .gitignore. The SignalForge
+#      incident (2026-09-19) committed 2.8GB of Turbopack dev cache
+#      because a custom Next.js distDir (`.next-visual/`) wasn't
+#      gitignored. This is always a hard error — build artifacts are
+#      never legitimate commit content.
 #
 # The check is non-blocking by default (exit 0 with warnings) so the
 # executor can still commit on a warning, but the warnings get logged
@@ -162,6 +170,53 @@ while IFS= read -r f; do
 done <<< "$deleted"
 
 # ---------------------------------------------------------------------
+# Build-artifact hygiene (failure mode 3).
+# Patterns that must NEVER be committed, regardless of task scope.
+# Matched against the repo-relative path. Covers default AND custom
+# build output dirs — the SignalForge incident was a custom Next.js
+# distDir (`.next-visual/`) that the project's .gitignore didn't cover,
+# so `git add -A` swept 2.8GB of Turbopack .sst cache into history.
+# ---------------------------------------------------------------------
+artifact_violations=()
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  case "$f" in
+    node_modules/*|*/node_modules/*|\
+    .next/*|*/.next/*|\
+    .next-*/*|*/.next-*/*|\
+    out/*|*/out/*|\
+    .terraform/*|*/.terraform/*|\
+    .venv/*|*/.venv/*|venv/*|*/venv/*|\
+    __pycache__/*|*/__pycache__/*|\
+    .pytest_cache/*|*/.pytest_cache/*|\
+    .hypothesis/*|*/.hypothesis/*|\
+    .mypy_cache/*|*/.mypy_cache/*|\
+    .ruff_cache/*|*/.ruff_cache/*|\
+    *.sst|*.tsbuildinfo|*.pyc|*.pyo)
+      artifact_violations+=("$f") ;;
+  esac
+done <<< "$modified"
+
+# Oversized files: anything over 10MB in the diff is flagged, even if
+# it doesn't match a known artifact pattern. Legitimate source files
+# are never this large; this catches cache files, bundles, and dumps
+# that slip past pattern matching. Deleted files are skipped (no size
+# on disk); already-flagged artifacts aren't double-reported.
+oversized_violations=()
+while IFS= read -r f; do
+  [ -z "$f" ] && continue
+  [ -e "$f" ] || continue
+  size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
+  if [ "$size" -gt 10485760 ]; then
+    already_flagged=0
+    for av in ${artifact_violations[@]:-}; do
+      [ "$av" = "$f" ] && already_flagged=1 && break
+    done
+    [ "$already_flagged" -eq 0 ] && oversized_violations+=("$f (${size} bytes)")
+  fi
+done <<< "$modified"
+
+# ---------------------------------------------------------------------
 # Compose verdict.
 # ---------------------------------------------------------------------
 verdict="safe"
@@ -176,6 +231,12 @@ if [ "$suspicious_deletion" -eq 1 ]; then
 fi
 if [ "${#unauthorized_deletes[@]}" -gt 0 ]; then
   errors+=("Unauthorized deletes: $(printf '%s, ' "${unauthorized_deletes[@]}" | sed 's/, $//')")
+fi
+if [ "${#artifact_violations[@]}" -gt 0 ]; then
+  errors+=("Build artifacts must not be committed: $(printf '%s, ' "${artifact_violations[@]}" | sed 's/, $//')")
+fi
+if [ "${#oversized_violations[@]}" -gt 0 ]; then
+  errors+=("Oversized files must not be committed: $(printf '%s, ' "${oversized_violations[@]}" | sed 's/, $//')")
 fi
 
 if [ "${#errors[@]}" -gt 0 ]; then
@@ -211,6 +272,8 @@ if [ -n "$REPORT" ]; then
   "deleted_lines": ${deleted_lines},
   "out_of_scope_files": $(json_array_of "${out_of_scope[@]:-}"),
   "unauthorized_deletes": $(json_array_of "${unauthorized_deletes[@]:-}"),
+  "artifact_violations": $(json_array_of "${artifact_violations[@]:-}"),
+  "oversized_violations": $(json_array_of "${oversized_violations[@]:-}"),
   "warnings": $(json_array_of "${warnings[@]:-}"),
   "errors": $(json_array_of "${errors[@]:-}")
 }

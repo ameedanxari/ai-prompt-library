@@ -129,25 +129,110 @@ if [ -n "$failed_files" ]; then
   failed_yaml="${failed_yaml}]"
 fi
 
+# Build remaining_issues: a machine-readable list of what still fails.
+# Each entry is either {file: "<basename>", issue: "<first validator
+# complaint for that file>"} or {coverage_gap: "<missing tasks-<slug>.md>"}.
+# The agent loop reads this (not the prose body) to decide regenerations.
+# Empty ([]) when the gate passes.
+build_remaining_issues_yaml() {
+  local entries=()
+  local f base first_issue
+  while IFS= read -r f; do
+    [ -z "$f" ] && continue
+    base=$(basename "$f")
+    first_issue=$(grep -E "^❌ " "$VAL_OUT_FILE" | grep -F -- "${f}:" | head -n 1 \
+      | sed -E 's/^❌ [^:]+:[[:space:]]*//' | cut -c1-160)
+    first_issue=${first_issue//\\/\\\\}
+    first_issue=${first_issue//\"/\\\"}
+    [ -z "$first_issue" ] && first_issue="see Validator output section"
+    entries+=("  - {file: \"$base\", issue: \"$first_issue\"}")
+  done <<< "$failed_files"
+  local g
+  while IFS= read -r g; do
+    [ -z "$g" ] && continue
+    entries+=("  - {coverage_gap: \"$g\"}")
+  done <<< "$coverage_gaps"
+  if [ ${#entries[@]} -eq 0 ]; then
+    echo "remaining_issues: []"
+  else
+    echo "remaining_issues:"
+    printf "%s\n" "${entries[@]}"
+  fi
+}
+remaining_issues_yaml=$(build_remaining_issues_yaml)
+
+# Derive machine-readable check names from the captured validator output.
+# Each ❌ line maps to the check that emitted it:
+#   "❌ coverage:" mentioning feature(s)/tasks-      → C2
+#   "❌ coverage:" mentioning gap(s)/remediation-    → C3
+#   "❌ baseline coverage:"                          → C5
+#   "❌ phase-order:"                                → C11
+#   "❌ <path>:" per-file schema complaints          → C4
+#   companion / regulated-architecture / task-contract / tamper lines,
+#   and anything else with no clean C-number          → the validator script name
+# (per the checks_run comment below: script names cover mechanical checks
+# with no clean C-number). checks_failed is the sorted unique set;
+# checks_passed is the honest checks_run set minus checks_failed.
+derive_failed_checks() {
+  grep -E "^❌ " "$VAL_OUT_FILE" | awk '
+    /^❌ coverage:/ {
+      if ($0 ~ /gap\(s\)|remediation-/) print "C3"; else print "C2"; next;
+    }
+    /^❌ baseline coverage:/ { print "C5"; next; }
+    /^❌ phase-order:/ { print "C11"; next; }
+    /^❌ (missing required companion|regulated-architecture|task contract|revise-report)/ \
+      { print "validate-instantiation.sh"; next; }
+    /[Tt]amper/ { print "validate-instantiation.sh"; next; }
+    /^❌ [^:]+:/ { print "C4"; next; }
+    { print "validate-instantiation.sh"; }
+  ' | sort -u || true
+}
+
+# Honest checks_run: only checks the two validators invoked above actually
+# perform. C2 feature→task coverage, C3 gap→remediation coverage (only
+# when gap-list.md exists), C4 task-schema fields, C5 baseline-topic
+# markers, C6 external-services manifest, C7 user-story field presence,
+# C11 phase fields (instantiation) + phase ordering (phase-order). The
+# rest of the C1–C18 taxonomy (epic→feature semantics, platform coverage,
+# regression judgment, UI quality, regulated architecture, …) requires
+# agent judgment — see the mapping table in
+# prompts/orchestrators/revise-outputs.md. The validator script names
+# cover the mechanical checks with no clean C-number.
+checks_run_list="C2 C4 C5 C6 C7 C11 validate-instantiation.sh validate-phase-order.sh"
+if [ -f "$TARGET_DIR/gap-list.md" ]; then
+  checks_run_list="C2 C3 C4 C5 C6 C7 C11 validate-instantiation.sh validate-phase-order.sh"
+fi
+checks_run_yaml=$(printf "%s\n" $checks_run_list | tr ' ' '\n' | sort -u | paste -sd, - | sed 's/,/, /g')
+
+failed_checks=$(derive_failed_checks)
+if [ -n "$failed_checks" ]; then
+  checks_failed_yaml=$(printf "%s\n" "$failed_checks" | paste -sd, - | sed 's/,/, /g')
+  checks_passed_yaml=$(comm -23 \
+    <(printf "%s\n" $checks_run_list | tr ' ' '\n' | sort -u) \
+    <(printf "%s\n" "$failed_checks" | sort -u) \
+    | paste -sd, - | sed 's/,/, /g')
+else
+  checks_failed_yaml=""
+  checks_passed_yaml="$checks_run_yaml"
+fi
+
 # Write the report.
 {
   echo "---"
   echo "revised_at: $NOW"
   echo "engine: $engine"
   echo "plan_files: $plan_count"
-  if [ "$engine" = "drill-down-engine" ]; then
-    echo "checks_run: [C1, C2, C4, C5, C6, C7, C8, C9, C10, C11, C17]"
-  else
-    echo "checks_run: [C3, C4, C5, C6, C7, C8, C9, C10, C11, C17]"
-  fi
+  echo "report_schema_version: 2"
+  echo "checks_run: [$checks_run_yaml]"
   if [ "$gate" = "pass" ]; then
     echo "checks_passed: [all]"
     echo "checks_failed: []"
   else
-    echo "checks_passed: [see regenerations_performed]"
-    echo "checks_failed: [validator reported issues in failing_files or coverage_gap_count]"
+    echo "checks_passed: [$checks_passed_yaml]"
+    echo "checks_failed: [$checks_failed_yaml]"
   fi
   echo "regenerations_performed: []"
+  echo "$remaining_issues_yaml"
   echo "failing_files: $failed_yaml"
   if [ -n "$coverage_gaps" ]; then
     gap_count=$(printf "%s\n" "$coverage_gaps" | wc -l | tr -d ' ')

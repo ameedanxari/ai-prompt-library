@@ -19,10 +19,13 @@ import {
 export type TaskContractIssueSeverity = 'error' | 'warning';
 
 export type TaskContractIssueCode =
+  | 'no-plan-files'
   | 'missing-file-dependency'
   | 'file-dependency-cycle'
   | 'missing-task-dependency'
   | 'task-dependency-cycle'
+  | 'self-dependency'
+  | 'duplicate-task-id'
   | 'empty-task-file'
   | 'missing-user-story'
   | 'malformed-user-story'
@@ -174,6 +177,19 @@ export function buildTaskContractReport(
   const pathClaims = buildPathClaims(sortedFiles);
   const duplicatePathClaims = pathClaims.filter((claim) => claim.owners.length > 1);
   const issues = buildIssues(sortedFiles, fileGraph, taskUnitGraph, duplicatePathClaims);
+
+  // An empty input set must never produce a green report: without this guard
+  // a directory with zero plan files looked "valid" (0 issues, blocked=false).
+  if (sortedFiles.length === 0) {
+    issues.push({
+      code: 'no-plan-files',
+      severity: 'error',
+      message: `No tasks-*.md or remediation-*.md files found${
+        options.sourceDirectory ? ` in ${options.sourceDirectory}` : ''
+      }.`,
+    });
+    issues.sort(compareIssues);
+  }
 
   return {
     schemaVersion: 2,
@@ -383,6 +399,55 @@ function buildIssues(
       message: `Task-unit dependency cycle detected: ${taskUnitGraph.cycleNodes.join(', ')}.`,
       owners: taskUnitGraph.cycleNodes,
     });
+  }
+
+  for (const node of fileGraph.nodes) {
+    for (const dep of node.selfDependencies) {
+      issues.push({
+        code: 'self-dependency',
+        severity: 'error',
+        message: `${node.id} lists itself as a dependency; remove the self-reference.`,
+        file: node.id,
+        dependency: dep,
+      });
+    }
+  }
+
+  for (const node of taskUnitGraph.nodes) {
+    for (const dep of node.selfDependencies) {
+      const [file, unitId] = splitCanonicalId(node.id);
+      issues.push({
+        code: 'self-dependency',
+        severity: 'error',
+        message: `${node.id} lists itself as a dependency; remove the self-reference.`,
+        file,
+        unitId,
+        canonicalId: node.id,
+        dependency: dep,
+      });
+    }
+  }
+
+  const canonicalIdCounts = new Map<string, { file: string; unitId: string }[]>();
+  for (const file of files) {
+    for (const unit of file.units) {
+      const group = canonicalIdCounts.get(unit.canonicalId) ?? [];
+      group.push({ file: file.filename, unitId: unit.id });
+      canonicalIdCounts.set(unit.canonicalId, group);
+    }
+  }
+  for (const [canonicalId, group] of [...canonicalIdCounts.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))) {
+    if (group.length > 1) {
+      issues.push({
+        code: 'duplicate-task-id',
+        severity: 'error',
+        message: `${canonicalId} is declared ${group.length} times; task IDs must be unique within a file.`,
+        file: group[0].file,
+        unitId: group[0].unitId,
+        canonicalId,
+      });
+    }
   }
 
   for (const file of files) {

@@ -127,6 +127,19 @@ describe('finalize.sh', () => {
         applicable: false,
       });
       expect(out).toMatch(/Fixture-isolation report: .*fixture-isolation-report\.json/);
+      // Every other canonical artifact the pipeline produces exists and
+      // is non-empty — a builder regression that silently drops an
+      // output must fail this test.
+      for (const artifact of [
+        'task-contract.json',
+        'phase-order-report.md',
+        'path-ledger.md',
+        'delivery-order.md',
+      ]) {
+        const p = path.join(sandbox, artifact);
+        expect(fs.existsSync(p)).toBe(true);
+        expect(fs.statSync(p).size).toBeGreaterThan(0);
+      }
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

@@ -89,6 +89,9 @@ export interface ParsedPlanFile {
 export interface PlanGraphNode {
   id: string;
   dependencies: string[];
+  /** Dependencies that point at the node itself. Excluded from `dependencies`
+   *  (so they cannot fake a cycle) but reported, never silently dropped. */
+  selfDependencies: string[];
   missingDependencies: string[];
 }
 
@@ -106,11 +109,31 @@ interface Section {
   lines: string[];
 }
 
-const planFileNamePattern = /^(tasks|remediation)-(.+)\.md$/;
+const PLAN_FILE_KINDS = ['tasks', 'remediation'] as const;
+// The dependency-file pattern is derived from the same kind list as the
+// plan-filename pattern so the two can never drift apart: adding a kind
+// here teaches both the filename matcher and the Depends-on reference
+// extractor at once.
+const planFileNamePattern = new RegExp(`^(${PLAN_FILE_KINDS.join('|')})-(.+)\\.md$`);
 const headingPattern = /^##\s+([TR][0-9]+)(?:\s*[·.-]\s*)?(.*)$/;
-const fieldPattern = /^\s*[-*]?\s*\*\*([^:*]+):\*\*\s*(.*)$/;
-const dependencyFilePattern = /\b(?:tasks|remediation)-[a-z0-9][a-z0-9-]*\.md\b/g;
+// Accepts both `**Field:** value` (colon inside the bold) and
+// `**Field**: value` (colon outside the bold) — both are common in
+// generated markdown, and rejecting either silently drops the field.
+const fieldPattern = /^\s*[-*]?\s*\*\*\s*([^:*]+?)\s*(?::\s*\*\*|\*\*\s*:?)\s*(.*)$/;
+const dependencyFilePattern = new RegExp(
+  `\\b(?:${PLAN_FILE_KINDS.join('|')})-[a-z0-9][a-z0-9-]*\\.md\\b`,
+  'g',
+);
 const localTaskPattern = /\b[TR][0-9]+\b/g;
+
+/**
+ * A fenced-code-block delimiter line (``` or ```info). Fence-aware parsing
+ * treats fenced regions as inert: headings and field-like lines inside
+ * them are documentation, not structure.
+ */
+function isFenceDelimiter(line: string): boolean {
+  return line.trimStart().startsWith('```');
+}
 
 export function isPlanTaskFilename(filename: string): boolean {
   return planFileNamePattern.test(path.basename(filename));
@@ -168,14 +191,19 @@ export function parsePlanTaskDirectory(targetDir: string): ParsedPlanFile[] {
 export function buildFileDependencyGraph(files: ParsedPlanFile[]): PlanGraph {
   const ids = new Set(files.map((file) => file.filename));
   const nodes = files.map((file) => {
-    const dependencies = unique(
+    const referencedFiles = unique(
       file.units.flatMap((unit) => unit.dependencies)
         .map((dep) => dep.file)
-        .filter((dep): dep is string => Boolean(dep))
-        .filter((dep) => dep !== file.filename),
-    ).sort();
+        .filter((dep): dep is string => Boolean(dep)),
+    );
+    const selfDependencies = referencedFiles
+      .filter((dep) => dep === file.filename)
+      .sort();
+    const dependencies = referencedFiles
+      .filter((dep) => dep !== file.filename)
+      .sort();
     const missingDependencies = dependencies.filter((dep) => !ids.has(dep));
-    return { id: file.filename, dependencies, missingDependencies };
+    return { id: file.filename, dependencies, selfDependencies, missingDependencies };
   });
 
   return finishGraph(nodes);
@@ -195,7 +223,7 @@ export function buildTaskUnitDependencyGraph(files: ParsedPlanFile[]): PlanGraph
   }
 
   const nodes = units.map(({ file, unit }) => {
-    const dependencies = unique(unit.dependencies.flatMap((dep) => {
+    const referencedUnits = unique(unit.dependencies.flatMap((dep) => {
       if (dep.file) {
         return unitsByFile.get(dep.file) ?? [dep.file];
       }
@@ -203,11 +231,21 @@ export function buildTaskUnitDependencyGraph(files: ParsedPlanFile[]): PlanGraph
         return [unitsByLocalId.get(`${file.filename}#${dep.localTaskId}`) ?? `${file.filename}#${dep.localTaskId}`];
       }
       return [];
-    })).filter((dep) => dep !== unit.canonicalId).sort();
+    }));
+    // Self-dependencies are kept out of the graph edges (so a task that
+    // lists itself cannot manufacture a cycle) but recorded on the node
+    // so the report can flag them instead of silently swallowing them.
+    const selfDependencies = referencedUnits
+      .filter((dep) => dep === unit.canonicalId)
+      .sort();
+    const dependencies = referencedUnits
+      .filter((dep) => dep !== unit.canonicalId)
+      .sort();
 
     return {
       id: unit.canonicalId,
       dependencies,
+      selfDependencies,
       missingDependencies: dependencies.filter((dep) => !ids.has(dep)),
     };
   });
@@ -255,9 +293,13 @@ function splitTaskSections(lines: string[]): Section[] {
   let current: Section | null = null;
   const topLevelLines: string[] = [];
   let topLevelLineNumber = 1;
+  // Fenced code blocks are inert: a task-like heading inside a fence is
+  // documentation, not a task boundary.
+  let inFence = false;
 
   lines.forEach((line, index) => {
-    const heading = line.match(headingPattern);
+    if (isFenceDelimiter(line)) inFence = !inFence;
+    const heading = !inFence ? line.match(headingPattern) : null;
     if (heading) {
       if (current) sections.push(current);
       current = {
@@ -424,10 +466,21 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
 
 function extractAcceptanceBullets(lines: string[], startIndex: number): string[] {
   const bullets: string[] = [];
+  // Fenced code blocks are inert: neither headings nor field-like lines
+  // inside a fence terminate collection, and fence content is never
+  // collected as bullets.
+  let inFence = false;
 
   for (const line of lines.slice(startIndex)) {
+    if (isFenceDelimiter(line)) {
+      inFence = !inFence;
+      continue;
+    }
+    if (inFence) continue;
     if (fieldPattern.test(line) || /^##\s+/.test(line)) break;
-    const bullet = line.match(/^\s{2,}[-*]\s+(.+?)\s*$/);
+    // Generated markdown commonly uses unindented bullets; requiring
+    // indentation silently dropped those acceptance criteria.
+    const bullet = line.match(/^\s*[-*+]\s+(.+?)\s*$/);
     if (bullet) bullets.push(bullet[1].trim());
   }
 

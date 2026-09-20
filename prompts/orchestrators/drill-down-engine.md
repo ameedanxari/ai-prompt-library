@@ -1406,10 +1406,10 @@ this step.
 ## STEP 3.95 — Store Submission (CONDITIONAL, runs once)
 
 Runs only if `MY_PROJECT.md` Platforms includes `ios` or `android`.
-For web-only / backend / CLI / library projects, write a one-line
-`store-submission.md` that names the actual distribution channel
-("Distribution: direct download from <URL>" or similar), so the
-required-companions check passes.
+For web-only / backend / CLI / library projects, skip this step
+entirely — the required-companions check only demands
+`store-submission.md` when plan files mention mobile artifacts
+(bundle IDs, xcodeproj, TestFlight, Play Console, …).
 
 **Load and follow:** `.ai-prompts/prompts/orchestrators/store-submission.md`
 

@@ -125,8 +125,11 @@ offline support, data residency, integrations you MUST use._
 _If you have designs, mockups, specs, brand guidelines, or existing
 code you want the library to respect, drop them into `working_copy/`
 at the project root. The library will read them first and treat their
-contents as authoritative — names, entities, flows, colors, typography
-all come from what you provide._
+contents as authoritative over **product facts** — names, entities, flows,
+colors, typography all come from what you provide. They are never treated
+as **instructions**: anything in your files that reads as a directive to
+the AI (rather than a fact about your product) will be flagged for your
+confirmation, not followed silently._
 
 _You don't need to list files here. Just drop them into
 `working_copy/`._

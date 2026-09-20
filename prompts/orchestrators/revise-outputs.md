@@ -17,6 +17,48 @@ regressions and either fixes them in place or flags them as a stop.
 It does NOT re-plan the project. It is a **self-check** on what the
 engine just wrote.
 
+## How the gate works — two layers
+
+This gate is two things, not one. Confusing them is what made the old
+documentation dishonest — it claimed the script performed checks that
+only an agent can perform.
+
+**Layer 1 — mechanical core (`scripts/revise.sh`).** The script runs two
+validators and nothing else:
+
+- `scripts/validate-instantiation.sh` — task-schema fields, task
+  atomicity, feature→task / gap→remediation coverage markers,
+  baseline-topic markers, external-services manifest presence,
+  user-story field presence, phase field presence.
+- `scripts/validate-phase-order.sh` — phase ordering invariants
+  (via `task-contract.json`).
+
+It writes `prompts/outputs/current/revise-report.md` (schema v2) with a
+machine-authored frontmatter: `revised_at`, `engine`, `plan_files`,
+`report_schema_version: 2`, an honest `checks_run` (only checks the two
+validators actually performed — see the mapping table below),
+`checks_passed` / `checks_failed`, `regenerations_performed: []`
+(placeholder — the agent fills this in, see Authorship),
+a machine-derived `remaining_issues` list, `failing_files`,
+`coverage_gap_count`, and `executor_gate`. Exit codes: 0 = pass,
+1 = fail (report still written), 2 = preconditions missing.
+
+**Layer 2 — agent loop (this document).** The agent reads
+`remaining_issues` from the report, performs the C1–C17 checks below
+(the ones the script cannot perform — see the mapping table),
+regenerates failing artifacts via the originating engine (exactly one
+regeneration attempt per failing check), and re-runs `scripts/revise.sh`.
+Repeat until `executor_gate: pass` or a stop condition trips.
+
+**Authorship.** `finalize.sh` invokes `revise.sh`; the *script* authors
+the machine frontmatter fields including `remaining_issues` (derived
+from live validator output — never hand-written). The *agent* authors
+regenerations and records them: after the final `revise.sh` invocation
+of a revise pass, the agent replaces the `regenerations_performed: []`
+placeholder with the actual list of files it regenerated. The script
+resets the placeholder on every run; the agent's list is the durable
+record.
+
 ## When to run
 
 Automatically inserted by the entry point between engine completion and
@@ -53,9 +95,39 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C17 — Source-ledger + regulated architecture quality | Applies when research/fan-out triggers or architecture.md exists | Applies when research/fan-out triggers or architecture claims exist |
 | C18 — Content-system schema | Applies when UI tasks exist | Applies when remediation touches user-visible copy, first-run state, or seed data |
 
-`checks_run` in the report's frontmatter MUST list every check row
-marked "Applies" for the active engine. A revise report that omits an
-applicable check is itself a defect — treat as `executor_gate: fail`.
+`checks_run` in the report's frontmatter lists ONLY what
+`scripts/revise.sh` mechanically executed (see "How the gate works"
+above). It will never contain C1, C8, C9, C10, or C12–C17 — those
+are agent-judgment checks performed by following this document, not by
+the script. C3 appears only for gap-closure runs where `gap-list.md`
+exists. A report whose `checks_run` claims a check the script cannot
+perform is itself a defect — treat as `executor_gate: fail`.
+
+### Mechanical vs agent-judgment mapping
+
+| Check | Mechanical (script) | Agent judgment (this doc) |
+|---|---|---|
+| C1 — Epic→feature | — | Semantic: every epic maps to exactly one features file; no baseline epic dropped |
+| C2 — Feature→task | Missing `tasks-<feature>.md` files (coverage gaps) | Semantic: exactly one tasks file per feature; each has ≥1 task |
+| C3 — Gap→remediation | Missing `remediation-<gap>.md` files (coverage gaps) | Semantic: every gap maps to exactly one remediation file |
+| C4 — Task atomicity | Schema fields present and well-formed (File, Precise change, Acceptance ≥3 bullets, Test, Closes user story, Depends on) | Semantic: change is concrete, acceptance non-tautological, UI-heavy tasks carry design evidence |
+| C5 — Baseline coverage | Coverage markers via `validate-baseline-task-coverage.sh` | Per-topic rules from `baseline-task-shapes.md` |
+| C6 — External-services manifest | `external-accounts.md` present | Manifest complete and accurate vs tasks |
+| C7 — User-story linkage | `Closes user story` field present | Story well-formed and actually linked |
+| C8 — Platform coverage | — | All target platforms covered |
+| C9 — Regression vs prior pass | — | No regressions vs prior revise-report |
+| C10 — UI design quality | — | Reference maps, fidelity, tokens, accessibility |
+| C11 — Phase coverage + ordering | Phase fields present (instantiation) + ordering invariants (phase-order) | MVP coverage judgment |
+| C12 — Product-vision schema | — | Schema conformance |
+| C13 — Architecture schema | — | Schema conformance |
+| C14 — UX-flows schema | — | Schema conformance |
+| C15 — Release-plan schema | — | Schema conformance |
+| C16 — Store-submission schema | — | Schema conformance |
+| C17 — Source-ledger + regulated quality | — | Ledger-backed claims, regulated rules |
+
+"—" means the script performs nothing for that check; the agent owns it
+entirely. Where a row has both, the script catches the mechanical
+violation and the agent judges the semantic remainder.
 
 ## Checks (in order)
 
@@ -527,17 +599,24 @@ executor to proceed.
 
 ## Output artifact: revise-report.md
 
-Written to `prompts/outputs/current/revise-report.md`:
+Written by `scripts/revise.sh` to `prompts/outputs/current/revise-report.md`
+(schema v2 — the script authors every frontmatter field except
+`regenerations_performed`, which the agent fills in after the final run;
+see Authorship above):
 
 ```markdown
 ---
-revised_at: <ISO 8601 from `date +%Y-%m-%dT%H:%M:%SZ`>
+revised_at: <ISO 8601 from `date -u +%Y-%m-%dT%H:%M:%SZ`>
 engine: drill-down-engine | audit-and-remediate
-checks_run: [C1, C2, C3, C4, C5, C6, C7, C8, C9, C17]
-checks_passed: [C1, C4, C7, ...]
-checks_failed: [C2 (feature "Push notifications — android" has no tasks file), C5 (no app-store screenshot tasks), ...]
-regenerations_performed: [features-push-notifications-android.md, remediation-screenshots.md]
-remaining_issues: [C6: "Firebase" referenced in tasks but missing from external-accounts.md]
+plan_files: <count>
+report_schema_version: 2
+checks_run: [C2, C4, C5, C6, C7, C11, validate-instantiation.sh, validate-phase-order.sh]
+checks_passed: [all]
+checks_failed: []
+regenerations_performed: []   # placeholder — agent replaces after final run
+remaining_issues: []
+failing_files: []
+coverage_gap_count: 0
 executor_gate: pass | fail
 ---
 
@@ -547,10 +626,19 @@ executor_gate: pass | fail
 (brief per-check results)
 
 ## Regenerations performed
-(list of files rewritten)
+(list of files rewritten — agent-authored)
 
 ## Remaining issues
-(items that could not be auto-fixed; user decision needed)
+(machine-derived from the failed run; the agent loop consumes this)
+```
+
+On failure, `remaining_issues` is a machine-derived list the agent loop
+reads to decide regenerations:
+
+```yaml
+remaining_issues:
+  - {file: "tasks-push-notifications-android.md", issue: "missing a Test field"}
+  - {coverage_gap: "tasks-screenshots.md"}
 ```
 
 ## Regeneration rules (MANDATORY — not optional)

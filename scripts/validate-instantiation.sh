@@ -47,12 +47,20 @@ TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(te
 
 HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Implementation guidance here|TODO:|TBD)'
 GENERIC_UI_PATTERN='(make it beautiful|beautifully crafted|modern UI|polished UI|nice design|clean design)'
-UI_TASK_PATTERN='(^|[^[:alpha:]])(frontend|screen|dashboard|chart|graph|tailwind|design[ -]system|app screen|web app|mobile app|visual design|ui design|ui surface|ui screen|ui component|ui reference|ui-heavy|component library|component inventory|component system|reusable component)([^[:alpha:]]|$)'
+# Note: the bare token "graph" was deliberately removed from this pattern.
+# It matched backend/tooling usage (build-task-graph.sh, task-graph.json,
+# "dependency graph") and misclassified non-UI work as UI-heavy. Genuine
+# UI visualization intent is covered by the chart/dashboard alternatives.
+UI_TASK_PATTERN='(^|[^[:alpha:]])(frontend|screen|dashboard|chart|tailwind|design[ -]system|app screen|web app|mobile app|visual design|ui design|ui surface|ui screen|ui component|ui reference|ui-heavy|component library|component inventory|component system|reusable component)([^[:alpha:]]|$)'
 UI_EVIDENCE_PATTERN='(ui reference source map|reference source map|existing-style source map|existing style source|screen-fidelity|screen fidelity|design-system|design system|component inventory|token mapping|existing product style is authoritative|existing theme authority|current style source)'
 SOURCE_MAP_REFERENCE_PATTERN='(ui reference source map|reference source map|ui-reference-source-map\.md)'
 SOURCE_MAP_ROW_PATTERN='(REF-[0-9]+|MAP-[0-9]+)'
 DASHBOARD_PATTERN='(^|[^[:alpha:]])(dashboard|admin panel|analytics console|operational panel)([^[:alpha:]]|$)'
-CHART_PATTERN='(^|[^[:alpha:]])(chart|graph|data visualization|visualization)([^[:alpha:]]|$)'
+# CHART_PATTERN shares the same bare "graph" token problem: it matched
+# build-task-graph.sh / task-graph.json / "dependency graph" and demanded
+# tooltip/legend/loading/empty/error planning terms for a script change.
+# Genuine chart intent is covered by chart/data visualization/visualization.
+CHART_PATTERN='(^|[^[:alpha:]])(chart|data visualization|visualization)([^[:alpha:]]|$)'
 TAILWIND_PATTERN='(^|[^[:alpha:]])tailwind([^[:alpha:]]|$)'
 HARDCODED_STYLE_PATTERN='(#[0-9a-fA-F]{3,8}|rgb[a]?\(|hsl[a]?\()'
 TOKEN_STYLE_PATTERN='(token|@theme|var\(--|tailwind\.config|theme variable|css variable|designTokens)'
@@ -421,6 +429,62 @@ else
   fi
 fi
 
+# 0b-iii. Gap→remediation coverage (C3). If gap-list.md exists, every
+# gap heading inside it must have a matching remediation-<slug>.md on
+# disk — the gap-closure equivalent of C2. The slug mapping is the same
+# as C2 (lowercase, punctuation stripped, whitespace to hyphen), plus
+# the leading "Gn · " gap-number prefix is stripped: a "## G1 ·
+# revise-report-fail-path-honesty" heading maps to
+# remediation-revise-report-fail-path-honesty.md.
+if [ -f "$TARGET_DIR/gap-list.md" ]; then
+  gap_declared=$(mktemp)
+  gap_produced=$(mktemp)
+  grep -E "^## " "$TARGET_DIR/gap-list.md" | sed -E 's/^## +//' \
+    | tr '[:upper:]' '[:lower:]' \
+    | sed -E 's/[^a-z0-9 -]//g' \
+    | tr -s ' ' '-' \
+    | sed -E 's/^-+//; s/-+$//' \
+    | sed -E 's/^g[0-9]+-//' \
+    | sort -u > "$gap_declared"
+
+  for rf in "$TARGET_DIR"/remediation-*.md; do
+    base=$(basename "$rf" .md)
+    echo "${base#remediation-}"
+  done | sort -u > "$gap_produced"
+
+  gap_missing=$(comm -23 "$gap_declared" "$gap_produced")
+  if [ -n "$gap_missing" ]; then
+    gap_missing_count=$(printf "%s\n" "$gap_missing" | wc -l | tr -d ' ')
+    echo "❌ coverage: $gap_missing_count gap(s) declared but have no remediation-<gap>.md"
+    echo "   Generate a remediation file for each of these via"
+    echo "   audit-and-remediate Step 3:"
+    printf "%s\n" "$gap_missing" | sed 's/^/   - remediation-/;s/$/.md/'
+    echo "   Do NOT declare Step 3 complete until every gap has a"
+    echo "   matching remediation file. Regenerate via the engine, not by hand."
+    fail=1
+  fi
+
+  # 0b-iv. Reverse check — orphan remediation files. A
+  # remediation-<slug>.md matching no gap heading is a defect: the model
+  # either wrote a remediation for a gap that was deleted from the gap
+  # list to game the gate, or named the file with a slug that doesn't
+  # match a declared gap.
+  gap_orphan=$(comm -13 "$gap_declared" "$gap_produced")
+  if [ -n "$gap_orphan" ]; then
+    gap_orphan_count=$(printf "%s\n" "$gap_orphan" | wc -l | tr -d ' ')
+    echo "❌ coverage: $gap_orphan_count remediation-<slug>.md file(s) have no matching gap heading"
+    echo "   Either the gap was deleted from gap-list.md to game the gate,"
+    echo "   or the remediation file is mis-named. Fix by restoring the gap"
+    echo "   heading (preferred if the work is real) or deleting the orphan"
+    echo "   file (if the work is genuinely out of scope)."
+    echo "   Orphan remediation files:"
+    printf "%s\n" "$gap_orphan" | sed 's/^/   - remediation-/;s/$/.md/'
+    fail=1
+  fi
+
+  rm -f "$gap_declared" "$gap_produced"
+fi
+
 # 0. Required-companion-files check. When plan files exist, two more files
 # MUST also exist in the same directory — skipping them is a structural
 # defect that blocks execution regardless of per-task validity.
@@ -432,16 +496,24 @@ fi
 required_companions=(
   "$TARGET_DIR/external-accounts.md"
   "$TARGET_DIR/delivery-order.md"
-  # Stream A planning artifacts — upstream of tasks. Every greenfield
-  # run that produced tasks-*.md must also have these:
-  "$TARGET_DIR/product-vision.md"
-  "$TARGET_DIR/architecture.md"
-  "$TARGET_DIR/release-plan.md"
-  # store-submission.md is required for all runs that produced tasks
-  # — for non-mobile projects it can be a one-line file noting the
-  # actual distribution channel, but it must exist.
-  "$TARGET_DIR/store-submission.md"
 )
+# store-submission.md is NOT unconditionally required (G6, Option B): it is
+# a conditional companion, required only when plan files mention mobile
+# artifacts (see the mobile-artifact scan below). Non-mobile runs skip it
+# entirely — no one-liner stub needed.
+# Stream A planning artifacts — upstream of tasks. Only required when
+# the run actually produced tasks-*.md (greenfield mode). Remediation-
+# only (gap-closure) runs never produce these, so demanding them there
+# forces stub files to satisfy the gate.
+shopt -s nullglob
+_tasks_files=("$TARGET_DIR"/tasks-*.md)
+if [ ${#_tasks_files[@]} -gt 0 ]; then
+  required_companions+=(
+    "$TARGET_DIR/product-vision.md"
+    "$TARGET_DIR/architecture.md"
+    "$TARGET_DIR/release-plan.md"
+  )
+fi
 if [ "${VALIDATOR_SKIP_GATE_CHECK:-0}" != "1" ]; then
   required_companions+=("$TARGET_DIR/revise-report.md")
 fi
@@ -465,6 +537,33 @@ for rc in "${required_companions[@]}"; do
     fail=1
   fi
 done
+
+# 0b-i. Conditional companion: store-submission.md is required only when
+# the plan ships to app stores (G6, Option B). Scan plan files for
+# mobile-artifact signals; otherwise print an informational skip note.
+# The pattern is intentionally conservative: a false negative just means
+# the check doesn't fire, never a false failure.
+_mobile_artifact_re='bundle[ -_]?id(entifier)?|applicationId|\.xcodeproj|\.xcworkspace|AndroidManifest|Info\.plist|TestFlight|Play Console|App Store|Play Store|\.ipa|\.aab|\.apk'
+_mobile_detected=0
+for _pf in "$TARGET_DIR"/tasks-*.md "$TARGET_DIR"/remediation-*.md; do
+  [ -f "$_pf" ] || continue
+  if grep -qiE "$_mobile_artifact_re" "$_pf"; then
+    _mobile_detected=1
+    break
+  fi
+done
+if [ "$_mobile_detected" -eq 1 ]; then
+  if [ ! -f "$TARGET_DIR/store-submission.md" ]; then
+    echo "❌ missing required companion: $TARGET_DIR/store-submission.md"
+    echo "   Plan files mention mobile artifacts (bundle ID, xcodeproj,"
+    echo "   TestFlight, Play Console, …), so this run must also produce"
+    echo "   store-submission.md (Step 3.95 — store submission prep)."
+    echo "   Re-run the engine through to completion — not just Steps 1-3."
+    fail=1
+  fi
+else
+  echo "ℹ️  store-submission.md not required: no mobile artifacts detected in plan files."
+fi
 
 # 0c-ii. Baseline feature-coverage — catches the "delete features to
 # game the gate" pattern. For each baseline-epic features file, check
@@ -652,12 +751,20 @@ if [ -f "$TARGET_DIR/revise-report.md" ]; then
     # Tamper-detection — hand-written files often mimic the YAML shape
     # but have placeholder timestamps and empty check arrays because the
     # writer has no live script output to copy from.
-    head -n 30 "$TARGET_DIR/revise-report.md" > /tmp/revise-head.$$
+    #
+    # NOTE: revise-report.md is attacker-influenced input (it is meant to
+    # be checked for hand-written mimics). Its contents are NEVER
+    # interpolated into interpreted code — values are passed to python3
+    # via environment variables only.
+    revise_head=$(mktemp) || { echo "❌ cannot create temp file" >&2; exit 2; }
+    # Clean up even if the script exits early.
+    trap 'rm -f "$revise_head"' EXIT
+    head -n 30 "$TARGET_DIR/revise-report.md" > "$revise_head"
 
     # 0a-i. `revised_at` must be within the last 48 hours of now OR
     # within 48 hours of the file's mtime. An obvious placeholder like
     # "2025-01-01T00:00:00Z" on a file last-modified today is a tell.
-    revised_at=$(awk -F': *' '/^revised_at:/ {print $2; exit}' /tmp/revise-head.$$ | tr -d '[:space:]')
+    revised_at=$(awk '/^revised_at:/ {sub(/^revised_at:[[:space:]]*/, ""); print; exit}' "$revise_head" | tr -d '[:space:]')
     if [ -z "$revised_at" ]; then
       echo "❌ revise-report.md: missing revised_at in frontmatter"
       echo "   The script writes this field; a hand-written report usually omits it."
@@ -666,18 +773,22 @@ if [ -f "$TARGET_DIR/revise-report.md" ]; then
     else
       # Convert revised_at ISO-8601 to epoch seconds. Use python because
       # `date -d` syntax varies between BSD (macOS) and GNU (Linux).
-      revised_epoch=$(python3 -c "
-import sys, datetime
+      # revised_at comes from a report file under adversarial scrutiny:
+      # pass it via the environment so a quote-breakout payload in the
+      # file cannot escape into the Python source.
+      revised_epoch=$(REVISED_AT="$revised_at" python3 -c '
+import os, datetime
 try:
-    s = '$revised_at'.replace('Z', '+00:00')
+    s = os.environ["REVISED_AT"].replace("Z", "+00:00")
     dt = datetime.datetime.fromisoformat(s)
     if dt.tzinfo is None:
         dt = dt.replace(tzinfo=datetime.timezone.utc)
     print(int(dt.timestamp()))
 except Exception:
-    print('0')
-" 2>/dev/null || echo "0")
-      mtime_epoch=$(python3 -c "import os; print(int(os.path.getmtime('$TARGET_DIR/revise-report.md')))" 2>/dev/null || echo "0")
+    print("0")
+' 2>/dev/null || echo "0")
+      # Same for the report path: never interpolate $TARGET_DIR into code.
+      mtime_epoch=$(REVISE_REPORT="$TARGET_DIR/revise-report.md" python3 -c 'import os; print(int(os.path.getmtime(os.environ["REVISE_REPORT"])))' 2>/dev/null || echo "0")
       now_epoch=$(date -u +%s)
       # Allow a 48-hour window relative to mtime (covers legitimate reruns).
       window=172800
@@ -703,8 +814,8 @@ except Exception:
     # least one check (C1, C2, etc.) OR the narrative body must list
     # per-check status. The script always writes real check names; empty
     # `[]` for both is impossible.
-    if grep -qE "^checks_passed:[[:space:]]*\[\][[:space:]]*$" /tmp/revise-head.$$ \
-       && grep -qE "^checks_failed:[[:space:]]*\[\][[:space:]]*$" /tmp/revise-head.$$ ; then
+    if grep -qE "^checks_passed:[[:space:]]*\[\][[:space:]]*$" "$revise_head" \
+       && grep -qE "^checks_failed:[[:space:]]*\[\][[:space:]]*$" "$revise_head" ; then
       echo "❌ revise-report.md: both checks_passed and checks_failed are empty"
       echo "   The script always writes the names of checks it ran (e.g. [C1, C2, C4])."
       echo "   An empty pair here means the report is a hand-written mimic."
@@ -715,10 +826,10 @@ except Exception:
     # 0a-iii. executor_gate check.
     # (The enclosing branch only runs when VALIDATOR_SKIP_GATE_CHECK != 1,
     # so we always check the gate value here.)
-    if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" /tmp/revise-head.$$; then
+    if grep -qE "^executor_gate:[[:space:]]*pass[[:space:]]*$" "$revise_head"; then
       :  # passes — continue
     else
-      gate_line=$(grep -E "^executor_gate:" /tmp/revise-head.$$ | head -n 1 || true)
+      gate_line=$(grep -E "^executor_gate:" "$revise_head" | head -n 1 || true)
       echo "❌ revise-report.md: executor_gate is not 'pass'"
       if [ -n "$gate_line" ]; then
         echo "   $gate_line"
@@ -731,7 +842,10 @@ except Exception:
       echo "   (the script rewrites this report from live validator state)"
       fail=1
     fi
-    rm -f /tmp/revise-head.$$
+    # Temp file is also removed by the EXIT trap; this explicit removal
+    # keeps the happy path tidy.
+    rm -f "$revise_head"
+    trap - EXIT
   fi
 fi
 
@@ -1487,7 +1601,7 @@ for fn in os.listdir(target_dir):
     deps = []
     with open(os.path.join(target_dir, fn)) as fh:
         for line in fh:
-            if '**Depends on:**' in line:
+            if '**Depends on:**' in line or '**Depends on**:' in line:
                 refs = re.findall(r'tasks-[a-z0-9][a-z0-9-]*\.md', line)
                 deps.extend(refs)
                 break
