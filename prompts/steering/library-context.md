@@ -24,7 +24,7 @@ Loaded by the IDE at every session. Keep it short.
      for user review before execution.
    - **Greenfield** (new project) → loads `drill-down-engine.md`.
 4. If external material exists (designs/specs/source code under
-   `working_copy/`, `prompts/working_copy/`, or project has real
+   `working_copy/`, `.ai-prompts/prompts/working_copy/`, or project has real
    `src/`/`backend/`/`frontend/`/`android/`/`ios/` directories), also
    read `.ai-prompts/prompts/orchestrators/external-input-handler.md`.
 5. Follow the chosen engine until its next checkpoint. Stop at every
@@ -89,14 +89,14 @@ After running any helper, re-run `finalize.sh` to refresh the gate.
 The executor (`.ai-prompts/prompts/orchestrators/executor.md`) wires
 two pipelines that happy-path planning sessions do NOT need to load:
 
-- **On every test/build failure:** `scripts/diagnose-harness.sh`
+- **On every test/build failure:** `.ai-prompts/scripts/diagnose-harness.sh`
   classifies the failure (`harness_crash` / `code_crash_known` /
   `code_crash_unknown` / `not_crashed`) using per-stack catalogs
   under `.ai-prompts/prompts/modules/harness-recovery/`. Recipes
   recover the harness automatically; structured `code_fix`
   remediations are applied by the AI executor in the next loop iteration.
-- **On every successful task:** `scripts/safety-check-commit.sh` +
-  `scripts/commit-task.sh` produce one commit per task with scope
+- **On every successful task:** `.ai-prompts/scripts/safety-check-commit.sh` +
+  `.ai-prompts/scripts/commit-task.sh` produce one commit per task with scope
   and revert-protection invariants. Push is never automatic at the
   task level.
 

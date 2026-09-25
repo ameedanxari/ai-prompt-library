@@ -32,7 +32,16 @@ done
 JUNIT_XML=""
 [ -f "$PWD/test-results/junit.xml" ] && JUNIT_XML="$PWD/test-results/junit.xml"
 
-NODE_REPORT="$(ls -t "$PWD"/report.*.json 2>/dev/null | head -1 || true)"
+# Freshest Node fatal-error report. `ls -t | head -1` would mis-parse paths
+# containing spaces/newlines (and would list a directory's contents if one
+# ever matched), so walk the glob and keep the newest by mtime with -nt.
+NODE_REPORT=""
+for cand in "$PWD"/report.*.json; do
+  [ -f "$cand" ] || continue
+  if [ -z "$NODE_REPORT" ] || [ "$cand" -nt "$NODE_REPORT" ]; then
+    NODE_REPORT="$cand"
+  fi
+done
 
 PW_REPORT_DIR=""
 [ -d "$PWD/playwright-report" ] && PW_REPORT_DIR="$PWD/playwright-report"

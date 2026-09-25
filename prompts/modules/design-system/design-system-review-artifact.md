@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real paths, concrete token/component names, real
    reference evidence, and project-specific review instructions.
 -->
@@ -87,9 +87,9 @@ When writing a task from this module:
    confirms the artifact includes token swatches, component states, and
    reference evidence.
    Preferred generator:
-   `bash scripts/generate-design-system-review-artifact.sh prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html`
+   `bash .ai-prompts/scripts/generate-design-system-review-artifact.sh prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html`
    Preferred deterministic check:
-   `bash scripts/validate-design-system-review-artifact.sh . prompts/outputs/current/ui-reference-source-map.md`
+   `bash .ai-prompts/scripts/validate-design-system-review-artifact.sh . prompts/outputs/current/ui-reference-source-map.md`
 5. Keep external references as pattern evidence only. Do not copy reference
    screenshots, brand assets, exact layouts, icon sets, or proprietary
    illustrations.

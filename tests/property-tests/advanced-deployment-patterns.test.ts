@@ -1,6 +1,8 @@
 import { describe, it, expect } from 'vitest';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
+
+import { readModuleWithDetails } from '../../src/module-content.js';
 
 const DEPLOYMENT_MODULES_PATH = join(process.cwd(), 'prompts', 'modules', 'deployment');
 
@@ -49,7 +51,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       });
 
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8');
+        const content = readModuleWithDetails(templatePath);
 
         it('should have all required sections', () => {
           REQUIRED_SECTIONS.forEach(section => {
@@ -147,7 +149,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('edge-computing-deployment.md should include edge-specific features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'edge-computing-deployment.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('edge');
         expect(content).toContain('cdn');
         expect(content).toContain('latency');
@@ -159,7 +161,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('serverless-orchestration-scale.md should include serverless-specific features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'serverless-orchestration-scale.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('serverless');
         expect(content).toContain('function');
         expect(content).toContain('lambda');
@@ -171,7 +173,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('multi-cloud-deployment-strategies.md should include multi-cloud features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'multi-cloud-deployment-strategies.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('multi-cloud');
         expect(content).toContain('aws');
         expect(content).toContain('azure');
@@ -184,7 +186,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('gitops-advanced-workflows.md should include GitOps-specific features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'gitops-advanced-workflows.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('gitops');
         expect(content).toContain('git');
         expect(content).toContain('argocd');
@@ -197,7 +199,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('infrastructure-as-code-evolution.md should include IaC-specific features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'infrastructure-as-code-evolution.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('infrastructure as code');
         expect(content).toContain('terraform');
         expect(content).toContain('pulumi');
@@ -210,7 +212,7 @@ describe('Advanced Deployment Patterns Templates', () => {
     it('zero-trust-deployment-architectures.md should include zero-trust features', () => {
       const templatePath = join(DEPLOYMENT_MODULES_PATH, 'zero-trust-deployment-architectures.md');
       if (existsSync(templatePath)) {
-        const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+        const content = readModuleWithDetails(templatePath).toLowerCase();
         expect(content).toContain('zero-trust');
         expect(content).toContain('identity');
         expect(content).toContain('micro-segmentation');
@@ -227,7 +229,7 @@ describe('Advanced Deployment Patterns Templates', () => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (!existsSync(templatePath)) return null;
         
-        const content = readFileSync(templatePath, 'utf-8');
+        const content = readModuleWithDetails(templatePath);
         return {
           template,
           sections: REQUIRED_SECTIONS.filter(section => content.includes(section)),
@@ -248,7 +250,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           // Should reference integration with other systems
           expect(content).toMatch(/integration|monitoring|security|analytics|testing/);
         }
@@ -259,7 +261,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/error|exception|failure|rollback|recovery/);
         }
       });
@@ -269,7 +271,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/scal|performance|optimization|efficiency/);
         }
       });
@@ -281,7 +283,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           const aiFeatures = content.match(/ai|artificial intelligence|machine learning|ml|intelligent|optimization|predictive/g) || [];
           expect(aiFeatures.length).toBeGreaterThanOrEqual(5);
         }
@@ -292,7 +294,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/automat|orchestrat|intelligent|self-healing|adaptive/);
         }
       });
@@ -302,7 +304,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/monitoring|observability|metrics|alerting|dashboard|prometheus|grafana/);
         }
       });
@@ -312,7 +314,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/security|encryption|authentication|authorization|compliance|audit/);
         }
       });
@@ -322,7 +324,7 @@ describe('Advanced Deployment Patterns Templates', () => {
       ADVANCED_DEPLOYMENT_TEMPLATES.forEach(template => {
         const templatePath = join(DEPLOYMENT_MODULES_PATH, template);
         if (existsSync(templatePath)) {
-          const content = readFileSync(templatePath, 'utf-8').toLowerCase();
+          const content = readModuleWithDetails(templatePath).toLowerCase();
           expect(content).toMatch(/cost|optimization|efficiency|savings|budget/);
         }
       });

@@ -4,7 +4,7 @@ import {
   findTraceabilityGaps,
   type ReviewedSemanticOverride,
   type TraceabilityMatrixInput,
-} from '../../src/traceability/traceability-matrix';
+} from '../../src/traceability/traceability-matrix.js';
 
 const completeOverride = (
   sourceId: string,

@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -591,6 +591,7 @@ pub fn matrix_multiply(a: &[f64], b: &[f64], rows_a: usize, cols_a: usize, cols_
 
 ```bash
 # Install Rust using rustup
+# SECURITY: piping a URL straight into a shell runs unreviewed code — download the script, inspect it, then run it.
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
 source ~/.cargo/env
 
@@ -657,6 +658,7 @@ async fn process_files_concurrently(file_paths: Vec<String>) -> Result<(), Box<d
 
 ```bash
 # Install wasm-pack
+# SECURITY: piping a URL straight into a shell runs unreviewed code — download the script, inspect it, then run it.
 curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 # Create WASM project

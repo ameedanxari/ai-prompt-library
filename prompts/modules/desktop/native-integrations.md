@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -480,8 +480,8 @@ class WindowManager {
 ## Related Modules
 
 - [desktop/offline-first.md](./offline-first.md) - Offline capabilities
-- [desktop/performance-optimization.md](../../desktop/performance-optimization.md) - Performance patterns
-- [desktop/desktop-security.md](../../desktop/desktop-security.md) - Security considerations
+- [.ai-prompts/prompts/desktop/performance-optimization.md](../../desktop/performance-optimization.md) - Performance patterns
+- [.ai-prompts/prompts/desktop/desktop-security.md](../../desktop/desktop-security.md) - Security considerations
 
 ## Examples
 

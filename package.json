@@ -38,6 +38,10 @@
       "types": "./dist/task-contract/index.d.ts",
       "import": "./dist/task-contract/index.js"
     },
+    "./validators": {
+      "types": "./dist/validators/index.d.ts",
+      "import": "./dist/validators/index.js"
+    },
     "./traceability": {
       "types": "./dist/traceability/traceability-matrix.d.ts",
       "import": "./dist/traceability/traceability-matrix.js"
@@ -51,8 +55,25 @@
     "dist/review",
     "dist/task-contract",
     "dist/traceability",
+    "dist/validators",
+    "dist/template-validator.*",
     "docs",
-    "prompts",
+    "prompts/AGENTS.md",
+    "prompts/README.md",
+    "prompts/TAXONOMY.md",
+    "prompts/ai-native",
+    "prompts/deployment",
+    "prompts/desktop",
+    "prompts/modules",
+    "prompts/monitoring",
+    "prompts/orchestrators",
+    "prompts/performance",
+    "prompts/review",
+    "prompts/security",
+    "prompts/steering",
+    "prompts/technology-stacks",
+    "prompts/testing",
+    "prompts/outputs/README.md",
     "project-templates",
     "scripts",
     "MY_PROJECT.md.template",

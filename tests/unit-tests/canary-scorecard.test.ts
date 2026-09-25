@@ -3,7 +3,7 @@ import {
   evaluateReleaseGates,
   type ReleaseGate,
   type ReleaseGateKind,
-} from '../../src/release/release-gates';
+} from '../../src/release/release-gates.js';
 
 const TIER_ZERO = new Set(['security', 'privacy', 'destructive-action', 'data-integrity']);
 

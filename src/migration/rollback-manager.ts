@@ -19,8 +19,25 @@ export interface MigrationSnapshot {
   state: Record<string, any>;
 }
 
+/**
+ * A handler that restores the state captured in a snapshot. The manager does
+ * not know how state is persisted (files, DB, memory), so the host registers
+ * the real restore logic via setRestoreHandler().
+ */
+export type RestoreHandler = (snapshot: MigrationSnapshot) => Promise<void> | void;
+
 export class RollbackManager {
   private snapshots: MigrationSnapshot[] = [];
+  private restoreHandler?: RestoreHandler;
+
+  /**
+   * Registers the handler that actually restores a snapshot's state
+   * (file system, DB migrations, etc.). Rollback refuses to report success
+   * until a handler is registered.
+   */
+  public setRestoreHandler(handler: RestoreHandler): void {
+    this.restoreHandler = handler;
+  }
 
   /**
    * Takes a snapshot before a migration step
@@ -48,9 +65,18 @@ export class RollbackManager {
       return { success: false, error: `Snapshot ${snapshotId} not found` };
     }
 
-    console.log(`[RollbackManager] Rolling back to snapshot '${snapshot.id}' (version ${snapshot.version})`);
+    // HONEST (item 15c): the old code returned success:true while restoring
+    // nothing. Without a registered restore handler we now report failure
+    // explicitly instead of pretending the rollback happened.
+    if (!this.restoreHandler) {
+      return {
+        success: false,
+        snapshot,
+        error: 'No restore handler registered: snapshot state was NOT restored. Call setRestoreHandler() first.'
+      };
+    }
 
-    // In a real implementation, this would restore file system state, DB migrations, etc.
+    await this.restoreHandler(snapshot);
     return { success: true, snapshot };
   }
 

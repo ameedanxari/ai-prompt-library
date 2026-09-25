@@ -6,7 +6,7 @@
 # public API and the shell tools.
 #
 # Usage:
-#   bash scripts/build-task-contract.sh [target-dir] [output-json]
+#   bash .ai-prompts/scripts/build-task-contract.sh [target-dir] [output-json]
 #
 # Exit codes:
 #   0  contract written
@@ -34,7 +34,8 @@ resolve_script_dir() {
 
 SCRIPT_DIR="$(resolve_script_dir)"
 PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=scripts/lib/toolchain.sh
+# shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"
 
 FAILED_ATTEMPT_REPORT="${AI_PROMPT_TOOLCHAIN_FAILED_ATTEMPT_REPORT:-$TARGET_DIR/task-contract.failed-attempt.json}"

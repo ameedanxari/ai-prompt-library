@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { buildTaskContractReport } from '../../src/task-contract/task-contract-report';
+import { buildTaskContractReport } from '../../src/task-contract/task-contract-report.js';
 import {
   buildFileDependencyGraph,
   buildTaskUnitDependencyGraph,
   parsePlanTaskFile,
-} from '../../src/task-contract/task-parser';
+} from '../../src/task-contract/task-parser.js';
 
 describe('task-parser markdown acceptance', () => {
   it('accepts the colon-outside-bold field style (**Field**: value)', () => {

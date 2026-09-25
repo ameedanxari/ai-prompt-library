@@ -37,7 +37,7 @@ existing codebase already encodes the architecture.
   current-best-practice claims).
 - `prompts/outputs/current/ui-reference-source-map.md` if it exists
   (UI architecture is part of the blueprint).
-- `prompts/orchestrators/research-and-fanout-policy.md` when its
+- `.ai-prompts/prompts/orchestrators/research-and-fanout-policy.md` when its
   triggers apply. Use it to decide which claims need citations and
   whether worker fan-out should inspect specialist slices.
 - One or more **technology-stack modules** from
@@ -326,8 +326,9 @@ After writing `architecture.md`, **STOP and present** to the user:
 4. The list of ADR titles (just status + title).
 5. The line: `"Architecture blueprint is ready at
    prompts/outputs/current/architecture.md. Say **Continue** to
-   proceed to Step 3 (atomic task generation) — which will cite
-   this blueprint — or give feedback to adjust first."`
+   proceed to Step 2.8 (UX blueprint — skipped for non-UI
+   projects, then Step 3 atomic task generation) — or give
+   feedback to adjust first."`
 
 This checkpoint is where to catch wrong stack choices early. A
 choice made in the blueprint propagates into ~50–80 tasks; reversing

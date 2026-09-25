@@ -5,6 +5,88 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — corpus split, `validators` subpath, repository hygiene
+
+The library had outgrown two of its own assumptions: that a module lives in
+a single file, and that everything under `src/` is product surface. Long
+modules were split so a consumer can load a cheap brief and expand only
+what it needs, the template validators became a real published entrypoint,
+and a large body of speculative runtime code that no build list, export map
+or import graph referenced was removed rather than left to rot the
+typecheck.
+
+### Added — expandable module detail files
+
+Long prompt modules are now a short core brief at the original path plus
+`<module>.detail-N-<topic>.md` fragments beside it. `src/module-content.ts`
+exposes `readModuleWithDetails()` and `listModuleDetailFiles()`. Any reader
+that validates a module's *content* — validators, property tests — must read
+the brief and its details as one unit; readers that only need the cheap
+overview read the brief alone. When a module has not been split the composed
+result is exactly the brief's content, so the convention is backwards
+compatible. The property tests that assert on module structure now compose
+through this helper instead of reading the brief alone.
+
+### Added — `./validators` package subpath
+
+`src/validators/` (an index plus the 22 domain template validators) and the
+22 root-level `*-template-validator.ts` modules joined the build include
+list and are published as `ai-prompt-library/validators`. `prompts/TAXONOMY.md`
+was added to the package files as the corpus map.
+
+### Added — corpus reference-integrity CI gate
+
+`scripts/check-reference-integrity.sh` sweeps the corpus for three rot
+classes: bare `prompts/<asset>/` or `scripts/<script>` references that must
+be `.ai-prompts/`-qualified for the installed layout, `docs/` references
+that do not resolve on disk, and documented output filenames whose producer
+never mentions them. Fenced code blocks are exempt — they are example output,
+not instructions — and `prompts/outputs/current/**` is treated as sample
+data. Runs as its own CI job.
+
+### Changed — `nodenext` module resolution
+
+`tsconfig.json` moved from `module: ESNext` / `moduleResolution: node` to
+`nodenext` for both, so the compiler enforces the explicit `.js` extensions
+on relative imports that the published ESM output actually needs at runtime.
+
+### Removed — speculative agentic-runtime subsystems
+
+`src/agentic-runtime.ts` and the `intent/`, `planning/`, `critics/`,
+`architecture/`, `memory/`, `reliability/`, `coordination/`, `monitoring/`,
+`observation/`, `integration/`, `validation/` and `environment/` modules were
+removed, together with the tests that exercised only them. None appeared in
+the build include list, the `exports` map or `src/index.ts`, and nothing
+shipped imported them — but they were the sole source of the typecheck errors
+that `nodenext` surfaced, and their tests were decorative green coverage of
+code no consumer could reach. `src/execution/`, `src/skill-system/`,
+`src/migration/rollback-manager.ts` and `src/security/` are live and stay.
+`src/environment/environment-detector.ts` is retained because
+`security-fixes-item13.test.ts` proves its command-injection fix.
+
+### Fixed — semantic-review CLI published an empty report
+
+`src/review/cli.ts` detected its own entrypoint by comparing
+`resolve(process.argv[1])` with `import.meta.url`. Node resolves
+`import.meta.url` to a real path but `resolve()` does not, so when the
+validator compiled the CLI into a temporary directory under a symlinked
+`$TMPDIR` (macOS `/var` → `/private/var`) the comparison never matched: the
+process exited 0 having written nothing, and `validate-semantic-review.sh`
+then atomically published an empty JSON report as though validation had
+succeeded. The guard now compares real paths.
+
+### Fixed — shellcheck gate
+
+`shellcheck scripts/*.sh scripts/lib/*.sh` had been failing on `main`. Real
+defects were repaired rather than silenced — an unquoted array expansion in
+`safety-check-commit.sh` that re-split artifact paths containing spaces,
+no-op redirections and a missing `cd || exit` in the new reference-integrity
+sweep, and `ls`-parsing probes in the harness diagnostics. Genuinely
+intentional patterns now carry targeted inline directives stating the
+reason: literal `awk`/`sed` programs that must not expand, helper functions
+invoked indirectly by name through `write_atomic_report`, and status
+variables set by `scripts/lib/toolchain.sh` for its callers to read.
+
 ## [Unreleased] — content-experience layer (SignalForge audit remediation)
 
 A forensic audit of the SignalForge build (2026-07) showed the library
@@ -165,6 +247,21 @@ integration tasks after per-file tasks; or a visible-output review
 phase. Those remain planned extensions — the three gates shipped here
 are the ones that would have prevented ~70% of the StorageCleaner
 run's failures on their own.
+
+### Fixed — assessment item 15 AbortController clause: not applicable (2026-09-22)
+
+Verified by grep over `src/`, `scripts/`, `project-templates/`,
+`deployment/` for `fetch(`, `XMLHttpRequest`, `node:http(s)`,
+`axios`, `got(`, `undici`, `curl`, `wget`, `net`/`tls`/`dgram` usage
+(sole false positive: a Python `*needles` parameter in a heredoc):
+DPROMPT's shipped tooling performs zero HTTP requests and
+`package.json` declares no runtime dependencies. The only
+`retry`/`timeout` mentions are repair-loop failure-message matching,
+a skill-test config field, and template validators checking
+generated-app doc files — there is no network surface to add
+timeout/retry to, so no decorative fetch helper was created. If
+network I/O is ever added to the tooling, AbortController timeout +
+retry is a requirement.
 
 ## [v1.0.0] — 2026-04-22
 

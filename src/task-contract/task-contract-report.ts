@@ -16,8 +16,16 @@ import {
   type TaskSchemaVersion,
 } from './task-parser.js';
 
+/**
+ * Severity of a task-contract issue. `error` issues set `summary.blocked`;
+ * `warning` issues are advisory only.
+ */
 export type TaskContractIssueSeverity = 'error' | 'warning';
 
+/**
+ * Machine-readable codes for every issue the contract checker can emit.
+ * Codes are stable: tooling may switch on them.
+ */
 export type TaskContractIssueCode =
   | 'no-plan-files'
   | 'missing-file-dependency'
@@ -55,10 +63,17 @@ export type TaskContractIssueCode =
   | 'legacy-task-schema'
   | 'duplicate-file-path';
 
+/**
+ * Options for {@link buildTaskContractReport}.
+ */
 export interface TaskContractReportOptions {
   sourceDirectory?: string;
 }
 
+/**
+ * Aggregate counts for a task-contract report. `blocked` is true when at
+ * least one `error`-severity issue exists.
+ */
 export interface TaskContractSummary {
   fileCount: number;
   taskFileCount: number;
@@ -74,6 +89,11 @@ export interface TaskContractSummary {
   blocked: boolean;
 }
 
+/**
+ * A single contract violation or advisory finding. `file`, `unitId`,
+ * `canonicalId`, `dependency`, `path`, and `owners` locate the problem;
+ * only the fields relevant to the issue `code` are populated.
+ */
 export interface TaskContractIssue {
   code: TaskContractIssueCode;
   severity: TaskContractIssueSeverity;
@@ -86,6 +106,10 @@ export interface TaskContractIssue {
   owners?: string[];
 }
 
+/**
+ * Per-file view of a parsed plan file: its task units, dependency edges,
+ * and the distinct field values found across its units.
+ */
 export interface TaskContractFileEntry {
   filename: string;
   filePath?: string;
@@ -104,6 +128,11 @@ export interface TaskContractFileEntry {
   evidenceLevels: EvidenceLevel[];
 }
 
+/**
+ * Per-unit view of a parsed task unit: every contract field, both the
+ * parsed value (e.g. `phase`) and the raw invalid value (e.g.
+ * `invalidPhase`) when the raw text failed validation.
+ */
 export interface TaskContractUnitEntry {
   id: string;
   canonicalId: string;
@@ -139,17 +168,29 @@ export interface TaskContractUnitEntry {
   fixtureAllowanceMissingReleaseExclusionCheck?: true;
 }
 
+/**
+ * One claimant of a file path: the file and task unit that declares it.
+ */
 export interface TaskContractPathOwner {
   file: string;
   unitId: string;
   canonicalId: string;
 }
 
+/**
+ * A file path and every task unit that claims to own it. Claims with more
+ * than one owner also appear in `duplicatePathClaims` and produce a
+ * `duplicate-file-path` warning.
+ */
 export interface TaskContractPathClaim {
   path: string;
   owners: TaskContractPathOwner[];
 }
 
+/**
+ * The canonical machine-readable task contract. `schemaVersion` is 2;
+ * `issues` is sorted by severity, then code, then location.
+ */
 export interface TaskContractReport {
   schemaVersion: 2;
   generatedBy: 'src/task-contract/task-contract-report.ts';
@@ -166,6 +207,12 @@ export interface TaskContractReport {
   issues: TaskContractIssue[];
 }
 
+/**
+ * Builds a task-contract report from already-parsed plan files.
+ *
+ * An empty input set never produces a green report: it yields a single
+ * `no-plan-files` error issue so `summary.blocked` is true.
+ */
 export function buildTaskContractReport(
   files: ParsedPlanFile[],
   options: TaskContractReportOptions = {},
@@ -208,6 +255,10 @@ export function buildTaskContractReport(
   };
 }
 
+/**
+ * Parses every tasks-*.md / remediation-*.md file in `targetDir` and builds
+ * the task-contract report for it.
+ */
 export function buildTaskContractReportForDirectory(targetDir: string): TaskContractReport {
   return buildTaskContractReport(parsePlanTaskDirectory(targetDir), {
     sourceDirectory: targetDir,

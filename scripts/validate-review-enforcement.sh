@@ -65,6 +65,7 @@ section "Checking GitHub Actions versions"
 
 workflow_files=$(git ls-files '.github/workflows/*.yml' '.github/workflows/*.yaml')
 if [ -n "$workflow_files" ]; then
+  # shellcheck disable=SC2086  # $workflow_files is a newline-separated list of paths that must split into separate grep file arguments
   outdated_checkout=$(grep -nE 'uses:[[:space:]]*actions/checkout@v[0-5]([[:space:]#]|$)' $workflow_files || true)
   if [ -n "$outdated_checkout" ]; then
     printf '%s\n' "$outdated_checkout"

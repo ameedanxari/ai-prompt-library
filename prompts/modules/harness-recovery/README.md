@@ -1,7 +1,7 @@
 # Harness-Recovery Catalogs
 
 When a per-task test or build-gate fails, the executor invokes
-`scripts/diagnose-harness.sh`. That dispatcher routes to one of the
+`.ai-prompts/scripts/diagnose-harness.sh`. That dispatcher routes to one of the
 per-stack diagnose scripts in `scripts/diagnose-harness-<stack>.sh`,
 which scan known crash-artifact locations and match what they find
 against a catalog in this directory.
@@ -26,7 +26,7 @@ which crash classes the catalog covers.
 
 Hit a crash that isn't in the catalog?
 
-1. Run `bash scripts/diagnose-harness.sh ...` and inspect the
+1. Run `bash .ai-prompts/scripts/diagnose-harness.sh ...` and inspect the
    resulting `harness-diagnosis.json`. The `confidence: low` and
    `classification: code_crash_unknown` combination is the signal.
 2. Open the relevant `<stack>.yaml`.

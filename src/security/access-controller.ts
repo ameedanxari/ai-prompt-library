@@ -93,7 +93,10 @@ export class AccessController {
   private matchResource(pattern: string, resource: string): boolean {
     if (pattern === '*') return true;
     if (pattern.endsWith('/*')) {
-      return resource.startsWith(pattern.slice(0, -2));
+      // SECURITY (item 13b): the prefix must include the trailing '/'. The old
+      // code used pattern.slice(0, -2) ('src/*' -> 'src'), so 'srcmalicious'
+      // matched the 'src/*' permission. 'src/' no longer matches 'srcfoo'.
+      return resource.startsWith(pattern.slice(0, -1));
     }
     return pattern === resource;
   }

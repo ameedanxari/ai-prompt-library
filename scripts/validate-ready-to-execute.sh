@@ -10,7 +10,7 @@
 # contract.
 #
 # Usage:
-#   bash scripts/validate-ready-to-execute.sh [target-dir]
+#   bash .ai-prompts/scripts/validate-ready-to-execute.sh [target-dir]
 #
 # Exit codes:
 #   0  ready_to_execute: true

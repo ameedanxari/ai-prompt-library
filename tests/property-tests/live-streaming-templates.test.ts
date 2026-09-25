@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { RealTimeCommunicationTemplateValidator } from '../../src/real-time-communication-template-validator.js';
+import { RealTimeCommunicationTemplateValidator } from '../../src/validators/real-time-communication-template-validator.js';
 import { join } from 'path';
 
 /**

@@ -3,7 +3,7 @@
 # prompts/outputs/current/ui-reference-source-map.md.
 #
 # Usage:
-#   bash scripts/validate-ui-reference-source-map.sh [source-map-path]
+#   bash .ai-prompts/scripts/validate-ui-reference-source-map.sh [source-map-path]
 #
 # Exit codes:
 #   0  source map is valid

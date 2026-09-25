@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { CommerceTemplateValidator } from '../../src/commerce-template-validator';
+import { CommerceTemplateValidator } from '../../src/validators/commerce-template-validator.js';
 
 describe('Property-Based Tests: Commerce Shopping Workflow Template Completeness', () => {
   const validator = new CommerceTemplateValidator();

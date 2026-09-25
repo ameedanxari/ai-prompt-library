@@ -1,5 +1,5 @@
-import type { CompletionState } from '../completion/completion-state';
-import type { EvidenceLevel } from '../task-contract/task-parser';
+import type { CompletionState } from '../completion/completion-state.js';
+import type { EvidenceLevel } from '../task-contract/task-parser.js';
 
 export const TASK_EXECUTION_STATUSES = [
   'pending',

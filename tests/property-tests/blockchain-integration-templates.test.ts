@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { BlockchainTemplateValidator } from '../../src/blockchain-template-validator.js';
+import { BlockchainTemplateValidator } from '../../src/validators/blockchain-template-validator.js';
 import { join } from 'path';
 
 /**
@@ -43,7 +43,11 @@ describe('Property-Based Tests: Blockchain Integration Template Completeness', (
           // Property assertion: All templates have required structural elements
           expect(structure.allTemplatesHaveRequiredSections).toBe(true);
           expect(structure.templatesHaveImplementationPatterns).toBe(true);
-          expect(structure.templatesHaveConfigurationExamples).toBe(true);
+          // NOTE (item 12c): none of the blockchain fixtures documents a
+          // `## Configuration` / `## Variables` section, so this is now honestly
+          // false. It was true only because of a copy-paste bug (a stray
+          // `|| this.hasCodeExamples(content)` on the config check) that was removed.
+          expect(structure.templatesHaveConfigurationExamples).toBe(false);
           expect(structure.templatesHaveIntegrationPoints).toBe(true);
           expect(structure.templatesHaveDataModels).toBe(true);
 
@@ -89,7 +93,9 @@ describe('Property-Based Tests: Blockchain Integration Template Completeness', (
             expect(content.hasPurposeSection).toBe(true);
             expect(content.hasContextSection).toBe(true);
             expect(content.hasImplementationPatterns).toBe(true);
-            expect(content.hasConfigurationParameters).toBe(true);
+            // NOTE (item 12c): none of the blockchain fixtures has a Configuration /
+            // Variables section; see note above on the removed stray-OR bug.
+            expect(content.hasConfigurationParameters).toBe(false);
             expect(content.hasCodeExamples).toBe(true);
           }
 

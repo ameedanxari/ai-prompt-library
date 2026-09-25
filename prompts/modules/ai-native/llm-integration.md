@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -478,10 +478,10 @@ class VerifyingLLM {
 
 ## Related Modules
 
-- `ai-native/prompt-engineering.md` - Advanced prompt techniques
-- `ai-native/context-management.md` - Context window optimization
-- `security/ai-security.md` - LLM security patterns
-- `performance/ai-optimization.md` - Performance tuning
+- `.ai-prompts/prompts/ai-native/prompt-engineering.md` - Advanced prompt techniques
+- `.ai-prompts/prompts/ai-native/context-management.md` - Context window optimization
+- `.ai-prompts/prompts/security/ai-security.md` - LLM security patterns
+- `.ai-prompts/prompts/performance/ai-optimization.md` - Performance tuning
 
 ## Examples
 

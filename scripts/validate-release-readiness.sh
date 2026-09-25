@@ -2,7 +2,7 @@
 # validate-release-readiness.sh — pre-tag / pre-publish package gate.
 #
 # Usage:
-#   bash scripts/validate-release-readiness.sh [repo-root]
+#   bash .ai-prompts/scripts/validate-release-readiness.sh [repo-root]
 #
 # By default this runs the package build and an npm pack dry-run, then
 # validates package metadata, docs examples, bin executability, and

@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
+
+import { readModuleWithDetails } from '../../src/module-content.js';
 
 /**
  * Property-Based Tests for Modular Feature Templates
@@ -47,7 +49,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(technologyStacksPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: Technology-specific optimizations must be present
               expect(content).toMatch(/## Technology Stack Configuration/);
@@ -109,7 +111,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(featurePatternsPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: All features must include security considerations
               expect(content).toMatch(/Security Features|Security/);
@@ -167,7 +169,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(technologyStacksPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: Cost optimization strategies must be present
               expect(content).toMatch(/Cost Optimization|Cost|Budget|Free/);
@@ -227,7 +229,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(featurePatternsPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: Offline functionality must include caching strategies
               expect(content).toMatch(/Cache|Caching|cache|offline/);
@@ -248,7 +250,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(technologyStacksPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: Technology stacks should include offline data management
               expect(content).toMatch(/offline|Offline|cache|Cache|storage|Storage/);
@@ -288,7 +290,7 @@ describe('Property-Based Tests: Modular Feature Templates', () => {
             const filePath = join(featurePatternsPath, file);
             
             if (existsSync(filePath)) {
-              const content = readFileSync(filePath, 'utf-8');
+              const content = readModuleWithDetails(filePath);
               
               // Property: All feature templates must have consistent structure
               expect(content).toMatch(/## Overview/);

@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -1084,7 +1084,7 @@ export function registerProtocols() {
 - `tauri-desktop.md` - Lighter alternative to Electron
 - `web-react.md` - React patterns for renderer process
 - `progressive-web-apps.md` - PWA as alternative to desktop
-- `deployment/desktop-distribution.md` - Desktop app distribution
+- `.ai-prompts/prompts/deployment/desktop-distribution.md` - Desktop app distribution
 
 ## Examples
 

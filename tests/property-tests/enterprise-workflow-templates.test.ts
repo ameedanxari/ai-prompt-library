@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { EnterpriseSaaSTemplateValidator } from '../../src/enterprise-saas-template-validator';
+import { EnterpriseSaaSTemplateValidator } from '../../src/validators/enterprise-saas-template-validator.js';
 import { join } from 'path';
 
 describe('Property Test: Enterprise Workflow Template Coverage', () => {

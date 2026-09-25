@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -990,9 +990,9 @@ app.global_shortcut_manager()
 ## Related Modules
 
 - [technology-stacks/electron-desktop.md](./electron-desktop.md) - Alternative desktop framework
-- [desktop/desktop-security.md](../../desktop/desktop-security.md) - Desktop security patterns
-- [deployment/desktop-distribution.md](../../deployment/desktop-distribution.md) - Distribution strategies
-- [testing/desktop-testing.md](../../testing/desktop-testing.md) - Desktop testing approaches
+- [.ai-prompts/prompts/desktop/desktop-security.md](../../desktop/desktop-security.md) - Desktop security patterns
+- [.ai-prompts/prompts/deployment/desktop-distribution.md](../../deployment/desktop-distribution.md) - Distribution strategies
+- [.ai-prompts/prompts/testing/desktop-testing.md](../../testing/desktop-testing.md) - Desktop testing approaches
 
 ## Examples
 

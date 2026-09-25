@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { GamificationTemplateValidator } from '../../src/gamification-template-validator.js';
+import { GamificationTemplateValidator } from '../../src/validators/gamification-template-validator.js';
 import { join } from 'path';
 
 /**

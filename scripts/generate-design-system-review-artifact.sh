@@ -3,7 +3,7 @@
 # design-system review page from ui-reference-source-map.md.
 #
 # Usage:
-#   bash scripts/generate-design-system-review-artifact.sh [source-map] [output-html]
+#   bash .ai-prompts/scripts/generate-design-system-review-artifact.sh [source-map] [output-html]
 #
 # Defaults:
 #   source-map  prompts/outputs/current/ui-reference-source-map.md

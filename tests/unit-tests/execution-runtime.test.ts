@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { ExecutionRuntime } from '../../src/execution/execution-runtime';
-import { ExecutionMonitor } from '../../src/execution/execution-monitor';
-import { QualityGateEnforcer } from '../../src/execution/quality-gate-enforcer';
-import { RepairLoop } from '../../src/execution/repair-loop';
+import { ExecutionRuntime } from '../../src/execution/execution-runtime.js';
+import { ExecutionMonitor } from '../../src/execution/execution-monitor.js';
+import { QualityGateEnforcer } from '../../src/execution/quality-gate-enforcer.js';
+import { RepairLoop } from '../../src/execution/repair-loop.js';
 
 describe('Execution runtime components', () => {
   it('executes plan steps in dependency order and passes dependency outputs', async () => {

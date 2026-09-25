@@ -3,7 +3,7 @@
 # design-system review artifact created during execution.
 #
 # Usage:
-#   bash scripts/validate-design-system-review-artifact.sh [project-root-or-html-path] [source-map]
+#   bash .ai-prompts/scripts/validate-design-system-review-artifact.sh [project-root-or-html-path] [source-map]
 #
 # If a directory is passed, validates:
 #   <directory>/docs/design-system/review/index.html

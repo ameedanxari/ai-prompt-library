@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { CommerceTemplateValidator } from '../../src/commerce-template-validator.js';
+import { CommerceTemplateValidator } from '../../src/validators/commerce-template-validator.js';
 import { join } from 'path';
 
 /**
@@ -214,7 +214,10 @@ describe('Property-Based Tests: Commerce Product Template Completeness', () => {
           const templatePath = join(commerceModulePath, templateFile);
           
           // Property: Each template should have comprehensive data models
-          const hasDataModels = validator['hasDataModels'](templatePath);
+          // (item 12: commerce's file-based private was renamed to
+          // templateHasDataModels when the content-based check moved to the
+          // shared TemplateValidator base)
+          const hasDataModels = validator['templateHasDataModels'](templatePath);
           expect(hasDataModels).toBe(true);
           
           // Property: Templates should have implementation patterns

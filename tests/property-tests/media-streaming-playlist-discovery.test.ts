@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { MediaStreamingTemplateValidator } from '../../src/media-streaming-template-validator.js';
+import { MediaStreamingTemplateValidator } from '../../src/validators/media-streaming-template-validator.js';
 import { join } from 'path';
 
 /**

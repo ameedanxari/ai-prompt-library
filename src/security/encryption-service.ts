@@ -25,9 +25,16 @@ export class EncryptionService {
   /**
    * Derives an encryption key from a passphrase
    */
-  public deriveKey(passphrase: string, salt?: string): Buffer {
+  public deriveKey(passphrase: string, salt?: string): { key: Buffer; salt: string } {
+    // SECURITY (item 13c): the salt is now returned alongside the key. The old
+    // signature silently discarded a randomly generated salt, making the derived
+    // key unrecoverable (and silently re-randomized on every call without an
+    // explicit salt). Callers must persist the returned salt with the payload.
     const s = salt || crypto.randomBytes(16).toString('hex');
-    return crypto.pbkdf2Sync(passphrase, s, 100000, this.keyLength, 'sha512');
+    return {
+      key: crypto.pbkdf2Sync(passphrase, s, 100000, this.keyLength, 'sha512'),
+      salt: s,
+    };
   }
 
   /**

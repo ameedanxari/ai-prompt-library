@@ -3,7 +3,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs.js';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'validate-ready-to-execute.sh');

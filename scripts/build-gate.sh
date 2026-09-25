@@ -14,7 +14,7 @@
 # check that targets "does the code compile" only.
 #
 # Usage:
-#   bash scripts/build-gate.sh [project-root]
+#   bash .ai-prompts/scripts/build-gate.sh [project-root]
 #
 # Exit codes:
 #   0  every detected stack compiled cleanly
@@ -126,7 +126,7 @@ check_ios() {
     -quiet \
     build 2>&1 | tail -40
   local rc=${PIPESTATUS[0]}
-  if [ $rc -ne 0 ]; then
+  if [ "$rc" -ne 0 ]; then
     failures+=("ios: xcodebuild -scheme $scheme build exited $rc")
   else
     printf "[ios] OK\n"

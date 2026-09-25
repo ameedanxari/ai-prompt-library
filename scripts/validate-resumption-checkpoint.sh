@@ -2,7 +2,7 @@
 # validate-resumption-checkpoint.sh — validate selective-resume state.
 #
 # Usage:
-#   bash scripts/validate-resumption-checkpoint.sh [checkpoint-or-output-dir]
+#   bash .ai-prompts/scripts/validate-resumption-checkpoint.sh [checkpoint-or-output-dir]
 #
 # If a directory is passed, validates:
 #   <directory>/resumption-checkpoint.md

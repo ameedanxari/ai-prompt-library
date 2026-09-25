@@ -91,7 +91,7 @@ are mandatory — the agent cannot silently drop them. Use this table:
 | C13 — Architecture schema | Applies | Skip |
 | C14 — UX-flows schema | Applies when UI tasks exist | Skip |
 | C15 — Release-plan schema | Applies | Skip |
-| C16 — Store-submission schema | Applies (one-liner ok for non-mobile) | Skip |
+| C16 — Store-submission schema | Applies when plan files mention mobile artifacts (G6, Option B); non-mobile runs skip it | Skip |
 | C17 — Source-ledger + regulated architecture quality | Applies when research/fan-out triggers or architecture.md exists | Applies when research/fan-out triggers or architecture claims exist |
 | C18 — Content-system schema | Applies when UI tasks exist | Applies when remediation touches user-visible copy, first-run state, or seed data |
 
@@ -178,8 +178,8 @@ fields before executor handoff.
 ### C5 — Baseline coverage (BOTH engines — greenfield AND gap-closure)
 
 Run for every run, both modes. Load
-`prompts/orchestrators/baseline-task-shapes.md` as the single source of
-truth for per-topic rules.
+`.ai-prompts/prompts/orchestrators/baseline-task-shapes.md` as the single
+source of truth for per-topic rules.
 
 First run `scripts/validate-baseline-task-coverage.sh <target-dir>`.
 It writes `baseline-task-coverage.md` and fails when a scoped or
@@ -406,7 +406,7 @@ those services).
 Run:
 
 ```bash
-bash scripts/validate-regulated-architecture.sh <target-dir>
+bash .ai-prompts/scripts/validate-regulated-architecture.sh <target-dir>
 ```
 
 This check applies when the plan includes regulated healthcare,
@@ -546,10 +546,13 @@ required sections —
 - **Compliance** — privacy policy URL, export compliance answer.
 
 **For non-mobile projects** (web-only, backend, CLI, library):
-a one-line file naming the actual distribution channel is
-sufficient. Example:
-`Distribution: direct download from <URL>. No app-store
-submission required.`
+skip this step entirely — no `store-submission.md` is produced and no
+stub is needed. Per the G6 companion convention, the validator's
+required-companions check demands `store-submission.md` only when plan
+files mention mobile artifacts: reverse-DNS bundle IDs (`com.` / `io.`
+/ `app.`), bundle ID / applicationId declarations, `xcodeproj` /
+`xcworkspace`, TestFlight, Play Console, Google Play, App Store, or
+`.ipa` / `.aab` / `.apk` references.
 
 Cross-artifact consistency:
 - Privacy disclosures align with `architecture.md` § Privacy &

@@ -8,8 +8,8 @@
  * Validates: Requirements 3.5, 5.5, 6.1
  */
 
-import { ExecutionContext } from './execution-runtime';
-import { ExecutionMetrics } from './execution-monitor';
+import { ExecutionContext } from './execution-runtime.js';
+import { ExecutionMetrics } from './execution-monitor.js';
 
 /**
  * Result of a quality check

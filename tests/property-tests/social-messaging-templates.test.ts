@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { SocialTemplateValidator } from '../../src/social-template-validator.js';
+import { SocialTemplateValidator } from '../../src/validators/social-template-validator.js';
 import { join } from 'path';
 
 /**

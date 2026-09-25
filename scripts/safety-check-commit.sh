@@ -26,7 +26,7 @@
 # Hard failures (exit 1) require user intervention before committing.
 #
 # Usage:
-#   bash scripts/safety-check-commit.sh \
+#   bash .ai-prompts/scripts/safety-check-commit.sh \
 #       --task <path-to-tasks-*.md> \
 #       [--ledger prompts/outputs/current/path-ledger.md] \
 #       [--strict]                                  # exit 1 on warnings
@@ -209,7 +209,7 @@ while IFS= read -r f; do
   size=$(stat -c%s "$f" 2>/dev/null || stat -f%z "$f" 2>/dev/null || echo 0)
   if [ "$size" -gt 10485760 ]; then
     already_flagged=0
-    for av in ${artifact_violations[@]:-}; do
+    for av in ${artifact_violations[@]+"${artifact_violations[@]}"}; do
       [ "$av" = "$f" ] && already_flagged=1 && break
     done
     [ "$already_flagged" -eq 0 ] && oversized_violations+=("$f (${size} bytes)")

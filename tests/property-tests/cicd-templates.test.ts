@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { DeploymentTemplateValidator } from '../../src/deployment-template-validator.js';
+import { DeploymentTemplateValidator } from '../../src/validators/deployment-template-validator.js';
 import { join } from 'path';
 
 /**

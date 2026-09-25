@@ -58,15 +58,27 @@ and logs progress.
 ## Quick start
 
 **→ See [`QUICK_START.md`](QUICK_START.md) for the single copy-paste
-prompt.** Paste it into any agentic AI chat inside an empty folder, answer
-one question, and the library handles everything else — installation,
-project scaffolding, planning, and implementation.
+prompt.** Paste it into a desktop AI coding app (Cursor, Windsurf,
+Kiro, the Claude or ChatGPT desktop app — not the chatgpt.com /
+claude.ai websites) inside an empty folder, answer one question about
+what you want to build, then approve each stage by saying
+**Continue** — expect about **4 planning approvals** (epics →
+features → task prompts → readiness gate), and batch execution with
+**"Continue 5"**. Planning takes roughly 1–3 hours of mostly waiting;
+building a real project takes days. No install needed: the prompt
+tells the agent to download the library itself with a plain
+`git clone --depth 1` — you only need the desktop app and `git`.
 
-If you want the manual path instead, use one of these install modes.
+Starting from zero? [docs/FREE_RESOURCES.md](docs/FREE_RESOURCES.md)
+lists free AI coding apps and free tiers.
 
-**Git submodule (recommended for app projects):**
+**Other install modes** (only if you prefer them over the
+zero-install default):
 
-1. `git submodule add https://github.com/ameedanxari/ai-prompt-library .ai-prompts`
+*Git submodule* (keeps the library pinned as a submodule of your
+repo — the agent-facing paths are identical):
+
+1. `git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts`
 2. `bash .ai-prompts/scripts/bootstrap-project-integration.sh` — creates
    `AGENTS.md`, copies `MY_PROJECT.md` from the template, wires IDE
    steering.
@@ -75,9 +87,9 @@ If you want the manual path instead, use one of these install modes.
    (web + Android + iOS, auth + admin, i18n, a11y, tests, CI/CD, etc.).
 4. In your AI chat: "Read `.ai-prompts/prompts/AGENTS.md` and
    `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`, follow
-   its routing, do not stop between steps."
+   its routing, and stop at each ⏸ checkpoint for my review."
 
-**npm package (useful for CI, validators, and API consumers):**
+*npm package* (useful for CI, validators, and API consumers):
 
 ```bash
 npm install --save-dev ai-prompt-library
@@ -86,10 +98,10 @@ bash .ai-prompts/scripts/bootstrap-project-integration.sh
 npx ai-prompt-ready prompts/outputs/current
 ```
 
-The package expects Node.js 20+, npm, Python 3, and Bash. The npm
+The npm path expects Node.js 20+, npm, Python 3, and Bash. The npm
 install publishes the prompt library, shell validators, and typed
 task-contract API. The `.ai-prompts` symlink keeps the agent-facing
-paths identical to the submodule flow while `npx` exposes the
+paths identical to the clone flow while `npx` exposes the
 mechanical gates.
 
 Programmatic task-contract example:
@@ -236,8 +248,10 @@ preference menu — you already authorised the run.
 
 - A non-technical user who wants to turn an idea into a concrete,
   ordered task list without having to design the architecture themselves.
-- A lower-end coding model (SWE 1.6-class) asked to implement one task at
-  a time — each task is small enough to fit a modest context window.
+- A mid-range coding model — e.g. Claude in the Claude desktop app or
+  Cursor, GPT in the ChatGPT desktop app — asked to implement one task
+  at a time. Each task is written small enough to fit without needing
+  the whole project in context.
 - Engineers who want an opinionated scaffold for turning vague briefs
   into atomic work items.
 

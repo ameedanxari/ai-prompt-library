@@ -27,7 +27,6 @@
 # Sets these globals on the calling shell:
 #   MATCHED_ID       — entry id, or "__none__"
 #   CLASSIFICATION   — harness_crash | code_crash_known | code_crash_unknown
-#   REMED_TYPE       — recipe | code_fix | none
 #   CONFIDENCE       — high | medium | low
 #   RECIPE_STEPS[]   — array of recipe steps (env vars NOT expanded yet)
 #   CODE_FIX_KV[]    — array of "k:v" lines for the code_fix object
@@ -123,7 +122,6 @@ read_catalog_match() {
 
   MATCHED_ID="$(printf '%s\n' "$parsed" | awk -F= '/^MATCHED_ID=/{print $2}')"
   CLASSIFICATION="$(printf '%s\n' "$parsed" | awk -F= '/^CLASSIFICATION=/{print $2}')"
-  REMED_TYPE="$(printf '%s\n' "$parsed" | awk -F= '/^REMED_TYPE=/{print $2}')"
   CONFIDENCE="$(printf '%s\n' "$parsed" | awk -F= '/^CONFIDENCE=/{print $2}')"
   RECIPE_STEPS=()
   while IFS= read -r line; do

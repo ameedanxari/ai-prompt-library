@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { ContentManagementTemplateValidator } from '../../src/content-management-template-validator.js';
+import { ContentManagementTemplateValidator } from '../../src/validators/content-management-template-validator.js';
 import { join } from 'path';
 
 /**

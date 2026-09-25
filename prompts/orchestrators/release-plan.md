@@ -351,8 +351,9 @@ user:
 3. The top three release-specific risks (one line each).
 4. The line: `"Release plan is ready at
    prompts/outputs/current/release-plan.md. Say **Continue** to
-   run the Revise Gate, or give feedback to adjust the staging
-   first."`
+   proceed to Step 3.95 (store submission) for mobile platforms,
+   or the Revise Gate if no mobile platforms — or give feedback
+   to adjust the staging first."`
 
 If the user pushes back on the stage cut, that's the cheapest
 moment to re-grade Phase tags or re-distribute tasks across

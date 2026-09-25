@@ -9,7 +9,7 @@
 #      paths, or from `--stack` if passed explicitly).
 #   2. Routes to the matching per-stack diagnose script.
 #   3. The per-stack script reads on-disk crash artifacts, matches them
-#      against `prompts/modules/harness-recovery/<stack>.yaml`, and
+#      against `.ai-prompts/prompts/modules/harness-recovery/<stack>.yaml`, and
 #      writes a structured `harness-diagnosis.json`.
 #   4. Returns one of four exit codes that tells the executor what to
 #      do next.
@@ -36,7 +36,7 @@
 # of looping.
 #
 # Usage:
-#   bash scripts/diagnose-harness.sh \
+#   bash .ai-prompts/scripts/diagnose-harness.sh \
 #       --task <path-to-tasks-*.md> \
 #       --exit-code <captured exit code> \
 #       --stderr <path-to-captured stderr file> \
@@ -89,14 +89,17 @@ detect_from_task() {
     *ios/*)             echo "ios"; return 0 ;;
     *android/*)         echo "android"; return 0 ;;
     *lib/*\.dart*|*.dart*) echo "flutter"; return 0 ;;
-    *src/*.ts*|*src/*.tsx*|*src/*.js*|*src/*.jsx*) echo "web"; return 0 ;;
+    # `.ts*`/`.js*` already cover `.tsx`/`.jsx`, so no separate patterns.
+    *src/*.ts*|*src/*.js*) echo "web"; return 0 ;;
     *scripts/*.sh*|*\.sh*) echo "bash"; return 0 ;;
   esac
   return 1
 }
 
 detect_from_layout() {
-  if   [ -d "$ROOT/ios" ] && [ -f "$ROOT/ios/Podfile" ] || ls "$ROOT/ios"/*.xcodeproj 2>/dev/null | grep -q .; then
+  # Presence checks use `compgen -G` (glob match) rather than `ls | grep` so
+  # that paths containing spaces or newlines are handled correctly.
+  if   [ -d "$ROOT/ios" ] && [ -f "$ROOT/ios/Podfile" ] || compgen -G "$ROOT/ios/*.xcodeproj" >/dev/null; then
     echo "ios"
   elif [ -d "$ROOT/android" ] && [ -f "$ROOT/android/gradlew" ]; then
     echo "android"
@@ -104,7 +107,7 @@ detect_from_layout() {
     echo "flutter"
   elif [ -f "$ROOT/package.json" ]; then
     echo "web"
-  elif [ -d "$ROOT/scripts" ] && ls "$ROOT/scripts"/*.sh 2>/dev/null | grep -q .; then
+  elif [ -d "$ROOT/scripts" ] && compgen -G "$ROOT/scripts/*.sh" >/dev/null; then
     echo "bash"
   else
     return 1

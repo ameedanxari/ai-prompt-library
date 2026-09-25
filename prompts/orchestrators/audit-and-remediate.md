@@ -38,7 +38,7 @@ All written to `prompts/outputs/current/`:
 When the user requests semantic review, functional validation, completion
 challenge, or review-driven planning, also produce the canonical artifacts
 under `review/` defined by
-`prompts/orchestrators/semantic-review-and-validation.md`.
+`.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md`.
 
 ## Context-isolation rules
 
@@ -86,7 +86,7 @@ If you start a new chat, paste this exactly:
 
 For requests that ask whether existing work is correct, functional, complete,
 or ready to stop, load and run
-`prompts/orchestrators/semantic-review-and-validation.md` as part of Step 1.
+`.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md` as part of Step 1.
 Use the existing implementation as the reviewed source revision. If no prior
 execution artifacts exist, record unavailable evidence honestly and produce a
 nonterminal completion decision.
@@ -113,7 +113,12 @@ plans.
 
 **Do NOT load:** the full source tree, test output history, git log.
 
-**Produce:** one `audit-report.md` with these sections:
+**Produce:** one `audit-report.md` with these sections. **Secret handling:**
+credentials, tokens, API keys, passwords, or other secrets encountered
+while reading the codebase must be redacted — never transcribed into the
+audit report, prompts, logs, or any artifact. Note only the location and
+the fact that a secret exists (e.g. `backend/.env — live API key present
+[REDACTED]`); never record the value.
 
 ```markdown
 # Audit Report
@@ -296,7 +301,21 @@ The output MUST NOT contain template filenames or placeholder tokens.
 ### Prompt file structure
 
 Adapt the sections to the specific remediation, but follow this general
-structure:
+structure. Every task unit is a `## Rn` section carrying the FULL
+task-card metadata block — the revise gate (C4 task atomicity, C7
+user-story linkage, C11 phase coverage) mechanically rejects remediation
+files whose tasks lack `Closes user story:`, `Change type:`, `Phase:`,
+`File:`, `Precise change:`, >=3 `Acceptance:` bullets, `Depends on:`,
+`Test:`, or `Estimated LOC:`.
+
+**Parser constraint (MANDATORY):** the task-contract parser creates one
+task unit per `## Rn` heading, and treats any `**Field:**`-style
+bold-colon line OUTSIDE a task section as a task unit. Narrative
+sections (`## Context`, `## What to build`,
+`## Implementation guidance`) must therefore contain NO bold-colon
+field lines — write them as plain prose and code blocks only. Every
+metadata line lives INSIDE a `## Rn` section. Field-like lines in prose
+create phantom tasks and false contract errors.
 
 ```markdown
 # Remediation Prompt — <Gap Name>
@@ -304,15 +323,17 @@ structure:
 _Closes gap:_ G1 · <slug>
 
 ## Context
-<Summary of the gap from the audit and what needs fixing.>
+<Summary of the gap from the audit and what needs fixing. Plain prose
+only — no task-card field lines here.>
 
 ## What to build
-<One-paragraph summary of the end-to-end fix.>
+<One-paragraph summary of the end-to-end fix. Plain prose only.>
 
 ## Implementation guidance
 
 <The core of the prompt. Dissolve the loaded module into concrete
-instructions for the project. Include:>
+instructions for the project. Plain prose and code blocks only —
+no **Field:**-style lines. Include:>
 
 ### <Subsection per major concern>
 - Algorithms, configuration patterns, thresholds (from module)
@@ -358,9 +379,34 @@ Include this section for UI remediation only:
 - For existing UI, do not introduce unrelated colors, typography, spacing,
   navigation patterns, component libraries, or Tailwind conventions without
   an explicit redesign or migration decision.
+
+## R1 — <Task title>
+
+- **Closes user story:** As a <role>, I <want/need> <action>, so that <value>.
+- **Change type:** <create-new | modify-existing>
+- **Phase:** <foundation | mvp | expand | polish>
+- **File:** `<exact single file path>` (exactly one file per task)
+- **Precise change:** <concrete delta, not a category of work>
+- **Acceptance:**
+  - <observable acceptance condition 1>
+  - <observable acceptance condition 2>
+  - <observable acceptance condition 3>
+- **Depends on:** <G1.R<m> | none> (one-line reason required if not none)
+- **Test:** <verification command or steps>
+- **Estimated LOC:** <+N | -N | ~N>
+
+## R2 — <Task title>
+
+<same task-card metadata block, adapted to this task>
 ```
 
-**Example — remediating a missing Xcode target:**
+Fixture metadata (`Composition map`, `Fixture allowance`,
+`Fixture retirement task`, `Release exclusion check`, `Evidence level`)
+also goes INSIDE the owning `## Rn` task section — never in narrative
+prose — for the same parser-constraint reason.
+
+**Example — remediating a missing Xcode target** (abridged to one task unit;
+a real file has one `## Rn` section per task):
 
 ```markdown
 # Remediation Prompt — MenuMaker Customer Target
@@ -378,24 +424,32 @@ shared core and containing the customer-specific source files.
 
 ## Implementation guidance
 
-### Target Configuration
-- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj` (modify existing)
-- **Precise change:** In the `PBXProject` `targets` array, add one new
-  `PBXNativeTarget` with name `MenuMaker-Customer`, product type
-  `com.apple.product-type.application`, bundle identifier
-  `com.creatrixe.MenuMaker.customer`.
-- Link the `MenuMakerCore` static library target (create if absent)
-  and add all source files currently under `ios/MenuMaker/Customer/`
-  to the new target's `PBXSourcesBuildPhase`.
+The `PBXNativeTarget` product type for an application is
+`com.apple.product-type.application`. Link the `MenuMakerCore` static
+library target (create it first if absent) and add every source file
+currently under `ios/MenuMaker/Customer/` to the new target's
+`PBXSourcesBuildPhase`. Verify with `xcodebuild` and `plutil` as named
+in the task's Test field below.
 
-### Testing approach
-Run the following commands to verify:
-- `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build` must exit 0.
-- `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Customer/Info.plist` must print `com.creatrixe.MenuMaker.customer`.
+## R1 — Add MenuMaker-Customer target to project.pbxproj
 
-### Dependencies
+- **Closes user story:** As a release engineer, I need a dedicated Customer app target, so that it builds and deploys independently of the other app targets.
+- **Change type:** modify-existing
+- **Phase:** foundation
+- **File:** `ios/MenuMaker.xcodeproj/project.pbxproj`
+- **Precise change:** In the `PBXProject` `targets` array, add one new `PBXNativeTarget` named `MenuMaker-Customer` with product type `com.apple.product-type.application` and bundle identifier `com.creatrixe.MenuMaker.customer`, linked against the `MenuMakerCore` static library target.
+- **Acceptance:**
+  - `xcodebuild -list -project ios/MenuMaker.xcodeproj` lists a `MenuMaker-Customer` target.
+  - `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build` exits 0.
+  - `plutil -extract CFBundleIdentifier raw ios/MenuMaker-Customer/Info.plist` prints `com.creatrixe.MenuMaker.customer`.
 - **Depends on:** none
+- **Test:** `xcodebuild -scheme MenuMaker-Customer -destination 'generic/platform=iOS' -configuration Debug build`
+- **Estimated LOC:** +45
 ```
+
+Note how the guidance prose above names no `**Field:**` lines — all
+metadata lives in the `## R1` section, so the task-contract parser sees
+exactly one task unit.
 
 ### Fixture allowance and retirement contract (MANDATORY)
 
@@ -407,7 +461,9 @@ retirement work in the same remediation prompt.
 
 Use `Composition map` with exactly one of `production`, `test-fixture`,
 `screenshot`, `preview`, or `demo`. A production-owned fixture task must carry
-all four fields below; do not leave retirement as prose in `What NOT to do`:
+all four fields below; do not leave retirement as prose in `What NOT to do`.
+Place these lines INSIDE the owning `## Rn` task section (per the parser
+constraint in "Prompt file structure" above) — never in narrative prose:
 
 ```markdown
 - **Composition map:** test-fixture
@@ -503,7 +559,37 @@ single-line file: "No new external services required for this
 remediation pass." Preserve any prior `external-accounts.md` from the
 greenfield generation — do not overwrite it.
 
-**After writing, continue immediately to Step 4.**
+**After writing, continue immediately to Step 3.6.**
+
+---
+
+## STEP 3.6 — Schema alignment pass (MANDATORY)
+
+After all `remediation-*.md` files are written, the narrative guidance in
+them still lacks the machine-parseable task-card metadata the revise
+gate requires. Without this pass, gap-closure plans can never pass
+revise checks C4 (task atomicity), C7 (user-story linkage), and C11
+(phase coverage) — the gate rejects every task unit missing
+`Closes user story:`, `Change type:`, `Phase:`, `File:`,
+`Precise change:`, ≥3 `Acceptance:` bullets, `Depends on:`, `Test:`, or
+`Estimated LOC:`.
+
+**Load and follow:** `.ai-prompts/prompts/orchestrators/schema-alignment-pass.md`
+(remediation mode).
+
+It injects (or completes) the task-card metadata block at the top of
+every `## Rn` task unit, validates that no field-like bold-colon lines
+remain in narrative prose, checks cross-platform `File:` paths, and
+validates the `Depends on:` task-unit references are acyclic. Then run:
+
+```bash
+bash .ai-prompts/scripts/repair-task-schema-fields.sh prompts/outputs/current
+```
+
+to normalize any alias drift into the canonical fields.
+
+**After the schema alignment pass completes, continue immediately to
+Step 4.**
 
 ---
 
@@ -568,7 +654,7 @@ coverage gaps routinely slip past the engine (e.g. collapsing `Hindi
 (all device sizes)` into one task when the rule is per locale × per
 device class). The finalize wrapper now writes
 `baseline-task-coverage.md` via
-`scripts/validate-baseline-task-coverage.sh`, runs specialized
+`.ai-prompts/scripts/validate-baseline-task-coverage.sh`, runs specialized
 contract validators, then invokes the full revise check set for
 semantic review.
 

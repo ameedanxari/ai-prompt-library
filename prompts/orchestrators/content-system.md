@@ -5,7 +5,7 @@ persona voice pack, voice-and-tone guide, terminology glossary,
 page-level content model, first-run experience spec, and seed/demo
 data policy — plus `prompts/outputs/current/content-lint.config.json`,
 the machine-readable config consumed by
-`scripts/validate-content-lint.sh`.
+`.ai-prompts/scripts/validate-content-lint.sh`.
 
 This stage exists because structure and copy fail differently.
 `ux-flows.md` decides what each screen *does*; this file decides what
@@ -289,5 +289,5 @@ After writing both files, **STOP and present** to the user:
 - `drill-down-engine.md` Step 3 — UI tasks cite the content model.
 - `executor.md` rule 6 — surface-copy hygiene at execution time.
 - `revise-outputs.md` C18 — validates this file's schema.
-- `scripts/validate-content-lint.sh` — mechanical enforcement against
+- `.ai-prompts/scripts/validate-content-lint.sh` — mechanical enforcement against
   the built application source.

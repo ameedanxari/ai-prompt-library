@@ -10,7 +10,7 @@ not hand-edit files here and do not commit them to a consumer project
 |---|---|---|
 | `current/` | drill-down-engine, audit-and-remediate, revise-outputs, executor | The active run root. Canonical compatibility files still live at the root (`epics.md`, `tasks-*.md`, `execution-log.md`, etc.) until the next major format migration, but new noisy machine output should go under `current/logs/`, execution sidecars under `current/execution/`, and planning exports under `current/planning/`. |
 | `self-maintain/` | self-maintain orchestrator | The library's own self-audit output. Kept separate from `current/` so a maintainer run never collides with an end-user project run. |
-| `field-tests/` (optional) | humans or consumers | Free-form observation files used as input to the self-maintain flow (`YYYY-MM-DD-run-name.md`). See `prompts/orchestrators/self-maintain.md` for the format. |
+| `field-tests/` (optional) | humans or consumers | Free-form observation files used as input to the self-maintain flow (`YYYY-MM-DD-run-name.md`). See `.ai-prompts/prompts/orchestrators/self-maintain.md` for the format. |
 | `archive/` (optional) | reset/archive scripts or humans | Archived completed runs. Use this instead of leaving multiple historical runs mixed into `current/`. |
 
 ## Canonical artefacts
@@ -18,7 +18,7 @@ not hand-edit files here and do not commit them to a consumer project
 Two files in `current/` are **machine-produced** and must never be
 hand-written:
 
-- `revise-report.md` — produced by `scripts/revise.sh`. First line is
+- `revise-report.md` — produced by `.ai-prompts/scripts/revise.sh`. First line is
   always `---` (YAML frontmatter fence). The validator rejects
   narrative look-alikes.
 - `execution-log.md` — produced by the executor. Carries the YAML

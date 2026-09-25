@@ -39,6 +39,11 @@ When these modules are selected, they should drive:
 - `docs/DESIGN_SYSTEM_VERSIONING.md` (versioning policy)
 - `.github/workflows/design-token-validation.yml` (CI/CD enforcement)
 - Infrastructure: `src/core/design-tokens/tokens.json`, generation scripts, linting rules
+
+> **Path note:** every `docs/…` reference in these modules denotes a
+> file the agent **creates in the consumer project** (`<project>/docs/…`)
+> at execution time — not a file in this library. (Library docs are
+> always referenced as `.ai-prompts/docs/…`.)
 - Current task prompts must dissolve module guidance directly. Do not
   reference legacy template paths in generated output.
 

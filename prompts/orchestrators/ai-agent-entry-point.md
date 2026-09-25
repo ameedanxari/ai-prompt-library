@@ -12,18 +12,18 @@ the routing logic below selects it:
 | Mode chosen at step D | Engine to load |
 |---|---|
 | Mode 1 — Trivial | None (just do the edit) |
-| Mode 2 — Execute existing plan | `prompts/orchestrators/executor.md` |
-| Mode 3 — Gap-closure | `prompts/orchestrators/audit-and-remediate.md` |
-| Mode 4 — Greenfield | `prompts/orchestrators/drill-down-engine.md` |
+| Mode 2 — Execute existing plan | `.ai-prompts/prompts/orchestrators/executor.md` |
+| Mode 3 — Gap-closure | `.ai-prompts/prompts/orchestrators/audit-and-remediate.md` |
+| Mode 4 — Greenfield | `.ai-prompts/prompts/orchestrators/drill-down-engine.md` |
 
 If `working_copy/` contains external material, also load
-`prompts/orchestrators/external-input-handler.md` before the engine
+`.ai-prompts/prompts/orchestrators/external-input-handler.md` before the engine
 (it runs first and hands off).
 
 If the request involves regulated domains, cloud/provider architecture,
 security/privacy, AI automation, current/latest best practices, or a
 large corpus that benefits from split inspection, also load
-`prompts/orchestrators/research-and-fanout-policy.md` and follow it.
+`.ai-prompts/prompts/orchestrators/research-and-fanout-policy.md` and follow it.
 
 Base auto-load before doing work: **2 files** (this one + the chosen
 engine). Mode 3 inherits one extra read for the external-input handler
@@ -95,13 +95,13 @@ If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equi
    - Read the active `phase` (planning | execution), the active `step`, and the array of files under `re_load_files`.
    - **Only load the files listed in `re_load_files`** (this restricts context loading to the active slice, e.g. a specific epic or task file).
    - Route directly to the corresponding engine/phase at that designated step:
-     - If `phase: execution`, route to `prompts/orchestrators/executor.md` and load `execution-log.md` plus the current task.
-     - If `phase: planning` and the engine is Greenfield, route to `prompts/orchestrators/drill-down-engine.md` at the step and load the specified files.
-     - If `phase: planning` and the engine is Gap-closure, route to `prompts/orchestrators/audit-and-remediate.md` at the step and load the specified files.
+     - If `phase: execution`, route to `.ai-prompts/prompts/orchestrators/executor.md` and load `execution-log.md` plus the current task.
+     - If `phase: planning` and the engine is Greenfield, route to `.ai-prompts/prompts/orchestrators/drill-down-engine.md` at the step and load the specified files.
+     - If `phase: planning` and the engine is Gap-closure, route to `.ai-prompts/prompts/orchestrators/audit-and-remediate.md` at the step and load the specified files.
 
 3. **Path 3 — Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If Path 2 didn't apply (no checkpoint) **and** `force_reload == false`, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
    - **Skip the planning re-read entirely.** Do NOT load `epics.md`, `brief-keywords.md`, `features-*.md`, or any `tasks-*.md` other than the one named by `next_task`.
-   - Route directly to `prompts/orchestrators/executor.md`. The executor's own preflight will run `scripts/validate-ready-to-execute.sh`, confirm `ready_to_execute: true`, and read the envelope to resume from `next_task`.
+   - Route directly to `.ai-prompts/prompts/orchestrators/executor.md`. The executor's own preflight will run `.ai-prompts/scripts/validate-ready-to-execute.sh`, confirm `ready_to_execute: true`, and read the envelope to resume from `next_task`.
    - This branch is the correct behavior for any in-flight project whose planning is already complete; the planning artifacts are stable on disk and do not need to be re-read into context.
 
 4. **Path 4 — No-State Force-Reload (last resort).** If none of the above matched (i.e. `force_reload == false`, no checkpoint, and no usable execution-log), there is no cheap path. Fall back to the same full re-read as Path 1: read `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist. Proceed through Steps A–F to route. Write a fresh `resumption-checkpoint.md` afterward so the next resumption hits Path 2.
@@ -159,7 +159,7 @@ for reset or the stale state is unambiguous.
 ### B. External input check
 
 Is there user-provided external material? Check for any of:
-- Non-empty `working_copy/` or `prompts/working_copy/`
+- Non-empty `working_copy/` or `.ai-prompts/prompts/working_copy/`
 - Attached spec / PRD / RFC
 - Existing source code the user wants to extend (e.g. `src/`, `backend/`,
   `frontend/`, `android/`, `ios/` with non-trivial content)
@@ -167,7 +167,7 @@ Is there user-provided external material? Check for any of:
   "External material" or "Reference material"
 
 If yes:
-1. Read `prompts/orchestrators/external-input-handler.md` (file #3).
+1. Read `.ai-prompts/prompts/orchestrators/external-input-handler.md` (file #3).
 2. Execute it to produce `prompts/outputs/current/project-context.md`.
 3. The handler itself continues to step C when it finishes — do not wait.
 
@@ -184,7 +184,7 @@ Does `prompts/outputs/current/project-context.md` exist?
 
 If the prompt, `project-context.md`, `MY_PROJECT.md`, or external material
 contains any of the following, read
-`prompts/orchestrators/research-and-fanout-policy.md` before executing the
+`.ai-prompts/prompts/orchestrators/research-and-fanout-policy.md` before executing the
 selected engine:
 
 - Regulated or high-stakes domains: healthcare, clinical safety,
@@ -223,12 +223,12 @@ Just do the work directly. Do not run any engine.
 Use when BOTH of these are true:
 - `prompts/outputs/current/` contains `remediation-*.md` (gap-closure
   plan) OR `tasks-*.md` (greenfield plan), AND the plan passes
-  `scripts/validate-ready-to-execute.sh`.
+  `.ai-prompts/scripts/validate-ready-to-execute.sh`.
 - The user's ask signals execution, not re-planning: "fix", "implement",
   "execute", "run the plan", "do the work", "build it", "ship", "close
   the gaps", "write the tests", "make it pass", "continue", "next task".
 
-Route to `prompts/orchestrators/executor.md`. Do NOT re-run the audit
+Route to `.ai-prompts/prompts/orchestrators/executor.md`. Do NOT re-run the audit
 — a plan already exists. The executor will resume from
 `execution-log.md` if it exists, or start at the first task otherwise.
 
@@ -254,14 +254,14 @@ Use when ALL of these are true:
 - Mode 2 does NOT apply (either no plan exists or the user explicitly
   wants a fresh audit).
 
-Route to `prompts/orchestrators/audit-and-remediate.md` and follow its
+Route to `.ai-prompts/prompts/orchestrators/audit-and-remediate.md` and follow its
 5-step flow (Component audit → Gap list checkpoint → Remediation tasks
 → Validate/revise → Planning hard stop).
 
 When the request specifically asks to review completed work, validate
 functionality, challenge a completion claim, or plan work from semantic
 findings, the gap-closure engine MUST load
-`prompts/orchestrators/semantic-review-and-validation.md` during its audit.
+`.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md` during its audit.
 Mechanical checks alone are not a substitute for this review path.
 
 The orchestrator ends with a planning hard stop after the revise gate
@@ -343,7 +343,7 @@ Do NOT auto-invoke the executor based on execute-signal words in the
 original prompt — the planning phase always completes first with user
 review.
 
-Once authorized, read `prompts/orchestrators/executor.md`. The
+Once authorized, read `.ai-prompts/prompts/orchestrators/executor.md`. The
 executor processes tasks one at a time, with a ⏸ CHECKPOINT after
 each task. It maintains `execution-log.md` (with YAML handoff
 envelope) and stops on regressions, 3+ consecutive blockers, or user
@@ -374,8 +374,8 @@ This protocol ensures every implementation prompt and every code change is based
 | File / group | Load when |
 |---|---|
 | `docs/optional/` (PREVENTION_CHECKLIST, COMMIT_GUIDELINES, SAFEGUARDS) | User explicitly asks for safeguard / commit-policy / change-impact guidance |
-| Other orchestrators under `prompts/orchestrators/` | Only via the entry-point routing logic |
-| Full module catalog `prompts/modules/**` | Never all at once. The drill-down engine loads only the modules needed for the current expansion context. |
+| Other orchestrators under `.ai-prompts/prompts/orchestrators/` | Only via the entry-point routing logic |
+| Full module catalog `.ai-prompts/prompts/modules/**` | Never all at once. The drill-down engine loads only the modules needed for the current expansion context. |
 
 ## Rules of engagement
 

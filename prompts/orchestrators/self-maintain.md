@@ -19,9 +19,9 @@ This orchestrator is the entry point for that.
 
 ## Inputs
 
-- The library itself (`prompts/orchestrators/`, `prompts/modules/`,
-  `prompts/AGENTS.md`, `prompts/steering/`, `scripts/`, `tests/`).
-- `docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current architecture
+- The library itself (`.ai-prompts/prompts/orchestrators/`, `.ai-prompts/prompts/modules/`,
+  `.ai-prompts/prompts/AGENTS.md`, `.ai-prompts/prompts/steering/`, `scripts/`, `tests/`).
+- `.ai-prompts/docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current architecture
   direction and implemented upgrade slices.
 - Optional: `prompts/outputs/field-tests/<run-name>.md` — free-form
   observations about a specific end-to-end run, including what the
@@ -39,13 +39,13 @@ scope: the "project" being audited is this library.
    scripts, tests), flows (entry-point routing, engine steps), and
    constraints (auto-load budget, validator rules).
 2. Run `audit-and-remediate.md` Step 1 against components:
-   - `prompts/orchestrators/` (the active orchestrators: entry-point,
+   - `.ai-prompts/prompts/orchestrators/` (the active orchestrators: entry-point,
      drill-down-engine, audit-and-remediate, executor, revise-outputs,
      external-input-handler, module-selection-index,
      baseline-task-shapes, self-maintain)
-   - `prompts/modules/` (252 templates across 29 categories — sample,
+   - `.ai-prompts/prompts/modules/` (252 templates across 29 categories — sample,
      don't read all)
-   - `prompts/steering/`
+   - `.ai-prompts/prompts/steering/`
    - `scripts/`
    - `tests/`
    - `QUICK_START.md` + `README.md` + `MY_PROJECT.md.template`
@@ -63,7 +63,7 @@ scope: the "project" being audited is this library.
    we don't want self-maintenance output to collide with an end-user
    project run).
 5. Each remediation task targets a file in the library itself
-   (`prompts/orchestrators/executor.md`, `scripts/validate-
+   (`.ai-prompts/prompts/orchestrators/executor.md`, `scripts/validate-
    instantiation.sh`, etc.). Same task-shape rules apply — one file
    per task, precise change, closes a user story (where the "user"
    is another AI agent running the library).
@@ -131,5 +131,5 @@ Once self-maintain runs, the field-test file is treated as input-only
 - `external-input-handler.md` — pulls library structure into context.
 - `revise-outputs.md` — run after self-maintain to check the library
   audit's own completeness.
-- `docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current hybrid architecture
+- `.ai-prompts/docs/HYBRID_LIBRARY_UPGRADE_PLAN.md` — current hybrid architecture
   upgrade plan.

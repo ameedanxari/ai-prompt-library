@@ -14,7 +14,7 @@ The entry point routes here when ALL of these are true:
 - The user's prompt signals execution: "fix", "implement", "execute",
   "run the plan", "do the work", "build it", "ship", "write the tests",
   "close the gaps", or similar.
-- The plan passed `scripts/validate-ready-to-execute.sh`.
+- The plan passed `.ai-prompts/scripts/validate-ready-to-execute.sh`.
 
 ## Preflight gate (MUST run before ANY task execution)
 
@@ -251,7 +251,7 @@ harness_recoveries: []     # appended by the diagnose-harness pipeline; each ent
   old one, and keep every prior journal entry intact. The executor is
   append-only for journal entries and atomic-replace for the envelope.
 - `updated_at` ticks on every task transition.
-- `next_task` is computed: first task in dependency+severity order that
+- `next_task` is computed: first task in `delivery-order.md` manifest order that
   is not in `done` / `blocked` / `deferred` / `failed`; when no implementation
   task remains, use
   `.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md` until
@@ -310,7 +310,7 @@ The `taskId` must equal the unit's `canonicalId` in `task-contract.json`
   ],
   "buildEvidence": {
     "outcome": "pass",
-    "command": "bash scripts/build-gate.sh .",
+    "command": "bash .ai-prompts/scripts/build-gate.sh .",
     "recordedAt": "2026-04-19T22:46:00Z",
     "current": true,
     "sourceRevision": "<git revision or worktree fingerprint>"
@@ -413,7 +413,7 @@ order, which hides the phase grouping and mixes foundation tasks with
 expand/polish tasks. The Phase field exists specifically to fix this,
 but the field alone does not change iteration order — the executor
 must read a canonical sorted list. That list is `delivery-order.md`,
-written by `scripts/build-delivery-order.sh` during finalize.
+written by `.ai-prompts/scripts/build-delivery-order.sh` during finalize.
 
 **Never substitute filesystem order for delivery-order.md.** If the
 manifest is missing or out of date, regenerate it via:
@@ -426,7 +426,7 @@ The script also re-validates that no task depends on a later-phase
 task (phase inversion) and no cycle exists. Both conditions are
 fatal to the executor.
 
-`task-graph.json`, written by `scripts/build-task-graph.sh`, is the
+`task-graph.json`, written by `.ai-prompts/scripts/build-task-graph.sh`, is the
 machine-readable DAG used for dependency checks, resume math, and final
 execution-order validation. It catches missing dependency references
 and cycles even when the human-readable delivery manifest looks sane.
@@ -834,32 +834,32 @@ Next step options:
 
 ## See also
 
-- `prompts/orchestrators/ai-agent-entry-point.md` — routes here.
-- `prompts/orchestrators/audit-and-remediate.md` — produces the plan
+- `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — routes here.
+- `.ai-prompts/prompts/orchestrators/audit-and-remediate.md` — produces the plan
   this orchestrator executes (gap-closure).
-- `prompts/orchestrators/drill-down-engine.md` — produces the plan for
+- `.ai-prompts/prompts/orchestrators/drill-down-engine.md` — produces the plan for
   greenfield builds; same execution semantics apply.
-- `scripts/validate-ready-to-execute.sh` — the single pre-executor
+- `.ai-prompts/scripts/validate-ready-to-execute.sh` — the single pre-executor
   readiness gate this orchestrator refuses to run without.
-- `scripts/validate-phase-order.sh` — phase/order contract gate
+- `.ai-prompts/scripts/validate-phase-order.sh` — phase/order contract gate
   invoked by the readiness/finalize flow.
-- `scripts/validate-baseline-task-coverage.sh` — baseline-topic
+- `.ai-prompts/scripts/validate-baseline-task-coverage.sh` — baseline-topic
   coverage gate invoked by the readiness/finalize flow.
-- `scripts/validate-screenshot-matrix.sh` — app-store screenshot matrix
+- `.ai-prompts/scripts/validate-screenshot-matrix.sh` — app-store screenshot matrix
   gate invoked by the readiness/finalize flow when screenshot task files
   exist.
-- `scripts/validate-instantiation.sh` — the lower-level instantiation
+- `.ai-prompts/scripts/validate-instantiation.sh` — the lower-level instantiation
   validator invoked by the readiness/finalize flow.
-- `scripts/build-path-ledger.sh` — emits the canonical-paths ledger
+- `.ai-prompts/scripts/build-path-ledger.sh` — emits the canonical-paths ledger
   the executor must consult before writing any source file.
-- `scripts/build-gate.sh` — the after-each-task build-green gate.
-- `scripts/diagnose-harness.sh` + per-stack scripts and
-  `prompts/modules/harness-recovery/*.yaml` — the diagnosis pipeline
+- `.ai-prompts/scripts/build-gate.sh` — the after-each-task build-green gate.
+- `.ai-prompts/scripts/diagnose-harness.sh` + per-stack scripts and
+  `.ai-prompts/prompts/modules/harness-recovery/*.yaml` — the diagnosis pipeline
   the executor runs on every test/build failure before marking a
   task `failed`.
-- `scripts/safety-check-commit.sh` + `scripts/commit-task.sh` — the
+- `.ai-prompts/scripts/safety-check-commit.sh` + `.ai-prompts/scripts/commit-task.sh` — the
   per-task auto-commit pipeline with scope and revert-protection
   invariants.
-- `scripts/validate-execution-envelope.sh` — the honest-handoff gate
+- `.ai-prompts/scripts/validate-execution-envelope.sh` — the honest-handoff gate
   that refuses `next_task: null` when files are missing without a
   blocked/failed/deferred entry.

@@ -46,7 +46,7 @@ describe('step3-progress.sh', () => {
     try {
       fs.writeFileSync(
         path.join(sandbox, 'features-auth.md'),
-        ['# Features — Auth', '', '## Sign up', 'x', '', '## Sign in', 'x'].join('\n'),
+        ['# Features — Auth', '', '## Sign up', '**Feature ID:** F-sign-up', '', '## Sign in', '**Feature ID:** F-sign-in'].join('\n'),
       );
       fs.writeFileSync(path.join(sandbox, 'tasks-sign-up.md'), '## T1 · x\n');
       fs.writeFileSync(path.join(sandbox, 'tasks-sign-in.md'), '## T1 · x\n');
@@ -70,13 +70,13 @@ describe('step3-progress.sh', () => {
           '# Features — Auth',
           '',
           '## Sign up',
-          'x',
+          '**Feature ID:** F-sign-up',
           '',
           '## Sign in',
-          'x',
+          '**Feature ID:** F-sign-in',
           '',
           '## Password reset',
-          'x',
+          '**Feature ID:** F-password-reset',
         ].join('\n'),
       );
       fs.writeFileSync(path.join(sandbox, 'tasks-sign-up.md'), '## T1 · x\n');
@@ -98,11 +98,11 @@ describe('step3-progress.sh', () => {
     try {
       fs.writeFileSync(
         path.join(sandbox, 'features-auth.md'),
-        ['# Features — Auth', '', '## Sign up', 'x'].join('\n'),
+        ['# Features — Auth', '', '## Sign up', '**Feature ID:** F-sign-up'].join('\n'),
       );
       fs.writeFileSync(
         path.join(sandbox, 'features-billing.md'),
-        ['# Features — Billing', '', '## Checkout', 'x'].join('\n'),
+        ['# Features — Billing', '', '## Checkout', '**Feature ID:** F-checkout'].join('\n'),
       );
       const { out } = run(sandbox);
       expect(out).toMatch(/## auth/);

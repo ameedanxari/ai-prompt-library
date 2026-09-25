@@ -8,7 +8,7 @@
  * Validates: Requirements 7.1, 7.2, 7.3, 7.4, 7.5
  */
 
-import { ExecutionContext } from './execution-runtime';
+import { ExecutionContext } from './execution-runtime.js';
 
 /**
  * A candidate fix for a failure

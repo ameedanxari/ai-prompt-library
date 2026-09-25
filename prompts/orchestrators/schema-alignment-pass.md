@@ -1,6 +1,11 @@
 # Schema Alignment Pass Orchestrator
 
-This orchestrator is invoked in **Step 3.7** of the `drill-down-engine.md`. Its goal is to take the high-quality narrative implementation prompts produced in Step 3 and augment them with the machine-parseable metadata required for automated execution.
+This orchestrator is invoked in **Step 3.7** of the `drill-down-engine.md`
+(drill-down mode, below) and in **Step 3.6** of the
+`audit-and-remediate.md` (remediation mode — see "Remediation mode
+(gap-closure)" below). Its goal is to take the high-quality narrative
+implementation prompts produced in Step 3 and augment them with the
+machine-parseable metadata required for automated execution.
 
 ## Context
 
@@ -23,7 +28,7 @@ Iterate through every `tasks-*.md` file in `prompts/outputs/current/` and inject
     `build-task-contract.sh`) and `validate-instantiation.sh` enforce
     this mechanically — missing fields fail the ready gate.
 7.  **Use the mechanical repair helper first:** Run
-    `bash scripts/repair-task-schema-fields.sh prompts/outputs/current`
+    `bash .ai-prompts/scripts/repair-task-schema-fields.sh prompts/outputs/current`
     before manual regeneration. It only normalizes explicit field
     aliases and value shorthands already present in the task files; it
     does not invent missing fields.
@@ -35,6 +40,7 @@ Inject this block immediately after the `# Prompt — <Name>` title:
 ```markdown
 - **Closes user story:** As a <role>, I <want/need> <action>, so that <value>.
 - **Change type:** <create-new | modify-existing>
+- **Phase:** <foundation | mvp | expand | polish>
 - **File:** `<ios_path>` | `<android_path>`
 - **Precise change:** <concrete delta, not a category of work>
 - **Acceptance:**
@@ -55,19 +61,85 @@ Inject this block immediately after the `# Prompt — <Name>` title:
 | CI/CD / Fastlane | shared path only | `\`.github/workflows/build.yml\`` |
 | Localization resources | `ios/path` \| `android/path` | `\`ios/.../Localizable.xcstrings\` \| \`android/app/src/main/res/values/strings.xml\`` |
 
+## Migration numbering
+
+Workers cannot coordinate on migration sequence numbers, so they must
+never invent them. Any task that creates a database migration uses the
+reserved, greppable placeholder path `db/migrations/SEQNN_<slug>.sql`
+(where `<slug>` describes the migration, e.g.
+`db/migrations/SEQNN_merchant_core.sql`). The `SEQNN` marker declares
+intent without claiming a number.
+
+Before finalize, the coordinator replaces every `SEQNN` marker with the
+global topological sequence (`0001`, `0002`, …) ordered by the task
+dependency graph, renaming files to `db/migrations/NNNN_<slug>.sql`.
+The gate in `.ai-prompts/scripts/validate-instantiation.sh` rejects any surviving
+`SEQNN` or `NN` placeholder — no marker may leak into the finalized
+plan.
+
 ## Workflow
 
-1.  **Load the Map:** Read `epics.md` and all `features-*.md` files to understand the high-level dependency graph. Read the `_Project platforms:_` line in `epics.md` to determine whether cross-platform paths are required.
-2.  **Batch Process:** Open 5–10 task files at a time.
-3.  **Analyze & Inject:** For each file, read the guidance, identify the file path(s) for EACH declared platform, write the metadata, and save.
-4.  **Cross-Platform Audit:** After injecting all metadata, run a pass specifically checking that every dual-platform task has both an `ios/` and `android/` path in its `File:` field. Flag any that are missing.
-5.  **DAG Validation:** After all metadata is injected, verify the `Depends on:` graph is acyclic (no circular dependencies). The validator does this mechanically, but catching cycles during the alignment pass is faster than waiting for the Revise Gate.
-6.  **Mechanical repair:** Run
-    `bash scripts/repair-task-schema-fields.sh prompts/outputs/current`
-    to normalize aliases like `Change: create`, `Dependencies: none`,
-    `LOC: 10`, and `Acceptance criteria:` into the canonical task-card
-    fields.
-7.  **Final Audit:** Run `bash scripts/finalize.sh` to verify that the dependency graph is acyclic, all paths are unique, the task contract is valid, and all schema fields are present.
+Do NOT perform this pass in a single context window. Loading every task file at once exhausts weaker models' context and causes silent field-dropping. Run the **segmented, script-assisted pass** below — the same five segments (3.7.1–3.7.5) defined in Step 3.7 of the drill-down engine. Each segment names a bounded input scope, the script that does the mechanical part, and a checkpoint that must pass before the next segment starts. If a checkpoint fails, rerun only that segment.
+
+### Step 3.7.1 — Mechanical pre-pass (script-assisted)
+
+**Input scope:** the file list only — no task narrative is read in this segment.
+
+1. **Load the Map:** Read `epics.md` and all `features-*.md` files to understand the high-level dependency graph. Read the `_Project platforms:_` line in `epics.md` to determine whether cross-platform paths are required. The epic groups define the segment boundaries for Step 3.7.2 — process one epic per pass.
+2. **Mechanical repair first:** Run
+   `bash .ai-prompts/scripts/repair-task-schema-fields.sh prompts/outputs/current`
+   to normalize aliases like `Change: create`, `Dependencies: none`,
+   `LOC: 10`, and `Acceptance criteria:` into the canonical task-card
+   fields. The script only normalizes explicit aliases already present; it does not invent missing fields.
+
+**Checkpoint 3.7.1:** the repair script exits 0 and every `tasks-*.md` is assigned to exactly one epic group.
+
+### Step 3.7.2 — Metadata injection, one epic at a time
+
+**Input scope:** the task files of ONE epic only — open 5–10 task files at a time, never more than one epic in context.
+
+**Analyze & Inject:** For each file, read the guidance, identify the file path(s) for EACH declared platform, write the metadata in the Output Schema above, and save. Extract, don't invent: read the existing narrative content to determine the correct `File:` path and `Change type:`; never add files or features that aren't in the narrative.
+
+**Checkpoint 3.7.2:** every task in the epic carries the full task-card skeleton — no schema field omitted. Verify mechanically before advancing to the next epic:
+
+```bash
+bash .ai-prompts/scripts/validate-instantiation.sh prompts/outputs/current
+```
+
+### Step 3.7.3 — Cross-platform path audit
+
+**Input scope:** metadata blocks only — grep the `File:` lines; do not re-read full narratives.
+
+Run a pass specifically checking that every dual-platform task has both an `ios/` and `android/` path in its `File:` field (pipe-separator format). Only files that are inherently single-platform (`.xcprivacy`, `fastlane/`, `.github/workflows/`, `AndroidManifest.xml`) may omit the second platform. Flag any that are missing.
+
+**Checkpoint 3.7.3:** zero dual-platform tasks with a single-platform `File:` field:
+
+```bash
+grep -h -- '- \*\*File:\*\*' prompts/outputs/current/tasks-*.md | grep -v '|'
+```
+
+Every line returned must be an inherently single-platform path; anything else goes back for a `File:` fix.
+
+### Step 3.7.4 — Dependency repair and DAG validation
+
+**Input scope:** the `Depends on:` lines plus `task-contract.json`. No narrative reading in this segment.
+
+**Dependency Mapping:** Link tasks to their prerequisites (e.g., UI depends on Service, Service depends on Data Model/Design Tokens). Every non-`none` Depends-on entry MUST include a parenthetical reason, and MUST reference a `tasks-*.md` file that exists on disk (validator check 5c-ii). Verify the `Depends on:` graph is acyclic — the validator runs Kahn's algorithm, but catching cycles during the alignment pass is faster than waiting for the Revise Gate. Fix cycles by removing or reversing one dependency in the chain:
+
+```bash
+bash .ai-prompts/scripts/build-task-graph.sh prompts/outputs/current
+```
+
+**Checkpoint 3.7.4:** `build-task-graph.sh` exits 0 with no cycle report and no dangling `Depends on:` entries.
+
+### Step 3.7.5 — External-accounts rollup and final audit
+
+**Input scope:** none new — sweeps and gate only.
+
+1. **Re-rollup external accounts:** Re-scan all `tasks-*.md` for environment variables, secrets, third-party endpoints, and cron schedules introduced during Step 3 (workers add these after the Step 2.5 rollup ran). Update `external-accounts.md` with anything new before finalize — the manifest must reflect the full surface the tasks actually declare.
+2. **Final Audit:** Run `bash .ai-prompts/scripts/finalize.sh` to verify that the dependency graph is acyclic, all paths are unique, the task contract is valid, and all schema fields are present.
+
+**Checkpoint 3.7.5:** `finalize.sh` exits 0 → the pass is complete. Any failure names the failing segment — rerun that segment's checkpoint, not the whole pass.
 
 ## Common Defects to Watch For
 
@@ -85,3 +157,91 @@ These patterns were identified in the StorageCleaner field test and are now mech
 ## Trigger Phrase
 
 Invoke this orchestrator when the user says: **"Perform Schema Alignment Pass"** or after Step 3 of the drill-down engine is complete.
+
+For gap-closure plans, the trigger is **"Perform Schema Alignment Pass
+(remediation)"**, invoked from Step 3.6 of `audit-and-remediate.md` after
+all `remediation-*.md` files are written. The remediation mode below
+applies.
+
+---
+
+## Remediation mode (gap-closure)
+
+Without this pass, gap-closure plans can never pass the revise gate:
+the audit engine's Step 3 template emits narrative guidance, but revise
+checks C4 (task atomicity), C7 (user-story linkage), and C11 (phase
+coverage) require per-task `Closes user story:`, `Change type:`,
+`Phase:`, `File:`, `Precise change:`, ≥3 `Acceptance:` bullets,
+`Depends on:`, `Test:`, and `Estimated LOC:` fields on every
+remediation task. This mode injects exactly that schema.
+
+### Structural differences from drill-down mode
+
+1. **Task units are `## Rn` sections**, not files. One
+   `remediation-<gap>.md` file holds one or more `## R1`, `## R2`, …
+   task units. The metadata block is injected at the top of **each
+   `## Rn` section**, immediately after the `## Rn — <title>` heading —
+   not after the H1 title.
+2. **File-level linkage:** the H1 title stays
+   `# Remediation Prompt — <Gap Name>` and keeps the
+   `_Closes gap:_ G<n> · <slug>` line, which the C3 gap→remediation
+   coverage check uses to match the file to its gap in `gap-list.md`.
+3. **No field-like lines in narrative prose (MANDATORY):** the
+   task-contract parser creates one task unit per `## Rn` heading and
+   treats any `**Field:**`-style bold-colon line *outside* a task section
+   as a task unit. Field-like lines in `## Context`, `## What to build`,
+   or `## Implementation guidance` create phantom tasks and false
+   contract errors. Keep narrative sections as plain prose and code
+   blocks; every metadata line lives inside a `## Rn` section.
+4. **`Depends on:` references task units**, not files: `<G<n>.R<m> |
+   none>` (e.g. `G1.R2` — "needs the schema change R2 introduces"). A
+   one-line reason is required when not `none`.
+
+### Per-task schema (mandatory for every `## Rn` unit)
+
+Inject this block immediately after the `## Rn — <title>` heading:
+
+```markdown
+- **Closes user story:** As a <role>, I <want/need> <action>, so that <value>.
+- **Change type:** <create-new | modify-existing>
+- **Phase:** <foundation | mvp | expand | polish>
+- **File:** `<exact single path>` (exactly one file per task)
+- **Precise change:** <concrete delta, not a category of work>
+- **Acceptance:**
+  - <observable acceptance condition 1>
+  - <observable acceptance condition 2>
+  - <observable acceptance condition 3>
+- **Depends on:** <G<n>.R<m> | none> (reason required if not none)
+- **Test:** <verification command/steps>
+- **Estimated LOC:** <+N | -N | ~N>
+```
+
+Fixture metadata (`Composition map`, `Fixture allowance`,
+`Fixture retirement task`, `Release exclusion check`, `Evidence level`)
+also goes inside the owning `## Rn` section — never in narrative prose.
+
+### Workflow (remediation mode)
+
+1. **Load the Map:** Read `gap-list.md` and every `remediation-*.md`
+   file. Read `project-context.md` for platform targets.
+2. **Batch Process:** Open remediation files 2–3 at a time (each holds
+   multiple task units).
+3. **Analyze & Inject:** For each `## Rn` unit, read the surrounding
+   narrative guidance, derive the metadata (extract, don't invent), and
+   complete the per-task schema block. Remove or relocate any
+   field-like bold-colon lines from the narrative sections into their
+   owning task unit.
+4. **Cross-Platform Audit:** Same rule as drill-down mode — dual-platform
+   tasks need both paths in `File:` via the pipe separator.
+5. **DAG Validation:** Verify the `Depends on:` task-unit references
+   (including cross-file `G<n>.R<m>` references) are acyclic. The
+   validator runs Kahn's algorithm; catching cycles here is faster.
+6. **Mechanical repair:** Run
+   `bash .ai-prompts/scripts/repair-task-schema-fields.sh prompts/outputs/current`
+   to normalize aliases into the canonical task-card fields.
+7. **Re-rollup external accounts:** Re-scan all `remediation-*.md` for
+   environment variables, secrets, third-party endpoints, and cron
+   schedules introduced during Step 3; update `external-accounts.md`.
+8. **Final Audit:** Run `bash .ai-prompts/scripts/finalize.sh` to rebuild the
+   derived artifacts and run the Revise Gate. Do NOT hand-write
+   `revise-report.md` — the script writes it from live validator state.

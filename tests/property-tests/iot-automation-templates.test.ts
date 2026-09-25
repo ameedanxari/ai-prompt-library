@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { IoTTemplateValidator } from '../../src/iot-template-validator.js';
+import { IoTTemplateValidator } from '../../src/validators/iot-template-validator.js';
 import { join } from 'path';
 
 /**

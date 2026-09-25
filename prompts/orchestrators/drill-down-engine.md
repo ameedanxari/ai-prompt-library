@@ -472,11 +472,19 @@ Each feature has:
   and verified" surfaces, if at all, as "You're securely signed in",
   never as the invariant's own words. Requirement and acceptance
   wording is under the same never-display rule by default.
-  the parent epic's `phase` unless this feature is materially earlier
-  or later than its siblings (e.g. a "design tokens" feature inside an
-  mvp epic legitimately moves to `foundation`; an "advanced filters"
-  feature inside an mvp epic legitimately moves to `expand`). See
-  `baseline-task-shapes.md` § Phase enum for the assignment rule.
+- `phase` — Assign deliberately per feature against the enum in
+  `baseline-task-shapes.md` § Phase enum (`foundation` = must exist
+  before any MVP work can proceed; `mvp` = in the minimum viable
+  product; `expand` = post-MVP growth; `polish` = quality and visual
+  refinement). Do NOT default every feature to the parent epic's
+  `phase`: a `features-*.md` file where every feature is `mvp` is a
+  planning smell — it means no real sequencing thought happened, and
+  the revise gate will flag it. A feature may move earlier or later
+  than its siblings when materially justified (e.g. a "design tokens"
+  feature inside an mvp epic legitimately moves to `foundation`; an
+  "advanced filters" feature inside an mvp epic legitimately moves to
+  `expand`). See `baseline-task-shapes.md` § Phase enum for the
+  assignment rule.
   A feature MUST NOT name a `dependencies` entry from a later phase
   (phase inversion) — the revise gate rejects such cases.
 
@@ -506,6 +514,10 @@ Each feature has:
 
 **Phase:** mvp
 ```
+
+> Assign `Phase` deliberately per the enum above — never copy the
+> example value blindly. A file where every feature carries the same
+> phase is a planning smell.
 
 **Write to:** `prompts/outputs/current/features-<epic-slug>.md`
 
@@ -678,7 +690,7 @@ entirely.
 
 It produces `prompts/outputs/current/ux-flows.md`. After writing
 the file and presenting the checkpoint, **wait for the user to say
-"Continue"** before starting Step 3.
+"Continue"** before starting Step 2.9 (Content System).
 
 If `ux-flows.md` already exists on disk (resumption), skip this
 step.
@@ -1489,7 +1501,7 @@ list and feeds them to the AI — but the result is the same either way.
 ---
 phase: planning
 engine: drill-down
-step: "Step 5 — Planning complete"
+step: "Planning hard stop"
 last_completed: "revise-report.md"
 next_action: "User authorization required — say Execute to begin"
 re_load_files:

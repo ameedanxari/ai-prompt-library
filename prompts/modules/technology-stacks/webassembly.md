@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -103,6 +103,7 @@ WebAssembly is a binary instruction format that enables near-native performance 
 
 ```bash
 # Install wasm-pack
+# SECURITY: piping a URL straight into a shell runs unreviewed code — download the script, inspect it, then run it.
 curl https://rustwasm.github.io/wasm-pack/installer/init.sh -sSf | sh
 
 # Create new project
@@ -579,9 +580,9 @@ pub fn hash_password(password: &str) -> Vec<u8> {
 
 ## Related Modules
 
-- `performance/optimization.md` - Performance patterns
-- `technology-stacks/rust.md` - Rust development
-- `deployment/cdn-deployment.md` - WASM distribution
+- `.ai-prompts/prompts/performance/optimization.md` - Performance patterns
+- `.ai-prompts/prompts/technology-stacks/rust.md` - Rust development
+- `.ai-prompts/prompts/deployment/cdn-deployment.md` - WASM distribution
 
 ## Examples
 

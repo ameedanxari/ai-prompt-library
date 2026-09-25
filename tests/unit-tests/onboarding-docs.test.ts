@@ -52,7 +52,11 @@ describe('QUICK_START.md', () => {
     // The main prompt block should reference all the key steps.
     const main = blocks.find((b) => b.includes('.ai-prompts/'));
     expect(main).toBeDefined();
-    expect(main!).toMatch(/git submodule/);
+    // Zero-install default: the main prompt clones the library; the
+    // submodule path is demoted to "Other install modes".
+    expect(main!).toMatch(/git clone/);
+    expect(main!).not.toMatch(/git submodule/);
+    expect(body).toMatch(/git submodule/);
     expect(main!).toMatch(/bootstrap-project-integration/);
     expect(main!).toMatch(/ai-agent-entry-point/);
   });

@@ -21,7 +21,7 @@ import {
   areSkillsCompatible,
   calculateQualityScore,
   ValidationResult
-} from '../../src/skill-system/skill-definition';
+} from '../../src/skill-system/skill-definition.js';
 
 describe('Skill Definition Interface', () => {
   let validSkill: SkillDefinition;
@@ -492,14 +492,54 @@ describe('Skill Definition Interface', () => {
       expect(score).toBe(0);
     });
 
-    it('should check skill compatibility (simplified)', () => {
-      const skill1 = validSkill;
+    it('should check skill compatibility honestly (item 15c)', () => {
+      // validSkill's required inputs (route, method) are NOT among its own
+      // outputs (code, documentation, tests) — chaining it into itself is
+      // not compatible. The old unconditional `true` was a fabrication.
       const skill2 = { ...validSkill, id: '723e4567-e89b-12d3-a456-426614174006' };
-      
-      const compatible = areSkillsCompatible(skill1, skill2);
-      
-      // Simplified compatibility check always returns true
-      expect(compatible).toBe(true);
+      expect(areSkillsCompatible(validSkill, skill2)).toBe(false);
+    });
+
+    it('should return true when skill1 produces everything skill2 requires', () => {
+      const producer = createSkillDefinition({
+        id: 'aaaaaaaa-e89b-12d3-a456-426614174000',
+        name: 'producer',
+        version: '1.0.0',
+        outputSchema: {
+          type: 'object',
+          properties: {
+            route: { type: 'string' },
+            method: { type: 'string' }
+          }
+        }
+      });
+      expect(areSkillsCompatible(producer, validSkill)).toBe(true);
+    });
+
+    it('should return false on a type mismatch between output and required input', () => {
+      const badProducer = createSkillDefinition({
+        id: 'bbbbbbbb-e89b-12d3-a456-426614174000',
+        name: 'bad producer',
+        version: '1.0.0',
+        outputSchema: {
+          type: 'object',
+          properties: {
+            route: { type: 'number' },
+            method: { type: 'string' }
+          }
+        }
+      });
+      expect(areSkillsCompatible(badProducer, validSkill)).toBe(false);
+    });
+
+    it('should return true when skill2 requires no inputs', () => {
+      const noInputs = createSkillDefinition({
+        id: 'cccccccc-e89b-12d3-a456-426614174000',
+        name: 'no inputs',
+        version: '1.0.0',
+        inputSchema: { type: 'object', properties: {} }
+      });
+      expect(areSkillsCompatible(validSkill, noInputs)).toBe(true);
     });
   });
 

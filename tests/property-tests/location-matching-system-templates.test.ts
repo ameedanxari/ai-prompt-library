@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { LocationServicesTemplateValidator } from '../../src/location-services-template-validator.js';
+import { LocationServicesTemplateValidator } from '../../src/validators/location-services-template-validator.js';
 import { join } from 'path';
 
 /**

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { BlockchainTemplateValidator } from '../../src/blockchain-template-validator.js';
+import { BlockchainTemplateValidator } from '../../src/validators/blockchain-template-validator.js';
 import { join } from 'path';
 
 /**
@@ -43,7 +43,10 @@ describe('Property-Based Tests: DeFi Governance Template Completeness', () => {
           // Property assertion: All templates have required structural elements
           expect(structure.allTemplatesHaveRequiredSections).toBe(true);
           expect(structure.templatesHaveImplementationPatterns).toBe(true);
-          expect(structure.templatesHaveConfigurationExamples).toBe(true);
+          // Item 12c: blockchain's hasConfigurationParameters no longer ORs in
+          // hasCodeExamples (that was a copy-paste bug). No DeFi fixture has a
+          // ## Configuration / ## Variables section, so this is honestly false.
+          expect(structure.templatesHaveConfigurationExamples).toBe(false);
           expect(structure.templatesHaveIntegrationPoints).toBe(true);
           expect(structure.templatesHaveDataModels).toBe(true);
 
@@ -88,7 +91,9 @@ describe('Property-Based Tests: DeFi Governance Template Completeness', () => {
             expect(content.hasPurposeSection).toBe(true);
             expect(content.hasContextSection).toBe(true);
             expect(content.hasImplementationPatterns).toBe(true);
-            expect(content.hasConfigurationParameters).toBe(true);
+            // Item 12c: honestly false — no DeFi fixture documents a
+            // ## Configuration / ## Variables section (see note above).
+            expect(content.hasConfigurationParameters).toBe(false);
             expect(content.hasCodeExamples).toBe(true);
           }
 

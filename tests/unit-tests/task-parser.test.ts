@@ -5,7 +5,7 @@ import {
   extractDependencyRefs,
   extractFilePaths,
   parsePlanTaskFile,
-} from '../../src/task-contract/task-parser';
+} from '../../src/task-contract/task-parser.js';
 
 describe('task contract parser', () => {
   it('parses a top-level task metadata block', () => {

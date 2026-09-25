@@ -181,7 +181,7 @@ fi
 
 for steering_dir in .kiro/steering .cursor/rules .windsurf/rules .continue/rules .vscode/ai-steering .ai-steering; do
   [ -d "$steering_dir" ] || continue
-  if grep -REiq "10-stage pipeline|stage-01-intake|COVE|continue automatically" "$steering_dir" 2>/dev/null; then
+  if grep -REiq "10-stage pipeline|stage-01-intake|\bCOVE\b|continue automatically" "$steering_dir" 2>/dev/null; then
     fail "stale steering content found in $steering_dir"
   else
     pass "steering content current in $steering_dir"

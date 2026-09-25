@@ -1,10 +1,73 @@
 # Quick Start
 
+## Before you paste — the 60-second checklist
+
+Do these five checks **before** you paste the prompt below. They
+prevent the five most common first-run failures (see
+[Troubleshooting](#troubleshooting) if you skipped this and something
+broke).
+
+- [ ] **You're in a desktop AI coding app, not a website.** Cursor,
+      Windsurf, Kiro, the Claude desktop app, the ChatGPT desktop app,
+      Continue, or Aider — anything that can run terminal commands and
+      write files. **chatgpt.com and claude.ai in a browser will not
+      work** — the agent needs to run commands and create files on
+      your computer.
+- [ ] **You have an empty folder** for the project, and you know where
+      the app's chat box is (that's where you'll paste the prompt).
+- [ ] **The agent can run commands.** Quick test — type this in the
+      chat box first and make sure it runs:
+      `Please run the command "echo hello" in my terminal and tell me what it printed.`
+      If it prints `hello`, you're good.
+- [ ] **You know what you'll be asked.** Exactly **one** question:
+      "What do you want to build?" — answer in a sentence or a
+      paragraph. Then you'll approve each stage by saying
+      **Continue** — expect about **4 approvals during planning**,
+      and use **"Continue 5"** to batch approvals while the app is
+      being built. Planning takes roughly 1–3 hours (mostly the agent
+      working, not you); building takes days. See
+      [What to expect](#what-to-expect) below.
+- [ ] **You have an AI tool to run this in.** No account yet? Start
+      with [FREE_RESOURCES.md](docs/FREE_RESOURCES.md) — free AI
+      coding apps and free tiers, no credit card needed.
+
+---
+
+## What to expect
+
+> **Time.** Planning: answer 1 question (~1 minute), then about
+> **4 "Continue" approvals** as you review what the agent produced
+> (epics → features → task prompts → readiness gate). Expect 1–3
+> hours of elapsed time — the agent does the work between your
+> approvals; you just review and type Continue. Building
+> (execution): one approval per task, so batch with **"Continue 5"**.
+> A real project is dozens to 100+ tasks — days of agent time, not
+> minutes. You set the pace; nothing advances without your approval.
+>
+> **Cost.** Many people do the whole planning phase on a free tier.
+> Execution is the expensive part because it's a lot of AI work.
+> Start with the free tools in
+> [FREE_RESOURCES.md](docs/FREE_RESOURCES.md); upgrade only if you
+> run out.
+>
+> **Which model.** Any current Claude- or GPT-class model running
+> **inside a desktop AI coding app** works — e.g. Claude in the
+> Claude desktop app or in Cursor, GPT in the ChatGPT desktop app.
+> (The docs elsewhere say "SWE 1.6-class / small context windows" —
+> that just means a decent mid-range coding model, not the most
+> expensive one. Each task is written small enough that the model
+> doesn't need your whole project in context.) Do **not** use the
+> web versions (chatgpt.com, claude.ai) — they can't run commands or
+> write files.
+
+---
+
 ## The single prompt (copy this into an AI chat on an empty folder)
 
 Open an agentic AI chat — **Claude Code, Cursor, Windsurf, Kiro,
-Continue, Aider, etc.** — inside the folder you want to build your
-project in, and paste exactly this:
+Continue, Aider, the Claude desktop app, the ChatGPT desktop app,
+etc.** — inside the folder you want to build your project in, and
+paste exactly this:
 
 ---
 
@@ -12,17 +75,18 @@ project in, and paste exactly this:
 Hey AI — set up a new project for me using the AI Prompt Library.
 
 Do the following, in order. At each checkpoint (marked ⏸), stop and
-show me a summary of what was just completed, then wait for me to say
-"Continue" before proceeding. If a step is already done, skip it.
+show me a summary of what was just completed, then wait for my
+approval before proceeding. I may say "Continue", "Continue 5", or a
+natural acknowledgment like "looks good, keep going" — treat ALL of
+these as approval to proceed. If a step is already done, skip it.
 
 1. Initialize git if needed. If ".git/" does not exist in this folder,
    run: git init
 
 2. Install the AI Prompt Library. If ".ai-prompts/" does not exist, run:
-     git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
-     git submodule update --init --recursive
-   If ".ai-prompts/" already exists, run:
-     git submodule update --remote .ai-prompts
+     git clone --depth 1 https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+   If ".ai-prompts/" already exists, leave it as is and continue.
+   (Optional refresh: git -C .ai-prompts pull)
 
 3. Run the bootstrap script. This creates AGENTS.md, MY_PROJECT.md from
    the template, and wires steering files for whichever IDE I'm using:
@@ -104,7 +168,8 @@ show me a summary of what was just completed, then wait for me to say
 
    This is the task checklist. Each task gets ticked off as it
    completes. If I say "Continue 5", run 5 tasks before the next
-   checkpoint.
+   checkpoint. Treat natural acknowledgments ("looks good, keep
+   going", "go ahead", "yep") the same as "Continue".
 
    Only stop execution if: a test regression appears, 3+ tasks
    block consecutively, external credentials are needed, or I
@@ -143,19 +208,26 @@ Start now.
 
 ## What happens after you paste
 
-1. The agent runs shell commands for ~10 seconds — setup.
+1. The agent runs setup commands for a minute or so — git init, the
+   library download, and the bootstrap script.
 2. The agent asks you **one** question: "What do you want to build?"
-3. Answer in a sentence or a paragraph. Vague is fine.
+3. Answer in a sentence or a paragraph. Vague is fine — but the more
+   specific you are, the less the library has to guess (see the
+   [Brief guidance](MY_PROJECT.md.template#brief-required--the-only-required-field)
+   on what a good brief answers).
 4. The agent starts the **planning phase** and stops at each
-   checkpoint (⏸) to show you what it produced:
-   - Epics → Features → Task prompts → Finalize/readiness gate.
-   - Say "Continue" at each checkpoint to advance.
-   - If something looks wrong, give feedback and the agent adjusts.
+   checkpoint (⏸) to show you what it produced — expect about
+   **4 approvals**: epics → features → task prompts → the
+   finalize/readiness gate. On a large brief the agent may also pause
+   once per epic's worth of task prompts; say "Continue 3" to batch
+   those. **You don't have to type the exact word "Continue"** —
+   "looks good, keep going", "go ahead", or "yep" all work. If
+   something looks wrong, give feedback and the agent adjusts.
 5. After the readiness gate passes, the agent shows you the full task
-   checklist and asks you to say "Execute" to begin building.
+   checklist and stops. Say "Execute" to begin building.
 6. The agent enters the **execution phase**, implementing one task
    at a time. After each task it shows you the result and waits.
-   Say "Continue" to advance, or "Continue 5" to batch.
+   Say "Continue" to advance, or "Continue 5" to batch five tasks.
 7. If the IDE closes or context runs out, start a new session and
    say "Continue where you left off" — the agent picks up from
    `execution-log.md`.
@@ -163,43 +235,202 @@ Start now.
    verified decision proceeds to honest handoff; unresolved findings become
    the next remediation tasks.
 
-## NPM install alternative
+## A worked example, end to end
 
-The copy-paste prompt uses a git submodule because that gives agents a
-stable `.ai-prompts/` path. For CI, validators, and package consumers
-you can install from npm and keep the same path with a symlink:
+Here's what a real run looks like for a small brief, so the file
+names and checkpoint summaries above aren't abstract.
 
-```bash
-npm install --save-dev ai-prompt-library
-ln -sfn node_modules/ai-prompt-library .ai-prompts
-bash .ai-prompts/scripts/bootstrap-project-integration.sh
-npx ai-prompt-ready prompts/outputs/current
+**The brief** (2 sentences, pasted as the answer to the one question):
+
+> A room-booking app for a 10-person yoga studio in Portland.
+> Customers book and pay for classes from their phones; the owner
+> manages the weekly schedule and sees who paid, from a simple
+> dashboard.
+
+**What the agent writes into `epics.md`** (excerpt — the real file has
+~15 lines per epic plus ~12 production-readiness baseline epics):
+
+```markdown
+_Project platforms: web, android, ios_
+_Feature epics: 4 · Baseline epics: 12 · Total: 16_
+
+## Feature epics
+
+### 1. Class schedule & booking
+- **Category:** feature
+- **Goal:** Customers can browse the weekly class schedule and book a spot from their phone.
+- **Acceptance:**
+  - Weekly schedule view shows all classes with remaining spots
+  - Booking holds a spot and confirms instantly
+- **Complexity:** M
+- **Applies to:** web, android, ios
+- **Phase:** mvp
+
+### 2. Payments for classes
+- **Category:** feature
+- **Goal:** Customers pay for a class (or class pack) at booking time via Stripe.
+- **Acceptance:**
+  - Successful payment confirms the booking
+  - Failed payment releases the held spot
+- **Complexity:** M
+- **Applies to:** web, android, ios
+- **Phase:** mvp
+
+## Baseline epics
+
+### B1. Onboarding & consent
+- **Category:** baseline
+- **Goal:** First-run signup, login, and consent capture.
+...
 ```
 
-Prerequisites: Node.js 20+, npm, Python 3, and Bash.
+**What a ⏸ checkpoint summary looks like** (after the epics stage):
 
-Common `npx` commands:
+> ⏸ **Checkpoint — Epics complete**
+> 1. **Done:** Wrote `epics.md` — 4 feature epics (schedule & booking,
+>    payments, customer accounts, owner dashboard) + 12 baseline epics
+>    (auth, admin, payments plumbing, notifications, …), and
+>    `brief-keywords.md` mapping your brief's key phrases to epics.
+> 2. **Progress:** Planning step 1 of 4.
+> 3. **Next:** Expand each epic into features with data models and API
+>    contracts.
+> 4. Say **Continue** to proceed, or give feedback (e.g. "drop the
+>    class-pack idea for now").
 
-| Command | Use |
-|---|---|
-| `npx ai-prompt-ready prompts/outputs/current` | Run the full pre-executor gate. |
-| `npx ai-prompt-finalize prompts/outputs/current` | Rebuild all planning ledgers and run revise. |
-| `npx ai-prompt-build-task-contract prompts/outputs/current` | Write `task-contract.json`. |
-| `npx ai-prompt-validate-task-contract prompts/outputs/current` | Check task schema, dependencies, phases, paths, and tests. |
-| `npx ai-prompt-validate-screenshot-matrix prompts/outputs/current` | Check app-store screenshot task matrix coverage. |
-| `npx ai-prompt-generate-design-review prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html` | Generate the design review HTML artifact. |
-| `npx ai-prompt-validate-design-review docs/design-system/review/index.html prompts/outputs/current/ui-reference-source-map.md` | Validate design review HTML against the source map. |
-| `npx ai-prompt-validate-semantic-review prompts/outputs/current` | Validate semantic reports and the completion decision before honest handoff. |
-| `npx ai-prompt-validate-release-readiness .` | Check package metadata, docs examples, bins, and npm pack dry-run contents before release. |
+**What the final report looks like** (after execution + review):
 
-Programmatic API example:
+> ✅ **Done — honest handoff**
+> - **Start the app:** `cd yoga-studio-app && npm run dev` → open
+>   http://localhost:3000
+> - **Run the tests:** `npm test` (142 passed, 0 failed)
+> - **External accounts you still need to create:**
+>   Stripe (stripe.com → Developers → API keys) — payments won't work
+>   until you paste the test key into `.env`
+> - **Summary:** 87 tasks done, 2 blocked on the Stripe key above,
+>   all green otherwise.
+> - ⚠️ Honest caveat: the plan is complete and every task's tests
+>   pass, but nobody has clicked through the real app in production
+>   yet — try the booking flow yourself before telling customers
+>   about it. See [From handoff to live app](#from-handoff-to-live-app).
 
-```js
-import { buildTaskContractReportForDirectory } from 'ai-prompt-library/task-contract';
+The full file inventory is in [Expected output layout](#expected-output-layout)
+below — read this example first, then that table is a reference, not
+a wall.
 
-const report = buildTaskContractReportForDirectory('prompts/outputs/current');
-console.log(report.summary.blocked);
-```
+## From handoff to live app
+
+When the agent says it's done, here's what you actually have — and
+what's still on you.
+
+**What you have:** a working app in your project folder, with its
+tests, plus the full plan (`prompts/outputs/current/`) and a journal
+of everything the agent did (`execution-log.md`). If the agent ever
+needs to pick the work back up, those files are how it resumes.
+
+**The 3 common remainders** (things the agent cannot do for you):
+
+1. **External accounts.** Anything with a signup — Stripe, Firebase,
+   AWS, email providers — is listed in `external-accounts.md` with
+   the signup link and which keys to paste where. Creating accounts
+   and copying keys is your job; the agent can't sign up as you.
+2. **The start command.** The final report gives you one command to
+   run the app locally and one to run the tests. Run them. If the
+   app doesn't start, paste the error back to the agent — that's a
+   normal part of the process, not a failure.
+3. **Deploy.** "Runs on my laptop" isn't "live on the internet."
+   The plan includes deployment tasks, but picking a host (Vercel,
+   Railway, Fly.io, …) and pointing your domain at it is a human
+   decision. The agent can walk you through it when you're ready.
+
+**The honest-handoff caveat, in plain language:** when the agent's
+log says `next_task: null`, that means *the plan is finished* — every
+task was either done or explicitly marked blocked/failed. It does
+**not** mean the app is verified to work in production. The
+semantic-review step checks that the code faithfully implements the
+plan, but nobody — human or AI — has watched a real customer use it
+yet. Click through the important flows yourself before you launch.
+
+## Troubleshooting
+
+The five likeliest first-run failures. Find your symptom, paste the
+**exact sentence** back to the agent.
+
+**1. You pasted into a web chat (chatgpt.com / claude.ai) instead of
+the desktop app.**
+Symptom: the agent says it can't run commands, asks *you* to run
+things, and no files ever appear in your folder.
+Paste back:
+> Stop here. I pasted this prompt into a web chat by mistake — it
+> needs a desktop AI coding app that can run terminal commands and
+> write files. I'm going to restart this in a desktop app. Nothing
+> for you to do.
+
+**2. `git` not found.**
+Symptom: the agent reports `git: command not found` (or similar) and
+the install step fails.
+Paste back:
+> Git isn't installed on my computer. Please give me the exact steps
+> to install git for my operating system. I'll install it and tell
+> you when it's done — then continue from the install step.
+
+**3. The library download hangs.**
+Symptom: step 2 sits for many minutes with no progress.
+Paste back:
+> The download seems stuck. Stop it and retry once with exactly this:
+> git clone --depth 1 https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+> Then continue from the bootstrap step.
+
+**4. The agent asks more than one question.**
+Symptom: after the brief question it keeps asking about platforms,
+tech stack, user roles, and more.
+Paste back:
+> No more questions. The prompt says: ask exactly ONE question, then
+> infer everything else from my brief. Make sensible defaults, write
+> them into MY_PROJECT.md, and I'll correct them at the first
+> checkpoint.
+
+**5. The agent skips ⏸ checkpoints.**
+Symptom: it barrels through planning or execution stages without
+stopping to show you summaries.
+Paste back:
+> You skipped a ⏸ checkpoint. Stop right now, show me the summary of
+> what you just finished (what was done, progress so far, what comes
+> next), and wait for me to say Continue.
+
+## FAQ
+
+**How much does this cost?**
+The library itself is free and open source. What costs money (or
+free-tier allowance) is the AI model doing the work. Many people get
+through the whole planning phase on a free tier — start with the
+free tools in [FREE_RESOURCES.md](docs/FREE_RESOURCES.md). Execution
+is the expensive part because it's a lot of AI work; you control the
+pace with your Continue approvals, so costs scale with how much you
+approve, not with surprises.
+
+**How long does it take?**
+Roughly: planning takes 1–3 hours of elapsed time (you answer one
+question and approve ~4 checkpoints; the agent works in between).
+Execution is dozens to 100+ tasks — expect days of agent working
+time for a real project. Use "Continue 5" to batch approvals.
+
+**Which model / app should I use?**
+Any current Claude- or GPT-class model inside a desktop AI coding
+app: Claude in the Claude desktop app or Cursor, GPT in the ChatGPT
+desktop app, or the models built into Windsurf, Kiro, Continue, or
+Aider. The one hard requirement is the desktop app (terminal +
+files), not the website. If you're starting from zero, the free
+options in [FREE_RESOURCES.md](docs/FREE_RESOURCES.md) are the
+cheapest way to try.
+
+**Can I change my mind mid-run?**
+Yes. During planning, give feedback at any ⏸ checkpoint ("drop the
+class packs", "web only for now") and the agent reworks that stage.
+During execution, describe the change and the agent adds or edits
+tasks — small changes just continue. For a big scope change, edit
+`MY_PROJECT.md` and ask the agent to re-run planning for the
+affected parts; execution always resumes from `execution-log.md`,
+so completed work isn't lost.
 
 ## Expected output layout
 
@@ -237,9 +468,15 @@ resume from — or for you to inspect if something goes sideways.
 ## If you want more control
 
 The defaults in `MY_PROJECT.md.template` (web + Android + iOS + full
-production-readiness baseline) are aggressive. If your project is
-smaller in scope and you want the library to skip some of that, open
-`MY_PROJECT.md` after step 3 and:
+production-readiness baseline) are aggressive — a full build is a
+big run. If your project is smaller in scope, the highest-leverage
+thing you can do is **Restrict** the scope *before* planning starts.
+Open `MY_PROJECT.md` after step 3 and paste one of the recipes from
+the template's **Restrict** section — e.g. "web only" skips the
+mobile apps and app-store packaging entirely, which is roughly
+two-thirds fewer tasks for a typical brief.
+
+You can also:
 
 - List only the platforms you want under **Platforms** (e.g. "web
   only").
@@ -249,6 +486,60 @@ smaller in scope and you want the library to skip some of that, open
 
 Then tell the agent to continue — it will re-read `MY_PROJECT.md` and
 apply your restrictions.
+
+## Other install modes
+
+The copy-paste prompt above needs nothing installed except a desktop
+AI coding app and `git` — the agent downloads the library itself with
+a plain `git clone`. If you prefer a different setup, two
+alternatives:
+
+**Git submodule** (keeps the library pinned as a submodule of your
+repo — the agent-facing paths are identical):
+
+```bash
+git submodule add https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+git submodule update --init --recursive
+bash .ai-prompts/scripts/bootstrap-project-integration.sh
+```
+
+**npm package** (useful for CI, validators, and API consumers):
+
+```bash
+npm install --save-dev ai-prompt-library
+ln -sfn node_modules/ai-prompt-library .ai-prompts
+bash .ai-prompts/scripts/bootstrap-project-integration.sh
+npx ai-prompt-ready prompts/outputs/current
+```
+
+The npm path expects Node.js 20+, npm, Python 3, and Bash. The npm
+install publishes the prompt library, shell validators, and typed
+task-contract API. The `.ai-prompts` symlink keeps the agent-facing
+paths identical to the clone flow while `npx` exposes the
+mechanical gates.
+
+Common `npx` commands:
+
+| Command | Use |
+|---|---|
+| `npx ai-prompt-ready prompts/outputs/current` | Run the full pre-executor gate. |
+| `npx ai-prompt-finalize prompts/outputs/current` | Rebuild all planning ledgers and run revise. |
+| `npx ai-prompt-build-task-contract prompts/outputs/current` | Write `task-contract.json`. |
+| `npx ai-prompt-validate-task-contract prompts/outputs/current` | Check task schema, dependencies, phases, paths, and tests. |
+| `npx ai-prompt-validate-screenshot-matrix prompts/outputs/current` | Check app-store screenshot task matrix coverage. |
+| `npx ai-prompt-generate-design-review prompts/outputs/current/ui-reference-source-map.md docs/design-system/review/index.html` | Generate the design review HTML artifact. |
+| `npx ai-prompt-validate-design-review docs/design-system/review/index.html prompts/outputs/current/ui-reference-source-map.md` | Validate design review HTML against the source map. |
+| `npx ai-prompt-validate-semantic-review prompts/outputs/current` | Validate semantic reports and the completion decision before honest handoff. |
+| `npx ai-prompt-validate-release-readiness .` | Check package metadata, docs examples, bins, and npm pack dry-run contents before release. |
+
+Programmatic API example:
+
+```js
+import { buildTaskContractReportForDirectory } from 'ai-prompt-library/task-contract';
+
+const report = buildTaskContractReportForDirectory('prompts/outputs/current');
+console.log(report.summary.blocked);
+```
 
 ## If something goes wrong mid-run, or you need to resume
 

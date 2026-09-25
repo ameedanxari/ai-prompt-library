@@ -19,7 +19,7 @@
 #   3  preconditions missing (no task files, no Phase fields)
 #
 # Usage:
-#   bash scripts/build-delivery-order.sh [target-dir]
+#   bash .ai-prompts/scripts/build-delivery-order.sh [target-dir]
 
 set -uo pipefail
 

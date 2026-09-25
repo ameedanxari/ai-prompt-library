@@ -7,7 +7,7 @@
 # mixed-phase task files, and dependency cycles.
 #
 # Usage:
-#   bash scripts/validate-phase-order.sh [target-dir]
+#   bash .ai-prompts/scripts/validate-phase-order.sh [target-dir]
 #
 # Exit codes:
 #   0  phase/order contract is valid

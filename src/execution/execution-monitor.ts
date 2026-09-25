@@ -7,7 +7,7 @@
  * Validates: Requirements 5.1, 5.2, 5.3
  */
 
-import { ExecutionStatus, ExecutionContext } from './execution-runtime';
+import { ExecutionStatus, ExecutionContext } from './execution-runtime.js';
 
 /**
  * Metrics collected during execution

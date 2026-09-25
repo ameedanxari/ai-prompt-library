@@ -3,7 +3,7 @@
 # blocking contract issues.
 #
 # Usage:
-#   bash scripts/validate-task-contract.sh [target-dir-or-task-contract.json]
+#   bash .ai-prompts/scripts/validate-task-contract.sh [target-dir-or-task-contract.json]
 #
 # Exit codes:
 #   0  contract exists and has no error-severity issues

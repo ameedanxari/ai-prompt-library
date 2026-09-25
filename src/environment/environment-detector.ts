@@ -78,9 +78,15 @@ export class EnvironmentDetector {
    * Checks for specific system dependencies
    */
   public async checkDependency(name: string): Promise<boolean> {
-    const escaped = name.replace(/"/g, '\\"');
+    // SECURITY (item 13a): `name` must never be interpolated into a shell
+    // command line. The old code only escaped `"`, leaving quote-breakout
+    // command injection possible. We now (1) allowlist the name and
+    // (2) pass it as an argv value (`$1`) rather than interpolating it.
+    if (!/^[A-Za-z0-9_][A-Za-z0-9_.\-]*$/.test(name)) {
+      return false;
+    }
     try {
-      childProcess.execFileSync('sh', ['-lc', `command -v "${escaped}"`], { stdio: 'ignore' });
+      childProcess.execFileSync('sh', ['-c', 'command -v "$1" >/dev/null 2>&1', 'sh', name], { stdio: 'ignore' });
       return true;
     } catch {
       return false;

@@ -3,7 +3,7 @@ import {
   evaluateReleaseGate,
   evaluateReleaseGates,
   type ReleaseGate,
-} from '../../src/release/release-gates';
+} from '../../src/release/release-gates.js';
 
 function gate(overrides: Partial<ReleaseGate> = {}): ReleaseGate {
   return {

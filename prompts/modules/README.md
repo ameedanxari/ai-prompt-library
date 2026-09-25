@@ -4,7 +4,7 @@
 
 Reusable domain-specific prompt modules. The drill-down engine and
 audit-and-remediate engine consult
-`prompts/orchestrators/module-selection-index.md`
+`.ai-prompts/prompts/orchestrators/module-selection-index.md`
 to pick the module set needed for the current expansion context based
 on the feature's intents. Each module is a self-contained pattern
 document with real code examples for a specific domain.
@@ -23,7 +23,7 @@ document with real code examples for a specific domain.
    tasks — real file paths, real function signatures, real acceptance
    criteria. The module filename never appears in the output.
 
-See `prompts/AGENTS.md` for the full engine flow.
+See `.ai-prompts/prompts/AGENTS.md` for the full engine flow.
 
 ## Category tree
 
@@ -68,6 +68,6 @@ See `prompts/AGENTS.md` for the full engine flow.
   split the feature.
 - **Modules are dissolved, not referenced.** The template filename,
   placeholder tokens, and `.ai-prompts/prompts/` paths must not appear
-  in engine output (enforced by `scripts/validate-instantiation.sh`).
+  in engine output (enforced by `.ai-prompts/scripts/validate-instantiation.sh`).
 - **If the intent index doesn't match any module**, the engine should
   proceed without one. Do not guess.

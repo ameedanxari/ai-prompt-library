@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { FintechTemplateValidator } from '../../src/fintech-template-validator.js';
+import { FintechTemplateValidator } from '../../src/validators/fintech-template-validator.js';
 import { join } from 'path';
 
 /**

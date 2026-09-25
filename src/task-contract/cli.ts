@@ -7,23 +7,26 @@ import {
   type TaskContractReport,
 } from './task-contract-report.js';
 import { parsePlanTaskDirectory } from './task-parser.js';
+import {
+  TaskContractError,
+  TaskContractUsageError,
+  toTaskContractError,
+} from './errors.js';
 
 export function buildTaskContractFile(
   targetDir = 'prompts/outputs/current',
   outPath = path.join(targetDir, 'task-contract.json'),
 ): TaskContractReport {
   if (!fs.existsSync(targetDir) || !fs.statSync(targetDir).isDirectory()) {
-    throw new TaskContractCliError(
+    throw new TaskContractUsageError(
       `task contract: target directory does not exist: ${targetDir}`,
-      2,
     );
   }
 
   const files = parsePlanTaskDirectory(targetDir);
   if (files.length === 0) {
-    throw new TaskContractCliError(
+    throw new TaskContractUsageError(
       `task contract: no tasks-*.md or remediation-*.md in ${targetDir}`,
-      2,
     );
   }
 
@@ -37,16 +40,30 @@ export function buildTaskContractFile(
   return report;
 }
 
-class TaskContractCliError extends Error {
-  constructor(
-    message: string,
-    public readonly exitCode: number,
-  ) {
-    super(message);
-  }
-}
+const HELP_TEXT = `task-contract-cli — build the canonical machine-readable task contract.
+
+Usage:
+  task-contract-cli [target-dir] [output-json]
+
+  target-dir   Directory containing tasks-*.md / remediation-*.md files
+               (default: prompts/outputs/current)
+  output-json  Where to write task-contract.json
+               (default: <target-dir>/task-contract.json)
+
+Exit codes:
+  0  report written (even when the report contains issues;
+     check summary.blocked / summary.issueCounts in the JSON)
+  1  unexpected internal error
+  2  usage error: bad arguments, missing target directory, or no task files found
+  3  input error: inputs exist but are malformed or unreadable
+`;
 
 function main(argv: string[]): number {
+  if (argv.includes('--help') || argv.includes('-h')) {
+    process.stdout.write(HELP_TEXT);
+    return 0;
+  }
+
   const targetDir = argv[0] ?? 'prompts/outputs/current';
   const outPath = argv[1] ?? path.join(targetDir, 'task-contract.json');
 
@@ -62,12 +79,9 @@ function main(argv: string[]): number {
     );
     return 0;
   } catch (error) {
-    if (error instanceof TaskContractCliError) {
-      console.error(error.message);
-      return error.exitCode;
-    }
-    console.error(error instanceof Error ? error.message : String(error));
-    return 2;
+    const typed = toTaskContractError(error);
+    console.error(`${typed.name}: ${typed.message}`);
+    return typed.exitCode;
   }
 }
 

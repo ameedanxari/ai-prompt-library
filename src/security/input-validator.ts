@@ -20,7 +20,9 @@ export class InputValidator {
   private blocklist: RegExp[] = [
     /(<script\b[^>]*>[\s\S]*?<\/script>)/gi,          // XSS
     /(;\s*(rm|del|drop|truncate|exec)\s)/gi,            // Command injection
-    /(\.\.\/(\.\.\\)*)/g,                                // Path traversal
+    // NOTE (item 13d): the old path-traversal regex /(\.\.\/(\.\.\\)*)/g was
+    // removed — it missed bare `..`, `..\`, and URL-encoded `%2e%2e` forms.
+    // Traversal is now caught by the dedicated containsPathTraversal() check.
     /(union\s+select|insert\s+into|delete\s+from)/gi,  // SQL injection
   ];
 
@@ -30,6 +32,14 @@ export class InputValidator {
   public validate(input: string): InputValidationResult {
     const threats: string[] = [];
     let sanitised = input;
+
+    // SECURITY (item 13d): dedicated path-traversal check. Normalizes `\` to
+    // `/` and decodes percent-encoding (catching `..\` and `%2e%2e` forms),
+    // then looks for a literal `..` path segment.
+    if (this.containsPathTraversal(input)) {
+      threats.push('Matched blocklist pattern: path traversal (..)');
+      sanitised = sanitised.replace(/\.\./g, '[BLOCKED]');
+    }
 
     for (const pattern of this.blocklist) {
       if (pattern.test(input)) {
@@ -41,6 +51,22 @@ export class InputValidator {
     }
 
     return { valid: threats.length === 0, sanitised, threats };
+  }
+
+  /**
+   * Detects `..` path segments after normalizing separators and decoding
+   * percent-encoded input (e.g. `%2e%2e%2f`).
+   */
+  private containsPathTraversal(input: string): boolean {
+    const candidates = [input];
+    try {
+      candidates.push(decodeURIComponent(input));
+    } catch {
+      // Malformed percent-encoding: fall back to testing the raw input.
+    }
+    return candidates.some(candidate =>
+      /(^|\/)\.\.(\/|$)/.test(candidate.replace(/\\/g, '/'))
+    );
   }
 
   /**

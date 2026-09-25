@@ -50,6 +50,13 @@ describe('validate-project-integration.sh', () => {
         JSON.stringify({ name: 'ai-prompt-library', version: '9.8.7' }, null, 2),
         'utf8',
       );
+      // A real published package ships MY_PROJECT.md.template; bootstrap
+      // refuses to run without it, so the fake package must include one.
+      fs.writeFileSync(
+        path.join(packageRoot, 'MY_PROJECT.md.template'),
+        '# Fake project template\n',
+        'utf8',
+      );
       fs.symlinkSync(packageRoot, path.join(sandbox, '.ai-prompts'));
 
       execSync(`bash "${BOOTSTRAP}"`, {

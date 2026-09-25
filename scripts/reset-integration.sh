@@ -212,6 +212,7 @@ tool_readiness() {
   local resolved
   resolved=$(command -v "$tool" 2>/dev/null || true)
   if [ -n "$resolved" ]; then
+    # shellcheck disable=SC2016  # backticks are literal markdown code spans in the output, not command substitution
     printf 'ready (`%s`)' "$resolved"
   else
     printf 'missing'
@@ -236,6 +237,7 @@ EOF
 
 for input_dir in working_copy prompts/working_copy; do
   if [ -d "$input_dir" ]; then
+    # shellcheck disable=SC2016  # backticks are literal markdown code spans; printf expands \n from the format string itself
     printf -- '- `%s/` — external/reference material retained outside generated outputs.\n' "$input_dir" >> "$PREFLIGHT_TMP"
   fi
 done
@@ -252,6 +254,7 @@ if [ "${#REMOVED_ARTIFACTS[@]}" -eq 0 ]; then
   echo "- None; the output tree was already clean." >> "$PREFLIGHT_TMP"
 else
   for artifact in "${REMOVED_ARTIFACTS[@]}"; do
+    # shellcheck disable=SC2016  # backticks are literal markdown code spans; printf expands \n from the format string itself
     printf -- '- `%s`\n' "$artifact" >> "$PREFLIGHT_TMP"
   done
 fi

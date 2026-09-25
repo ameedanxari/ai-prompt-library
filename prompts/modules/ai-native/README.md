@@ -148,10 +148,10 @@ AI-Native Development represents a paradigm shift where AI is not just a feature
 
 ## Related Modules
 
-- `testing/ai-testing.md` - Testing AI-powered features
-- `security/ai-security.md` - Securing AI systems
-- `performance/ai-optimization.md` - Optimizing AI performance
-- `deployment/model-deployment.md` - Deploying AI models
+- `.ai-prompts/prompts/testing/ai-testing.md` - Testing AI-powered features
+- `.ai-prompts/prompts/security/ai-security.md` - Securing AI systems
+- `.ai-prompts/prompts/performance/ai-optimization.md` - Optimizing AI performance
+- `.ai-prompts/prompts/deployment/model-deployment.md` - Deploying AI models
 
 ## Examples
 

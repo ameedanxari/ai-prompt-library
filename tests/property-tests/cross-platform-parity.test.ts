@@ -1,7 +1,9 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { readFileSync, existsSync } from 'fs';
+import { existsSync } from 'fs';
 import { join } from 'path';
+
+import { readModuleWithDetails } from '../../src/module-content.js';
 
 /**
  * Feature: ai-prompt-library, Property 11: Cross-Platform Parity Management
@@ -97,7 +99,7 @@ class CrossPlatformParityValidator {
     }
 
     try {
-      const content = readFileSync(filePath, 'utf-8').toLowerCase();
+      const content = readModuleWithDetails(filePath).toLowerCase();
       
       // Check that at least some required elements are present in the prompt
       // Use a more flexible approach - require at least 50% of elements to be present
@@ -150,7 +152,7 @@ class CrossPlatformParityValidator {
       const filePath = join(this.parityModulePath, file);
       if (!existsSync(filePath)) return false;
 
-      const content = readFileSync(filePath, 'utf-8');
+      const content = readModuleWithDetails(filePath);
       
       // Consistent structure elements
       const hasTitle = content.includes('# ');

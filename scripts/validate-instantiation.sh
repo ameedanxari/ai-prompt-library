@@ -33,10 +33,18 @@ GLOBAL_PATTERNS=(
   '\{\{[^}]+\}\}'
   '<TBD>'
   '\[project name\]'
+  # Migration-number placeholders: 0000NN / 00NNN slipped through the {{/TBD
+  # greps in validation (Project Circulate v0) and reached the gate as real
+  # filenames. SEQNN is the engine's reserved "coordinator assigns the global
+  # sequence" marker (see schema-alignment-pass.md) — it must never survive
+  # to finalize. The leading digit (or SEQ prefix) is required so prose like
+  # DUNNING / CONNECT can't false-positive.
+  '[0-9]NN[0-9_]*|SEQNN'
 )
 
 # Per-line patterns that, when matched on a "File:" line, indicate the
 # File field points at a directory or group rather than one file.
+# shellcheck disable=SC2016  # literal ERE; the backticks are pattern text, not command substitution
 FILE_LINE_DIR_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*`[^`]+/`'
 FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|all)\b'
 
@@ -55,7 +63,6 @@ UI_TASK_PATTERN='(^|[^[:alpha:]])(frontend|screen|dashboard|chart|tailwind|desig
 UI_EVIDENCE_PATTERN='(ui reference source map|reference source map|existing-style source map|existing style source|screen-fidelity|screen fidelity|design-system|design system|component inventory|token mapping|existing product style is authoritative|existing theme authority|current style source)'
 SOURCE_MAP_REFERENCE_PATTERN='(ui reference source map|reference source map|ui-reference-source-map\.md)'
 SOURCE_MAP_ROW_PATTERN='(REF-[0-9]+|MAP-[0-9]+)'
-DASHBOARD_PATTERN='(^|[^[:alpha:]])(dashboard|admin panel|analytics console|operational panel)([^[:alpha:]]|$)'
 # CHART_PATTERN shares the same bare "graph" token problem: it matched
 # build-task-graph.sh / task-graph.json / "dependency graph" and demanded
 # tooltip/legend/loading/empty/error planning terms for a script change.
@@ -65,6 +72,9 @@ TAILWIND_PATTERN='(^|[^[:alpha:]])tailwind([^[:alpha:]]|$)'
 HARDCODED_STYLE_PATTERN='(#[0-9a-fA-F]{3,8}|rgb[a]?\(|hsl[a]?\()'
 TOKEN_STYLE_PATTERN='(token|@theme|var\(--|tailwind\.config|theme variable|css variable|designTokens)'
 UNRELATED_REDESIGN_PATTERN='(new visual language|unrelated visual|replace the existing theme|replace current theme|from scratch visual system|new unrelated palette|new palette)'
+# Negated redesign mentions ("No new palette") are the opposite of proposing a
+# redesign — without this guard the check flags tasks that explicitly decline one.
+REDESIGN_NEGATION_PATTERN='([Nn]o new (palette|visual language|theme)|without (a |any )?redesign)'
 REDESIGN_APPROVAL_PATTERN='(redesign requested|redesign approval|explicit redesign|rebrand|migration approved|user requested redesign|user requested rebrand)'
 MOBILE_CLEANUP_PATTERN='(memory cleanup|storage cleanup|storage cleaner|free up space|photo/video cleanup|phone cleanup|cleanup app)'
 CAPABILITY_MATRIX_PATTERN='(os capability matrix|capability matrix|iOS Support|Android Support|Fallback Behavior|Store Policy Risk|User-Facing Copy Constraint)'
@@ -87,18 +97,6 @@ FILE_MARKER='^\s*[-*]?\s*\*\*File:\*\*'
 DEPENDS_MARKER='^\s*[-*]?\s*\*\*Depends on:\*\*'
 LOC_MARKER='^\s*[-*]?\s*\*\*Estimated LOC:\*\*'
 PHASE_MARKER='^\s*[-*]?\s*\*\*Phase:\*\*'
-
-# Depends-on must carry a Reason when not `none`. Both engines require
-# this to prevent invented ordering between unrelated tasks.
-DEPENDS_NONE='^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*[[:space:]]*none[[:space:]]*\.?[[:space:]]*$'
-DEPENDS_WITH_REASON='^[[:space:]]*[-*]?[[:space:]]*\*\*Depends on:\*\*.*(reason|because|needs|requires|blocked by|\(|—|-[[:space:]])'
-
-# Screenshot-collapse detector. A single task that says it creates
-# screenshots for multiple device sizes OR multiple locales at once
-# violates the baseline-task-shapes "per locale × per device" rule.
-# Triggered only on task titles that mention screenshot/store/app-icon.
-SCREENSHOT_TASK_TITLE='^##\s+R?T?[0-9]+.*\b(screenshot|store\s+listing|app\s+icon)s?\b'
-SCREENSHOT_COLLAPSE_PRECISE='Precise change:.*\b(all|multiple|each|every)\b.*\b(device|locale|size|language)'
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "ℹ️  no output directory at $TARGET_DIR — nothing to validate"
@@ -540,10 +538,13 @@ done
 
 # 0b-i. Conditional companion: store-submission.md is required only when
 # the plan ships to app stores (G6, Option B). Scan plan files for
-# mobile-artifact signals; otherwise print an informational skip note.
+# mobile-artifact signals — reverse-DNS bundle IDs (com./io./app.),
+# bundle ID / applicationId declarations, xcodeproj, xcworkspace,
+# TestFlight, Play Console, Google Play, App Store, .ipa, .aab, .apk —
+# otherwise print an informational skip note.
 # The pattern is intentionally conservative: a false negative just means
 # the check doesn't fire, never a false failure.
-_mobile_artifact_re='bundle[ -_]?id(entifier)?|applicationId|\.xcodeproj|\.xcworkspace|AndroidManifest|Info\.plist|TestFlight|Play Console|App Store|Play Store|\.ipa|\.aab|\.apk'
+_mobile_artifact_re='bundle[ -_]?id(entifier)?|applicationId|\.xcodeproj|\.xcworkspace|AndroidManifest|Info\.plist|TestFlight|Play Console|Google Play|App Store|Play Store|\.ipa|\.aab|\.apk|\b(com|io|app)\.[a-z0-9]+(\.[a-z0-9]+)+'
 _mobile_detected=0
 for _pf in "$TARGET_DIR"/tasks-*.md "$TARGET_DIR"/remediation-*.md; do
   [ -f "$_pf" ] || continue
@@ -556,7 +557,8 @@ if [ "$_mobile_detected" -eq 1 ]; then
   if [ ! -f "$TARGET_DIR/store-submission.md" ]; then
     echo "❌ missing required companion: $TARGET_DIR/store-submission.md"
     echo "   Plan files mention mobile artifacts (bundle ID, xcodeproj,"
-    echo "   TestFlight, Play Console, …), so this run must also produce"
+    echo "   TestFlight, Play Console, Google Play, App Store, .ipa/.aab/.apk,"
+    echo "   …), so this run must also produce"
     echo "   store-submission.md (Step 3.95 — store submission prep)."
     echo "   Re-run the engine through to completion — not just Steps 1-3."
     fail=1
@@ -701,6 +703,7 @@ if [ -f "$TARGET_DIR/epics.md" ]; then
     if [ -n "$empty_rows" ]; then
       echo "❌ $TARGET_DIR/brief-keywords.md: malformed keyword rows"
       echo "   Each row must follow: | <keyword> | covered|out-of-scope | <covered by epic/feature OR reason> |"
+      # shellcheck disable=SC2001  # sed prefixes each line; ${var//} cannot anchor per line
       echo "$empty_rows" | sed 's/^/   /'
       fail=1
     fi
@@ -956,7 +959,18 @@ for f in "${files[@]}"; do
   # generic "make it beautiful" prompts, dashboard/chart tasks without
   # real states, and existing-product work that invents a new theme
   # instead of following the audited one.
-  if grep -Eiq "$UI_TASK_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+  #
+  # A task whose own UI design plan section explicitly declares no
+  # user-facing UI is not UI-heavy, even when schema boilerplate (the stack
+  # line, the section heading) trips UI_TASK_PATTERN. Believe the task's
+  # explicit scoping: 8/15 "lacks design evidence" flags in validation
+  # (Project Circulate v0) were pure boilerplate matches on no-UI tasks.
+  ui_plan_no_ui=0
+  ui_plan_body=$(awk 'tolower($0) ~ /^#+ ui design plan/{flag=1;next} /^#+ /{flag=0} flag' "$f")
+  if echo "$ui_plan_body" | grep -Eiq 'no (user-facing )?ui (exists|is introduced)|no ui of its own'; then
+    ui_plan_no_ui=1
+  fi
+  if [ "$ui_plan_no_ui" -eq 0 ] && grep -Eiq "$UI_TASK_PATTERN" "$f" && ! basename "$f" | grep -Eiq 'screenshot'; then
     ui_design_gate_needed=1
     if ! grep -Eiq "$UI_EVIDENCE_PATTERN" "$f"; then
       echo "❌ $f: UI-heavy task lacks design evidence"
@@ -1021,17 +1035,31 @@ for f in "${files[@]}"; do
       fail=1
     fi
 
-    if grep -Eiq "$UNRELATED_REDESIGN_PATTERN" "$f" \
+    # Negated mentions ("No new palette") are filtered: they decline a redesign.
+    redesign_hits=$(grep -niE "$UNRELATED_REDESIGN_PATTERN" "$f" | grep -Ev "$REDESIGN_NEGATION_PATTERN" || true)
+    if [ -n "$redesign_hits" ] \
        && ! grep -Eiq "$REDESIGN_APPROVAL_PATTERN" "$f"; then
       echo "❌ $f: existing-product UI task proposes unrelated redesign without approval"
-      grep -niE "$UNRELATED_REDESIGN_PATTERN" "$f" | sed 's/^/   /'
+      # shellcheck disable=SC2001  # sed prefixes each line; ${var//} cannot anchor per line
+      echo "$redesign_hits" | sed 's/^/   /'
       echo "   Existing product theming is authoritative unless the user"
       echo "   explicitly requested redesign, rebrand, or a Tailwind/theme migration."
       fail=1
     fi
   fi
 
-  if grep -Eiq "$DASHBOARD_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+  # Dashboard-terms gate is subject-scoped: it applies only when the task is
+  # ABOUT a dashboard (the filename slug or the title names one), not when the
+  # word "dashboard" appears as a passing mention ("visible in the merchant
+  # dashboard"), an external console ("Stripe Dashboard"), a data producer
+  # ("aggregates behind the Public Flow Dashboard"), or a design-pattern
+  # citation. Mention-based matching flagged 31/33 dashboard issues as false
+  # positives in validation (Project Circulate v0).
+  dashboard_subject=0
+  if basename "$f" | grep -Eiq 'dashboard'; then dashboard_subject=1; fi
+  title_line=$(grep -m1 -E '^# ' "$f" || true)
+  if echo "$title_line" | grep -Eiq 'dashboard'; then dashboard_subject=1; fi
+  if [ "$dashboard_subject" -eq 1 ] && ! basename "$f" | grep -Eiq 'screenshot'; then
     ui_design_gate_needed=1
     missing_dashboard_terms=""
     for term in kpi filter chart table; do
@@ -1052,7 +1080,7 @@ for f in "${files[@]}"; do
     fi
   fi
 
-  if grep -Eiq "$CHART_PATTERN" "$f" && ! echo "$(basename "$f")" | grep -Eiq 'screenshot'; then
+  if grep -Eiq "$CHART_PATTERN" "$f" && ! basename "$f" | grep -Eiq 'screenshot'; then
     ui_design_gate_needed=1
     missing_chart_terms=""
     for term in tooltip legend loading empty error; do
@@ -1154,12 +1182,13 @@ for f in "${files[@]}"; do
         # - Android-only: AndroidManifest.xml
         # - Shared docs: docs/, README
         is_exempt=0
+        # shellcheck disable=SC2018,SC2019  # ASCII-only fold is deliberate: [:upper:]/[:lower:] are locale-dependent and every pattern below is ASCII
         lower_line=$(echo "$file_line" | tr 'A-Z' 'a-z')
         case "$lower_line" in
           *.github/*|*fastlane/*|*.swiftlint*|*detekt*) is_exempt=1 ;;
           *.xcprivacy*|*.plist*) is_exempt=1 ;;
           *docs/*|*readme*) is_exempt=1 ;;
-          *release/*|*tools/*|*scripts/*|*privacy/*|*store-assets/*|*fixtures/*|*test-fixtures/*|*build/reports/*) is_exempt=1 ;;
+          *release/*|*tools/*|*scripts/*|*privacy/*|*store-assets/*|*fixtures/*|*build/reports/*) is_exempt=1 ;;
         esac
         # Check: non-exempt files must have the pipe separator
         if [ $is_exempt -eq 0 ] && ! echo "$file_line" | grep -q '|'; then
@@ -1169,6 +1198,7 @@ for f in "${files[@]}"; do
           echo "   Shared/release/docs/tooling artifacts are exempt by path pattern."
           echo "   If this file is legitimately single-platform, move it to an exempt"
           echo "   artifact path or split the task by platform with explicit dependencies."
+          # shellcheck disable=SC2001  # sed trims leading whitespace; the ${var#...} equivalent is unreadable
           echo "   Current: $(echo "$file_line" | sed 's/^[[:space:]]*//')"
           fail=1
         fi
@@ -1196,6 +1226,7 @@ for f in "${files[@]}"; do
     echo "   (e.g. parenthetical after the task ids, or an explicit"
     echo "    'Reason: <why this dependency is code-level>' line)."
     echo "   Offending lines:"
+    # shellcheck disable=SC2001  # sed prefixes each line; ${var//} cannot anchor per line
     echo "$bad_depends" | sed 's/^/     /'
     fail=1
   fi
@@ -1247,6 +1278,7 @@ for f in "${files[@]}"; do
       echo "   Tip:      the common \"missing comma before 'so that'\" case is mechanically fixable — run:"
       echo "               bash scripts/fix-user-stories.sh $TARGET_DIR"
       echo "   Offending lines:"
+      # shellcheck disable=SC2001  # sed prefixes each line; ${var//} cannot anchor per line
       echo "$bad_stories" | sed 's/^/     /'
       fail=1
     fi
@@ -1418,6 +1450,7 @@ for f in "${files[@]}"; do
   # metadata, app-icon generation as a build-time asset pipeline) do
   # not automatically need PNG File fields — they may be text, scripts,
   # or SVG-to-PNG generators.
+  # shellcheck disable=SC2018,SC2019  # ASCII-only fold is deliberate: [:upper:]/[:lower:] are locale-dependent and the case pattern below is ASCII
   fname_lower=$(echo "$f" | tr 'A-Z' 'a-z')
   needs_captures=0
   case "$fname_lower" in

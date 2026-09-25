@@ -8,7 +8,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
-   (validated by scripts/validate-instantiation.sh).
+   (validated by .ai-prompts/scripts/validate-instantiation.sh).
 4. Outputs must contain real data shapes, real endpoints, real file paths, and
    real function signatures specific to the project.
 -->
@@ -18,7 +18,7 @@ When the drill-down engine (or any orchestrator) uses this template:
 Verify that generated implementation plans preserve provided mockups and design intent with measurable, screen-level fidelity gates.
 
 ## Instructions
-1. Build a screen inventory from `working_copy/` and `prompts/working_copy/`.
+1. Build a screen inventory from `working_copy/` and `.ai-prompts/prompts/working_copy/`.
 1a. If HTML/CSS mockups or clickable flow docs exist, generate `ui-fidelity-source-map.md` first and use it as source-of-truth.
 2. For each screen, map:
    - source file/reference

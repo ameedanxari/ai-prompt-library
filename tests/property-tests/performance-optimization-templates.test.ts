@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { PerformanceTemplateValidator } from '../../src/performance-template-validator.js';
+import { PerformanceTemplateValidator } from '../../src/validators/performance-template-validator.js';
 import { join } from 'path';
 
 /**

@@ -7,7 +7,7 @@ historical execution state are never canary inputs.
 
 ## Invariants
 
-1. Start every run with `scripts/reset-integration.sh --yes` and retain
+1. Start every run with `.ai-prompts/scripts/reset-integration.sh --yes` and retain
    `prompts/outputs/current/clean-state-preflight.md`.
 2. Hash and retain the original brief before generation. A rerun uses the
    unchanged brief; generated output is never repaired by hand.
@@ -174,6 +174,18 @@ beside its successor so score changes and regressions remain auditable.
 5. Rerun the same canary from the unchanged original brief.
 6. Link the successor run to the defect and prior run; close only when the
    original failure passes without weakening thresholds or deleting evidence.
+
+## Nightly Acceptance Probe
+
+The acceptance probe runs **nightly** (via cron or scheduled CI). Every
+nightly run starts from a clean preflight (Invariant 1) and evaluates the
+same thresholds: overall score at least 90, every dimension at least 85,
+`security`, `privacy`, `destructive-action`, and `data-integrity` at 100,
+and every hard gate passing with retained evidence. Promotion decisions
+are made on nightly results — a canary is eligible for staging promotion
+only when its most recent nightly run passes all thresholds and hard
+gates. Any red hard gate blocks promotion until a subsequent nightly run
+passes.
 
 ## CI/CD And Promotion
 

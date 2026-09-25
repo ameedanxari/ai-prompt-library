@@ -2,6 +2,7 @@
 # Shared deterministic tool resolution and transactional report helpers.
 
 if [ "${AI_PROMPT_TOOLCHAIN_LOADED:-0}" = "1" ]; then
+  # shellcheck disable=SC2317  # sourced-vs-executed guard: `exit 0` is reached only when this file is run directly, `return 0` when sourced
   return 0 2>/dev/null || exit 0
 fi
 AI_PROMPT_TOOLCHAIN_LOADED=1
@@ -82,6 +83,7 @@ resolve_node() {
 
 resolve_npm() {
   local candidate=""
+  # shellcheck disable=SC2034  # output variable read by caller scripts (finalize.sh, build-task-contract.sh) after resolve_npm
   RESOLVED_NPM=""
 
   for candidate_spec in \
@@ -203,6 +205,7 @@ write_atomic_report() {
     return 1
   fi
 
+  # shellcheck disable=SC2034  # output variable read by caller scripts (finalize.sh, validate-semantic-review.sh, …) after write_atomic_report
   ATOMIC_REPORT_STATUS="success"
   return 0
 }

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
-import { buildTaskContractReport } from '../../src/task-contract/task-contract-report';
-import { parsePlanTaskFile } from '../../src/task-contract/task-parser';
+import { buildTaskContractReport } from '../../src/task-contract/task-contract-report.js';
+import { parsePlanTaskFile } from '../../src/task-contract/task-parser.js';
 
 function taskFile(
   filename: string,

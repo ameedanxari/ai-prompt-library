@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { EnterpriseSaaSTemplateValidator } from '../../src/enterprise-saas-template-validator.js';
+import { EnterpriseSaaSTemplateValidator } from '../../src/validators/enterprise-saas-template-validator.js';
 import { join } from 'path';
 
 /**

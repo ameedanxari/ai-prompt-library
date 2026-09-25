@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 # validate-baseline-task-coverage.sh — deterministic C5 baseline checks.
 #
-# Baseline task-shape rules live in prompts/orchestrators/
+# Baseline task-shape rules live in .ai-prompts/prompts/orchestrators/
 # baseline-task-shapes.md. This validator promotes the most mechanical
 # parts of those rules into a pre-executor gate: when a plan clearly
 # scopes in a baseline topic, the corresponding task/remediation files
 # must contain the required implementation and verification markers.
 #
 # Usage:
-#   bash scripts/validate-baseline-task-coverage.sh [target-dir]
+#   bash .ai-prompts/scripts/validate-baseline-task-coverage.sh [target-dir]
 #
 # Exit codes:
 #   0  detected baseline topics are covered
@@ -220,7 +220,10 @@ TOPICS = [
             ("unit runner and threshold", r"\b(vitest|jest|pytest|XCTest|JUnit)\b[\s\S]{0,160}\b(coverage threshold|coverage)\b"),
             ("integration strategy", r"\b(integration test|testcontainers|in-memory postgres|mswjs|test double|fixture database)\b"),
             ("UI test runner", r"\b(Playwright|Espresso|XCUITest|Cypress|UI test)\b"),
-            ("E2E smoke journey", r"\b(E2E smoke|full user journey|end-to-end smoke)\b"),
+            # "E2E ... gate/journey/suite" also counts: a CI merge gate over the
+            # guest-checkout E2E IS the smoke journey even when the literal
+            # phrase "E2E smoke" never appears (Project Circulate v0).
+            ("E2E smoke journey", r"\b(E2E smoke|full user journey|end-to-end smoke|E2E\b[\s\S]{0,60}\b(smoke|journey|gate|suite))\b"),
             ("property-based invariant", r"\b(property[- ]based|fast-check|hypothesis|critical domain invariant)\b"),
         ],
     },

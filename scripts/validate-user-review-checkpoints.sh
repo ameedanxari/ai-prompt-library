@@ -10,7 +10,7 @@
 #     review artifact is present.
 #
 # Usage:
-#   bash scripts/validate-user-review-checkpoints.sh [target-dir]
+#   bash .ai-prompts/scripts/validate-user-review-checkpoints.sh [target-dir]
 #
 # Exit codes:
 #   0  checkpoints are valid

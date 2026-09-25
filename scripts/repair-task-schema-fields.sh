@@ -8,7 +8,7 @@
 # task requirements.
 #
 # Usage:
-#   bash scripts/repair-task-schema-fields.sh [target-dir]
+#   bash .ai-prompts/scripts/repair-task-schema-fields.sh [target-dir]
 #
 # Exit codes:
 #   0  files were scanned and task-schema-repair-report.md was written

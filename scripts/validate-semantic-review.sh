@@ -26,7 +26,8 @@ resolve_script_dir() {
 
 SCRIPT_DIR="$(resolve_script_dir)"
 PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=scripts/lib/toolchain.sh
+# shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"
 
 if [ ! -d "$PLAN_DIR" ]; then
@@ -45,6 +46,7 @@ NODE_BIN="$RESOLVED_NODE"
 CLI="$PACKAGE_ROOT/dist/review/cli.js"
 ISOLATED_BUILD_DIR=""
 
+# shellcheck disable=SC2317,SC2329  # invoked indirectly as the EXIT trap handler; SC2317 is the pre-0.10 code for the same finding
 cleanup() {
   if [ -n "$ISOLATED_BUILD_DIR" ] && [ -d "$ISOLATED_BUILD_DIR" ]; then
     rm -rf "$ISOLATED_BUILD_DIR"
@@ -70,6 +72,7 @@ if [ ! -f "$CLI" ]; then
   exit 2
 fi
 
+# shellcheck disable=SC2317,SC2329  # invoked indirectly via write_atomic_report; SC2317 is the pre-0.10 code for the same finding
 produce_report() {
   local temporary="$1"
   "$NODE_BIN" "$CLI" "$PLAN_DIR" "$temporary"
@@ -95,6 +98,7 @@ case "$status" in
     exit 1
     ;;
   *)
+    # shellcheck disable=SC2016  # literal node -e program: JS template placeholders must not be shell-expanded
     "$NODE_BIN" -e 'const fs=require("node:fs"); for (const issue of JSON.parse(fs.readFileSync(process.argv[1], "utf8")).issues) console.log(`  - ${issue.code}${issue.artifact ? ` [${issue.artifact}]` : ""}${issue.findingId ? ` [${issue.findingId}]` : ""}: ${issue.message}`)' "$REPORT"
     echo "❌ semantic review gate: invalid"
     exit 2

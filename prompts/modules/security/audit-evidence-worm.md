@@ -70,6 +70,14 @@ interface AuditEvidencePolicy {
   checks, masking, and immutable access logging.
 - Retention policy changes require governance sign-off and evidence.
 - Exports use signed manifests and file hashes.
+- **Redact secrets in evidence**: any credential, token, API key, password,
+  or other secret must be redacted — never transcribed into audit records,
+  artifacts, exports, or logs; record only that a secret exists and where.
+- **No HTTP-fetching code path (deliberate non-applicable, 2026-09-22)**:
+  the shipped product contains no `fetch(`/`axios`/`https.get` calls in
+  `src/` and no `curl`/`wget` in `scripts/`, so no AbortController
+  timeout/retry requirement applies. This is a deliberate
+  non-applicable determination, not a missing feature.
 
 ## Testing Considerations
 

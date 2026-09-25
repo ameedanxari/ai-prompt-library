@@ -61,7 +61,7 @@ Once set up, these steering files will automatically guide AI agents to:
 
 ## AGENTS.md Integration
 
-`scripts/bootstrap-project-integration.sh` generates a project-root
+`.ai-prompts/scripts/bootstrap-project-integration.sh` generates a project-root
 `AGENTS.md` that references these steering files automatically, so
 manual wiring is not required. If you are setting up by hand, include
 this block near the top of your project's `AGENTS.md`:

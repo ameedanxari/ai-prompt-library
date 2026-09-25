@@ -15,7 +15,7 @@
 # and reviewable localized-copy checks for each frame.
 #
 # Usage:
-#   bash scripts/scaffold-screenshot-captures.sh \
+#   bash .ai-prompts/scripts/scaffold-screenshot-captures.sh \
 #        --target prompts/outputs/current \
 #        --platform ios \
 #        [--app-name StorageCleaner] \
@@ -122,6 +122,15 @@ case "$PLATFORM" in
 esac
 
 FEATURE_SLUG="${FEATURE_SLUG:-screenshots-${PLATFORM}}"
+
+# The slug is interpolated into the output file name, so restrict it to
+# lowercase letters, digits, and dashes. Anything else (e.g. --feature-slug
+# ../../evil) is a path traversal out of the target directory.
+if ! [[ "$FEATURE_SLUG" =~ ^[a-z0-9-]+$ ]]; then
+  echo "❌ --feature-slug must match ^[a-z0-9-]+$ (got: $FEATURE_SLUG)" >&2
+  exit 2
+fi
+
 OUTPUT_FILE="$TARGET/tasks-${FEATURE_SLUG}.md"
 
 if [ -f "$OUTPUT_FILE" ] && [ $FORCE -eq 0 ]; then

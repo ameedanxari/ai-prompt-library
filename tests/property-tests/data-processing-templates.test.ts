@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { DataProcessingTemplateValidator } from '../../src/data-processing-template-validator.js';
+import { DataProcessingTemplateValidator } from '../../src/validators/data-processing-template-validator.js';
 import { join } from 'path';
 
 /**

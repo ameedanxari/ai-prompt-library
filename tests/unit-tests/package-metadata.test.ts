@@ -91,6 +91,7 @@ describe('package metadata', () => {
       'src/review/**/*.ts',
       'src/task-contract/**/*.ts',
       'src/traceability/**/*.ts',
+      'src/validators/**/*.ts',
     ]);
     expect(buildConfig.exclude).toContain('src/**/*.test.ts');
     expect(fs.readFileSync(path.join(REPO_ROOT, 'src', 'index.ts'), 'utf8'))
@@ -112,7 +113,26 @@ describe('package metadata', () => {
       'dist/review',
       'dist/task-contract',
       'dist/traceability',
-      'prompts',
+      'dist/validators',
+      'dist/template-validator.*',
+      // The prompt corpus ships as explicit paths (never the scratch
+      // outputs under prompts/outputs/current or prompts/working_copy).
+      'prompts/AGENTS.md',
+      'prompts/README.md',
+      'prompts/TAXONOMY.md',
+      'prompts/ai-native',
+      'prompts/deployment',
+      'prompts/desktop',
+      'prompts/modules',
+      'prompts/monitoring',
+      'prompts/orchestrators',
+      'prompts/performance',
+      'prompts/review',
+      'prompts/security',
+      'prompts/steering',
+      'prompts/technology-stacks',
+      'prompts/testing',
+      'prompts/outputs/README.md',
       'project-templates',
       'scripts',
       'README.md',

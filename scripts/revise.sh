@@ -202,11 +202,13 @@ checks_run_list="C2 C4 C5 C6 C7 C11 validate-instantiation.sh validate-phase-ord
 if [ -f "$TARGET_DIR/gap-list.md" ]; then
   checks_run_list="C2 C3 C4 C5 C6 C7 C11 validate-instantiation.sh validate-phase-order.sh"
 fi
+# shellcheck disable=SC2086  # $checks_run_list is a deliberate space-separated list; the splitting yields one item per line
 checks_run_yaml=$(printf "%s\n" $checks_run_list | tr ' ' '\n' | sort -u | paste -sd, - | sed 's/,/, /g')
 
 failed_checks=$(derive_failed_checks)
 if [ -n "$failed_checks" ]; then
   checks_failed_yaml=$(printf "%s\n" "$failed_checks" | paste -sd, - | sed 's/,/, /g')
+  # shellcheck disable=SC2086  # same deliberate word splitting of the space-separated $checks_run_list
   checks_passed_yaml=$(comm -23 \
     <(printf "%s\n" $checks_run_list | tr ' ' '\n' | sort -u) \
     <(printf "%s\n" "$failed_checks" | sort -u) \

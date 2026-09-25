@@ -10,7 +10,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs.js';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const FINALIZE = path.join(REPO_ROOT, 'scripts', 'finalize.sh');

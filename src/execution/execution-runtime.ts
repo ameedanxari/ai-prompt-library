@@ -8,9 +8,13 @@
  * Validates: Requirements 4.1, 4.2, 4.3, 4.4, 4.5
  */
 
-import { SkillId } from '../skill-system/skill-definition';
-import { SkillGraph } from '../skill-system/skill-graph';
-import { ArtifactId } from '../memory/artifact-storage';
+import { SkillId } from '../skill-system/skill-definition.js';
+import { SkillGraph } from '../skill-system/skill-graph.js';
+
+// NOTE: ArtifactId was `export type ArtifactId = string` in the removed
+// src/memory/artifact-storage.ts. It is re-declared here so the execution
+// runtime carries no dependency on that module.
+export type ArtifactId = string;
 
 /**
  * Status of an execution task
@@ -138,15 +142,30 @@ export class ExecutionRuntime {
     try {
       const executor = this.executors.get(skillId);
       if (!executor && this.skillGraph) {
-        await Promise.resolve(this.skillGraph.getSkillImplementation(skillId));
+        // HONEST (item 15c): actually use the skill-graph implementation. The old
+        // code awaited getSkillImplementation() and discarded the result, then
+        // marked the execution 'completed' with a stub `{ skillId, input }`
+        // output. If the implementation is callable we invoke it; otherwise we
+        // fail loudly instead of pretending the skill ran.
+        const skillImpl = await Promise.resolve(this.skillGraph.getSkillImplementation(skillId));
+        const fn = skillImpl?.implementation;
+        if (typeof fn !== 'function') {
+          throw new Error(
+            `Skill ${skillId} has no callable implementation (got ${typeof fn}); refusing to mark it completed`
+          );
+        }
+        const result = await fn(input, context);
+        context.status = 'completed';
+        context.endTime = new Date();
+        context.output = result;
       } else if (!executor) {
         throw new Error(`No executor registered for skill ${skillId}`);
+      } else {
+        const result = await executor(input, context);
+        context.status = 'completed';
+        context.endTime = new Date();
+        context.output = result;
       }
-
-      const result = executor ? await executor(input, context) : { skillId, input };
-      context.status = 'completed';
-      context.endTime = new Date();
-      context.output = result;
     } catch (error: any) {
       context.status = 'failed';
       context.error = error.message;

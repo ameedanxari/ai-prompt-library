@@ -17,12 +17,22 @@ Step 3).
 5. If no intent matches, skip module loading — the engine can proceed without
    one.
 
+## Token budgets
+
+Every module entry below carries an explicit token budget: estimated tokens +
+a max budget, computed with one uniform heuristic — **estimated tokens ≈
+brief-file bytes ÷ 4; max budget = ⌈est × 1.5⌉**. Budgets reflect the short
+core brief at the listed path (the file the engine loads by default). Modules
+split into brief + expandable detail list per-detail-file budgets in the
+brief's "Expandable detail" section; load detail files only when the brief's
+checklist is insufficient for the task.
+
 Paths are relative to the repository root.
 
 ## Artifact-kind routing (run before domain-module lookup)
 
 Artifact ownership chooses the task shape before intent keywords choose domain
-knowledge. Start with `prompts/orchestrators/baseline-task-shapes.md` and use
+knowledge. Start with `.ai-prompts/prompts/orchestrators/baseline-task-shapes.md` and use
 this routing table. Domain modules may supply content constraints, but they do
 not change a non-runtime task into a runtime feature.
 
@@ -47,66 +57,66 @@ units with dependency edges. A reviewed override record must name `source`,
 
 ## Auth & Identity
 
-| Intent | Module |
-|---|---|
-| Sign up / sign in with email+password | `prompts/modules/feature-patterns/auth-oauth.md` |
-| OAuth / social login / SSO (consumer) | `prompts/modules/feature-patterns/auth-oauth.md` |
-| Enterprise SSO (SAML, OIDC) | `prompts/modules/enterprise-saas/sso-integration.md` |
-| Identity federation across providers | `prompts/modules/security/identity-federation.md` |
-| Role-based permissions | `prompts/modules/feature-patterns/auth-rbac.md` |
-| Enterprise RBAC with audit | `prompts/modules/enterprise-saas/rbac-enterprise.md` |
-| Advanced authorization (ABAC, policy engines, OPA) | `prompts/modules/security/advanced-authorization.md` |
-| Multi-factor / biometric | `prompts/modules/security/multi-factor-auth.md` |
-| Adaptive / risk-based authentication | `prompts/modules/security/adaptive-authentication.md` |
-| Zero-trust architecture | `prompts/modules/security/zero-trust-architecture.md` |
-| Privacy controls (consent, preferences, data-subject rights) | `prompts/modules/security/privacy-controls.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Sign up / sign in with email+password | `.ai-prompts/prompts/modules/feature-patterns/auth-oauth.md` | ~7.2k est / ~10.8k max |
+| OAuth / social login / SSO (consumer) | `.ai-prompts/prompts/modules/feature-patterns/auth-oauth.md` | ~7.2k est / ~10.8k max |
+| Enterprise SSO (SAML, OIDC) | `.ai-prompts/prompts/modules/enterprise-saas/sso-integration.md` | ~8.0k est / ~12.0k max |
+| Identity federation across providers | `.ai-prompts/prompts/modules/security/identity-federation.md` | ~7.2k est / ~10.8k max |
+| Role-based permissions | `.ai-prompts/prompts/modules/feature-patterns/auth-rbac.md` | ~6.7k est / ~10.1k max |
+| Enterprise RBAC with audit | `.ai-prompts/prompts/modules/enterprise-saas/rbac-enterprise.md` | ~6.7k est / ~10.0k max |
+| Advanced authorization (ABAC, policy engines, OPA) | `.ai-prompts/prompts/modules/security/advanced-authorization.md` | ~6.7k est / ~10.0k max |
+| Multi-factor / biometric | `.ai-prompts/prompts/modules/security/multi-factor-auth.md` | ~5.5k est / ~8.2k max |
+| Adaptive / risk-based authentication | `.ai-prompts/prompts/modules/security/adaptive-authentication.md` | ~6.7k est / ~10.0k max |
+| Zero-trust architecture | `.ai-prompts/prompts/modules/security/zero-trust-architecture.md` | ~6.3k est / ~9.4k max |
+| Privacy controls (consent, preferences, data-subject rights) | `.ai-prompts/prompts/modules/security/privacy-controls.md` | ~4.6k est / ~6.8k max |
 
 ## Data
 
-| Intent | Module |
-|---|---|
-| CRUD with a database | `prompts/modules/feature-patterns/data-crud.md` |
-| Encryption at rest / in transit | `prompts/modules/security/data-encryption.md` |
-| Encryption (cross-platform pattern — web/mobile/server, GDPR/HIPAA/SOC2) | `prompts/modules/feature-patterns/security-encryption.md` |
-| Data pipelines / ETL | `prompts/modules/data-processing/data-pipelines.md` |
-| Data ingestion (streaming + batch sources) | `prompts/modules/data-processing/data-ingestion.md` |
-| Data transformation / shaping / enrichment | `prompts/modules/data-processing/data-transformation.md` |
-| Data quality (validation, profiling, lineage) | `prompts/modules/data-processing/data-quality.md` |
-| Data governance (catalog, policy, compliance) | `prompts/modules/data-processing/data-governance.md` |
-| Data security (masking, classification, access) | `prompts/modules/data-processing/data-security.md` |
-| Big data / scalable architectures | `prompts/modules/data-processing/scalable-architectures.md` |
-| Big data processing (Spark, Flink, etc.) | `prompts/modules/data-processing/big-data-processing.md` |
-| Sync across devices | `prompts/modules/integration/data-synchronization.md` |
-| Offline-first / local-first | `prompts/modules/feature-patterns/perf-offline.md` |
-| Local-only persistence / resumable progress / snapshots | `prompts/modules/feature-patterns/local-persistence-progress.md` |
-| Native phone storage cleanup / Photos / MediaStore / scoped storage | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
-| Native phone storage cleanup / memory cleanup / free up space OS capability matrix | `prompts/modules/technology-stacks/mobile-os-capability-matrix.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| CRUD with a database | `.ai-prompts/prompts/modules/feature-patterns/data-crud.md` | ~8.0k est / ~12.1k max |
+| Encryption at rest / in transit | `.ai-prompts/prompts/modules/security/data-encryption.md` | ~3.9k est / ~5.8k max |
+| Encryption (cross-platform pattern — web/mobile/server, GDPR/HIPAA/SOC2) | `.ai-prompts/prompts/modules/feature-patterns/security-encryption.md` | ~1.1k est / ~1.7k max |
+| Data pipelines / ETL | `.ai-prompts/prompts/modules/data-processing/data-pipelines.md` | ~5.0k est / ~7.4k max |
+| Data ingestion (streaming + batch sources) | `.ai-prompts/prompts/modules/data-processing/data-ingestion.md` | ~5.7k est / ~8.5k max |
+| Data transformation / shaping / enrichment | `.ai-prompts/prompts/modules/data-processing/data-transformation.md` | ~6.0k est / ~9.1k max |
+| Data quality (validation, profiling, lineage) | `.ai-prompts/prompts/modules/data-processing/data-quality.md` | ~7.2k est / ~10.8k max |
+| Data governance (catalog, policy, compliance) | `.ai-prompts/prompts/modules/data-processing/data-governance.md` | ~6.1k est / ~9.2k max |
+| Data security (masking, classification, access) | `.ai-prompts/prompts/modules/data-processing/data-security.md` | ~5.5k est / ~8.3k max |
+| Big data / scalable architectures | `.ai-prompts/prompts/modules/data-processing/scalable-architectures.md` | ~5.9k est / ~8.9k max |
+| Big data processing (Spark, Flink, etc.) | `.ai-prompts/prompts/modules/data-processing/big-data-processing.md` | ~5.1k est / ~7.6k max |
+| Sync across devices | `.ai-prompts/prompts/modules/integration/data-synchronization.md` | ~5.6k est / ~8.4k max |
+| Offline-first / local-first | `.ai-prompts/prompts/modules/feature-patterns/perf-offline.md` | ~8.4k est / ~12.5k max |
+| Local-only persistence / resumable progress / snapshots | `.ai-prompts/prompts/modules/feature-patterns/local-persistence-progress.md` | ~1.5k est / ~2.2k max |
+| Native phone storage cleanup / Photos / MediaStore / scoped storage | `.ai-prompts/prompts/modules/feature-patterns/native-storage-cleanup.md` | ~2.2k est / ~3.3k max |
+| Native phone storage cleanup / memory cleanup / free up space OS capability matrix | `.ai-prompts/prompts/modules/technology-stacks/mobile-os-capability-matrix.md` | ~1.0k est / ~1.5k max |
 
 ## Architecture & Data Integrity
 
-| Intent | Module |
-|---|---|
-| Portals / bounded contexts / state ownership / write boundaries / source-of-truth boundaries | `prompts/modules/architecture/bounded-context-state-ownership.md` |
-| Tier 0 workflows / zero data loss / RPO/RTO / outbox / ordering / replay / audit fail-closed | `prompts/modules/architecture/tier-zero-data-integrity.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Portals / bounded contexts / state ownership / write boundaries / source-of-truth boundaries | `.ai-prompts/prompts/modules/architecture/bounded-context-state-ownership.md` | ~578 est / ~867 max |
+| Tier 0 workflows / zero data loss / RPO/RTO / outbox / ordering / replay / audit fail-closed | `.ai-prompts/prompts/modules/architecture/tier-zero-data-integrity.md` | ~532 est / ~798 max |
 
 ## AI & ML
 
-| Intent | Module |
-|---|---|
-| LLM integration / chatbot / AI assistant | `prompts/modules/ai-native/llm-integration.md` |
-| AI model deployment / serving (server or remote inference) | `prompts/modules/ai-native/model-serving.md` |
-| ML-driven autoscaling / workload forecasting | `prompts/modules/ai-native/predictive-scaling.md` |
-| On-device ML — iOS (Core ML, Vision, Create ML) | `prompts/modules/ai-native/on-device-ml-ios.md` |
-| On-device ML — Android (ML Kit, TensorFlow Lite, MediaPipe) | `prompts/modules/ai-native/on-device-ml-android.md` |
-| Blurry photo detection / low-quality image detection on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
-| Blurry photo detection / low-quality image detection on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
-| Near-duplicate photo detection / visual similarity on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
-| Near-duplicate photo detection / visual similarity on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
-| Sensitive document detection / OCR classification on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
-| Sensitive document detection / OCR classification on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
-| Duplicate video detection / video fingerprinting on iOS | `prompts/modules/ai-native/on-device-ml-ios.md` |
-| Duplicate video detection / video fingerprinting on Android | `prompts/modules/ai-native/on-device-ml-android.md` |
-| Local-only media AI for gallery cleanup | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| LLM integration / chatbot / AI assistant | `.ai-prompts/prompts/modules/ai-native/llm-integration.md` | ~3.7k est / ~5.5k max |
+| AI model deployment / serving (server or remote inference) | `.ai-prompts/prompts/modules/ai-native/model-serving.md` | ~1.2k est / ~1.8k max |
+| ML-driven autoscaling / workload forecasting | `.ai-prompts/prompts/modules/ai-native/predictive-scaling.md` | ~962 est / ~1.4k max |
+| On-device ML — iOS (Core ML, Vision, Create ML) | `.ai-prompts/prompts/modules/ai-native/on-device-ml-ios.md` | ~1.8k est / ~2.7k max |
+| On-device ML — Android (ML Kit, TensorFlow Lite, MediaPipe) | `.ai-prompts/prompts/modules/ai-native/on-device-ml-android.md` | ~2.0k est / ~3.1k max |
+| Blurry photo detection / low-quality image detection on iOS | `.ai-prompts/prompts/modules/ai-native/on-device-ml-ios.md` | ~1.8k est / ~2.7k max |
+| Blurry photo detection / low-quality image detection on Android | `.ai-prompts/prompts/modules/ai-native/on-device-ml-android.md` | ~2.0k est / ~3.1k max |
+| Near-duplicate photo detection / visual similarity on iOS | `.ai-prompts/prompts/modules/ai-native/on-device-ml-ios.md` | ~1.8k est / ~2.7k max |
+| Near-duplicate photo detection / visual similarity on Android | `.ai-prompts/prompts/modules/ai-native/on-device-ml-android.md` | ~2.0k est / ~3.1k max |
+| Sensitive document detection / OCR classification on iOS | `.ai-prompts/prompts/modules/ai-native/on-device-ml-ios.md` | ~1.8k est / ~2.7k max |
+| Sensitive document detection / OCR classification on Android | `.ai-prompts/prompts/modules/ai-native/on-device-ml-android.md` | ~2.0k est / ~3.1k max |
+| Duplicate video detection / video fingerprinting on iOS | `.ai-prompts/prompts/modules/ai-native/on-device-ml-ios.md` | ~1.8k est / ~2.7k max |
+| Duplicate video detection / video fingerprinting on Android | `.ai-prompts/prompts/modules/ai-native/on-device-ml-android.md` | ~2.0k est / ~3.1k max |
+| Local-only media AI for gallery cleanup | `.ai-prompts/prompts/modules/feature-patterns/native-storage-cleanup.md` | ~2.2k est / ~3.3k max |
 
 If the brief mentions privacy, local-only processing, no network, device
 AI/ML, phone media, or on-device inference, prefer the on-device modules
@@ -115,426 +125,426 @@ explicitly needs server-side or remote inference infrastructure.
 
 ## Mobile UX Patterns
 
-| Intent | Module |
-|---|---|
-| Swipe / gesture-based card UI (tinder-style, card stack) | `prompts/modules/feature-patterns/gesture-card-ui.md` |
-| Haptic feedback / tactile interactions | `prompts/modules/feature-patterns/haptic-feedback.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Swipe / gesture-based card UI (tinder-style, card stack) | `.ai-prompts/prompts/modules/feature-patterns/gesture-card-ui.md` | ~1.1k est / ~1.6k max |
+| Haptic feedback / tactile interactions | `.ai-prompts/prompts/modules/feature-patterns/haptic-feedback.md` | ~2.0k est / ~3.0k max |
 
 ## Commerce
 
-| Intent | Module |
-|---|---|
-| Product catalog / inventory | `prompts/modules/commerce/product-catalog.md` |
-| Product search (within a catalog) | `prompts/modules/commerce/product-search.md` |
-| Product reviews / ratings / Q&A | `prompts/modules/commerce/product-reviews.md` |
-| Inventory management (stock, warehousing, thresholds) | `prompts/modules/commerce/inventory-management.md` |
-| Shopping cart | `prompts/modules/commerce/shopping-cart.md` |
-| Checkout | `prompts/modules/commerce/checkout-workflow.md` |
-| Payments (cards, etc.) | `prompts/modules/commerce/payment-processing.md` |
-| Payment methods (Apple Pay, Google Pay, alternative) | `prompts/modules/commerce/payment-methods.md` |
-| Subscriptions / recurring | `prompts/modules/commerce/payment-subscriptions.md` |
-| PCI compliance | `prompts/modules/commerce/payment-security.md` |
-| Orders & fulfillment | `prompts/modules/commerce/order-management.md` |
-| Marketplace (multi-seller) | `prompts/modules/commerce/marketplace-features.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Product catalog / inventory | `.ai-prompts/prompts/modules/commerce/product-catalog.md` | ~8.2k est / ~12.2k max |
+| Product search (within a catalog) | `.ai-prompts/prompts/modules/commerce/product-search.md` | ~8.6k est / ~12.8k max |
+| Product reviews / ratings / Q&A | `.ai-prompts/prompts/modules/commerce/product-reviews.md` | ~9.4k est / ~14.2k max |
+| Inventory management (stock, warehousing, thresholds) | `.ai-prompts/prompts/modules/commerce/inventory-management.md` | ~8.7k est / ~13.1k max |
+| Shopping cart | `.ai-prompts/prompts/modules/commerce/shopping-cart.md` | ~5.3k est / ~7.9k max |
+| Checkout | `.ai-prompts/prompts/modules/commerce/checkout-workflow.md` | ~6.5k est / ~9.7k max |
+| Payments (cards, etc.) | `.ai-prompts/prompts/modules/commerce/payment-processing.md` | ~3.5k est / ~5.3k max |
+| Payment methods (Apple Pay, Google Pay, alternative) | `.ai-prompts/prompts/modules/commerce/payment-methods.md` | ~6.8k est / ~10.3k max |
+| Subscriptions / recurring | `.ai-prompts/prompts/modules/commerce/payment-subscriptions.md` | ~8.8k est / ~13.2k max |
+| PCI compliance | `.ai-prompts/prompts/modules/commerce/payment-security.md` | ~5.4k est / ~8.1k max |
+| Orders & fulfillment | `.ai-prompts/prompts/modules/commerce/order-management.md` | ~9.6k est / ~14.4k max |
+| Marketplace (multi-seller) | `.ai-prompts/prompts/modules/commerce/marketplace-features.md` | ~8.9k est / ~13.4k max |
 
 ## Social & Community
 
-| Intent | Module |
-|---|---|
-| User profiles | `prompts/modules/social/user-profiles.md` |
-| Follow / friend graphs | `prompts/modules/social/social-graphs.md` |
-| Feeds / timelines | `prompts/modules/social/content-feeds.md` |
-| User content creation (posts, photos, stories) | `prompts/modules/social/content-creation.md` |
-| Likes / comments / reactions / engagement | `prompts/modules/social/engagement-features.md` |
-| People discovery / follow suggestions | `prompts/modules/social/social-discovery.md` |
-| Identity verification (blue-check, authenticity) | `prompts/modules/social/user-verification.md` |
-| Real-time messaging / chat | `prompts/modules/social/real-time-messaging.md` |
-| E2E message encryption | `prompts/modules/social/message-encryption.md` |
-| Voice / video calls (WebRTC) | `prompts/modules/social/voice-video-calls.md` |
-| Social content moderation | `prompts/modules/social/content-moderation.md` |
-| DM / communication moderation | `prompts/modules/social/communication-moderation.md` |
-| Generic content moderation (non-social apps) | `prompts/modules/content-management/content-moderation.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| User profiles | `.ai-prompts/prompts/modules/social/user-profiles.md` | ~3.3k est / ~5.0k max |
+| Follow / friend graphs | `.ai-prompts/prompts/modules/social/social-graphs.md` | ~3.9k est / ~5.8k max |
+| Feeds / timelines | `.ai-prompts/prompts/modules/social/content-feeds.md` | ~4.1k est / ~6.2k max |
+| User content creation (posts, photos, stories) | `.ai-prompts/prompts/modules/social/content-creation.md` | ~4.1k est / ~6.1k max |
+| Likes / comments / reactions / engagement | `.ai-prompts/prompts/modules/social/engagement-features.md` | ~4.1k est / ~6.2k max |
+| People discovery / follow suggestions | `.ai-prompts/prompts/modules/social/social-discovery.md` | ~4.2k est / ~6.3k max |
+| Identity verification (blue-check, authenticity) | `.ai-prompts/prompts/modules/social/user-verification.md` | ~4.1k est / ~6.1k max |
+| Real-time messaging / chat | `.ai-prompts/prompts/modules/social/real-time-messaging.md` | ~3.9k est / ~5.8k max |
+| E2E message encryption | `.ai-prompts/prompts/modules/social/message-encryption.md` | ~4.0k est / ~5.9k max |
+| Voice / video calls (WebRTC) | `.ai-prompts/prompts/modules/social/voice-video-calls.md` | ~4.0k est / ~5.9k max |
+| Social content moderation | `.ai-prompts/prompts/modules/social/content-moderation.md` | ~4.3k est / ~6.4k max |
+| DM / communication moderation | `.ai-prompts/prompts/modules/social/communication-moderation.md` | ~4.2k est / ~6.2k max |
+| Generic content moderation (non-social apps) | `.ai-prompts/prompts/modules/content-management/content-moderation.md` | ~6.1k est / ~9.2k max |
 
 ## Real-time
 
-| Intent | Module |
-|---|---|
-| WebSocket infrastructure | `prompts/modules/real-time-communication/websocket-management.md` |
-| Presence / online status | `prompts/modules/real-time-communication/presence-systems.md` |
-| Live streaming | `prompts/modules/real-time-communication/live-streaming.md` |
-| Live events (virtual events, webinars) | `prompts/modules/real-time-communication/live-events.md` |
-| Video / voice conferencing | `prompts/modules/real-time-communication/video-conferencing.md` |
-| Real-time collaboration (CRDT, cursors, presence editing) | `prompts/modules/real-time-communication/real-time-collaboration.md` |
-| Real-time sync (multi-device state sync) | `prompts/modules/real-time-communication/real-time-sync.md` |
-| Streaming analytics on real-time data | `prompts/modules/real-time-communication/streaming-analytics.md` |
-| Message queuing / pub-sub (app layer) | `prompts/modules/real-time-communication/message-queuing.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| WebSocket infrastructure | `.ai-prompts/prompts/modules/real-time-communication/websocket-management.md` | ~4.3k est / ~6.5k max |
+| Presence / online status | `.ai-prompts/prompts/modules/real-time-communication/presence-systems.md` | ~6.9k est / ~10.4k max |
+| Live streaming | `.ai-prompts/prompts/modules/real-time-communication/live-streaming.md` | ~8.7k est / ~13.0k max |
+| Live events (virtual events, webinars) | `.ai-prompts/prompts/modules/real-time-communication/live-events.md` | ~830 est / ~1.2k max |
+| Video / voice conferencing | `.ai-prompts/prompts/modules/real-time-communication/video-conferencing.md` | ~11.5k est / ~17.2k max |
+| Real-time collaboration (CRDT, cursors, presence editing) | `.ai-prompts/prompts/modules/real-time-communication/real-time-collaboration.md` | ~10.1k est / ~15.2k max |
+| Real-time sync (multi-device state sync) | `.ai-prompts/prompts/modules/real-time-communication/real-time-sync.md` | ~9.6k est / ~14.4k max |
+| Streaming analytics on real-time data | `.ai-prompts/prompts/modules/real-time-communication/streaming-analytics.md` | ~1.1k est / ~1.7k max |
+| Message queuing / pub-sub (app layer) | `.ai-prompts/prompts/modules/real-time-communication/message-queuing.md` | ~5.3k est / ~8.0k max |
 
 ## Notifications
 
-| Intent | Module |
-|---|---|
-| Multi-channel (email/push/SMS) | `prompts/modules/notifications/notification-channels.md` |
-| In-app notifications | `prompts/modules/notifications/real-time-notifications.md` |
-| Rich notifications (images, actions, deep links) | `prompts/modules/notifications/rich-notifications.md` |
-| Personalisation / targeting / segmentation | `prompts/modules/notifications/notification-personalization.md` |
-| Compliance (opt-in, CAN-SPAM, GDPR) | `prompts/modules/notifications/notification-compliance.md` |
-| Notification analytics (delivery, open, CTR) | `prompts/modules/notifications/notification-analytics.md` |
-| Automated comms / drip campaigns | `prompts/modules/notifications/communication-automation.md` |
-| Enterprise comms (internal, escalations) | `prompts/modules/notifications/enterprise-communications.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Multi-channel (email/push/SMS) | `.ai-prompts/prompts/modules/notifications/notification-channels.md` | ~6.9k est / ~10.4k max |
+| In-app notifications | `.ai-prompts/prompts/modules/notifications/real-time-notifications.md` | ~6.5k est / ~9.8k max |
+| Rich notifications (images, actions, deep links) | `.ai-prompts/prompts/modules/notifications/rich-notifications.md` | ~5.4k est / ~8.1k max |
+| Personalisation / targeting / segmentation | `.ai-prompts/prompts/modules/notifications/notification-personalization.md` | ~5.5k est / ~8.2k max |
+| Compliance (opt-in, CAN-SPAM, GDPR) | `.ai-prompts/prompts/modules/notifications/notification-compliance.md` | ~5.7k est / ~8.6k max |
+| Notification analytics (delivery, open, CTR) | `.ai-prompts/prompts/modules/notifications/notification-analytics.md` | ~5.8k est / ~8.7k max |
+| Automated comms / drip campaigns | `.ai-prompts/prompts/modules/notifications/communication-automation.md` | ~6.3k est / ~9.4k max |
+| Enterprise comms (internal, escalations) | `.ai-prompts/prompts/modules/notifications/enterprise-communications.md` | ~6.4k est / ~9.7k max |
 
 ## Search & Discovery
 
-| Intent | Module |
-|---|---|
-| Full-text search | `prompts/modules/search-discovery/full-text-search.md` |
-| Faceted search / filters | `prompts/modules/search-discovery/faceted-search.md` |
-| Search personalisation (ranking per user) | `prompts/modules/search-discovery/search-personalization.md` |
-| Voice search | `prompts/modules/search-discovery/voice-search.md` |
-| Visual / image search | `prompts/modules/search-discovery/visual-search.md` |
-| Search analytics (queries, CTR, zero-results) | `prompts/modules/search-discovery/search-analytics.md` |
-| Recommendations | `prompts/modules/search-discovery/recommendation-systems.md` |
-| Semantic / vector search | `prompts/modules/search-discovery/semantic-search.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Full-text search | `.ai-prompts/prompts/modules/search-discovery/full-text-search.md` | ~8.6k est / ~12.9k max |
+| Faceted search / filters | `.ai-prompts/prompts/modules/search-discovery/faceted-search.md` | ~7.5k est / ~11.3k max |
+| Search personalisation (ranking per user) | `.ai-prompts/prompts/modules/search-discovery/search-personalization.md` | ~7.7k est / ~11.6k max |
+| Voice search | `.ai-prompts/prompts/modules/search-discovery/voice-search.md` | ~6.4k est / ~9.6k max |
+| Visual / image search | `.ai-prompts/prompts/modules/search-discovery/visual-search.md` | ~5.0k est / ~7.5k max |
+| Search analytics (queries, CTR, zero-results) | `.ai-prompts/prompts/modules/search-discovery/search-analytics.md` | ~8.3k est / ~12.5k max |
+| Recommendations | `.ai-prompts/prompts/modules/search-discovery/recommendation-systems.md` | ~4.8k est / ~7.3k max |
+| Semantic / vector search | `.ai-prompts/prompts/modules/search-discovery/semantic-search.md` | ~6.4k est / ~9.6k max |
 
 ## Location
 
-| Intent | Module |
-|---|---|
-| GPS tracking | `prompts/modules/location-services/gps-tracking.md` |
-| Geofencing | `prompts/modules/location-services/geofencing.md` |
-| Matching (Uber-style) | `prompts/modules/location-services/service-matching.md` |
-| Booking management (slots, scheduling) | `prompts/modules/location-services/booking-management.md` |
-| Fleet management (vehicles, routing, dispatch) | `prompts/modules/location-services/fleet-management.md` |
-| Dynamic pricing | `prompts/modules/location-services/dynamic-pricing.md` |
-| Maps | `prompts/modules/location-services/map-integration.md` |
-| Location privacy (consent, anonymisation) | `prompts/modules/location-services/location-privacy.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| GPS tracking | `.ai-prompts/prompts/modules/location-services/gps-tracking.md` | ~5.6k est / ~8.3k max |
+| Geofencing | `.ai-prompts/prompts/modules/location-services/geofencing.md` | ~9.9k est / ~14.9k max |
+| Matching (Uber-style) | `.ai-prompts/prompts/modules/location-services/service-matching.md` | ~8.4k est / ~12.6k max |
+| Booking management (slots, scheduling) | `.ai-prompts/prompts/modules/location-services/booking-management.md` | ~9.2k est / ~13.8k max |
+| Fleet management (vehicles, routing, dispatch) | `.ai-prompts/prompts/modules/location-services/fleet-management.md` | ~10.0k est / ~15.0k max |
+| Dynamic pricing | `.ai-prompts/prompts/modules/location-services/dynamic-pricing.md` | ~9.3k est / ~13.9k max |
+| Maps | `.ai-prompts/prompts/modules/location-services/map-integration.md` | ~10.8k est / ~16.2k max |
+| Location privacy (consent, anonymisation) | `.ai-prompts/prompts/modules/location-services/location-privacy.md` | ~11.1k est / ~16.7k max |
 
 ## Media
 
-| Intent | Module |
-|---|---|
-| CDN / streaming delivery | `prompts/modules/media-streaming/cdn-integration.md` |
-| Playlists / libraries | `prompts/modules/media-streaming/playlist-management.md` |
-| Offline media sync | `prompts/modules/media-streaming/offline-sync.md` |
-| Media search within a catalog | `prompts/modules/media-streaming/content-search.md` |
-| Media processing (transcode, thumbnails, waveforms) | `prompts/modules/media-streaming/media-processing.md` |
-| Photo near-duplicates / duplicate videos in local device gallery | `prompts/modules/feature-patterns/native-storage-cleanup.md` |
-| Streaming quality (ABR, bitrate, DRM) | `prompts/modules/media-streaming/streaming-quality.md` |
-| Recommendation engine (collaborative filtering) | `prompts/modules/media-streaming/recommendation-engine.md` |
-| Artist / creator tools (uploads, analytics, payouts) | `prompts/modules/media-streaming/artist-creator-tools.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| CDN / streaming delivery | `.ai-prompts/prompts/modules/media-streaming/cdn-integration.md` | ~5.2k est / ~7.8k max |
+| Playlists / libraries | `.ai-prompts/prompts/modules/media-streaming/playlist-management.md` | ~10.5k est / ~15.7k max |
+| Offline media sync | `.ai-prompts/prompts/modules/media-streaming/offline-sync.md` | ~7.7k est / ~11.6k max |
+| Media search within a catalog | `.ai-prompts/prompts/modules/media-streaming/content-search.md` | ~10.9k est / ~16.4k max |
+| Media processing (transcode, thumbnails, waveforms) | `.ai-prompts/prompts/modules/media-streaming/media-processing.md` | ~6.7k est / ~10.0k max |
+| Photo near-duplicates / duplicate videos in local device gallery | `.ai-prompts/prompts/modules/feature-patterns/native-storage-cleanup.md` | ~2.2k est / ~3.3k max |
+| Streaming quality (ABR, bitrate, DRM) | `.ai-prompts/prompts/modules/media-streaming/streaming-quality.md` | ~8.0k est / ~12.0k max |
+| Recommendation engine (collaborative filtering) | `.ai-prompts/prompts/modules/media-streaming/recommendation-engine.md` | ~9.8k est / ~14.8k max |
+| Artist / creator tools (uploads, analytics, payouts) | `.ai-prompts/prompts/modules/media-streaming/artist-creator-tools.md` | ~1.8k est / ~2.7k max |
 
 ## Gamification
 
-| Intent | Module |
-|---|---|
-| Points system (earn, spend, balance, anti-fraud) | `prompts/modules/gamification/point-systems.md` |
-| Achievements / badges / unlocks | `prompts/modules/gamification/achievement-systems.md` |
-| Leaderboards | `prompts/modules/gamification/leaderboards.md` |
-| Progression / levels / XP | `prompts/modules/gamification/progression-systems.md` |
-| Rewards (digital + real-world) | `prompts/modules/gamification/reward-systems.md` |
-| Streaks / daily challenges | `prompts/modules/gamification/streak-tracking.md` |
-| Social challenges / competitive play | `prompts/modules/gamification/social-challenges.md` |
-| Engagement psychology (retention, flow, loops) | `prompts/modules/gamification/engagement-psychology.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Points system (earn, spend, balance, anti-fraud) | `.ai-prompts/prompts/modules/gamification/point-systems.md` | ~9.0k est / ~13.5k max |
+| Achievements / badges / unlocks | `.ai-prompts/prompts/modules/gamification/achievement-systems.md` | ~10.2k est / ~15.3k max |
+| Leaderboards | `.ai-prompts/prompts/modules/gamification/leaderboards.md` | ~9.6k est / ~14.5k max |
+| Progression / levels / XP | `.ai-prompts/prompts/modules/gamification/progression-systems.md` | ~10.2k est / ~15.3k max |
+| Rewards (digital + real-world) | `.ai-prompts/prompts/modules/gamification/reward-systems.md` | ~8.6k est / ~12.9k max |
+| Streaks / daily challenges | `.ai-prompts/prompts/modules/gamification/streak-tracking.md` | ~8.6k est / ~13.0k max |
+| Social challenges / competitive play | `.ai-prompts/prompts/modules/gamification/social-challenges.md` | ~7.5k est / ~11.3k max |
+| Engagement psychology (retention, flow, loops) | `.ai-prompts/prompts/modules/gamification/engagement-psychology.md` | ~9.7k est / ~14.6k max |
 
 ## IoT
 
-| Intent | Module |
-|---|---|
-| Device discovery + pairing + connectivity | `prompts/modules/iot/device-connectivity.md` |
-| Device fleet management + lifecycle | `prompts/modules/iot/device-management.md` |
-| Edge computing / local-first IoT processing | `prompts/modules/iot/edge-computing.md` |
-| Sensor data ingestion + processing | `prompts/modules/iot/sensor-data-processing.md` |
-| IoT analytics (real-time + predictive maintenance) | `prompts/modules/iot/iot-analytics.md` |
-| IoT automation / rules engine | `prompts/modules/iot/iot-automation.md` |
-| IoT security (device identity, secure provisioning) | `prompts/modules/iot/iot-security.md` |
-| Industrial IoT / SCADA / OT integration | `prompts/modules/iot/industrial-iot.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Device discovery + pairing + connectivity | `.ai-prompts/prompts/modules/iot/device-connectivity.md` | ~6.5k est / ~9.8k max |
+| Device fleet management + lifecycle | `.ai-prompts/prompts/modules/iot/device-management.md` | ~6.6k est / ~9.9k max |
+| Edge computing / local-first IoT processing | `.ai-prompts/prompts/modules/iot/edge-computing.md` | ~6.2k est / ~9.3k max |
+| Sensor data ingestion + processing | `.ai-prompts/prompts/modules/iot/sensor-data-processing.md` | ~6.8k est / ~10.2k max |
+| IoT analytics (real-time + predictive maintenance) | `.ai-prompts/prompts/modules/iot/iot-analytics.md` | ~5.1k est / ~7.7k max |
+| IoT automation / rules engine | `.ai-prompts/prompts/modules/iot/iot-automation.md` | ~6.4k est / ~9.6k max |
+| IoT security (device identity, secure provisioning) | `.ai-prompts/prompts/modules/iot/iot-security.md` | ~6.8k est / ~10.2k max |
+| Industrial IoT / SCADA / OT integration | `.ai-prompts/prompts/modules/iot/industrial-iot.md` | ~5.4k est / ~8.1k max |
 
 ## Blockchain / Web3
 
-| Intent | Module |
-|---|---|
-| Smart contracts (Solidity, deployment, lifecycle) | `prompts/modules/blockchain/smart-contracts.md` |
-| Wallet integration (MetaMask, WalletConnect) | `prompts/modules/blockchain/wallet-integration.md` |
-| Token management (ERC-20, minting, transfers) | `prompts/modules/blockchain/token-management.md` |
-| NFTs (ERC-721/1155, marketplaces, royalties) | `prompts/modules/blockchain/nft-functionality.md` |
-| DeFi protocols (lending, AMM, staking) | `prompts/modules/blockchain/defi-protocols.md` |
-| On-chain governance / DAO voting | `prompts/modules/blockchain/governance-systems.md` |
-| Cross-chain bridges + multi-chain apps | `prompts/modules/blockchain/cross-chain.md` |
-| Enterprise blockchain (permissioned, consortium) | `prompts/modules/blockchain/enterprise-blockchain.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Smart contracts (Solidity, deployment, lifecycle) | `.ai-prompts/prompts/modules/blockchain/smart-contracts.md` | ~7.4k est / ~11.1k max |
+| Wallet integration (MetaMask, WalletConnect) | `.ai-prompts/prompts/modules/blockchain/wallet-integration.md` | ~5.5k est / ~8.2k max |
+| Token management (ERC-20, minting, transfers) | `.ai-prompts/prompts/modules/blockchain/token-management.md` | ~6.5k est / ~9.7k max |
+| NFTs (ERC-721/1155, marketplaces, royalties) | `.ai-prompts/prompts/modules/blockchain/nft-functionality.md` | ~7.1k est / ~10.6k max |
+| DeFi protocols (lending, AMM, staking) | `.ai-prompts/prompts/modules/blockchain/defi-protocols.md` | ~6.2k est / ~9.3k max |
+| On-chain governance / DAO voting | `.ai-prompts/prompts/modules/blockchain/governance-systems.md` | ~4.7k est / ~7.0k max |
+| Cross-chain bridges + multi-chain apps | `.ai-prompts/prompts/modules/blockchain/cross-chain.md` | ~4.7k est / ~7.1k max |
+| Enterprise blockchain (permissioned, consortium) | `.ai-prompts/prompts/modules/blockchain/enterprise-blockchain.md` | ~5.4k est / ~8.1k max |
 
 ## Fintech
 
-| Intent | Module |
-|---|---|
-| Accounts / balances / ledger | `prompts/modules/fintech/account-management.md` |
-| Transactions | `prompts/modules/fintech/transaction-processing.md` |
-| Fraud detection | `prompts/modules/fintech/fraud-detection.md` |
-| Compliance reporting | `prompts/modules/fintech/financial-reporting.md` |
-| Investments | `prompts/modules/fintech/investment-management.md` |
-| Budgeting / personal finance | `prompts/modules/fintech/budgeting-tools.md` |
-| Credit scoring | `prompts/modules/fintech/credit-scoring.md` |
-| Lending platform | `prompts/modules/fintech/lending-platform.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Accounts / balances / ledger | `.ai-prompts/prompts/modules/fintech/account-management.md` | ~4.5k est / ~6.8k max |
+| Transactions | `.ai-prompts/prompts/modules/fintech/transaction-processing.md` | ~5.9k est / ~8.8k max |
+| Fraud detection | `.ai-prompts/prompts/modules/fintech/fraud-detection.md` | ~6.8k est / ~10.3k max |
+| Compliance reporting | `.ai-prompts/prompts/modules/fintech/financial-reporting.md` | ~7.7k est / ~11.5k max |
+| Investments | `.ai-prompts/prompts/modules/fintech/investment-management.md` | ~5.6k est / ~8.4k max |
+| Budgeting / personal finance | `.ai-prompts/prompts/modules/fintech/budgeting-tools.md` | ~8.4k est / ~12.6k max |
+| Credit scoring | `.ai-prompts/prompts/modules/fintech/credit-scoring.md` | ~6.9k est / ~10.3k max |
+| Lending platform | `.ai-prompts/prompts/modules/fintech/lending-platform.md` | ~9.6k est / ~14.3k max |
 
 ## Healthcare
 
-| Intent | Module |
-|---|---|
-| HIPAA scope | `prompts/modules/healthcare/hipaa-compliance.md` |
-| UK healthcare / NHS / DTAC / DSPT / CQC / DCB0129 / DCB0160 / UK GDPR | `prompts/modules/healthcare/uk-regulated-healthcare.md` |
-| Medical cannabis / CBPM / controlled drug / Schedule 2 or 3 / CD Register / FP10CD / pharmacy governance | `prompts/modules/healthcare/controlled-drugs-uk.md` |
-| Clinical safety / SaMD / DCB0129 / DCB0160 / DecisionTrace / human approval for AI or automation | `prompts/modules/healthcare/clinical-safety-dcb0129.md` |
-| Patient records | `prompts/modules/healthcare/patient-data-management.md` |
-| Electronic medical records (EMR/EHR) | `prompts/modules/healthcare/medical-records.md` |
-| Telemedicine | `prompts/modules/healthcare/telemedicine.md` |
-| Appointment scheduling | `prompts/modules/healthcare/appointment-scheduling.md` |
-| Prescriptions | `prompts/modules/healthcare/prescription-management.md` |
-| Wearable / device integration (Apple Health, Fitbit) | `prompts/modules/healthcare/wearable-integration.md` |
-| Healthcare-specific security controls | `prompts/modules/healthcare/healthcare-security.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| HIPAA scope | `.ai-prompts/prompts/modules/healthcare/hipaa-compliance.md` | ~8.4k est / ~12.7k max |
+| UK healthcare / NHS / DTAC / DSPT / CQC / DCB0129 / DCB0160 / UK GDPR | `.ai-prompts/prompts/modules/healthcare/uk-regulated-healthcare.md` | ~928 est / ~1.4k max |
+| Medical cannabis / CBPM / controlled drug / Schedule 2 or 3 / CD Register / FP10CD / pharmacy governance | `.ai-prompts/prompts/modules/healthcare/controlled-drugs-uk.md` | ~746 est / ~1.1k max |
+| Clinical safety / SaMD / DCB0129 / DCB0160 / DecisionTrace / human approval for AI or automation | `.ai-prompts/prompts/modules/healthcare/clinical-safety-dcb0129.md` | ~734 est / ~1.1k max |
+| Patient records | `.ai-prompts/prompts/modules/healthcare/patient-data-management.md` | ~5.1k est / ~7.7k max |
+| Electronic medical records (EMR/EHR) | `.ai-prompts/prompts/modules/healthcare/medical-records.md` | ~8.0k est / ~11.9k max |
+| Telemedicine | `.ai-prompts/prompts/modules/healthcare/telemedicine.md` | ~11.1k est / ~16.7k max |
+| Appointment scheduling | `.ai-prompts/prompts/modules/healthcare/appointment-scheduling.md` | ~9.3k est / ~13.9k max |
+| Prescriptions | `.ai-prompts/prompts/modules/healthcare/prescription-management.md` | ~9.6k est / ~14.4k max |
+| Wearable / device integration (Apple Health, Fitbit) | `.ai-prompts/prompts/modules/healthcare/wearable-integration.md` | ~8.0k est / ~12.0k max |
+| Healthcare-specific security controls | `.ai-prompts/prompts/modules/healthcare/healthcare-security.md` | ~9.7k est / ~14.6k max |
 
 ## Enterprise SaaS
 
-| Intent | Module |
-|---|---|
-| Multi-tenant isolation | `prompts/modules/enterprise-saas/multi-tenancy.md` |
-| Billing / metering | `prompts/modules/enterprise-saas/enterprise-billing.md` |
-| Audit trails | `prompts/modules/enterprise-saas/audit-trails.md` |
-| Admin workflows | `prompts/modules/enterprise-saas/workflow-automation.md` |
-| Enterprise API gateway (rate limit, dev portal, webhooks) | `prompts/modules/enterprise-saas/api-management.md` |
-| White-labelling / per-tenant branding | `prompts/modules/enterprise-saas/white-labeling.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Multi-tenant isolation | `.ai-prompts/prompts/modules/enterprise-saas/multi-tenancy.md` | ~4.2k est / ~6.3k max |
+| Billing / metering | `.ai-prompts/prompts/modules/enterprise-saas/enterprise-billing.md` | ~10.9k est / ~16.3k max |
+| Audit trails | `.ai-prompts/prompts/modules/enterprise-saas/audit-trails.md` | ~9.8k est / ~14.7k max |
+| Admin workflows | `.ai-prompts/prompts/modules/enterprise-saas/workflow-automation.md` | ~11.1k est / ~16.6k max |
+| Enterprise API gateway (rate limit, dev portal, webhooks) | `.ai-prompts/prompts/modules/enterprise-saas/api-management.md` | ~7.4k est / ~11.1k max |
+| White-labelling / per-tenant branding | `.ai-prompts/prompts/modules/enterprise-saas/white-labeling.md` | ~10.4k est / ~15.6k max |
 
 ## Analytics
 
-| Intent | Module |
-|---|---|
-| Product analytics / events | `prompts/modules/analytics/user-analytics.md` |
-| A/B testing | `prompts/modules/analytics/ab-testing.md` |
-| Real-time dashboards | `prompts/modules/analytics/real-time-analytics.md` |
-| Business metrics (KPIs, OKRs, finance) | `prompts/modules/analytics/business-metrics.md` |
-| Cohort analysis / retention | `prompts/modules/analytics/cohort-analysis.md` |
-| Custom reporting / scheduled exports | `prompts/modules/analytics/custom-reporting.md` |
-| Predictive analytics (forecasting, churn) | `prompts/modules/analytics/predictive-analytics.md` |
-| Privacy-preserving analytics (DP, aggregation) | `prompts/modules/analytics/privacy-analytics.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Product analytics / events | `.ai-prompts/prompts/modules/analytics/user-analytics.md` | ~8.1k est / ~12.1k max |
+| A/B testing | `.ai-prompts/prompts/modules/analytics/ab-testing.md` | ~9.3k est / ~14.0k max |
+| Real-time dashboards | `.ai-prompts/prompts/modules/analytics/real-time-analytics.md` | ~11.2k est / ~16.9k max |
+| Business metrics (KPIs, OKRs, finance) | `.ai-prompts/prompts/modules/analytics/business-metrics.md` | ~6.7k est / ~10.1k max |
+| Cohort analysis / retention | `.ai-prompts/prompts/modules/analytics/cohort-analysis.md` | ~8.3k est / ~12.4k max |
+| Custom reporting / scheduled exports | `.ai-prompts/prompts/modules/analytics/custom-reporting.md` | ~9.2k est / ~13.9k max |
+| Predictive analytics (forecasting, churn) | `.ai-prompts/prompts/modules/analytics/predictive-analytics.md` | ~8.5k est / ~12.8k max |
+| Privacy-preserving analytics (DP, aggregation) | `.ai-prompts/prompts/modules/analytics/privacy-analytics.md` | ~8.3k est / ~12.4k max |
 
 ## Design Research & UI Planning
 
-| Intent | Module |
-|---|---|
-| Mobbin / free public UI references / App Store screenshots / Play Store screenshots / product reference research / UI inspiration / app pattern research | `prompts/modules/design-research/mobbin-reference-intake.md` |
-| UI reference source map / greenfield design context / design research schema | `prompts/modules/design-research/ui-reference-source-map.md` |
-| Existing product UI extension / follow existing theme / preserve current styling / no redesign | `prompts/modules/design-research/mobbin-reference-intake.md` |
-| Dashboard / admin dashboard / reporting dashboard / analytics console / operational panel | `prompts/modules/design-system/dashboard-screen-patterns.md` |
-| Graph / chart / data visualization / data table with charts / KPI reporting | `prompts/modules/design-system/data-visualization-system.md` |
-| Mobile app screen / app flow / screen-level UI / web app screen / frontend screen | `prompts/modules/design-research/mobbin-reference-intake.md` |
-| Liquid glass / glassmorphism / native material surfaces / aesthetic animations | `prompts/modules/design-system/native-visual-effects-and-motion.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Mobbin / free public UI references / App Store screenshots / Play Store screenshots / product reference research / UI inspiration / app pattern research | `.ai-prompts/prompts/modules/design-research/mobbin-reference-intake.md` | ~1.6k est / ~2.5k max |
+| UI reference source map / greenfield design context / design research schema | `.ai-prompts/prompts/modules/design-research/ui-reference-source-map.md` | ~1.9k est / ~2.8k max |
+| Existing product UI extension / follow existing theme / preserve current styling / no redesign | `.ai-prompts/prompts/modules/design-research/mobbin-reference-intake.md` | ~1.6k est / ~2.5k max |
+| Dashboard / admin dashboard / reporting dashboard / analytics console / operational panel | `.ai-prompts/prompts/modules/design-system/dashboard-screen-patterns.md` | ~958 est / ~1.4k max |
+| Graph / chart / data visualization / data table with charts / KPI reporting | `.ai-prompts/prompts/modules/design-system/data-visualization-system.md` | ~893 est / ~1.3k max |
+| Mobile app screen / app flow / screen-level UI / web app screen / frontend screen | `.ai-prompts/prompts/modules/design-research/mobbin-reference-intake.md` | ~1.6k est / ~2.5k max |
+| Liquid glass / glassmorphism / native material surfaces / aesthetic animations | `.ai-prompts/prompts/modules/design-system/native-visual-effects-and-motion.md` | ~1.0k est / ~1.5k max |
 
 ## Performance
 
-| Intent | Module |
-|---|---|
-| Caching (in-memory, distributed, CDN, invalidation) | `prompts/modules/performance/caching-strategies.md` |
-| Application performance monitoring (APM) | `prompts/modules/performance/performance-monitoring.md` |
-| Resource optimization (memory, CPU, storage, network) | `prompts/modules/performance/resource-optimization.md` |
-| Horizontal scaling / load balancing / sharding | `prompts/modules/performance/scalability-patterns.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Caching (in-memory, distributed, CDN, invalidation) | `.ai-prompts/prompts/modules/performance/caching-strategies.md` | ~5.1k est / ~7.7k max |
+| Application performance monitoring (APM) | `.ai-prompts/prompts/modules/performance/performance-monitoring.md` | ~6.0k est / ~9.0k max |
+| Resource optimization (memory, CPU, storage, network) | `.ai-prompts/prompts/modules/performance/resource-optimization.md` | ~5.2k est / ~7.8k max |
+| Horizontal scaling / load balancing / sharding | `.ai-prompts/prompts/modules/performance/scalability-patterns.md` | ~4.9k est / ~7.4k max |
 
 ## Ops / Platform
 
-| Intent | Module |
-|---|---|
-| CI/CD | `prompts/modules/deployment/ci-cd-pipelines.md` |
-| Containerization | `prompts/modules/deployment/containerization.md` |
-| Kubernetes orchestration | `prompts/modules/deployment/kubernetes-orchestration.md` |
-| Serverless at scale (Lambda, Cloud Run) | `prompts/modules/deployment/serverless-orchestration-scale.md` |
-| Cloud hosting | `prompts/modules/deployment/cloud-deployment.md` |
-| Google Cloud / GCP / Cloud Run / Cloud SQL / Spanner / Pub/Sub / VPC-SC / CMEK / Cloud Armor | `prompts/modules/technology-stacks/cloud-gcp.md` |
-| Regulated cloud landing zone / project segmentation / data residency / non-prod synthetic data / privileged access | `prompts/modules/deployment/regulated-cloud-landing-zone.md` |
-| Immutable audit evidence / WORM / locked logs / hash chains / evidence export / chain of custody | `prompts/modules/security/audit-evidence-worm.md` |
-| Multi-cloud deployment strategies | `prompts/modules/deployment/multi-cloud-deployment-strategies.md` |
-| Edge computing deployment (CDN workers, POPs) | `prompts/modules/deployment/edge-computing-deployment.md` |
-| Zero-trust deployment architecture | `prompts/modules/deployment/zero-trust-deployment-architectures.md` |
-| IaC evolution (Terraform → Pulumi → CDK patterns) | `prompts/modules/deployment/infrastructure-as-code-evolution.md` |
-| GitOps advanced workflows (ArgoCD, Flux) | `prompts/modules/deployment/gitops-advanced-workflows.md` |
-| Enterprise deployment (change windows, approvals) | `prompts/modules/deployment/enterprise-deployment.md` |
-| Observability | `prompts/modules/deployment/monitoring-observability.md` |
-| Disaster recovery | `prompts/modules/deployment/disaster-recovery.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| CI/CD | `.ai-prompts/prompts/modules/deployment/ci-cd-pipelines.md` | ~5.9k est / ~8.9k max |
+| Containerization | `.ai-prompts/prompts/modules/deployment/containerization.md` | ~5.0k est / ~7.5k max |
+| Kubernetes orchestration | `.ai-prompts/prompts/modules/deployment/kubernetes-orchestration.md` | ~7.5k est / ~11.2k max |
+| Serverless at scale (Lambda, Cloud Run) | `.ai-prompts/prompts/modules/deployment/serverless-orchestration-scale.md` | ~11.6k est / ~17.4k max |
+| Cloud hosting | `.ai-prompts/prompts/modules/deployment/cloud-deployment.md` | ~5.5k est / ~8.3k max |
+| Google Cloud / GCP / Cloud Run / Cloud SQL / Spanner / Pub/Sub / VPC-SC / CMEK / Cloud Armor | `.ai-prompts/prompts/modules/technology-stacks/cloud-gcp.md` | ~1.5k est / ~2.2k max |
+| Regulated cloud landing zone / project segmentation / data residency / non-prod synthetic data / privileged access | `.ai-prompts/prompts/modules/deployment/regulated-cloud-landing-zone.md` | ~598 est / ~897 max |
+| Immutable audit evidence / WORM / locked logs / hash chains / evidence export / chain of custody | `.ai-prompts/prompts/modules/security/audit-evidence-worm.md` | ~640 est / ~960 max |
+| Multi-cloud deployment strategies | `.ai-prompts/prompts/modules/deployment/multi-cloud-deployment-strategies.md` | ~975 est / ~1.5k max |
+| Edge computing deployment (CDN workers, POPs) | `.ai-prompts/prompts/modules/deployment/edge-computing-deployment.md` | ~10.4k est / ~15.6k max |
+| Zero-trust deployment architecture | `.ai-prompts/prompts/modules/deployment/zero-trust-deployment-architectures.md` | ~1.2k est / ~1.7k max |
+| IaC evolution (Terraform → Pulumi → CDK patterns) | `.ai-prompts/prompts/modules/deployment/infrastructure-as-code-evolution.md` | ~994 est / ~1.5k max |
+| GitOps advanced workflows (ArgoCD, Flux) | `.ai-prompts/prompts/modules/deployment/gitops-advanced-workflows.md` | ~967 est / ~1.5k max |
+| Enterprise deployment (change windows, approvals) | `.ai-prompts/prompts/modules/deployment/enterprise-deployment.md` | ~5.7k est / ~8.6k max |
+| Observability | `.ai-prompts/prompts/modules/deployment/monitoring-observability.md` | ~6.2k est / ~9.4k max |
+| Disaster recovery | `.ai-prompts/prompts/modules/deployment/disaster-recovery.md` | ~5.5k est / ~8.3k max |
 
 ## Ops / Readiness (gap-closure / productionize)
 
 For `audit-and-remediate.md` Step 3 when the gap is about taking an
 existing codebase to production. Pick whichever is most specific to the gap.
 
-| Intent | Module |
-|---|---|
-| Production deployment readiness (secrets, envs, DNS, SSL) | `prompts/modules/deployment/environment-management.md` |
-| CI/CD pipeline (build → test → deploy) | `prompts/modules/deployment/ci-cd-pipelines.md` |
-| Container orchestration (k8s, ECS, Fargate) | `prompts/modules/deployment/kubernetes-deployment.md` |
-| Blue/green, canary, feature flags | `prompts/modules/deployment/modern-deployment-patterns.md` |
-| Observability (logs + metrics + traces + alerts) | `prompts/modules/deployment/monitoring-observability.md` |
-| Disaster recovery / backups / RPO/RTO | `prompts/modules/deployment/disaster-recovery.md` |
-| Zero-downtime migrations / rollback | `prompts/modules/deployment/modern-deployment-patterns.md` |
-| Security audit / vulnerability scan | `prompts/modules/security/threat-detection.md` |
-| Penetration testing scope | `prompts/modules/testing/security-testing.md` |
-| Load / performance testing | `prompts/modules/testing/performance-testing.md` |
-| Chaos engineering | `prompts/modules/testing/chaos-engineering.md` |
-| Integration test coverage (backend API) | `prompts/modules/testing/test-automation.md` |
-| Accessibility audit (WCAG) | `prompts/modules/testing/accessibility-testing.md` |
-| Native mobile screenshot capture / app-store screenshots | `prompts/modules/testing/mobile-screenshot-ui-testing.md` |
-| Mobile app store submission (iOS) | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
-| Mobile app store submission (Android) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
-| Beta / TestFlight / internal testing | `prompts/modules/testing/test-automation.md` |
-| iOS simulator / xcodebuild crash recovery (planning of test tasks) | `prompts/modules/harness-recovery/ios.md` |
-| Android emulator / gradle daemon crash recovery | `prompts/modules/harness-recovery/android.md` |
-| Web (Vitest / Jest / Playwright / Node) test harness crashes | `prompts/modules/harness-recovery/web.md` |
-| Flutter test harness crash recovery | `prompts/modules/harness-recovery/flutter.md` |
-| Bash / shell script crash recovery | `prompts/modules/harness-recovery/bash.md` |
-| Documentation / runbook readiness | `prompts/modules/best-practices/coding-standards.md` |
-| Compliance readiness (GDPR, HIPAA, PCI) | pick from the domain sections above (`healthcare/hipaa-compliance.md`, `commerce/payment-security.md`, `security/data-encryption.md`) |
+| Intent | Module | Token budget |
+|---|---|---|
+| Production deployment readiness (secrets, envs, DNS, SSL) | `.ai-prompts/prompts/modules/deployment/environment-management.md` | ~5.2k est / ~7.7k max |
+| CI/CD pipeline (build → test → deploy) | `.ai-prompts/prompts/modules/deployment/ci-cd-pipelines.md` | ~5.9k est / ~8.9k max |
+| Container orchestration (k8s, ECS, Fargate) | `.ai-prompts/prompts/modules/deployment/kubernetes-deployment.md` | ~6.0k est / ~9.0k max |
+| Blue/green, canary, feature flags | `.ai-prompts/prompts/modules/deployment/modern-deployment-patterns.md` | ~7.5k est / ~11.3k max |
+| Observability (logs + metrics + traces + alerts) | `.ai-prompts/prompts/modules/deployment/monitoring-observability.md` | ~6.2k est / ~9.4k max |
+| Disaster recovery / backups / RPO/RTO | `.ai-prompts/prompts/modules/deployment/disaster-recovery.md` | ~5.5k est / ~8.3k max |
+| Zero-downtime migrations / rollback | `.ai-prompts/prompts/modules/deployment/modern-deployment-patterns.md` | ~7.5k est / ~11.3k max |
+| Security audit / vulnerability scan | `.ai-prompts/prompts/modules/security/threat-detection.md` | ~5.6k est / ~8.4k max |
+| Penetration testing scope | `.ai-prompts/prompts/modules/testing/security-testing.md` | ~1.2k est / ~1.8k max |
+| Load / performance testing | `.ai-prompts/prompts/modules/testing/performance-testing.md` | ~1.1k est / ~1.6k max |
+| Chaos engineering | `.ai-prompts/prompts/modules/testing/chaos-engineering.md` | ~7.1k est / ~10.6k max |
+| Integration test coverage (backend API) | `.ai-prompts/prompts/modules/testing/test-automation.md` | ~5.5k est / ~8.3k max |
+| Accessibility audit (WCAG) | `.ai-prompts/prompts/modules/testing/accessibility-testing.md` | ~8.6k est / ~12.9k max |
+| Native mobile screenshot capture / app-store screenshots | `.ai-prompts/prompts/modules/testing/mobile-screenshot-ui-testing.md` | ~5.4k est / ~8.1k max |
+| Mobile app store submission (iOS) | `.ai-prompts/prompts/modules/technology-stacks/ios-deployment-distribution.md` | ~7.4k est / ~11.1k max |
+| Mobile app store submission (Android) | `.ai-prompts/prompts/modules/technology-stacks/kotlin-android-development.md` | ~11.0k est / ~16.5k max |
+| Beta / TestFlight / internal testing | `.ai-prompts/prompts/modules/testing/test-automation.md` | ~5.5k est / ~8.3k max |
+| iOS simulator / xcodebuild crash recovery (planning of test tasks) | `.ai-prompts/prompts/modules/harness-recovery/ios.md` | ~681 est / ~1.0k max |
+| Android emulator / gradle daemon crash recovery | `.ai-prompts/prompts/modules/harness-recovery/android.md` | ~506 est / ~759 max |
+| Web (Vitest / Jest / Playwright / Node) test harness crashes | `.ai-prompts/prompts/modules/harness-recovery/web.md` | ~555 est / ~833 max |
+| Flutter test harness crash recovery | `.ai-prompts/prompts/modules/harness-recovery/flutter.md` | ~527 est / ~791 max |
+| Bash / shell script crash recovery | `.ai-prompts/prompts/modules/harness-recovery/bash.md` | ~549 est / ~824 max |
+| Documentation / runbook readiness | `.ai-prompts/prompts/modules/best-practices/coding-standards.md` | ~924 est / ~1.4k max |
+| Compliance readiness (GDPR, HIPAA, PCI) | pick from the domain sections above (`healthcare/hipaa-compliance.md`, `commerce/payment-security.md`, `security/data-encryption.md`) | — |
 
 ## Design System (UI)
 
-| Intent | Module |
-|---|---|
-| Design tokens (architecture) | `prompts/modules/design-system/token-architecture.md` |
-| Design tokens (generation pipeline — single source of truth across platforms) | `prompts/modules/design-system/token-generation-pipeline.md` |
-| Component system | `prompts/modules/design-system/component-system.md` |
-| Component implementation pattern (from tokens, no hardcoded styles) | `prompts/modules/design-system/component-implementation-pattern.md` |
-| Design system HTML review artifact / style guide preview / component catalog review / user design feedback | `prompts/modules/design-system/design-system-review-artifact.md` |
-| Loading states / skeletons / motion tokens | `prompts/modules/design-system/loading-states-and-animations.md` |
-| Design-to-code validation | `prompts/modules/design-system/design-to-code-validation.md` |
-| Design system governance / ownership / change control | `prompts/modules/design-system/governance-and-maintenance.md` |
-| Screen fidelity / visual QA / reference source map | `prompts/modules/design-system/screen-fidelity-audit.md` |
-| Design-system-first implementation sequencing | `prompts/modules/design-system/component-implementation-sequencing.md` |
-| Dashboard shell / KPI cards / filters / tables | `prompts/modules/design-system/dashboard-screen-patterns.md` |
-| Chart system / graph states / visualization accessibility | `prompts/modules/design-system/data-visualization-system.md` |
-| Native visual effects / liquid glass / material motion / reduced-motion fallback | `prompts/modules/design-system/native-visual-effects-and-motion.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Design tokens (architecture) | `.ai-prompts/prompts/modules/design-system/token-architecture.md` | ~566 est / ~849 max |
+| Design tokens (generation pipeline — single source of truth across platforms) | `.ai-prompts/prompts/modules/design-system/token-generation-pipeline.md` | ~2.1k est / ~3.1k max |
+| Component system | `.ai-prompts/prompts/modules/design-system/component-system.md` | ~639 est / ~959 max |
+| Component implementation pattern (from tokens, no hardcoded styles) | `.ai-prompts/prompts/modules/design-system/component-implementation-pattern.md` | ~2.9k est / ~4.3k max |
+| Design system HTML review artifact / style guide preview / component catalog review / user design feedback | `.ai-prompts/prompts/modules/design-system/design-system-review-artifact.md` | ~1.3k est / ~2.0k max |
+| Loading states / skeletons / motion tokens | `.ai-prompts/prompts/modules/design-system/loading-states-and-animations.md` | ~4.8k est / ~7.2k max |
+| Design-to-code validation | `.ai-prompts/prompts/modules/design-system/design-to-code-validation.md` | ~2.9k est / ~4.3k max |
+| Design system governance / ownership / change control | `.ai-prompts/prompts/modules/design-system/governance-and-maintenance.md` | ~3.0k est / ~4.5k max |
+| Screen fidelity / visual QA / reference source map | `.ai-prompts/prompts/modules/design-system/screen-fidelity-audit.md` | ~1.3k est / ~2.0k max |
+| Design-system-first implementation sequencing | `.ai-prompts/prompts/modules/design-system/component-implementation-sequencing.md` | ~533 est / ~800 max |
+| Dashboard shell / KPI cards / filters / tables | `.ai-prompts/prompts/modules/design-system/dashboard-screen-patterns.md` | ~958 est / ~1.4k max |
+| Chart system / graph states / visualization accessibility | `.ai-prompts/prompts/modules/design-system/data-visualization-system.md` | ~893 est / ~1.3k max |
+| Native visual effects / liquid glass / material motion / reduced-motion fallback | `.ai-prompts/prompts/modules/design-system/native-visual-effects-and-motion.md` | ~1.0k est / ~1.5k max |
 
 ## Cross-platform parity (web + mobile)
 
-| Intent | Module |
-|---|---|
-| Capability / feature-parity matrix across platforms | `prompts/modules/cross-platform/parity-matrix.md` |
-| Shared API contracts + data models across platforms | `prompts/modules/cross-platform/shared-contracts.md` |
-| Tests validating functional equivalence across platforms | `prompts/modules/cross-platform/parity-validation-tests.md` |
-| Parity documentation for team visibility | `prompts/modules/cross-platform/parity-documentation.md` |
-| Per-feature parity verification tasks | `prompts/modules/cross-platform/parity-verification-tasks.md` |
-| Dry-run parity check (structural only, no full gen) | `prompts/modules/cross-platform/parity-dry-run.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Capability / feature-parity matrix across platforms | `.ai-prompts/prompts/modules/cross-platform/parity-matrix.md` | ~2.3k est / ~3.5k max |
+| Shared API contracts + data models across platforms | `.ai-prompts/prompts/modules/cross-platform/shared-contracts.md` | ~7.7k est / ~11.5k max |
+| Tests validating functional equivalence across platforms | `.ai-prompts/prompts/modules/cross-platform/parity-validation-tests.md` | ~1.3k est / ~1.9k max |
+| Parity documentation for team visibility | `.ai-prompts/prompts/modules/cross-platform/parity-documentation.md` | ~4.0k est / ~6.1k max |
+| Per-feature parity verification tasks | `.ai-prompts/prompts/modules/cross-platform/parity-verification-tasks.md` | ~4.2k est / ~6.3k max |
+| Dry-run parity check (structural only, no full gen) | `.ai-prompts/prompts/modules/cross-platform/parity-dry-run.md` | ~3.0k est / ~4.5k max |
 
 ## Accessibility & Internationalization
 
-| Intent | Module |
-|---|---|
-| WCAG compliance / screen-reader / keyboard nav | `prompts/modules/accessibility/accessibility-compliance.md` |
-| i18n / translation / RTL / locale formatting | `prompts/modules/accessibility/internationalization.md` |
-| Regional customization / cultural adaptation | `prompts/modules/accessibility/cultural-adaptation.md` |
-| Advanced responsive design (fluid type, container queries) | `prompts/modules/accessibility/responsive-design-advanced.md` |
-| Responsive UI pattern (mobile-first, cross-device, a11y) | `prompts/modules/feature-patterns/ui-responsive.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| WCAG compliance / screen-reader / keyboard nav | `.ai-prompts/prompts/modules/accessibility/accessibility-compliance.md` | ~5.1k est / ~7.7k max |
+| i18n / translation / RTL / locale formatting | `.ai-prompts/prompts/modules/accessibility/internationalization.md` | ~4.8k est / ~7.2k max |
+| Regional customization / cultural adaptation | `.ai-prompts/prompts/modules/accessibility/cultural-adaptation.md` | ~4.7k est / ~7.1k max |
+| Advanced responsive design (fluid type, container queries) | `.ai-prompts/prompts/modules/accessibility/responsive-design-advanced.md` | ~5.0k est / ~7.5k max |
+| Responsive UI pattern (mobile-first, cross-device, a11y) | `.ai-prompts/prompts/modules/feature-patterns/ui-responsive.md` | ~6.9k est / ~10.3k max |
 
 ## Integration & APIs
 
-| Intent | Module |
-|---|---|
-| API management (versioning, keys, throttling) | `prompts/modules/integration/api-management.md` |
-| Service integration (between internal services) | `prompts/modules/integration/service-integration.md` |
-| Event-driven architecture (event bus, CQRS) | `prompts/modules/integration/event-driven-architecture.md` |
-| Message queues (Kafka, RabbitMQ, SQS, pub-sub) | `prompts/modules/integration/message-queues.md` |
-| Webhook systems (incoming + outgoing) | `prompts/modules/integration/webhook-systems.md` |
-| Enterprise integration (ESB, iPaaS, legacy SOAP) | `prompts/modules/integration/enterprise-integration.md` |
-| Integration monitoring (delivery, retries, DLQ) | `prompts/modules/integration/integration-monitoring.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| API management (versioning, keys, throttling) | `.ai-prompts/prompts/modules/integration/api-management.md` | ~6.1k est / ~9.1k max |
+| Service integration (between internal services) | `.ai-prompts/prompts/modules/integration/service-integration.md` | ~6.6k est / ~9.9k max |
+| Event-driven architecture (event bus, CQRS) | `.ai-prompts/prompts/modules/integration/event-driven-architecture.md` | ~5.6k est / ~8.3k max |
+| Message queues (Kafka, RabbitMQ, SQS, pub-sub) | `.ai-prompts/prompts/modules/integration/message-queues.md` | ~6.1k est / ~9.1k max |
+| Webhook systems (incoming + outgoing) | `.ai-prompts/prompts/modules/integration/webhook-systems.md` | ~5.0k est / ~7.5k max |
+| Enterprise integration (ESB, iPaaS, legacy SOAP) | `.ai-prompts/prompts/modules/integration/enterprise-integration.md` | ~5.8k est / ~8.7k max |
+| Integration monitoring (delivery, retries, DLQ) | `.ai-prompts/prompts/modules/integration/integration-monitoring.md` | ~6.4k est / ~9.6k max |
 
 ## Content Management
 
-| Intent | Module |
-|---|---|
-| Content creation (CMS authoring, rich text, media) | `prompts/modules/content-management/content-creation.md` |
-| Content organisation (taxonomies, tags, collections) | `prompts/modules/content-management/content-organization.md` |
-| Content workflow (draft → review → publish) | `prompts/modules/content-management/content-workflow.md` |
-| Content versioning / history / rollback | `prompts/modules/content-management/content-versioning.md` |
-| Content moderation (generic) | `prompts/modules/content-management/content-moderation.md` |
-| Content security (DRM, access control) | `prompts/modules/content-management/content-security.md` |
-| Content compliance (GDPR, takedowns) | `prompts/modules/content-management/content-compliance.md` |
-| Content analytics (performance, engagement) | `prompts/modules/content-management/content-analytics.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Content creation (CMS authoring, rich text, media) | `.ai-prompts/prompts/modules/content-management/content-creation.md` | ~5.8k est / ~8.6k max |
+| Content organisation (taxonomies, tags, collections) | `.ai-prompts/prompts/modules/content-management/content-organization.md` | ~7.4k est / ~11.0k max |
+| Content workflow (draft → review → publish) | `.ai-prompts/prompts/modules/content-management/content-workflow.md` | ~9.4k est / ~14.1k max |
+| Content versioning / history / rollback | `.ai-prompts/prompts/modules/content-management/content-versioning.md` | ~7.5k est / ~11.3k max |
+| Content moderation (generic) | `.ai-prompts/prompts/modules/content-management/content-moderation.md` | ~6.1k est / ~9.2k max |
+| Content security (DRM, access control) | `.ai-prompts/prompts/modules/content-management/content-security.md` | ~7.0k est / ~10.6k max |
+| Content compliance (GDPR, takedowns) | `.ai-prompts/prompts/modules/content-management/content-compliance.md` | ~6.5k est / ~9.7k max |
+| Content analytics (performance, engagement) | `.ai-prompts/prompts/modules/content-management/content-analytics.md` | ~5.7k est / ~8.6k max |
 
 ## Technology Stacks (pick when the project uses / targets this stack)
 
 ### Web
 
-| Intent | Module |
-|---|---|
-| React web app | `prompts/modules/technology-stacks/web-react.md` |
-| Tailwind CSS / Tailwind theme / Tailwind UI implementation | `prompts/modules/technology-stacks/tailwind-css.md` |
-| Progressive Web App (installable, offline) | `prompts/modules/technology-stacks/progressive-web-apps.md` |
-| WebAssembly (perf-critical web features) | `prompts/modules/technology-stacks/webassembly.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| React web app | `.ai-prompts/prompts/modules/technology-stacks/web-react.md` | ~7.8k est / ~11.6k max |
+| Tailwind CSS / Tailwind theme / Tailwind UI implementation | `.ai-prompts/prompts/modules/technology-stacks/tailwind-css.md` | ~981 est / ~1.5k max |
+| Progressive Web App (installable, offline) | `.ai-prompts/prompts/modules/technology-stacks/progressive-web-apps.md` | ~1.4k est / ~2.0k max |
+| WebAssembly (perf-critical web features) | `.ai-prompts/prompts/modules/technology-stacks/webassembly.md` | ~3.5k est / ~5.3k max |
 
 ### Mobile
 
-| Intent | Module |
-|---|---|
-| Native iOS (Swift / SwiftUI) | `prompts/modules/technology-stacks/swift-ios-development.md` |
-| iOS UI / UX patterns | `prompts/modules/technology-stacks/ios-ui-ux-patterns.md` |
-| iOS performance optimisation | `prompts/modules/technology-stacks/ios-performance-optimization.md` |
-| iOS testing (XCTest, XCUITest) | `prompts/modules/technology-stacks/ios-testing-comprehensive.md` |
-| iOS deployment / App Store | `prompts/modules/technology-stacks/ios-deployment-distribution.md` |
-| Native Android (Kotlin / Jetpack Compose) | `prompts/modules/technology-stacks/kotlin-android-development.md` |
-| Cross-platform React Native | `prompts/modules/technology-stacks/mobile-react-native.md` |
-| Cross-platform Flutter | `prompts/modules/technology-stacks/mobile-flutter.md` |
-| Mobile OS capability matrix / OS permissions / unsupported native capability / memory cleanup constraints | `prompts/modules/technology-stacks/mobile-os-capability-matrix.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Native iOS (Swift / SwiftUI) | `.ai-prompts/prompts/modules/technology-stacks/swift-ios-development.md` | ~8.4k est / ~12.6k max |
+| iOS UI / UX patterns | `.ai-prompts/prompts/modules/technology-stacks/ios-ui-ux-patterns.md` | ~11.2k est / ~16.8k max |
+| iOS performance optimisation | `.ai-prompts/prompts/modules/technology-stacks/ios-performance-optimization.md` | ~9.7k est / ~14.5k max |
+| iOS testing (XCTest, XCUITest) | `.ai-prompts/prompts/modules/technology-stacks/ios-testing-comprehensive.md` | ~10.7k est / ~16.1k max |
+| iOS deployment / App Store | `.ai-prompts/prompts/modules/technology-stacks/ios-deployment-distribution.md` | ~7.4k est / ~11.1k max |
+| Native Android (Kotlin / Jetpack Compose) | `.ai-prompts/prompts/modules/technology-stacks/kotlin-android-development.md` | ~11.0k est / ~16.5k max |
+| Cross-platform React Native | `.ai-prompts/prompts/modules/technology-stacks/mobile-react-native.md` | ~5.0k est / ~7.5k max |
+| Cross-platform Flutter | `.ai-prompts/prompts/modules/technology-stacks/mobile-flutter.md` | ~526 est / ~789 max |
+| Mobile OS capability matrix / OS permissions / unsupported native capability / memory cleanup constraints | `.ai-prompts/prompts/modules/technology-stacks/mobile-os-capability-matrix.md` | ~1.0k est / ~1.5k max |
 
 ### Backend
 
-| Intent | Module |
-|---|---|
-| Node.js / TypeScript backend (use per-intent modules above — no dedicated Node module) | — |
-| Go microservices | `prompts/modules/technology-stacks/go-microservices.md` |
-| Java Spring Boot | `prompts/modules/technology-stacks/java-spring-boot.md` |
-| Python ecosystem (Django / FastAPI / Flask) | `prompts/modules/technology-stacks/python-ecosystem.md` |
-| Ruby on Rails | `prompts/modules/technology-stacks/ruby-on-rails.md` |
-| PHP ecosystem (Laravel, Symfony) | `prompts/modules/technology-stacks/php-ecosystem.md` |
-| .NET ecosystem (C#, ASP.NET Core) | `prompts/modules/technology-stacks/dotnet-ecosystem.md` |
-| Elixir / Phoenix web | `prompts/modules/technology-stacks/elixir-phoenix-web.md` |
-| Scala functional programming | `prompts/modules/technology-stacks/scala-functional-programming.md` |
-| Rust systems programming (high-perf services, CLI) | `prompts/modules/technology-stacks/rust-systems-programming.md` |
-| C++ high-performance | `prompts/modules/technology-stacks/cpp-high-performance.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Node.js / TypeScript backend (use per-intent modules above — no dedicated Node module) | — | — |
+| Go microservices | `.ai-prompts/prompts/modules/technology-stacks/go-microservices.md` | ~8.8k est / ~13.3k max |
+| Java Spring Boot | `.ai-prompts/prompts/modules/technology-stacks/java-spring-boot.md` | ~11.7k est / ~17.5k max |
+| Python ecosystem (Django / FastAPI / Flask) | `.ai-prompts/prompts/modules/technology-stacks/python-ecosystem.md` | ~6.9k est / ~10.4k max |
+| Ruby on Rails | `.ai-prompts/prompts/modules/technology-stacks/ruby-on-rails.md` | ~8.7k est / ~13.1k max |
+| PHP ecosystem (Laravel, Symfony) | `.ai-prompts/prompts/modules/technology-stacks/php-ecosystem.md` | ~10.6k est / ~15.9k max |
+| .NET ecosystem (C#, ASP.NET Core) | `.ai-prompts/prompts/modules/technology-stacks/dotnet-ecosystem.md` | ~11.5k est / ~17.3k max |
+| Elixir / Phoenix web | `.ai-prompts/prompts/modules/technology-stacks/elixir-phoenix-web.md` | ~5.8k est / ~8.8k max |
+| Scala functional programming | `.ai-prompts/prompts/modules/technology-stacks/scala-functional-programming.md` | ~10.9k est / ~16.3k max |
+| Rust systems programming (high-perf services, CLI) | `.ai-prompts/prompts/modules/technology-stacks/rust-systems-programming.md` | ~6.4k est / ~9.6k max |
+| C++ high-performance | `.ai-prompts/prompts/modules/technology-stacks/cpp-high-performance.md` | ~6.0k est / ~9.0k max |
 
 ### BaaS / Cloud
 
-| Intent | Module |
-|---|---|
-| Firebase backend-as-a-service | `prompts/modules/technology-stacks/backend-firebase.md` |
-| AWS cloud (EC2, ECS, RDS, S3, Lambda) | `prompts/modules/technology-stacks/cloud-aws.md` |
-| Google Cloud Platform / GCP (Cloud Run, Cloud SQL, Pub/Sub, Cloud Storage, BigQuery, VPC-SC, CMEK) | `prompts/modules/technology-stacks/cloud-gcp.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Firebase backend-as-a-service | `.ai-prompts/prompts/modules/technology-stacks/backend-firebase.md` | ~497 est / ~746 max |
+| AWS cloud (EC2, ECS, RDS, S3, Lambda) | `.ai-prompts/prompts/modules/technology-stacks/cloud-aws.md` | ~1.9k est / ~2.9k max |
+| Google Cloud Platform / GCP (Cloud Run, Cloud SQL, Pub/Sub, Cloud Storage, BigQuery, VPC-SC, CMEK) | `.ai-prompts/prompts/modules/technology-stacks/cloud-gcp.md` | ~1.5k est / ~2.2k max |
 
 ### Desktop / specialised hardware
 
-| Intent | Module |
-|---|---|
-| Electron desktop app | `prompts/modules/technology-stacks/electron-desktop.md` |
-| Tauri desktop app (lightweight alternative to Electron) | `prompts/modules/technology-stacks/tauri-desktop.md` |
-| Apple CarPlay integration | `prompts/modules/technology-stacks/apple-carplay.md` |
-| Android Auto integration | `prompts/modules/technology-stacks/android-auto.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Electron desktop app | `.ai-prompts/prompts/modules/technology-stacks/electron-desktop.md` | ~6.7k est / ~10.1k max |
+| Tauri desktop app (lightweight alternative to Electron) | `.ai-prompts/prompts/modules/technology-stacks/tauri-desktop.md` | ~6.5k est / ~9.7k max |
+| Apple CarPlay integration | `.ai-prompts/prompts/modules/technology-stacks/apple-carplay.md` | ~1.6k est / ~2.3k max |
+| Android Auto integration | `.ai-prompts/prompts/modules/technology-stacks/android-auto.md` | ~1.3k est / ~2.0k max |
 
 ## Desktop Apps
 
-| Intent | Module |
-|---|---|
-| Native OS integrations (system APIs, protocol handlers) | `prompts/modules/desktop/native-integrations.md` |
-| Desktop offline-first with sync + conflict resolution | `prompts/modules/desktop/offline-first.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Native OS integrations (system APIs, protocol handlers) | `.ai-prompts/prompts/modules/desktop/native-integrations.md` | ~3.4k est / ~5.0k max |
+| Desktop offline-first with sync + conflict resolution | `.ai-prompts/prompts/modules/desktop/offline-first.md` | ~2.5k est / ~3.7k max |
 
 ## Testing
 
-| Intent | Module |
-|---|---|
-| Test automation strategy | `prompts/modules/testing/test-automation.md` |
-| Native mobile UI screenshot testing (iOS XCUITest / Android instrumentation) | `prompts/modules/testing/mobile-screenshot-ui-testing.md` |
-| Property-based tests | `prompts/modules/testing/property-based-testing.md` |
-| Centralized mock data | `prompts/modules/testing/centralized-mock-data.md` |
-| Fake backend generator (local API doubles) | `prompts/modules/testing/fake-backend-generator.md` |
-| Mock consolidation / DRY test fixtures | `prompts/modules/testing/mock-consolidation.md` |
-| Mock validation (drift between real + mock) | `prompts/modules/testing/mock-validation.md` |
-| Test data management (factories, fixtures, seeding) | `prompts/modules/testing/test-data-management.md` |
-| Test management (plans, reports, traceability) | `prompts/modules/testing/test-management.md` |
-| Cross-browser testing | `prompts/modules/testing/cross-browser-testing.md` |
-| Domain-specific testing patterns | `prompts/modules/testing/domain-testing.md` |
-| CI/CD testing (pipeline-integrated tests) | `prompts/modules/testing/ci-cd-testing.md` |
-| Debug-menu integration (dev toggles in app) | `prompts/modules/testing/debug-menu-integration.md` |
-| Quality metrics (coverage, flake rate, MTTR) | `prompts/modules/testing/quality-metrics.md` |
+| Intent | Module | Token budget |
+|---|---|---|
+| Test automation strategy | `.ai-prompts/prompts/modules/testing/test-automation.md` | ~5.5k est / ~8.3k max |
+| Native mobile UI screenshot testing (iOS XCUITest / Android instrumentation) | `.ai-prompts/prompts/modules/testing/mobile-screenshot-ui-testing.md` | ~5.4k est / ~8.1k max |
+| Property-based tests | `.ai-prompts/prompts/modules/testing/property-based-testing.md` | ~6.9k est / ~10.4k max |
+| Centralized mock data | `.ai-prompts/prompts/modules/testing/centralized-mock-data.md` | ~5.4k est / ~8.1k max |
+| Fake backend generator (local API doubles) | `.ai-prompts/prompts/modules/testing/fake-backend-generator.md` | ~1.3k est / ~1.9k max |
+| Mock consolidation / DRY test fixtures | `.ai-prompts/prompts/modules/testing/mock-consolidation.md` | ~5.1k est / ~7.6k max |
+| Mock validation (drift between real + mock) | `.ai-prompts/prompts/modules/testing/mock-validation.md` | ~5.2k est / ~7.8k max |
+| Test data management (factories, fixtures, seeding) | `.ai-prompts/prompts/modules/testing/test-data-management.md` | ~5.2k est / ~7.9k max |
+| Test management (plans, reports, traceability) | `.ai-prompts/prompts/modules/testing/test-management.md` | ~4.4k est / ~6.6k max |
+| Cross-browser testing | `.ai-prompts/prompts/modules/testing/cross-browser-testing.md` | ~9.9k est / ~14.9k max |
+| Domain-specific testing patterns | `.ai-prompts/prompts/modules/testing/domain-testing.md` | ~4.7k est / ~7.0k max |
+| CI/CD testing (pipeline-integrated tests) | `.ai-prompts/prompts/modules/testing/ci-cd-testing.md` | ~4.3k est / ~6.4k max |
+| Debug-menu integration (dev toggles in app) | `.ai-prompts/prompts/modules/testing/debug-menu-integration.md` | ~9.9k est / ~14.9k max |
+| Quality metrics (coverage, flake rate, MTTR) | `.ai-prompts/prompts/modules/testing/quality-metrics.md` | ~4.5k est / ~6.7k max |
 
 ## Rules
 

@@ -10,13 +10,13 @@ This document outlines best practices for clean, production-ready commits in the
 - **Documentation**: README files, API docs, usage guides
 - **Configuration**: Package.json, tsconfig.json, build configs
 - **Tests**: Unit tests, integration tests, property-based tests
-- **Templates**: Prompt templates in `prompts/modules/`
+- **Templates**: Prompt templates in `.ai-prompts/prompts/modules/`
 - **Validators**: Template validation logic in `src/`
 
 ### ❌ Never Commit
 - **Kiro specs**: `.kiro/` directories (internal development only)
 - **Generated outputs**: `prompts/outputs/` (except README.md)
-- **Working copies**: `prompts/working_copy/` (except README.md)
+- **Working copies**: `.ai-prompts/prompts/working_copy/` (except README.md)
 - **Environment files**: `.env`, `.env.local`, etc.
 - **Dependencies**: `node_modules/`, build artifacts
 - **IDE files**: `.vscode/`, `.idea/`, etc.

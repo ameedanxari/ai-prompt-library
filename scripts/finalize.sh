@@ -21,7 +21,7 @@
 # and non-zero when any blocking report fails.
 #
 # Usage:
-#   bash scripts/finalize.sh [target-dir]
+#   bash .ai-prompts/scripts/finalize.sh [target-dir]
 #
 # If target-dir is omitted, defaults to prompts/outputs/current.
 
@@ -53,7 +53,8 @@ resolve_script_dir() {
 }
 SCRIPT_DIR="$(resolve_script_dir)"
 PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
-# shellcheck source=scripts/lib/toolchain.sh
+# shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"
 
 FAILED_ATTEMPT_REPORT="$TARGET_DIR/finalize.failed-attempt.json"
@@ -99,6 +100,7 @@ fi
 
 SANITIZED_PATH_STATUS="pass"
 SANITIZED_PATH_REASON="configured Node and npm resolve with PATH=/usr/bin:/bin"
+# shellcheck disable=SC2016  # literal bash -c program: $1 must reach the inner shell unexpanded
 if ! /usr/bin/env -i \
   PATH="/usr/bin:/bin" \
   AI_PROMPT_NODE_PATH="$NODE_BIN" \
@@ -114,6 +116,7 @@ fi
 echo "Toolchain provenance: library=$LIBRARY_VERSION node=$NODE_VERSION npm=$NPM_VERSION"
 echo "Toolchain provenance: git=$GIT_COMMIT sanitized_path=$SANITIZED_PATH_STATUS"
 
+# shellcheck disable=SC2317,SC2329  # invoked indirectly via write_atomic_report; SC2317 is the pre-0.10 code for the same finding
 write_finalize_provenance() {
   local temporary_report="$1"
   local final_gate="$2"
@@ -139,12 +142,12 @@ write_finalize_provenance() {
 
 echo "=== finalize: $TARGET_DIR ==="
 echo ""
-echo "Step 1/5 — apply mechanical auto-fixers"
+echo "Stage 1/5 — apply mechanical auto-fixers"
 echo "----------------------------------------"
 bash "$SCRIPT_DIR/repair-task-schema-fields.sh" "$TARGET_DIR" || true
 bash "$SCRIPT_DIR/fix-user-stories.sh" "$TARGET_DIR" || true
 echo ""
-echo "Step 2/5 — build the canonical-paths ledger"
+echo "Stage 2/5 — build the canonical-paths ledger"
 echo "-------------------------------------------"
 # Emit path-ledger.md so the executor has an authoritative list of
 # every File: path the plan owns. Non-fatal: ledger collisions are
@@ -152,7 +155,7 @@ echo "-------------------------------------------"
 ledger_status=0
 bash "$SCRIPT_DIR/build-path-ledger.sh" "$TARGET_DIR" || ledger_status=$?
 echo ""
-echo "Step 3/5 — build the delivery-order manifest"
+echo "Stage 3/5 — build the delivery-order manifest"
 echo "--------------------------------------------"
 # Emit delivery-order.md so the executor has a canonical phase-aware
 # topological sort. Without this, the executor falls back to filesystem
@@ -162,7 +165,7 @@ echo "--------------------------------------------"
 delivery_status=0
 bash "$SCRIPT_DIR/build-delivery-order.sh" "$TARGET_DIR" || delivery_status=$?
 echo ""
-echo "Step 4/5 — build and validate contracts, graph, phase order, baseline, walking skeletons, fixture isolation, review checkpoints, and screenshot matrices"
+echo "Stage 4/5 — build and validate contracts, graph, phase order, baseline, walking skeletons, fixture isolation, review checkpoints, and screenshot matrices"
 echo "------------------------------------------------------------------------------------------------------------------------------------------------------"
 graph_status=0
 bash "$SCRIPT_DIR/build-task-graph.sh" "$TARGET_DIR" || graph_status=$?
@@ -192,7 +195,7 @@ else
   echo "ℹ️  no screenshot task matrix files found; skipping screenshot matrix validation."
 fi
 echo ""
-echo "Step 5/5 — run the Revise Gate"
+echo "Stage 5/5 — run the Revise Gate"
 echo "------------------------------"
 gate_status=0
 bash "$SCRIPT_DIR/revise.sh" "$TARGET_DIR" || gate_status=$?

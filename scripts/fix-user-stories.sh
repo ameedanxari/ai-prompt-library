@@ -9,7 +9,7 @@
 # only the first comma, like:
 #     As a user, I want to cancel so that I can stop the sync.
 # which is missing a comma before "so that". The validator (rule 5 in
-# scripts/validate-instantiation.sh) rejects it and the gate fails.
+# .ai-prompts/scripts/validate-instantiation.sh) rejects it and the gate fails.
 #
 # This script scans tasks-*.md and remediation-*.md files in the target
 # directory and inserts the missing comma. It touches only lines that:
@@ -21,7 +21,7 @@
 # Other variants are left alone — the validator will still flag them.
 #
 # Usage:
-#   bash scripts/fix-user-stories.sh <target-dir>
+#   bash .ai-prompts/scripts/fix-user-stories.sh <target-dir>
 #
 # Exit codes:
 #   0  files were scanned (whether or not any were modified)
@@ -65,6 +65,7 @@ for f in "$TARGET_DIR"/tasks-*.md "$TARGET_DIR"/remediation-*.md; do
   # Apply the fix with awk (portable across BSD/GNU). Edit in place via
   # a tempfile to avoid sed -i differences.
   tmp=$(mktemp "${TMPDIR:-/tmp}/fix-us.XXXXXX")
+  # shellcheck disable=SC1003  # the backslash/quote pair below lands inside an awk comment in this single-quoted program; it is inert text, not a quoting bug
   awk '
     /^-[[:space:]]+\*\*Closes user story:\*\*/ {
       if ($0 ~ /As (a|an|the) / && $0 ~ /, I (want|need) /) {

@@ -13,5 +13,5 @@ behaviour.
 
 ## Related
 
-- `prompts/modules/technology-stacks/electron-desktop.md` — Electron stack.
-- `prompts/modules/technology-stacks/tauri-desktop.md` — Tauri stack (lighter alternative).
+- `.ai-prompts/prompts/modules/technology-stacks/electron-desktop.md` — Electron stack.
+- `.ai-prompts/prompts/modules/technology-stacks/tauri-desktop.md` — Tauri stack (lighter alternative).

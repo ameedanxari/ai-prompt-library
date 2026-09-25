@@ -19,6 +19,49 @@ _Write in plain language. You can be vague about tech ("like Spotify but
 for audiobooks") or specific ("a React PWA for restaurant owners"). The
 library will fill in the rest._
 
+**A good brief always answers three things: WHO it's for, WHAT they
+can do with it, and WHY it matters.** If you cover those three, the
+rest is optional.
+
+> **Worked example** — a complete brief:
+>
+> > A room-booking app for a 10-person yoga studio in Portland.
+> > Customers book and pay for classes from their phones; the owner
+> > manages the weekly schedule and sees who paid, from a simple
+> > dashboard.
+>
+> **What the library infers from it:**
+> - _Who / what / why:_ customers (book + pay for classes), the studio
+>   owner (manage schedule, track payments) — the "why" is a studio
+>   too small for off-the-shelf booking software.
+> - _Platforms:_ "from their phones" → iPhone + Android apps; "simple
+>   dashboard" → website. (All three — the default holds.)
+> - _Users / roles:_ Customer, Studio Owner (an admin role is implied).
+> - _Baseline:_ logins, payments (Stripe), an admin panel, notifications
+>   for booking confirmations.
+> - _Non-goals:_ no class-content streaming, no multi-studio support,
+>   no waitlist marketplace — none of that was asked for.
+>
+> **Warning:** the vaguer your brief, the more the library assumes —
+> more platforms, more baseline features, more tasks. A one-liner like
+> "a fitness app" gets the maximum defaults: the longest, most
+> expensive run. Two specific sentences beat a vague paragraph.
+
+### Alternative: answer 3 questions instead
+
+_If the blank box above feels intimidating, delete it and answer these
+three questions instead. (The Quick Start agent asks one question and
+infers the rest — these three are for when you're filling this file in
+yourself.)_
+
+1. **What should people be able to DO with this?** (the 2–3 most
+   important actions — e.g. "book a class, pay for it, cancel it")
+2. **Who is it for, specifically?** ("yoga studio owners with under 20
+   staff" — not "users")
+3. **What does success look like on day one?** (the one outcome that
+   matters most — e.g. "a customer can book and pay without calling
+   the studio")
+
 ---
 
 ## Product identity (optional — canonical names and IDs)
@@ -40,9 +83,18 @@ screenshots, and generated project names._
 
 ## Defaults the library will assume if you leave the rest blank
 
+**Leave everything below blank and you get: a website + iPhone app +
+Android app, with logins, an admin panel, and app-store packaging.**
+That's the full production default — great if you might grow, overkill
+for a weekend MVP. If you want less, say so under **Restrict** below
+(there are copy-paste recipes).
+
 Skip ahead and leave the sections below empty if any of these defaults
 are fine. Only edit them if you want to **restrict** the scope or
 **override** a default.
+
+<details>
+<summary>Exact technical defaults (click to expand)</summary>
 
 - **Platforms**: web (responsive, PWA-capable) + Android + iOS. All three.
 - **Web stack**: React 18 + TypeScript + Vite + Tailwind. Next.js if the
@@ -71,6 +123,8 @@ are fine. Only edit them if you want to **restrict** the scope or
   pipelines, infra-as-code, app store release assets for mobile,
   user onboarding, settings + debug menu, privacy + PII controls +
   consent flows.
+
+</details>
 
 If you want any of those turned **off**, list them under **Restrict**
 below.
@@ -138,16 +192,34 @@ _You don't need to list files here. Just drop them into
 
 ## Restrict (optional — turn OFF parts of the production-readiness baseline)
 
-_The library generates the full production-readiness baseline by
-default. List here any baseline topics you DO NOT want generated._
+_This is the highest-leverage section in this file: every line here
+shrinks the plan. The library generates the full production-readiness
+baseline by default — web + iPhone + Android, logins, admin panel,
+app-store packaging, the works. List here any baseline topics you DO
+NOT want generated._
 
-- …
+**Copy-paste recipes** (pick one, paste it below, delete the `…` line):
 
----
+_Web-only MVP — the single biggest time-saver (roughly two-thirds
+fewer tasks for a typical brief):_
+```
+Web only — no iOS app, no Android app, no app-store release assets.
+```
 
-## Non-goals (optional — tells the library what NOT to build)
+_No mobile apps in v1 — keep the full web build, defer mobile:_
+```
+No mobile apps in v1 — web + backend + admin panel only. Keep the
+API mobile-ready so apps can be added later.
+```
 
-_Things this product is explicitly not. Keeps the library from
-over-expanding into tangential features._
+_No app-store release — build the apps, skip the store submission work:_
+```
+Build the iOS and Android apps, but skip app-store release assets
+(screenshots, store listings, release packaging).
+```
+
+_Or write your own, e.g.:_
+- No admin panel — single owner, no staff roles.
+- No Infrastructure as Code — deploy to a managed host instead.
 
 - …

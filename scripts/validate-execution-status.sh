@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Validate canonical task-unit execution records against handoff artifacts.
 #
-# Usage: bash scripts/validate-execution-status.sh [plan-dir]
+# Usage: bash .ai-prompts/scripts/validate-execution-status.sh [plan-dir]
 # Exit 0: records and handoff agree (terminal state may be blocked/partial)
 # Exit 1: contradictory or missing evidence
 # Exit 2: prerequisites are missing or malformed

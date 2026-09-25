@@ -25,7 +25,7 @@
 #     pushes at gap/epic boundaries, not per task.
 #
 # Usage:
-#   bash scripts/commit-task.sh \
+#   bash .ai-prompts/scripts/commit-task.sh \
 #       --task <path-to-tasks-*.md> \
 #       --change-line "<one-liner from execution-log>" \
 #       [--safety-report .ai-prompts/safety-report.json] \
@@ -138,7 +138,6 @@ fi
 safety_trailer=""
 if [ -n "$SAFETY_REPORT" ] && [ -f "$SAFETY_REPORT" ]; then
   verdict=$(grep -m1 '"verdict"' "$SAFETY_REPORT" | sed 's/.*"verdict": "\([^"]*\)".*/\1/')
-  warn_count=$(grep -c '"warnings"' "$SAFETY_REPORT" || true)
   safety_trailer="Safety-Check: ${verdict}"
   if grep -q '"warnings": \[".' "$SAFETY_REPORT" 2>/dev/null; then
     wmsg=$(grep '"warnings"' "$SAFETY_REPORT" | head -1 | sed 's/.*"warnings": \[\([^]]*\)\].*/\1/' | head -c 120)

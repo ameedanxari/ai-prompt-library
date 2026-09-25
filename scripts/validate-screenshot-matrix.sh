@@ -2,7 +2,7 @@
 # validate-screenshot-matrix.sh — validate app-store screenshot task matrices.
 #
 # Usage:
-#   bash scripts/validate-screenshot-matrix.sh [target-dir-or-task-file]
+#   bash .ai-prompts/scripts/validate-screenshot-matrix.sh [target-dir-or-task-file]
 #
 # Exit codes:
 #   0  every discovered screenshot matrix is valid

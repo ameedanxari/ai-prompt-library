@@ -18,7 +18,7 @@
 # the ledger without blocking execution.
 #
 # Usage:
-#   bash scripts/build-path-ledger.sh [prompts/outputs/current]
+#   bash .ai-prompts/scripts/build-path-ledger.sh [prompts/outputs/current]
 #
 # Exit codes:
 #   0  ledger written, no collisions

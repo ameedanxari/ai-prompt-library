@@ -22,7 +22,8 @@ resolve_script_dir() {
 }
 
 SCRIPT_DIR="$(resolve_script_dir)"
-# shellcheck source=scripts/lib/toolchain.sh
+# shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
+# shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"
 
 if [ ! -d "$TARGET_DIR" ]; then
@@ -37,6 +38,7 @@ if ! require_tool node resolve_node; then
   exit 2
 fi
 
+# shellcheck disable=SC2317,SC2329  # invoked indirectly via write_atomic_report; SC2317 is the pre-0.10 code for the same finding
 produce_report() {
   local temporary="$1"
   "$RESOLVED_NODE" - "$CONTRACT" "$temporary" <<'NODE'
@@ -220,6 +222,7 @@ case "$report_status" in
     exit 0
     ;;
   *)
+    # shellcheck disable=SC2016  # literal node -e program: JS template placeholders must not be shell-expanded
     "$RESOLVED_NODE" -e 'const fs=require("node:fs"); for (const issue of JSON.parse(fs.readFileSync(process.argv[1], "utf8")).issues) console.log(`  - ${issue.code} [${issue.taskId}]: ${issue.message}`)' "$REPORT"
     echo "❌ fixture-isolation gate: fail"
     exit 1

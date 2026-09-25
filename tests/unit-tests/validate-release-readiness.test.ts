@@ -7,7 +7,7 @@ import * as path from 'node:path';
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'validate-release-readiness.sh');
 
-function run(root: string): { code: number; out: string } {
+function run(root: string, extraEnv: Record<string, string> = {}): { code: number; out: string } {
   try {
     return {
       code: 0,
@@ -17,6 +17,7 @@ function run(root: string): { code: number; out: string } {
           ...process.env,
           RELEASE_READINESS_SKIP_BUILD: '1',
           RELEASE_READINESS_SKIP_PACK: '1',
+          ...extraEnv,
         },
       }),
     };
@@ -170,10 +171,21 @@ describe('validate-release-readiness.sh', () => {
   });
 
   it('passes static release metadata checks for this package', () => {
-    const result = run(REPO_ROOT);
+    // The library package itself ships no product gates; point the script at
+    // a single passing gate fixture so this test checks only the static
+    // package metadata. (The sample project's own gates in
+    // prompts/outputs/current are intentionally unmet, and the gate logic
+    // is covered by the fixture tests below.)
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-passing-gates-'));
+    try {
+      writeGates(dir, [releaseGate()]);
+      const result = run(REPO_ROOT, { RELEASE_GATE_FILE: path.join(dir, 'release-gates.json') });
 
-    expect(result.code).toBe(0);
-    expect(result.out).toMatch(/release readiness: pass/);
+      expect(result.code).toBe(0);
+      expect(result.out).toMatch(/release readiness: pass/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   });
 
   it('rejects missing repository metadata before release', () => {

@@ -34,7 +34,7 @@ Write under `prompts/outputs/current/review/`:
 10. `completion-decision.json`
 11. `remediation-plan.md` when completion is not verified
 
-Follow `prompts/review/README.md` exactly.
+Follow `.ai-prompts/prompts/review/README.md` exactly.
 
 ## Phase 0: Review preflight
 
@@ -57,14 +57,14 @@ Follow `prompts/review/README.md` exactly.
 
 Run these prompts independently:
 
-1. `prompts/review/intent-fidelity-review.md`
-2. `prompts/review/implementation-correctness-review.md`
-3. `prompts/review/functional-validation-designer.md`
-4. `prompts/review/integration-composition-review.md`
-5. `prompts/review/adversarial-edge-case-review.md`
-6. `prompts/review/evidence-quality-audit.md`
-7. `prompts/review/user-outcome-validation.md`
-8. `prompts/review/content-experience-review.md`
+1. `.ai-prompts/prompts/review/intent-fidelity-review.md`
+2. `.ai-prompts/prompts/review/implementation-correctness-review.md`
+3. `.ai-prompts/prompts/review/functional-validation-designer.md`
+4. `.ai-prompts/prompts/review/integration-composition-review.md`
+5. `.ai-prompts/prompts/review/adversarial-edge-case-review.md`
+6. `.ai-prompts/prompts/review/evidence-quality-audit.md`
+7. `.ai-prompts/prompts/review/user-outcome-validation.md`
+8. `.ai-prompts/prompts/review/content-experience-review.md`
 
 Parallel read-only reviewers are preferred when available. Each reviewer writes
 only its own report and cannot edit implementation files, plans, evidence, or
@@ -72,7 +72,7 @@ another report.
 
 ## Phase 2: Review synthesis
 
-Run `prompts/review/review-synthesis.md` with all eight reports.
+Run `.ai-prompts/prompts/review/review-synthesis.md` with all eight reports.
 
 The synthesizer must:
 
@@ -87,7 +87,7 @@ The synthesizer must:
 
 ## Phase 3: Completion challenge
 
-Run `prompts/review/completion-challenge.md` without the implementer's narrative.
+Run `.ai-prompts/prompts/review/completion-challenge.md` without the implementer's narrative.
 Give it the synthesis, original requirements, raw evidence, and mechanical gate
 reports. It writes `completion-decision.json`.
 
@@ -98,7 +98,7 @@ proof. Missing, stale, indirect, fixture-only, or circular evidence results in
 ## Phase 4: Remediation planning
 
 When the decision is not `verified_complete`, run
-`prompts/review/remediation-planner.md`.
+`.ai-prompts/prompts/review/remediation-planner.md`.
 
 The plan must:
 

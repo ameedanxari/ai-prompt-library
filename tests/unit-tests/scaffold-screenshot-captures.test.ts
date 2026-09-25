@@ -12,7 +12,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { writeStreamAStubs } from '../test-helpers/stream-a-stubs';
+import { writeStreamAStubs } from '../test-helpers/stream-a-stubs.js';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCAFFOLD = path.join(REPO_ROOT, 'scripts', 'scaffold-screenshot-captures.sh');
@@ -22,6 +22,22 @@ const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-instantiation.sh');
 function scaffold(args: string[]): string {
   const quoted = args.map((a) => `"${a}"`).join(' ');
   return execSync(`bash "${SCAFFOLD}" ${quoted}`, { encoding: 'utf8' });
+}
+
+function runScaffold(args: string[]): { code: number; out: string } {
+  try {
+    const quoted = args.map((a) => `"${a}"`).join(' ');
+    return {
+      code: 0,
+      out: execSync(`bash "${SCAFFOLD}" ${quoted}`, { encoding: 'utf8' }),
+    };
+  } catch (error) {
+    const err = error as { stdout?: Buffer; stderr?: Buffer; status?: number };
+    return {
+      code: err.status ?? 1,
+      out: `${err.stdout?.toString() ?? ''}${err.stderr?.toString() ?? ''}`,
+    };
+  }
 }
 
 function runMatrixValidator(target: string): { code: number; out: string } {
@@ -234,6 +250,53 @@ describe('scaffold-screenshot-captures.sh', () => {
       // With --force, it must succeed
       const out = scaffold(['--target', dir, '--platform', 'ios', '--force']);
       expect(out).toMatch(/scaffolded/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('--feature-slug must match ^[a-z0-9-]+$ (path traversal rejected)', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-slug-'));
+    try {
+      // Rejected: path traversal attempt
+      let result = runScaffold(['--target', dir, '--platform', 'ios', '--feature-slug', '../../evil']);
+      expect(result.code).toBe(2);
+      expect(result.out).toMatch(/\^\[a-z0-9-\]\+\$/);
+      expect(result.out).toMatch(/feature-slug/);
+      expect(fs.existsSync(path.join(os.tmpdir(), 'evil.md'))).toBe(false);
+      expect(fs.readdirSync(dir)).toEqual([]);
+
+      // Rejected: uppercase and spaces
+      result = runScaffold(['--target', dir, '--platform', 'ios', '--feature-slug', 'UPPER CASE']);
+      expect(result.code).toBe(2);
+      expect(result.out).toMatch(/feature-slug/);
+      expect(fs.readdirSync(dir)).toEqual([]);
+
+      // Rejected: shell-dangerous characters
+      result = runScaffold(['--target', dir, '--platform', 'ios', '--feature-slug', 'a;touch pwned']);
+      expect(result.code).toBe(2);
+      expect(fs.readdirSync(dir)).toEqual([]);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('--feature-slug accepts a valid slug and defaults when omitted', () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-slug-ok-'));
+    try {
+      const result = runScaffold(['--target', dir, '--platform', 'ios', '--feature-slug', 'good-slug-123']);
+      expect(result.code).toBe(0);
+      expect(fs.existsSync(path.join(dir, 'tasks-good-slug-123.md'))).toBe(true);
+
+      // Omitting the flag keeps the default screenshots-<platform> slug
+      const dir2 = fs.mkdtempSync(path.join(os.tmpdir(), 'scaffold-slug-def-'));
+      try {
+        const result2 = runScaffold(['--target', dir2, '--platform', 'ios']);
+        expect(result2.code).toBe(0);
+        expect(fs.existsSync(path.join(dir2, 'tasks-screenshots-ios.md'))).toBe(true);
+      } finally {
+        fs.rmSync(dir2, { recursive: true, force: true });
+      }
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

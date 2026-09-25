@@ -8,7 +8,7 @@
 # Step 3 until every line is `- [x]`.
 #
 # Usage:
-#   bash scripts/step3-progress.sh [prompts/outputs/current]
+#   bash .ai-prompts/scripts/step3-progress.sh [prompts/outputs/current]
 #
 # Exit codes:
 #   0  every declared feature has a matching tasks-*.md on disk
@@ -54,7 +54,10 @@ for ff in "${feature_files[@]}"; do
     [ -z "$slug" ] && continue
     printf "%s\n" "$slug" >> "$declared_slugs_file"
     printf "%s|%s|%s\n" "$epic_slug" "$slug" "$name" >> "$feature_rows_file"
-  done < <(grep -E "^## " "$ff" || true)
+  # A ## heading counts as a feature only when the immediately following line is
+  # its **Feature ID:** declaration — explainer subheadings (e.g. "## Rounding
+  # policy") otherwise create phantom expected task files.
+  done < <(awk '/^## /{pending=$0;next} pending!=""{if (/^\*\*Feature ID:\*\*/) print pending; pending=""}' "$ff" || true)
 done
 
 total=$(wc -l < "$declared_slugs_file" | tr -d ' ')

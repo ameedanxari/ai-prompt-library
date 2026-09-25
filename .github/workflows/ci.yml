@@ -46,3 +46,11 @@ jobs:
 
       - name: Lint shell scripts
         run: shellcheck scripts/*.sh scripts/lib/*.sh
+
+  reference-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Sweep corpus references
+        run: bash scripts/check-reference-integrity.sh

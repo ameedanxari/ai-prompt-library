@@ -216,8 +216,9 @@ After writing `ux-flows.md`, **STOP and present** to the user:
 2. The list of design principles (just labels, not bodies).
 3. The line: `"UX blueprint is ready at
    prompts/outputs/current/ux-flows.md. Say **Continue** to
-   proceed to Step 3 (atomic task generation) — which will cite
-   this blueprint per UI task — or give feedback to adjust first."`
+   proceed to Step 2.9 (content system) — which turns this screen
+   map into the content model before atomic task generation — or
+   give feedback to adjust first."`
 
 This is the last checkpoint where re-grading a screen is cheap.
 Once tasks reference a screen by name, renaming or merging is more

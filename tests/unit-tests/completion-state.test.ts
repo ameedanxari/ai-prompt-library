@@ -7,7 +7,7 @@ import {
   deriveCompletionState,
   type CompletionDimension,
   type CompletionGateResult,
-} from '../../src/completion/completion-state';
+} from '../../src/completion/completion-state.js';
 
 const gate = (
   dimension: CompletionDimension,

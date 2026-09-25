@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # diagnose-harness-ios.sh — iOS-specific harness diagnosis.
-# See scripts/lib/harness-common.sh for the shared catalog parser.
+# See .ai-prompts/scripts/lib/harness-common.sh for the shared catalog parser.
 
 set -uo pipefail
 

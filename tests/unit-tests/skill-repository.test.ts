@@ -1,11 +1,11 @@
 import { describe, expect, it } from 'vitest';
-import { createSkillDefinition } from '../../src/skill-system/skill-definition';
+import { createSkillDefinition } from '../../src/skill-system/skill-definition.js';
 import {
   createInMemorySkillRepository,
   InMemorySkillStorage,
   InMemoryVersionManager,
   StorageBackedDependencyResolver,
-} from '../../src/skill-system/skill-repository';
+} from '../../src/skill-system/skill-repository.js';
 
 function skill(id: string, name: string, dependencies = []) {
   return createSkillDefinition({

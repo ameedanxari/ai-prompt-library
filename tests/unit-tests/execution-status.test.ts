@@ -3,7 +3,7 @@ import {
   deriveExecutionTerminalState,
   satisfiesEvidenceLevel,
   type TaskUnitExecutionRecord,
-} from '../../src/execution/execution-status';
+} from '../../src/execution/execution-status.js';
 
 const doneRecord = (
   overrides: Partial<TaskUnitExecutionRecord> = {},

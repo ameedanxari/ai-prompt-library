@@ -23,11 +23,16 @@ const INDEX = path.join(
 describe('module-selection-index', () => {
   const body = fs.readFileSync(INDEX, 'utf8');
 
-  // Match backtick-wrapped paths that look like module references:
-  //   `prompts/modules/<dir>/<file>.md`
-  const pathRegex = /`(prompts\/modules\/[a-z0-9-]+\/[a-z0-9-]+\.md)`/g;
+  // Match backtick-wrapped paths that look like module references, in either
+  // the repo-root form (`prompts/modules/<dir>/<file>.md`) or the installed-
+  // layout form (`.ai-prompts/prompts/modules/<dir>/<file>.md`) — refs inside
+  // the corpus are .ai-prompts-qualified so they resolve in the consumer
+  // project; both forms map to the same file under the repo root.
+  const pathRegex = /`((?:\.ai-prompts\/)?prompts\/modules\/[a-z0-9-]+\/[a-z0-9-]+\.md)`/g;
   const matches = Array.from(body.matchAll(pathRegex), (m) => m[1]);
   const uniquePaths = Array.from(new Set(matches));
+  const repoRelative = (p: string): string =>
+    p.replace(/^\.ai-prompts\//, '');
 
   it('index contains at least 30 module references', () => {
     expect(uniquePaths.length).toBeGreaterThanOrEqual(30);
@@ -35,7 +40,7 @@ describe('module-selection-index', () => {
 
   it('every referenced module path exists on disk', () => {
     const missing = uniquePaths.filter(
-      (p) => !fs.existsSync(path.join(REPO_ROOT, p)),
+      (p) => !fs.existsSync(path.join(REPO_ROOT, repoRelative(p))),
     );
     expect(
       missing,

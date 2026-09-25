@@ -4,6 +4,18 @@
 
 The Agentic Engineering Runtime transforms the AI Prompt Library into a closed-loop autonomous software delivery platform. It accepts natural-language prompts and autonomously designs, implements, tests, critiques, and repairs production-grade software.
 
+> **Status: design document, not shipped behaviour.** None of the subsystems
+> below are part of the published package. `src/agentic-runtime.ts` and the
+> `intent/`, `planning/`, `critics/`, `architecture/`, `memory/`, `reliability/`,
+> `coordination/`, `monitoring/`, `observation/`, `integration/` and
+> `validation/` modules were speculative, were never referenced by the build
+> include list, the `exports` map or `src/index.ts`, and have been removed from
+> the repository. What ships today is the prompt corpus plus the validators
+> under `src/` that are wired into `package.json` `exports`. Read this document
+> as the rationale for a system that was trialled and retired, not as an API
+> contract. The one exception is `src/security/`, described below, which is live
+> and tested.
+
 ## High-Level Architecture
 
 ```
@@ -90,7 +102,13 @@ User Prompt
 - **StateManager** – Persistent global state with crash recovery
 - **EventBus** – Pub/sub with replay and wildcard support
 
-### Security (`src/security/`)
+### Security (`src/security/` — live and tested, not published)
+
+> These four modules carry the item-13 security fixes and are exercised by
+> `tests/unit-tests/security-fixes-item13.test.ts` and
+> `tests/security-tests/vulnerability-testing.test.ts`. They are deliberately
+> absent from the build include list and the `exports` map, so they are tested
+> but not part of the published API surface:
 - **InputValidator** – XSS, injection, and path traversal detection
 - **AccessController** – RBAC with audit trail
 - **EncryptionService** – AES-256-GCM at-rest encryption

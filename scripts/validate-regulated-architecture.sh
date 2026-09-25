@@ -140,8 +140,12 @@ if [ "$gcp_architecture_signal" -eq 1 ]; then
 fi
 
 uk_health_signal=0
+# Note: bare "health" was deliberately removed from the second alternation. It
+# matched infrastructure usage ("health checks", "/healthz") and misclassified
+# non-healthcare projects as UK-healthcare. Genuine healthcare intent is
+# covered by healthcare|patient|clinic|pharmac(y|ies|ist)|prescription|clinical.
 if has '(UK|United Kingdom|NHS|DTAC|DSPT|CQC|GPhC|MHRA|DCB0129|DCB0160|UK GDPR|cannabis|CBPM|controlled drug)' \
-  && has '(health|medical|patient|clinic|pharmac(y|ies|ist)|prescription|clinical|drug)'; then
+  && has '(healthcare|medical|patient|clinic|pharmac(y|ies|ist)|prescription|clinical|drug)'; then
   uk_health_signal=1
 fi
 
@@ -199,6 +203,7 @@ if has '(portal|portals)' && has '(patient|clinic|pharmac(y|ies))'; then
     ' "$ARCH" 2>/dev/null || true)
     if [ -n "$bad_portal_lines" ]; then
       echo "FAIL regulated architecture: portal appears to be modelled as state/source-of-truth boundary"
+      # shellcheck disable=SC2001  # sed indents every line of a multiline value; ${var//search/replace} cannot anchor to line starts
       echo "$bad_portal_lines" | sed 's/^/  /'
       fail=1
     fi
@@ -222,6 +227,7 @@ if has '(audit trail|audit trails|audit evidence|WORM|tamper|chain of custody|br
     if [ -n "$bad_bq_anchor" ]; then
       echo "FAIL regulated architecture: BigQuery is presented as the legal/audit evidence anchor"
       echo "  Use immutable/locked Cloud Storage or locked logging as the anchor; BigQuery can query/export evidence."
+      # shellcheck disable=SC2001  # sed indents every line of a multiline value; ${var//search/replace} cannot anchor to line starts
       echo "$bad_bq_anchor" | sed 's/^/  /'
       fail=1
     fi
@@ -241,6 +247,7 @@ if has '(Pub/Sub|pub-sub|message queue|event bus|event-driven|eventing)'; then
     ' "$ARCH" 2>/dev/null || true)
     if [ -n "$bad_queue_authority" ]; then
       echo "FAIL regulated architecture: queue/Pub/Sub appears to be the source of truth"
+      # shellcheck disable=SC2001  # sed indents every line of a multiline value; ${var//search/replace} cannot anchor to line starts
       echo "$bad_queue_authority" | sed 's/^/  /'
       fail=1
     fi
@@ -257,7 +264,18 @@ if has '(zero data loss|data loss cannot happen|no data loss|RPO[[:space:]]*0|RP
   fi
 fi
 
-if has '(AI|LLM|model automation|automated decision|DecisionTrace)' \
+# Note: bare "AI" is word-boundaried. has() is a substring grep, so unanchored
+# AI matched "email", "said", "available" and forced kill-switch phrasing onto
+# projects with no AI (Project Circulate v0: "email" + review "triage").
+# v1: the check fired on the architecture's own "no AI automation" DISCLAIMER
+# (human review queues + "triage" in the clinical list). A file that explicitly
+# disclaims AI automation does not need a kill switch.
+AI_DISCLAIMED=0
+if has 'no (AI|LLMs?|ML)( |-)?automation|no automated decision-making|no LLMs?, no ML models?|without (any )?AI'; then
+  AI_DISCLAIMED=1
+fi
+if [ "$AI_DISCLAIMED" -eq 0 ] \
+  && has '((^|[^[:alpha:]])AI([^[:alpha:]]|$)|LLM|model automation|automated decision|DecisionTrace)' \
   && has '(clinical|medical|patient|prescrib|dispens|diagnos|triage|controlled drug|pharmacy)'; then
   if require_arch_file "high-risk AI healthcare workflow detected"; then
     require_arch_term "human approval or review gate for high-risk AI" '(human approval|human review|clinician approval|pharmacist approval|prescriber approval|manual review|human-in-the-loop)'

@@ -15,7 +15,8 @@
     "src/release/**/*.ts",
     "src/review/**/*.ts",
     "src/task-contract/**/*.ts",
-    "src/traceability/**/*.ts"
+    "src/traceability/**/*.ts",
+    "src/validators/**/*.ts"
   ],
   "exclude": ["node_modules", "dist", "tests", "src/**/*.test.ts"]
 }

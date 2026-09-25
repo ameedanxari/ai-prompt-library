@@ -14,7 +14,7 @@
 # "silent skips".
 #
 # Usage:
-#   bash scripts/validate-execution-envelope.sh [PLAN_DIR] [PROJECT_ROOT]
+#   bash .ai-prompts/scripts/validate-execution-envelope.sh [PLAN_DIR] [PROJECT_ROOT]
 #
 # PLAN_DIR defaults to prompts/outputs/current (where tasks-*.md and
 # execution-log.md live). PROJECT_ROOT defaults to the parent of

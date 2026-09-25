@@ -150,33 +150,17 @@ else
 fi
 
 # MY_PROJECT.md — the brief the drill-down engine reads at Step 1 (Seed).
+# .ai-prompts/MY_PROJECT.md.template is the single canonical template. If it
+# is absent the install is broken: fail loudly instead of writing a
+# divergent fallback template.
 if [ ! -f "MY_PROJECT.md" ]; then
-  if [ -f ".ai-prompts/MY_PROJECT.md.template" ]; then
-    cp .ai-prompts/MY_PROJECT.md.template MY_PROJECT.md
-  else
-    cat > MY_PROJECT.md << 'EOF'
-# My Project
-
-## Brief
-_2–3 sentences: what is the product, who is it for, what is the most important outcome?_
-
-## Core features
-- …
-- …
-
-## Users / roles
-- …
-
-## Tech preferences (optional)
-- Frontend:
-- Backend:
-- Database:
-
-## Reference material / External material (optional)
-- working_copy/ — designs and mockups
-- prompts/working_copy/ — specs / reference code
-EOF
+  if [ ! -f ".ai-prompts/MY_PROJECT.md.template" ]; then
+    echo "❌ .ai-prompts/MY_PROJECT.md.template is missing — cannot create MY_PROJECT.md."
+    echo "   The library installation is incomplete. Reinstall the library to"
+    echo "   restore the canonical template, then re-run this script."
+    exit 1
   fi
+  cp .ai-prompts/MY_PROJECT.md.template MY_PROJECT.md
 fi
 
 # Track current library version for update validation.

@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import * as fc from 'fast-check';
-import { AnalyticsTemplateValidator } from '../../src/analytics-template-validator.js';
+import { AnalyticsTemplateValidator } from '../../src/validators/analytics-template-validator.js';
 import { join } from 'path';
 
 /**

@@ -32,7 +32,7 @@ working_copy/
 
 ## What the handler does with it
 
-`prompts/orchestrators/external-input-handler.md` reads the material
+`.ai-prompts/prompts/orchestrators/external-input-handler.md` reads the material
 and produces `prompts/outputs/current/project-context.md` with:
 
 - **Entities** extracted from schemas, specs, or code.

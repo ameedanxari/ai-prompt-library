@@ -784,11 +784,26 @@ export function updateSkillDefinition(
 
 /**
  * Checks if two skill definitions are compatible for composition
+ *
+ * HONEST (item 15c): the old implementation returned `true` unconditionally.
+ * Compatibility now means: every property that skill2's input schema requires
+ * must be present in skill1's output schema properties, with a compatible
+ * `type` when both sides declare one. A skill pair where skill2 requires an
+ * input skill1 never produces is NOT compatible.
  */
 export function areSkillsCompatible(skill1: SkillDefinition, skill2: SkillDefinition): boolean {
-  // Check if output schema of skill1 matches input schema of skill2
-  // This is a simplified check - in practice would need schema compatibility analysis
-  return true;
+  const requiredInputs = skill2.inputSchema?.required ?? [];
+  const outputProps = skill1.outputSchema?.properties ?? {};
+  const inputProps = skill2.inputSchema?.properties ?? {};
+
+  return requiredInputs.every(name => {
+    const produced = outputProps[name];
+    if (produced === undefined) return false;
+    const expectedType = inputProps[name]?.type;
+    const producedType = produced?.type;
+    if (expectedType && producedType && expectedType !== producedType) return false;
+    return true;
+  });
 }
 
 /**

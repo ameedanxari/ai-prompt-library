@@ -12,12 +12,12 @@ This domain collects templates and guidance for desktop-specific applications an
 
 ## Templates
 
-- `desktop/desktop-security.md` - Security patterns
-- `desktop/performance-optimization.md` - Performance guidelines
-- `modules/desktop/offline-first.md` - Offline-first patterns
-- `modules/desktop/native-integrations.md` - OS API integration
-- `deployment/desktop-distribution.md` - Distribution and packaging
-- `testing/desktop-testing.md` - Testing strategies
+- `.ai-prompts/prompts/desktop/desktop-security.md` - Security patterns
+- `.ai-prompts/prompts/desktop/performance-optimization.md` - Performance guidelines
+- `.ai-prompts/prompts/modules/desktop/offline-first.md` - Offline-first patterns
+- `.ai-prompts/prompts/modules/desktop/native-integrations.md` - OS API integration
+- `.ai-prompts/prompts/deployment/desktop-distribution.md` - Distribution and packaging
+- `.ai-prompts/prompts/testing/desktop-testing.md` - Testing strategies
 
 ## Implementation Patterns
 
@@ -25,13 +25,13 @@ This domain collects templates and guidance for desktop-specific applications an
 Implement sandboxing, permission checks, and data encryption. Refer to `desktop-security.md` for detailed patterns.
 
 ### Pattern 2: Performance Optimization
-Profile CPU, memory and rendering performance. Use the `desktop/performance-optimization.md` template to guide tuning and resource management.
+Profile CPU, memory and rendering performance. Use the `.ai-prompts/prompts/desktop/performance-optimization.md` template to guide tuning and resource management.
 
 ### Pattern 3: Offline & Caching
-Ensure applications handle network loss gracefully. See `modules/desktop/offline-first.md` for offline-first strategies.
+Ensure applications handle network loss gracefully. See `.ai-prompts/prompts/modules/desktop/offline-first.md` for offline-first strategies.
 
 ### Pattern 4: Native Feature Integration
-Use `modules/desktop/native-integrations.md` for patterns on interacting with OS APIs, notifications, tray icons, and file handlers.
+Use `.ai-prompts/prompts/modules/desktop/native-integrations.md` for patterns on interacting with OS APIs, notifications, tray icons, and file handlers.
 
 ## Examples
 
