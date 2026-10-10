@@ -66,12 +66,19 @@ validator enforces:
 - All eight reports must still be present. Re-reviewed reports carry
   `sourceRevision`; carried reports keep `baseRevision` (or are re-stamped
   at `sourceRevision` if re-reviewed anyway).
-- Synthesis, mechanical evidence and the completion decision are written at
+- The synthesis and the completion decision are written at
   `sourceRevision`, and the synthesis still carries every review id and
-  every finding, carried ones included. Carried findings keep their status
-  until a re-reviewing dimension resolves them.
+  every finding, carried ones included.
 - A delta bundle may conclude `remediation_required`, `partial` or
   `blocked`, never `verified_complete`.
+
+Rules the validator cannot check, which the coordinator must keep:
+
+- Carried reports are copied unchanged from the base bundle. A carried
+  finding keeps its status until a re-reviewing dimension resolves it;
+  never edit a carried report to close a finding.
+- Re-run the mechanical gates for the revision under review; their
+  results are not reused from the base bundle.
 
 Choose the dimensions from the changed paths, and include more when unsure:
 `implementation-correctness` and `adversarial-edge-cases` for any runtime

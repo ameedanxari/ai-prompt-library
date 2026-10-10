@@ -280,7 +280,7 @@ describe('build-path-ledger.sh', () => {
         expect(ledger!).toMatch(/ledger_state: clean/);
         expect(ledger!).toMatch(/ordering_warnings: 1/);
         expect(ledger!).toMatch(/## Ordering warnings/);
-        expect(ledger!).toMatch(/`src\/fix\/helper\.ts` \| fix:R2 modifies it before fix:R5/);
+        expect(ledger!).toMatch(/`src\/fix\/helper\.ts` \| remediation-fix\.md:R2 modifies it before remediation-fix\.md:R5/);
       });
     });
 
@@ -320,6 +320,73 @@ describe('build-path-ledger.sh', () => {
         expect(ledger!).toContain('- `src/old/legacy.ts` — tasks-a.md:T1 (modify-existing)');
         expect(ledger!).toContain('- `src/old/legacy.ts` — tasks-b.md:T1 (modify-existing)');
         expect(ledger!).not.toMatch(/also modified by/);
+      });
+    });
+
+    it('does not let a unit without a change type inherit the previous unit\'s change type', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-inherit.md',
+          [
+            '## T1 · modify one',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/one.ts`',
+            '## T2 · no change type',
+            '- **File:** `src/two.ts`',
+            '## T3 · create two',
+            '- **Change type:** create-new',
+            '- **File:** `src/two.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger, out } = run(sandbox);
+        expect(code).toBe(1);
+        expect(out).not.toMatch(/modify-before-create/);
+        expect(ledger!).toMatch(/ledger_state: collisions_detected/);
+        expect(ledger!).toMatch(/Same path claimed by multiple tasks/);
+        expect(ledger!).toContain('(unspecified)');
+      });
+    });
+
+    it('treats unspecified + modify-existing on one path as clean, with no ordering warning', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-unspec.md',
+          [
+            '## T1 · unspecified creator',
+            '- **File:** `src/shared.ts`',
+            '## T2 · modify',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/shared.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger } = run(sandbox);
+        expect(code).toBe(0);
+        expect(ledger!).toMatch(/ledger_state: clean/);
+        expect(ledger!).toMatch(/ordering_warnings: 0/);
+        expect(ledger!).toMatch(/\(unspecified\); also modified by: tasks-unspec\.md:T2 \(modify-existing\)/);
+      });
+    });
+
+    it('labels remediation claimants with their real plan file name', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'remediation-fix.md',
+          [
+            '## R1 · create',
+            '- **Change type:** new-file',
+            '- **File:** `src/fix/a.ts`',
+            '## R2 · modify',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/fix/a.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger } = run(sandbox);
+        expect(code).toBe(0);
+        expect(ledger!).toContain('- `src/fix/a.ts` — remediation-fix.md:R1 (new-file); also modified by: remediation-fix.md:R2 (modify-existing)');
+        expect(ledger!).not.toContain('tasks-fix.md');
       });
     });
   });

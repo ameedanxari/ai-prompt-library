@@ -115,6 +115,17 @@ describe('execution status derivation', () => {
     );
   });
 
+  it('keeps the later record of an unflagged duplicate while still blocking', () => {
+    const report = deriveExecutionTerminalState(
+      [doneRecord(), doneRecord({ status: 'blocked', reason: 'later record' })],
+      passingGates,
+    );
+    expect(report.state).toBe('blocked');
+    expect(report.taskReasons['tasks-cleanup.md#T1']).toEqual(
+      expect.arrayContaining(['duplicate canonical execution record', 'later record']),
+    );
+  });
+
   it('treats a flagged follow-up record as authoritative instead of a duplicate', () => {
     const report = deriveExecutionTerminalState(
       [doneRecord({ status: 'blocked' }), doneRecord({ followUp: true })],

@@ -46,6 +46,14 @@ function fixture(): string {
     '### `remediation-gamma.md` — done',
     '- **Scope:** gamma only',
     '',
+    '## Canonical task-unit records (consolidated)',
+    '',
+    record('remediation-alpha.md#R4', { note: 'canonical' }),
+    record('tasks-beta.md#T2'),
+    '```json',
+    JSON.stringify({ taskId: 'remediation-alpha.md#R9' }),
+    '```',
+    '',
   ].join('\n');
   fs.writeFileSync(path.join(dir, 'execution-log.md'), log);
   return dir;
@@ -74,6 +82,37 @@ describe('execution-log-slice.sh', () => {
     expect(out).not.toContain('# Execution Log');
   });
 
+  it('appends matching records found outside packet entries', () => {
+    const dir = fixture();
+    const { code, out } = run([dir, 'remediation-alpha.md']);
+    expect(code).toBe(0);
+    const marker = out.indexOf('## Records outside packet entries');
+    expect(marker).toBeGreaterThan(out.indexOf('alpha second pass'));
+    const tail = out.slice(marker);
+    expect(tail).toContain('remediation-alpha.md#R4');
+    expect(tail).not.toContain('remediation-alpha.md#R1');
+    expect(tail).not.toContain('tasks-beta.md#T2');
+    expect(out.match(/remediation-alpha\.md#R4/g)).toHaveLength(1);
+  });
+
+  it('does not repeat records already printed inside entries', () => {
+    const dir = fixture();
+    const { code, out } = run([dir, 'tasks-beta.md']);
+    expect(code).toBe(0);
+    expect(out).toContain('## Records outside packet entries');
+    expect(out.slice(out.indexOf('## Records outside')).match(/tasks-beta\.md#T1/g)).toBeNull();
+  });
+
+  it('prints records that exist only outside entries and exits 0', () => {
+    const dir = fixture();
+    const log = path.join(dir, 'execution-log.md');
+    fs.appendFileSync(log, '\n' + record('remediation-orphan.md#R1') + '\n');
+    const { code, out } = run([dir, 'remediation-orphan.md']);
+    expect(code).toBe(0);
+    expect(out).toContain('## Records outside packet entries');
+    expect(out).toContain('remediation-orphan.md#R1');
+  });
+
   it('accepts a path for PLAN_FILE and reduces it to the file name', () => {
     const dir = fixture();
     const { code, out } = run([dir, 'prompts/outputs/current/tasks-beta.md']);
@@ -91,8 +130,10 @@ describe('execution-log-slice.sh', () => {
       'remediation-alpha.md#R1',
       'remediation-alpha.md#R2',
       'remediation-alpha.md#R3',
+      'remediation-alpha.md#R4',
     ]);
     expect(out).not.toContain('session_id');
+    expect(out).not.toContain('R9');
   });
 
   it('exits 1 when no entry matches', () => {

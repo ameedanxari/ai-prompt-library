@@ -62,7 +62,9 @@ fi
 LEDGER="$TARGET_DIR/path-ledger.md"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Extract one row per task: feature-slug|task-id|change-type|path
+# Extract one row per task: feature-slug|task-id|change-type|path|plan-file
+# A unit with no **Change type:** is recorded as `unspecified`, which counts
+# as a creator (anything other than `modify-existing`).
 # The task-id is the nearest preceding "## T<n>" or "## R<n>" heading.
 rows_file=$(mktemp)
 for pf in "${plan_files[@]}"; do
@@ -70,10 +72,13 @@ for pf in "${plan_files[@]}"; do
   # tasks-<slug>.md → <slug>; remediation-<slug>.md → <slug>
   slug="${base#tasks-}"
   slug="${slug#remediation-}"
-  awk -v slug="$slug" '
-    BEGIN { change = "unknown" }
+  awk -v slug="$slug" -v pfile="$(basename "$pf")" '
+    BEGIN { change = "unspecified"; tid = "?" }
     /^## [TR][0-9]+/ {
       # Grab the task id (T1, R2, …)
+      # Reset per-unit state: a unit never inherits the previous unit'"'"'s
+      # change type.
+      change = "unspecified"
       match($0, /[TR][0-9]+/)
       if (RSTART) {
         tid = substr($0, RSTART, RLENGTH)
@@ -111,7 +116,7 @@ for pf in "${plan_files[@]}"; do
         # Skip empty segments or segments that still look like prose.
         if (p == "") continue
         if (p ~ /[[:space:]]/) continue
-        printf("%s|%s|%s|%s\n", slug, tid, change, p)
+        printf("%s|%s|%s|%s|%s\n", slug, tid, change, p, pfile)
       }
     }
   ' "$pf" >> "$rows_file"
@@ -138,17 +143,16 @@ collision_a=$(awk -F'|' '{
 # the creator (same T/R prefix, so T-vs-R numbering is never compared).
 ordering_warnings=$(awk -F'|' '
   function tnum(t) { return substr(t, 2) + 0 }
-  function tpre(t) { return substr(t, 1, 1) }
   {
     n++
-    rs[n] = $1; rt[n] = $2; rc[n] = $3; rp[n] = $4
-    if ($3 != "modify-existing") { creators[$4]++; cs[$4] = $1; ct[$4] = $2 }
+    rs[n] = $5; rt[n] = $2; rc[n] = $3; rp[n] = $4
+    if ($3 != "modify-existing") { creators[$4]++; cs[$4] = $5; ct[$4] = $2 }
   }
   END {
     for (i = 1; i <= n; i++) {
       p = rp[i]
       if (rc[i] != "modify-existing" || creators[p] != 1) continue
-      if (rs[i] != cs[p] || tpre(rt[i]) != tpre(ct[p])) continue
+      if (rs[i] != cs[p]) continue
       if (tnum(rt[i]) < tnum(ct[p])) {
         printf("%s\t%s:%s modifies it before %s:%s creates it (modify-before-create)\n", p, rs[i], rt[i], cs[p], ct[p])
       }
@@ -322,7 +326,7 @@ fi
     awk -F'|' '
       {
         n++
-        rs[n] = $1; rt[n] = $2; rc[n] = $3; rp[n] = $4
+        rs[n] = $1; rt[n] = $2; rc[n] = $3; rp[n] = $4; rf[n] = $5
         count[$4]++
         if ($3 != "modify-existing") creators[$4]++
       }
@@ -335,16 +339,16 @@ fi
           if (multi) {
             for (j = 1; j <= n; j++) {
               if (rp[j] == p && rc[j] == "modify-existing") {
-                extra = extra (extra ? ", " : "") "tasks-" rs[j] ".md:" rt[j] " (" rc[j] ")"
+                extra = extra (extra ? ", " : "") rf[j] ":" rt[j] " (" rc[j] ")"
               }
             }
           }
-          printf("%s|%s|%s|%s|%s\n", rs[i], rt[i], rc[i], p, extra)
+          printf("%s|%s|%s|%s|%s|%s\n", rs[i], rt[i], rc[i], p, rf[i], extra)
         }
       }
     ' "$rows_file" > "$annotated"
     # Sort rows by slug then task id then path for a stable ledger.
-    sort -t'|' -k1,1 -k2,2 -k4,4 "$annotated" | while IFS='|' read -r slug tid change path extra; do
+    sort -t'|' -k1,1 -k2,2 -k4,4 "$annotated" | while IFS='|' read -r slug tid change path pfile extra; do
       if [ "$slug" != "$current_slug" ]; then
         [ -n "$current_slug" ] && echo ""
         echo "### $slug"
@@ -352,9 +356,9 @@ fi
         current_slug="$slug"
       fi
       if [ -n "$extra" ]; then
-        echo "- \`$path\` — tasks-$slug.md:$tid ($change); also modified by: $extra"
+        echo "- \`$path\` — $pfile:$tid ($change); also modified by: $extra"
       else
-        echo "- \`$path\` — tasks-$slug.md:$tid ($change)"
+        echo "- \`$path\` — $pfile:$tid ($change)"
       fi
     done
     rm -f "$annotated"

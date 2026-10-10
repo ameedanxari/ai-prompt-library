@@ -28,8 +28,8 @@ function script(args: string[]): { code: number; out: string } {
   return { code: result.status ?? 1, out: `${result.stdout}${result.stderr}` };
 }
 
-function digest(repo: string, paths: string[], rev = 'HEAD'): string {
-  const result = script(['--digest', '--repo', repo, '--rev', rev, ...paths]);
+function digest(repo: string, paths: string[], rev?: string): string {
+  const result = script(['--digest', '--repo', repo, ...(rev ? ['--rev', rev] : ['--worktree']), ...paths]);
   expect(result.code).toBe(0);
   return result.out.trim();
 }
@@ -81,6 +81,48 @@ describe('check-evidence-currency.sh', () => {
     expect(first).toMatch(/^sha256:[0-9a-f]{64}$/);
     expect(digest(repo, ['src/gone.ts', 'src/covered.ts'])).toBe(first);
     expect(digest(repo, ['src/covered.ts'])).not.toBe(first);
+  });
+
+  it('defaults --digest to the working tree and keeps --rev for committed blobs', () => {
+    const { repo } = setup();
+    const committed = digest(repo, ['src/covered.ts'], 'HEAD');
+    expect(script(['--digest', '--repo', repo, 'src/covered.ts']).out.trim()).toBe(committed);
+    fs.writeFileSync(path.join(repo, 'src', 'covered.ts'), 'export const a = 99;\n');
+    const bare = script(['--digest', '--repo', repo, 'src/covered.ts']).out.trim();
+    expect(bare).not.toBe(committed);
+    expect(bare).toBe(digest(repo, ['src/covered.ts'])); // explicit --worktree
+    expect(digest(repo, ['src/covered.ts'], 'HEAD')).toBe(committed); // --rev ignores the working tree
+  });
+
+  it('rejects --rev together with --worktree', () => {
+    const { repo } = setup();
+    expect(script(['--digest', '--repo', repo, '--rev', 'HEAD', '--worktree', 'src/covered.ts']).code).toBe(2);
+  });
+
+  it('stays current on the commit that records a worktree digest', () => {
+    const { repo, planDir } = setup();
+    const covered = ['src/covered.ts', 'src/new.ts'];
+    fs.writeFileSync(path.join(repo, 'src', 'covered.ts'), 'export const a = 3;\n');
+    fs.writeFileSync(path.join(repo, 'src', 'new.ts'), 'export const n = 1;\n');
+    const pre = digest(repo, covered); // uncommitted change, worktree blobs
+    writeLog(planDir, [{
+      taskId: 'remediation-foo.md#R1',
+      status: 'done',
+      buildEvidence: build({ coveredPaths: covered, pathsDigest: pre }),
+    }]);
+    commit(repo, 'code and log together');
+    const result = check(repo, planDir);
+    expect(result.code).toBe(0);
+    expect(result.report).toMatchObject({ checked: 1, current: 1, stale: [] });
+    // Old behaviour: a committed-blob digest computed before the commit would not match.
+    expect(digest(repo, covered, 'HEAD')).toBe(pre);
+    expect(digest(repo, covered, 'HEAD~1')).not.toBe(pre);
+    // Report mode can also verify against the working tree.
+    const wt = script([planDir, '--repo', repo, '--worktree']);
+    expect(wt.code).toBe(0);
+    fs.writeFileSync(path.join(repo, 'src', 'new.ts'), 'export const n = 2;\n');
+    expect(script([planDir, '--repo', repo, '--worktree']).code).toBe(1);
+    expect(check(repo, planDir).code).toBe(0); // HEAD still current
   });
 
   it('matches the documented digest construction', () => {

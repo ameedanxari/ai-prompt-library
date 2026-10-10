@@ -125,11 +125,11 @@ export function deriveExecutionTerminalState(
   for (const record of records) {
     const isFollowUp = record.followUp === true;
     if (recordsById.has(record.taskId)) {
-      if (isFollowUp) {
-        recordsById.set(record.taskId, record);
-      } else {
+      if (!isFollowUp) {
         addTaskReason(record.taskId, 'duplicate canonical execution record', true);
       }
+      // Last wins in both cases, matching scripts/validate-execution-status.sh.
+      recordsById.set(record.taskId, record);
     } else if (isFollowUp) {
       addTaskReason(record.taskId, 'follow-up record has no earlier canonical record', true);
     } else {

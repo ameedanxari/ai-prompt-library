@@ -11,11 +11,14 @@
 #   TARGET_DIR      directory holding execution-log.md (default prompts/outputs/current)
 #   PLAN_FILE       plan packet file name, e.g. remediation-foo.md (a path is reduced to its name)
 #   --records-only  print only the execution-status-record JSON blocks whose
-#                   taskId starts with PLAN_FILE#, as one JSON array
+#                   taskId starts with PLAN_FILE#, as one JSON array; scans the
+#                   whole log (outside other code fences), in log order
 #
 # Default output: the YAML frontmatter, then every journal entry whose
 # `### ` header names PLAN_FILE (the entry runs until the next `### ` or
-# `## ` line), records included.
+# `## ` line), records included, then a `## Records outside packet entries`
+# section with matching records that sit elsewhere in the log (for example
+# the consolidated "Canonical task-unit records" section).
 #
 # Exit codes: 0 output printed, 1 nothing matched, 2 usage error or missing log.
 
@@ -76,14 +79,35 @@ if lines and lines[0].strip() == "---":
             break
 
 header_re = re.compile(r"^### `" + re.escape(plan) + r"`")
-entries = []
+entries = []          # each: list of lines
 current = None
 in_fence = False
-for line in lines[body_start:]:
+fence_info = ""
+block = None          # (start_line_index, [lines]) of an open status-record fence
+blocks = []           # (start_line_index, raw text, entry or None)
+for idx, line in enumerate(lines[body_start:], start=body_start):
     if line.startswith("```"):
-        in_fence = not in_fence
-    is_heading = not in_fence and (line.startswith("### ") or line.startswith("## "))
-    if is_heading:
+        if not in_fence:
+            in_fence = True
+            fence_info = line[3:].strip()
+            if fence_info == "execution-status-record":
+                block = []
+        else:
+            if block is not None:
+                blocks.append((idx, "\n".join(block), current))
+                block = None
+            in_fence = False
+            fence_info = ""
+        if current is not None:
+            current.append(line)
+        continue
+    if in_fence:
+        if block is not None:
+            block.append(line)
+        if current is not None:
+            current.append(line)
+        continue
+    if line.startswith("### ") or line.startswith("## "):
         current = None
         if header_re.match(line):
             current = [line]
@@ -92,25 +116,25 @@ for line in lines[body_start:]:
     if current is not None:
         current.append(line)
 
-record_re = re.compile(r"```execution-status-record[^\n]*\n(.*?)\n```", re.S)
-records = []
-for entry in entries:
-    for block in record_re.findall("\n".join(entry)):
-        try:
-            rec = json.loads(block)
-        except ValueError:
-            continue
-        if isinstance(rec, dict) and str(rec.get("taskId", "")).startswith(plan + "#"):
-            records.append(rec)
+# Every status-record block in the whole log, in log order, for this plan.
+records = []          # (parsed, raw, owning entry or None)
+for _, raw, owner in blocks:
+    try:
+        rec = json.loads(raw)
+    except ValueError:
+        continue
+    if isinstance(rec, dict) and str(rec.get("taskId", "")).startswith(plan + "#"):
+        records.append((rec, raw, owner))
 
 if records_only:
     if not records:
         print(f"no execution-status records for {plan}", file=sys.stderr)
         sys.exit(1)
-    print(json.dumps(records, indent=2, ensure_ascii=False))
+    print(json.dumps([r[0] for r in records], indent=2, ensure_ascii=False))
     sys.exit(0)
 
-if not entries:
+outside = [r for r in records if r[2] is None]
+if not entries and not outside:
     print(f"no journal entries for {plan}", file=sys.stderr)
     sys.exit(1)
 
@@ -121,5 +145,14 @@ for entry in entries:
     if out:
         out.append("")
     out.extend(entry)
+if outside:
+    if out:
+        out.append("")
+    out.append("## Records outside packet entries")
+    for _, raw, _ in outside:
+        out.append("")
+        out.append("```execution-status-record")
+        out.append(raw)
+        out.append("```")
 print("\n".join(out))
 PY

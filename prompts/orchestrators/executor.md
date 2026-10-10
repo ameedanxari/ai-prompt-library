@@ -334,9 +334,12 @@ Two optional extensions keep records honest without busywork:
   earlier record is rejected as `orphan-follow-up-record`. Do not invent
   extra unit ids or amendment prose to work around a second touch.
 - **File-bound evidence.** Add `"coveredPaths"` (the files the evidence
-  proves) and `"pathsDigest"` to `buildEvidence`. Compute the digest with
-  `bash .ai-prompts/scripts/check-evidence-currency.sh --digest <path>...`.
-  Evidence then stays current until one of those files changes, so a
+  proves) and `"pathsDigest"` to `buildEvidence`. Compute the digest from
+  the working tree after the tests pass and before committing, with
+  `bash .ai-prompts/scripts/check-evidence-currency.sh --digest <path>...`
+  (`--digest` hashes working-tree files by default; pass `--rev REV` to
+  hash a commit instead), then commit the code and `execution-log.md`
+  together. Evidence then stays current until one of those files changes, so a
   docs-only or unrelated commit does not force a re-run. Check currency
   with `bash .ai-prompts/scripts/check-evidence-currency.sh prompts/outputs/current`
   (exit 1 lists stale records). Records without `coveredPaths` remain

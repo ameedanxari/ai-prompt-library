@@ -320,6 +320,44 @@ describe('validate-semantic-review.sh', () => {
       });
     });
 
+    it('rejects a delta completion decision left at the base revision', () => {
+      withRoot((root) => {
+        const review = writeDeltaReview(root, {});
+        setRevision(review, 'completion-decision.json', BASE);
+        const { code, report } = validate(root);
+        expect(code).toBe(2);
+        expect(report.valid).toBe(false);
+        expect(codes(report)).toContain('bundle-source-revision-disagreement');
+      });
+    });
+
+    it('rejects a full-mode completion decision at a different revision', () => {
+      withRoot((root) => {
+        writeValidReview(root);
+        setRevision(path.join(root, 'review'), 'completion-decision.json', 'other999');
+        const { code, report } = validate(root);
+        expect(code).toBe(2);
+        expect(codes(report)).toContain('bundle-source-revision-disagreement');
+      });
+    });
+
+    it('accepts a full scope without a sourceRevision', () => {
+      withRoot((root) => {
+        writeValidReview(root);
+        writeJson(path.join(root, 'review'), 'review-scope.json', { mode: 'full' });
+        const { code, report } = validate(root);
+        expect(code).toBe(0);
+        expect(report).toMatchObject({ status: 'pass', reviewMode: 'full' });
+      });
+    });
+
+    it('still requires a sourceRevision in delta mode', () => {
+      withRoot((root) => {
+        writeDeltaReview(root, { sourceRevision: undefined });
+        expect(codes(validate(root).report)).toContain('invalid-review-scope');
+      });
+    });
+
     it('refuses verified_complete in delta mode', () => {
       withRoot((root) => {
         writeDeltaReview(root, {}, 'verified_complete');

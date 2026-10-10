@@ -4,17 +4,26 @@
 # Records may bind their buildEvidence to files with coveredPaths (repo-relative)
 # and pathsDigest ("sha256:<64 hex>") instead of to the whole-tree revision. The
 # digest is sha256 over the UTF-8 text of the sorted coveredPaths, one line per
-# path: "<path>\t<blob>\n", where <blob> is `git rev-parse <rev>:<path>` or the
-# literal "missing" when the path does not exist at that revision.
+# path: "<path>\t<blob>\n", where <blob> is `git rev-parse <rev>:<path>` (--rev)
+# or `git hash-object -- <path>` of the working-tree file (--worktree), or the
+# literal "missing" when the path does not exist at that revision / in the tree.
+# A working-tree blob equals the blob the file has once committed, so a digest
+# computed with --worktree BEFORE committing stays current after the commit that
+# records it (commit the code and execution-log.md together).
 #
 # Usage:
-#   bash .ai-prompts/scripts/check-evidence-currency.sh [TARGET_DIR] [--rev REV] [--repo PATH]
-#   bash .ai-prompts/scripts/check-evidence-currency.sh --digest [--rev REV] [--repo PATH] PATH...
+#   bash .ai-prompts/scripts/check-evidence-currency.sh [TARGET_DIR] [--rev REV | --worktree] [--repo PATH]
+#   bash .ai-prompts/scripts/check-evidence-currency.sh --digest [--rev REV | --worktree] [--repo PATH] PATH...
 #
-# TARGET_DIR defaults to prompts/outputs/current, REV to HEAD, and PATH to the git
-# toplevel of the current directory. In report mode the authoritative record per
-# taskId (the last one in log order) is checked and TARGET_DIR/evidence-currency-report.json
-# is written. In --digest mode only the digest string is printed.
+# Source of blobs: --rev REV reads committed blobs; --worktree reads the working
+# tree (PATH relative to the repo root). The two flags are mutually exclusive.
+# Defaults: report mode uses --rev HEAD; --digest uses --worktree when neither
+# --rev nor --worktree is given (pass --digest --rev REV for committed blobs).
+# --repo defaults to the git toplevel of the current directory; TARGET_DIR to
+# prompts/outputs/current. In report mode the authoritative record per taskId
+# (the last one in log order) is checked and TARGET_DIR/evidence-currency-report.json
+# is written (its "rev" field is "worktree" under --worktree). In --digest mode
+# only the digest string is printed.
 # Exit 0: no bound record is stale (or --digest succeeded)
 # Exit 1: at least one bound record's digest no longer matches
 # Exit 2: usage error, missing inputs, or unreadable repository
@@ -22,7 +31,8 @@
 set -uo pipefail
 
 TARGET_DIR=""
-REV="HEAD"
+REV=""
+WORKTREE=0
 REPO=""
 DIGEST_MODE=0
 POSITIONAL=()
@@ -32,13 +42,15 @@ while [ "$#" -gt 0 ]; do
     --rev)
       if [ "$#" -lt 2 ]; then echo "evidence currency: --rev needs a value" >&2; exit 2; fi
       REV="$2"; shift 2 ;;
+    --worktree)
+      WORKTREE=1; shift ;;
     --repo)
       if [ "$#" -lt 2 ]; then echo "evidence currency: --repo needs a value" >&2; exit 2; fi
       REPO="$2"; shift 2 ;;
     --digest)
       DIGEST_MODE=1; shift ;;
     -h|--help)
-      sed -n '2,20p' "$0" | sed 's/^# \{0,1\}//'
+      sed -n '2,/^[^#]/{/^#/s/^# \{0,1\}//p;}' "$0"
       exit 0 ;;
     --)
       shift
@@ -49,6 +61,14 @@ while [ "$#" -gt 0 ]; do
       POSITIONAL+=("$1"); shift ;;
   esac
 done
+
+if [ "$WORKTREE" -eq 1 ] && [ -n "$REV" ]; then
+  echo "evidence currency: --rev and --worktree are mutually exclusive" >&2
+  exit 2
+fi
+if [ "$WORKTREE" -eq 0 ] && [ -z "$REV" ]; then
+  if [ "$DIGEST_MODE" -eq 1 ]; then WORKTREE=1; else REV="HEAD"; fi
+fi
 
 if ! command -v python3 >/dev/null 2>&1; then
   echo "evidence currency: python3 is required" >&2
@@ -68,7 +88,7 @@ if ! git -C "$REPO" rev-parse --git-dir >/dev/null 2>&1; then
   echo "evidence currency: not a git repository: $REPO" >&2
   exit 2
 fi
-if ! git -C "$REPO" rev-parse --verify --quiet "$REV^{commit}" >/dev/null 2>&1; then
+if [ "$WORKTREE" -eq 0 ] && ! git -C "$REPO" rev-parse --verify --quiet "$REV^{commit}" >/dev/null 2>&1; then
   echo "evidence currency: revision not found: $REV" >&2
   exit 2
 fi
@@ -106,7 +126,7 @@ if [ "$PYTHON_MODE" = "report" ]; then
 fi
 
 currency_status=0
-python3 - "$PYTHON_MODE" "$REPO" "$REV" "$TARGET_DIR" "$temporary_report" "${POSITIONAL[@]+"${POSITIONAL[@]}"}" <<'PY' || currency_status=$?
+python3 - "$PYTHON_MODE" "$REPO" "$REV" "$WORKTREE" "$TARGET_DIR" "$temporary_report" "${POSITIONAL[@]+"${POSITIONAL[@]}"}" <<'PY' || currency_status=$?
 import hashlib
 import json
 import os
@@ -114,10 +134,27 @@ import re
 import subprocess
 import sys
 
-mode, repo, rev, target_dir, report_path = sys.argv[1:6]
-extra_paths = sys.argv[6:]
+mode, repo, rev, worktree_flag, target_dir, report_path = sys.argv[1:7]
+extra_paths = sys.argv[7:]
+worktree = worktree_flag == "1"
+rev_label = "worktree" if worktree else rev
 
 def blob_for(path):
+    if worktree:
+        full = os.path.join(repo, path)
+        if os.path.islink(full):
+            # git stores a symlink as a blob of its target text.
+            result = subprocess.run(
+                ["git", "-C", repo, "hash-object", "--stdin"],
+                input=os.readlink(full).encode("utf-8"), capture_output=True,
+            )
+            return result.stdout.decode().strip() or "missing"
+        if not os.path.isfile(full):
+            return "missing"
+        result = subprocess.run(
+            ["git", "-C", repo, "hash-object", "--", path], capture_output=True, text=True,
+        )
+        return result.stdout.strip() if result.returncode == 0 and result.stdout.strip() else "missing"
     result = subprocess.run(
         ["git", "-C", repo, "rev-parse", "--verify", "--quiet", f"{rev}:{path}"],
         capture_output=True, text=True,
@@ -173,7 +210,7 @@ for task_id in sorted(authoritative):
 
 report = {
     "generated_by": "scripts/check-evidence-currency.sh",
-    "rev": rev,
+    "rev": rev_label,
     "checked": checked,
     "current": current,
     "stale": stale,
@@ -184,11 +221,11 @@ with open(report_path, "w", encoding="utf-8") as handle:
     handle.write("\n")
 
 if stale:
-    print(f"evidence currency: {len(stale)} of {checked} file-bound record(s) stale at {rev}")
+    print(f"evidence currency: {len(stale)} of {checked} file-bound record(s) stale at {rev_label}")
     for entry in stale:
         print(f"  - {entry['taskId']}: candidate paths {', '.join(entry['candidatePaths'])}")
     sys.exit(1)
-print(f"evidence currency: {current}/{checked} file-bound record(s) current at {rev}, {revision_bound} revision-bound")
+print(f"evidence currency: {current}/{checked} file-bound record(s) current at {rev_label}, {revision_bound} revision-bound")
 PY
 
 if [ "$PYTHON_MODE" = "digest" ]; then

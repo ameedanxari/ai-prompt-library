@@ -59,6 +59,25 @@ multipliers and move the design check before the code.
   fields with guidance on setting them.
 - `content-system.md`: explains the auto-registered share.
 
+### Fixed (independent review of the above)
+- `build-path-ledger.sh` no longer lets a unit without `Change type` inherit
+  the previous unit's value; such a unit is `unspecified` and counts as a
+  creator, so two creators on one path still collide. Remediation rows are
+  labelled with their real file name.
+- The semantic-review validator now compares the completion decision's
+  revision with the bundle revision in both modes; a `full` scope no longer
+  requires `sourceRevision`.
+- `check-evidence-currency.sh --digest` hashes working-tree files by default
+  (`--worktree`), so a digest written before the commit stays current after
+  it; `--rev REV` hashes a commit.
+- `execution-log-slice.sh` returns records wherever they sit in the log, not
+  only inside packet entries.
+- `select-impacted-tests.sh` maps a changed path named in a unit's `Test`
+  command to that command, lists other changed test files as `changedTests`,
+  and reports claimed paths whose unit has no test as `untestedUnits`.
+- `deriveExecutionTerminalState` keeps the last record on an unflagged
+  duplicate, matching the shell validator.
+
 ## [Unreleased] — corpus split, `validators` subpath, repository hygiene
 
 The library had outgrown two of its own assumptions: that a module lives in

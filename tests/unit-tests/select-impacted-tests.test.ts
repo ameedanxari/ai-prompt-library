@@ -43,12 +43,17 @@ function fixture(): { repo: string; plan: string } {
       unit('R2', ['src/b.ts'], 'npm test -- b'),
       unit('R3', ['src/shared.ts'], 'npm test -- a'),
       unit('R4', ['src/shared.ts'], 'npm run typecheck'),
+      unit('R5', ['src/untested.ts'], ''),
+      unit('R6', ['src/c.ts'], 'npx vitest run tests/c.test.ts'),
     ],
   }));
   write(repo, 'src/a.ts', 'a0');
   write(repo, 'src/b.ts', 'b0');
   write(repo, 'src/shared.ts', 's0');
   write(repo, 'src/unclaimed.ts', 'u0');
+  write(repo, 'src/untested.ts', 'x0');
+  write(repo, 'tests/c.test.ts', 'c0');
+  write(repo, 'tests/other.test.ts', 'o0');
   write(repo, 'README.md', 'r0');
   commit(repo, 'base');
   return { repo, plan };
@@ -142,6 +147,68 @@ describe('select-impacted-tests.sh', () => {
     ]);
     expect(parsed.commands).toEqual(['npm test -- a']);
     expect(parsed.unmappedPaths).toEqual(['src/unclaimed.ts']);
+  });
+
+  it('maps a changed test file named verbatim in a unit test command to that command', () => {
+    const { repo, plan } = fixture();
+    write(repo, 'tests/c.test.ts', 'c1');
+    commit(repo, 'change');
+    const { code, out, err } = run([plan, '--json']);
+    expect(code).toBe(0);
+    const parsed = JSON.parse(out);
+    expect(parsed.commands).toEqual(['npx vitest run tests/c.test.ts']);
+    expect(parsed.impactedUnits).toEqual([
+      { taskId: 'remediation-a.md#R6', file: 'tests/c.test.ts', test: 'npx vitest run tests/c.test.ts' },
+    ]);
+    expect(parsed.changedTests).toEqual([]);
+    expect(parsed.unmappedPaths).toEqual([]);
+    expect(err).toBe('');
+  });
+
+  it('does not treat a longer path as a verbatim match', () => {
+    const { repo, plan } = fixture();
+    write(repo, 'tests/sub/c.test.ts', 'new');
+    commit(repo, 'change');
+    const parsed = JSON.parse(run([plan, '--json']).out);
+    expect(parsed.commands).toEqual([]);
+    expect(parsed.changedTests).toEqual(['tests/sub/c.test.ts']);
+  });
+
+  it('lists unclaimed test files as changedTests with a run-directly note', () => {
+    const { repo, plan } = fixture();
+    write(repo, 'tests/other.test.ts', 'o1');
+    write(repo, 'pkg/test_thing.py', 'p');
+    write(repo, 'pkg/thing_test.go', 'g');
+    write(repo, 'pkg/widget.spec.tsx', 'w');
+    write(repo, 'src/unclaimed.ts', 'u1');
+    commit(repo, 'change');
+    const plain = run([plan]);
+    expect(plain.code).toBe(0);
+    expect(plain.out).toBe('');
+    for (const f of ['tests/other.test.ts', 'pkg/test_thing.py', 'pkg/thing_test.go', 'pkg/widget.spec.tsx']) {
+      expect(plain.err).toContain(`run directly: ${f}`);
+    }
+    const parsed = JSON.parse(run([plan, '--json']).out);
+    expect(parsed.changedTests).toEqual([
+      'pkg/test_thing.py',
+      'pkg/thing_test.go',
+      'pkg/widget.spec.tsx',
+      'tests/other.test.ts',
+    ]);
+    expect(parsed.unmappedPaths).toEqual(['src/unclaimed.ts']);
+  });
+
+  it('reports claimed paths whose unit declares no test as untestedUnits', () => {
+    const { repo, plan } = fixture();
+    write(repo, 'src/untested.ts', 'x1');
+    commit(repo, 'change');
+    const plain = run([plan]);
+    expect(plain.out).toBe('');
+    expect(plain.err).toContain('remediation-a.md#R5 claims src/untested.ts but declares no test');
+    const parsed = JSON.parse(run([plan, '--json']).out);
+    expect(parsed.untestedUnits).toEqual([{ taskId: 'remediation-a.md#R5', file: 'src/untested.ts' }]);
+    expect(parsed.impactedUnits).toEqual([]);
+    expect(parsed.unmappedPaths).toEqual([]);
   });
 
   it('exits 2 on usage errors, a missing contract and a non-repo directory', () => {

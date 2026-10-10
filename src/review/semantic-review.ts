@@ -327,10 +327,6 @@ export function validateSemanticReviewBundle(
     }
   }
 
-  if (revisions.size > 1) {
-    addIssue(issues, 'bundle-source-revision-disagreement', 'Review artifacts do not share one source revision.');
-  }
-
   const decision = bundle.completionDecision;
   if (!decision) {
     addIssue(issues, 'missing-completion-decision', 'completion-decision.json is required.', 'completion-decision.json');
@@ -343,6 +339,11 @@ export function validateSemanticReviewBundle(
     if (synthesis && decision.decision !== synthesis.completionRecommendation) {
       addIssue(issues, 'decision-synthesis-disagreement', 'Completion decision disagrees with review synthesis.', 'completion-decision.json');
     }
+  }
+
+  // Checked after the completion decision is added so every artifact revision is compared.
+  if (revisions.size > 1) {
+    addIssue(issues, 'bundle-source-revision-disagreement', 'Review artifacts do not share one source revision.');
   }
 
   const decisionValue = decision && DECISIONS.has(decision.decision) ? decision.decision : null;
@@ -437,7 +438,10 @@ function resolveReviewScope(
     return FULL_REVIEW_SCOPE;
   }
   const sourceRevision = nonEmpty(scope.sourceRevision);
-  if (!sourceRevision) addIssue(issues, 'invalid-review-scope', `${artifact} requires a sourceRevision.`, artifact);
+  // sourceRevision is optional in full mode (validated only when present) and required in delta mode.
+  if (!sourceRevision && (mode === 'delta' || scope.sourceRevision !== undefined)) {
+    addIssue(issues, 'invalid-review-scope', `${artifact} requires a sourceRevision.`, artifact);
+  }
 
   let dimensions: string[] = [];
   const dimensionsPresent = Array.isArray(scope.dimensions) && scope.dimensions.length > 0;
