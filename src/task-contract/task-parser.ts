@@ -29,10 +29,24 @@ export const COMPOSITION_MAPS = [
   'demo',
 ] as const;
 
+export const RISK_LEVELS = ['low', 'medium', 'high'] as const;
+/**
+ * Model tiers a planner may request for executing a unit.
+ * - lookup: cheapest model, for read-only lookups.
+ * - standard: routine implementation against a clear spec.
+ * - advanced: design, subtle bugs, security-critical core.
+ * - frontier: last resort or final judgment.
+ */
+export const MODEL_TIERS = ['lookup', 'standard', 'advanced', 'frontier'] as const;
+export const TURN_BUDGET_MIN = 1;
+export const TURN_BUDGET_MAX = 500;
+
 export type TaskPhase = (typeof PHASES)[number];
 export type ArtifactKind = (typeof ARTIFACT_KINDS)[number];
 export type EvidenceLevel = (typeof EVIDENCE_LEVELS)[number];
 export type CompositionMap = (typeof COMPOSITION_MAPS)[number];
+export type RiskLevel = (typeof RISK_LEVELS)[number];
+export type ModelTier = (typeof MODEL_TIERS)[number];
 export type TaskSchemaVersion = 2 | 'legacy';
 export type PlanFileKind = 'tasks' | 'remediation';
 
@@ -75,6 +89,13 @@ export interface ParsedTaskUnit {
   releaseExclusionCheck?: string;
   fixtureAllowanceMissingRetirementTask?: true;
   fixtureAllowanceMissingReleaseExclusionCheck?: true;
+  risk?: RiskLevel;
+  invalidRisk?: string;
+  modelTier?: ModelTier;
+  invalidModelTier?: string;
+  /** Maximum tool turns the executing agent gets; integer 1-500. */
+  turnBudget?: number;
+  invalidTurnBudget?: string;
 }
 
 export interface ParsedPlanFile {
@@ -452,6 +473,36 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
         hasTypedMetadata = true;
         unit.releaseExclusionCheck = value;
         break;
+      // Execution-routing fields are optional and deliberately do not flip a
+      // legacy unit to schema version 2.
+      case 'risk': {
+        const riskValue = normalizeEnumValue(value);
+        if (isRiskLevel(riskValue)) {
+          unit.risk = riskValue;
+        } else {
+          unit.invalidRisk = value;
+        }
+        break;
+      }
+      case 'model tier': {
+        const modelTierValue = normalizeEnumValue(value);
+        if (isModelTier(modelTierValue)) {
+          unit.modelTier = modelTierValue;
+        } else {
+          unit.invalidModelTier = value;
+        }
+        break;
+      }
+      case 'turn budget': {
+        const turnBudgetValue = normalizeEnumValue(value);
+        const turnBudget = /^\d+$/.test(turnBudgetValue) ? Number(turnBudgetValue) : Number.NaN;
+        if (Number.isInteger(turnBudget) && turnBudget >= TURN_BUDGET_MIN && turnBudget <= TURN_BUDGET_MAX) {
+          unit.turnBudget = turnBudget;
+        } else {
+          unit.invalidTurnBudget = value;
+        }
+        break;
+      }
     }
   }
 
@@ -570,6 +621,14 @@ function isEvidenceLevel(value: string): value is EvidenceLevel {
 
 function isCompositionMap(value: string): value is CompositionMap {
   return (COMPOSITION_MAPS as readonly string[]).includes(value);
+}
+
+function isRiskLevel(value: string): value is RiskLevel {
+  return (RISK_LEVELS as readonly string[]).includes(value);
+}
+
+function isModelTier(value: string): value is ModelTier {
+  return (MODEL_TIERS as readonly string[]).includes(value);
 }
 
 function normalizeEnumValue(raw: string): string {

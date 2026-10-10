@@ -36,6 +36,57 @@ Write under `prompts/outputs/current/review/`:
 
 Follow `.ai-prompts/prompts/review/README.md` exactly.
 
+## Review modes
+
+A **full** review re-runs all eight dimensions against one source revision.
+It is required for the first review after implementation and for any
+`verified_complete` decision, so a release decision always rests on a full
+review at the release-candidate revision.
+
+A **delta** review serves fix rounds. It re-reviews only the dimensions the
+round's changes can affect and carries the other reports forward unchanged.
+Declare it in `review/review-scope.json`:
+
+```json
+{
+  "mode": "delta",
+  "sourceRevision": "<revision under review>",
+  "baseRevision": "<revision of the last full or delta bundle>",
+  "dimensions": ["implementation-correctness", "adversarial-edge-cases"],
+  "changedPaths": ["<paths changed since baseRevision>"],
+  "reason": "<why these dimensions>"
+}
+```
+
+Dimension names are `intent-fidelity`, `implementation-correctness`,
+`functional-validation`, `integration-composition`, `adversarial-edge-cases`,
+`evidence-quality`, `user-outcome` and `content-experience`. Rules the
+validator enforces:
+
+- All eight reports must still be present. Re-reviewed reports carry
+  `sourceRevision`; carried reports keep `baseRevision` (or are re-stamped
+  at `sourceRevision` if re-reviewed anyway).
+- Synthesis, mechanical evidence and the completion decision are written at
+  `sourceRevision`, and the synthesis still carries every review id and
+  every finding, carried ones included. Carried findings keep their status
+  until a re-reviewing dimension resolves them.
+- A delta bundle may conclude `remediation_required`, `partial` or
+  `blocked`, never `verified_complete`.
+
+Choose the dimensions from the changed paths, and include more when unsure:
+`implementation-correctness` and `adversarial-edge-cases` for any runtime
+code; `integration-composition` when composition, wiring, jobs or
+migrations change; `functional-validation` and `evidence-quality` when
+tests or receipts change; `content-experience` and `user-outcome` when
+visible copy, pages or flows change; `intent-fidelity` when scope or
+acceptance changes. Escalate to a full review when the round touched more
+than about a third of the reviewed surface or changed shared foundations
+(auth, tenancy, data model).
+
+Start reviewers only after the evidence they read is complete for the
+revision under review. Never start a reviewer that has to wait or poll for
+test runs or receipts.
+
 ## Phase 0: Review preflight
 
 1. Capture one source revision for the complete review bundle. If the worktree

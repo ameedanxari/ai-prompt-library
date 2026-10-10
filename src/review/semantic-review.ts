@@ -147,8 +147,21 @@ export interface SemanticCompletionChallenge {
   evidence: SemanticEvidenceReference[];
 }
 
+export type SemanticReviewMode = 'full' | 'delta';
+
+export interface SemanticReviewScope {
+  mode: SemanticReviewMode;
+  sourceRevision: string;
+  baseRevision?: string;
+  dimensions?: string[];
+  changedPaths?: string[];
+  reason?: string;
+}
+
 export interface SemanticReviewBundle {
   reports: SemanticDimensionReview[];
+  /** Raw contents of review-scope.json when the file is present; validated by validateSemanticReviewBundle. */
+  reviewScope?: unknown;
   synthesis?: SemanticReviewSynthesis;
   completionDecision?: SemanticCompletionChallenge;
   remediationPlan?: string;
@@ -170,6 +183,8 @@ export interface SemanticReviewValidationReport {
   completionAllowed: boolean;
   decision: SemanticCompletionDecision | null;
   sourceRevision: string | null;
+  reviewMode: SemanticReviewMode;
+  scopedDimensions: string[];
   reportCount: number;
   findingCount: number;
   unresolvedFindingIds: string[];
@@ -193,6 +208,9 @@ const DECISIONS = new Set<string>(SEMANTIC_COMPLETION_DECISIONS);
 const DIMENSIONS = new Set<string>(SEMANTIC_REVIEW_DIMENSIONS);
 const SEVERITIES = new Set<string>(SEMANTIC_FINDING_SEVERITIES);
 const DISPOSITIONS = new Set<string>(SEMANTIC_FINDING_DISPOSITIONS);
+export const SEMANTIC_REVIEW_SCOPE_FILE = 'review-scope.json';
+
+const REVIEW_MODES = new Set<string>(['full', 'delta']);
 const EVIDENCE_KINDS = new Set<string>(['code', 'test', 'runtime', 'artifact', 'manual', 'external', 'review']);
 
 export function validateSemanticReviewBundle(
@@ -204,6 +222,10 @@ export function validateSemanticReviewBundle(
   const contextIds = new Set<string>();
   const reviewerIds = new Set<string>();
   const revisions = new Set<string>();
+  const scope = resolveReviewScope(bundle.reviewScope, issues);
+  // In delta mode per-report revisions are checked against the scope, not against each other.
+  const reportRevisions = scope.mode === 'delta' ? new Set<string>() : revisions;
+  if (scope.mode === 'delta') revisions.add(scope.sourceRevision);
   const sourceFindings = new Map<string, SemanticFinding>();
   let independentCount = 0;
   let blindCount = 0;
@@ -212,7 +234,8 @@ export function validateSemanticReviewBundle(
     const entries = reportsByDimension.get(report.dimension) ?? [];
     entries.push(report);
     reportsByDimension.set(report.dimension, entries);
-    validateDimensionReport(report, issues, reviewIds, contextIds, reviewerIds, revisions, sourceFindings);
+    validateDimensionReport(report, issues, reviewIds, contextIds, reviewerIds, reportRevisions, sourceFindings);
+    if (scope.mode === 'delta') validateDeltaReportRevision(report, scope, issues);
     if (report.reviewer?.independentContext) independentCount += 1;
     if (report.reviewer?.implementationNarrativeReceived === false) blindCount += 1;
   }
@@ -238,7 +261,7 @@ export function validateSemanticReviewBundle(
   if (blindCount < 1) {
     addIssue(issues, 'blind-review-missing', 'At least one reviewer must not receive the implementation narrative.');
   }
-  if (revisions.size > 1) {
+  if (scope.mode === 'full' && revisions.size > 1) {
     addIssue(issues, 'source-revision-disagreement', 'Dimension reports review different source revisions.');
   }
 
@@ -314,6 +337,9 @@ export function validateSemanticReviewBundle(
   } else {
     addRevision(decision.sourceRevision, 'completion-decision.json', issues, revisions);
     validateCompletionDecision(decision, bundle, canonicalFindings, unresolvedFindingIds, blockingFindingIds, issues);
+    if (scope.mode === 'delta' && decision.decision === 'verified_complete') {
+      addIssue(issues, 'delta-review-cannot-verify-complete', 'A delta review cannot yield verified_complete; a release decision needs a full review.', 'completion-decision.json');
+    }
     if (synthesis && decision.decision !== synthesis.completionRecommendation) {
       addIssue(issues, 'decision-synthesis-disagreement', 'Completion decision disagrees with review synthesis.', 'completion-decision.json');
     }
@@ -331,6 +357,8 @@ export function validateSemanticReviewBundle(
     completionAllowed,
     decision: decisionValue,
     sourceRevision: revisions.size === 1 ? [...revisions][0] : null,
+    reviewMode: scope.mode,
+    scopedDimensions: scope.mode === 'delta' ? [...scope.dimensions] : [],
     reportCount: bundle.reports.length,
     findingCount: canonicalFindings.size,
     unresolvedFindingIds,
@@ -356,6 +384,7 @@ export function validateSemanticReviewDirectory(planDirectory: string): Semantic
 
   const synthesis = readJsonArtifact(join(reviewDirectory, 'review-synthesis.json'), 'review-synthesis.json', loadIssues) as SemanticReviewSynthesis | undefined;
   const completionDecision = readJsonArtifact(join(reviewDirectory, 'completion-decision.json'), 'completion-decision.json', loadIssues) as SemanticCompletionChallenge | undefined;
+  const reviewScope = readReviewScope(join(reviewDirectory, SEMANTIC_REVIEW_SCOPE_FILE), loadIssues);
   const remediationPath = join(reviewDirectory, 'remediation-plan.md');
   const remediationPlan = existsSync(remediationPath) ? readFileSync(remediationPath, 'utf8') : undefined;
 
@@ -364,8 +393,101 @@ export function validateSemanticReviewDirectory(planDirectory: string): Semantic
     synthesis,
     completionDecision,
     remediationPlan,
+    reviewScope,
     loadIssues,
   });
+}
+
+interface ResolvedReviewScope {
+  mode: SemanticReviewMode;
+  sourceRevision: string;
+  baseRevision: string;
+  dimensions: string[];
+}
+
+const FULL_REVIEW_SCOPE: ResolvedReviewScope = { mode: 'full', sourceRevision: '', baseRevision: '', dimensions: [] };
+
+function readReviewScope(
+  path: string,
+  issues: SemanticReviewValidationIssue[],
+): unknown {
+  if (!existsSync(path)) return undefined;
+  try {
+    return JSON.parse(readFileSync(path, 'utf8')) as unknown;
+  } catch (error) {
+    addIssue(issues, 'invalid-review-scope', `${SEMANTIC_REVIEW_SCOPE_FILE} is not valid JSON: ${(error as Error).message}.`, SEMANTIC_REVIEW_SCOPE_FILE);
+    return undefined;
+  }
+}
+
+function resolveReviewScope(
+  raw: unknown,
+  issues: SemanticReviewValidationIssue[],
+): ResolvedReviewScope {
+  if (raw === undefined) return FULL_REVIEW_SCOPE;
+  const artifact = SEMANTIC_REVIEW_SCOPE_FILE;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    addIssue(issues, 'invalid-review-scope', `${artifact} root must be an object.`, artifact);
+    return FULL_REVIEW_SCOPE;
+  }
+  const scope = raw as Record<string, unknown>;
+  const mode = typeof scope.mode === 'string' && REVIEW_MODES.has(scope.mode) ? scope.mode as SemanticReviewMode : null;
+  if (!mode) {
+    addIssue(issues, 'invalid-review-scope', `${artifact} mode must be "full" or "delta".`, artifact);
+    return FULL_REVIEW_SCOPE;
+  }
+  const sourceRevision = nonEmpty(scope.sourceRevision);
+  if (!sourceRevision) addIssue(issues, 'invalid-review-scope', `${artifact} requires a sourceRevision.`, artifact);
+
+  let dimensions: string[] = [];
+  const dimensionsPresent = Array.isArray(scope.dimensions) && scope.dimensions.length > 0;
+  if (scope.dimensions !== undefined && !Array.isArray(scope.dimensions)) {
+    addIssue(issues, 'invalid-review-scope', `${artifact} dimensions must be an array of dimension names.`, artifact);
+  } else if (Array.isArray(scope.dimensions)) {
+    const invalid = scope.dimensions.filter((value) => typeof value !== 'string' || !DIMENSIONS.has(value));
+    if (invalid.length) {
+      addIssue(issues, 'invalid-review-scope', `${artifact} lists invalid dimension names: ${invalid.map((value) => JSON.stringify(value)).join(', ')}.`, artifact);
+    }
+    dimensions = sorted(scope.dimensions.filter((value): value is string => typeof value === 'string' && DIMENSIONS.has(value)));
+  }
+  if (scope.changedPaths !== undefined && (!Array.isArray(scope.changedPaths) || scope.changedPaths.some((value) => typeof value !== 'string'))) {
+    addIssue(issues, 'invalid-review-scope', `${artifact} changedPaths must be an array of strings.`, artifact);
+  }
+  if (scope.reason !== undefined && typeof scope.reason !== 'string') {
+    addIssue(issues, 'invalid-review-scope', `${artifact} reason must be a string.`, artifact);
+  }
+
+  if (mode === 'full' || !sourceRevision) {
+    return FULL_REVIEW_SCOPE;
+  }
+  const baseRevision = nonEmpty(scope.baseRevision);
+  if (!baseRevision) {
+    addIssue(issues, 'delta-scope-missing-base', `${artifact} delta mode requires a baseRevision.`, artifact);
+  }
+  if (!dimensionsPresent) {
+    addIssue(issues, 'delta-scope-missing-dimensions', `${artifact} delta mode requires a non-empty dimensions list.`, artifact);
+  }
+  return { mode, sourceRevision, baseRevision, dimensions };
+}
+
+function validateDeltaReportRevision(
+  report: SemanticDimensionReview,
+  scope: ResolvedReviewScope,
+  issues: SemanticReviewValidationIssue[],
+): void {
+  const revision = nonEmpty(report.sourceRevision);
+  if (!revision) return; // addRevision already reported the missing revision.
+  const artifact = SEMANTIC_REVIEW_REPORT_FILES[report.dimension] ?? `${report.dimension || 'unknown'}.json`;
+  if (scope.dimensions.includes(report.dimension)) {
+    if (revision !== scope.sourceRevision) {
+      addIssue(issues, 'delta-report-revision-mismatch', `${artifact} is a re-reviewed dimension and must carry revision ${scope.sourceRevision}, found ${revision}.`, artifact);
+    }
+    return;
+  }
+  const allowed = [scope.baseRevision, scope.sourceRevision].filter(Boolean);
+  if (!allowed.includes(revision)) {
+    addIssue(issues, 'delta-report-revision-mismatch', `${artifact} is carried forward and must carry revision ${allowed.join(' or ')}, found ${revision}.`, artifact);
+  }
 }
 
 function validateDimensionReport(

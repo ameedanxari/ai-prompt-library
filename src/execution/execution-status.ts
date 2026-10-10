@@ -48,6 +48,10 @@ export interface BuildEvidenceRecord {
   recordedAt: string;
   current: boolean;
   sourceRevision?: string;
+  /** Repo-relative paths this evidence covers; present together with pathsDigest. */
+  coveredPaths?: string[];
+  /** `sha256:<64 hex>` over sorted `<path>\t<blob>\n` lines (see scripts/check-evidence-currency.sh --digest). */
+  pathsDigest?: string;
 }
 
 export interface TaskUnitExecutionRecord {
@@ -59,6 +63,8 @@ export interface TaskUnitExecutionRecord {
   buildEvidence?: BuildEvidenceRecord;
   risks: ExecutionRisk[];
   reason?: string;
+  /** Marks a later record for a taskId already recorded; the last record in log order is authoritative. */
+  followUp?: boolean;
 }
 
 export interface ExecutionGateState {
@@ -114,9 +120,18 @@ export function deriveExecutionTerminalState(
     (blocking ? blockingReasons : reasons).push(`${taskId}: ${reason}`);
   };
 
+  // A later record for the same task is legal only as an explicit follow-up
+  // (`followUp: true`); the last record in log order is authoritative.
   for (const record of records) {
+    const isFollowUp = record.followUp === true;
     if (recordsById.has(record.taskId)) {
-      addTaskReason(record.taskId, 'duplicate canonical execution record', true);
+      if (isFollowUp) {
+        recordsById.set(record.taskId, record);
+      } else {
+        addTaskReason(record.taskId, 'duplicate canonical execution record', true);
+      }
+    } else if (isFollowUp) {
+      addTaskReason(record.taskId, 'follow-up record has no earlier canonical record', true);
     } else {
       recordsById.set(record.taskId, record);
     }
@@ -128,7 +143,9 @@ export function deriveExecutionTerminalState(
     }
   }
 
-  for (const record of records) {
+  const authoritativeRecords = [...recordsById.values()];
+
+  for (const record of authoritativeRecords) {
     if (record.status === 'blocked') {
       addTaskReason(record.taskId, record.reason || 'task is blocked', true);
       continue;
@@ -186,7 +203,7 @@ export function deriveExecutionTerminalState(
   }
 
   const recordBlockedIds = new Set(
-    records.filter((record) => record.status === 'blocked').map((record) => record.taskId),
+    authoritativeRecords.filter((record) => record.status === 'blocked').map((record) => record.taskId),
   );
   const envelopeBlockedIds = new Set(gates.envelopeBlockedTaskIds ?? []);
   for (const taskId of new Set([...recordBlockedIds, ...envelopeBlockedIds])) {

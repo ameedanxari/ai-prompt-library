@@ -151,6 +151,80 @@ describe('task contract parser', () => {
     expect(parsed.units[2]).toMatchObject({ invalidCompositionMap: 'staging-ish' });
   });
 
+  it('parses Risk, Model tier, and Turn budget case-insensitively', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-routing.md',
+      [
+        '## T1 - routed unit',
+        '- **Risk:** HIGH',
+        '- **Model tier:**  Advanced. ',
+        '- **Turn budget:** 40',
+        '',
+        '## T2 - unrouted unit',
+        '- **Change type:** create-new',
+        '',
+        '## T3 - bounds',
+        '- **Risk:** Low',
+        '- **Model tier:** lookup',
+        '- **Turn budget:** 500',
+        '',
+        '## T4 - frontier and floor',
+        '- **Model tier:** FRONTIER',
+        '- **Turn budget:** 1',
+        '',
+        '## T5 - standard and medium',
+        '- **Risk:** medium',
+        '- **Model tier:** standard',
+      ].join('\n'),
+    );
+
+    expect(parsed.units[0]).toMatchObject({ risk: 'high', modelTier: 'advanced', turnBudget: 40 });
+    expect(parsed.units[0].schemaVersion).toBe('legacy');
+    expect(parsed.units[1].risk).toBeUndefined();
+    expect(parsed.units[1].modelTier).toBeUndefined();
+    expect(parsed.units[1].turnBudget).toBeUndefined();
+    expect(parsed.units[2]).toMatchObject({ risk: 'low', modelTier: 'lookup', turnBudget: 500 });
+    expect(parsed.units[3]).toMatchObject({ modelTier: 'frontier', turnBudget: 1 });
+    expect(parsed.units[4]).toMatchObject({ risk: 'medium', modelTier: 'standard' });
+  });
+
+  it('records invalid Risk, Model tier, and Turn budget values without setting the typed properties', () => {
+    const parsed = parsePlanTaskFile(
+      'tasks-routing.md',
+      [
+        '## T1 - bad values',
+        '- **Risk:** severe',
+        '- **Model tier:** gpt-9',
+        '- **Turn budget:** 501',
+        '',
+        '## T2 - non-integer budgets',
+        '- **Turn budget:** 12.5',
+        '',
+        '## T3 - zero budget',
+        '- **Turn budget:** 0',
+        '',
+        '## T4 - negative budget',
+        '- **Turn budget:** -3',
+        '',
+        '## T5 - word budget',
+        '- **Turn budget:** many',
+      ].join('\n'),
+    );
+
+    expect(parsed.units[0]).toMatchObject({
+      invalidRisk: 'severe',
+      invalidModelTier: 'gpt-9',
+      invalidTurnBudget: '501',
+    });
+    expect(parsed.units[0].risk).toBeUndefined();
+    expect(parsed.units[0].modelTier).toBeUndefined();
+    expect(parsed.units[0].turnBudget).toBeUndefined();
+    expect(parsed.units[1].invalidTurnBudget).toBe('12.5');
+    expect(parsed.units[2].invalidTurnBudget).toBe('0');
+    expect(parsed.units[3].invalidTurnBudget).toBe('-3');
+    expect(parsed.units[4].invalidTurnBudget).toBe('many');
+  });
+
   it('extracts pipe-separated platform paths from one File field', () => {
     expect(
       extractFilePaths(

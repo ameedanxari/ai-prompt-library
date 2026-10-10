@@ -394,6 +394,9 @@ Include this section for UI remediation only:
 - **Depends on:** <G1.R<m> | none> (one-line reason required if not none)
 - **Test:** <verification command or steps>
 - **Estimated LOC:** <+N | -N | ~N>
+- **Risk:** <low | medium | high>
+- **Model tier:** <lookup | standard | advanced | frontier>
+- **Turn budget:** <tool calls the executing agent gets, 1-500>
 
 ## R2 — <Task title>
 
@@ -404,6 +407,25 @@ Fixture metadata (`Composition map`, `Fixture allowance`,
 `Fixture retirement task`, `Release exclusion check`, `Evidence level`)
 also goes INSIDE the owning `## Rn` task section — never in narrative
 prose — for the same parser-constraint reason.
+
+**Risk, model tier and turn budget** are optional, but set them on every
+unit you write; the executor routes and bounds agents by them, and a unit
+without them runs as `standard` with a 60-call budget.
+
+- `Risk: high` for units that touch privacy rights, authentication or
+  sessions, tenant isolation, migrations, money movement, or destructive
+  operations. The executor runs a design-first step for these (acceptance
+  tests written and failing first, then an independent design review).
+  Use `medium` for shared composition, background jobs and integrations;
+  `low` for copy, layout and isolated UI.
+- `Model tier`: `lookup` for read-only discovery, `standard` for
+  implementation against a precise change, `advanced` only for the design or
+  critical core of a high-risk change, `frontier` almost never. Split a
+  high-risk change so the routine remainder is its own `standard` unit
+  instead of raising the whole change to `advanced`.
+- `Turn budget`: size it to the change. About 30 for a focused edit with
+  one test, 60 for a typical unit, 120 at most for a cross-cutting change.
+  A unit that needs more is two units.
 
 **Example — remediating a missing Xcode target** (abridged to one task unit;
 a real file has one `## Rn` section per task):

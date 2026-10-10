@@ -19,6 +19,7 @@ interface Scenario {
   contentSystem?: string;
   inventory?: Record<string, unknown> | 'omit';
   appFiles?: Record<string, string>;
+  env?: Record<string, string>;
 }
 
 function run(scenario: Scenario) {
@@ -41,13 +42,18 @@ function run(scenario: Scenario) {
   let code = 0;
   let out = '';
   try {
-    out = execFileSync('/bin/bash', [VALIDATOR, outputs, app], { encoding: 'utf8' });
+    const env: NodeJS.ProcessEnv = { ...process.env, ...scenario.env };
+    if (!scenario.env || !('CONTENT_LINT_MAX_AUTO_SHARE' in scenario.env)) delete env.CONTENT_LINT_MAX_AUTO_SHARE;
+    if (!scenario.env || !('CONTENT_LINT_AUTO_PREFIX' in scenario.env)) delete env.CONTENT_LINT_AUTO_PREFIX;
+    out = execFileSync('/bin/bash', [VALIDATOR, outputs, app], { encoding: 'utf8', env });
   } catch (error) {
     const failure = error as { status?: number; stdout?: Buffer; stderr?: Buffer };
     code = failure.status ?? 1;
     out = `${failure.stdout?.toString() ?? ''}${failure.stderr?.toString() ?? ''}`;
   }
-  const report = JSON.parse(fs.readFileSync(path.join(outputs, 'content-lint-report.json'), 'utf8'));
+  const reportPath = path.join(outputs, 'content-lint-report.json');
+  // A usage error (exit 2) happens before any report is written.
+  const report = fs.existsSync(reportPath) ? JSON.parse(fs.readFileSync(reportPath, 'utf8')) : { status: 'none', issues: [], warnings: [], stats: {} };
   fs.rmSync(outputs, { recursive: true, force: true });
   fs.rmSync(app, { recursive: true, force: true });
   return { code, out, report };
@@ -256,5 +262,67 @@ describe('content lint — clean pass and pair integrity', () => {
     const codes = codesOf(bad.report);
     expect(codes).toContain('unknown-string-id');
     expect(codes).toContain('duplicate-heading');
+  });
+});
+
+describe('content lint — auto-registered share audit', () => {
+  // 3 auto-registered rows (STR-R-*) + 1 curated row (STR-HOME-001) = 75% auto.
+  const autoContentSystem = `${contentSystem}| STR-R-001 | helper | One | default | auto |\n| STR-R-002 | helper | Two | default | auto |\n| STR-R-003 | helper | Three | default | auto |\n`;
+  const autoInventory = {
+    schemaVersion: 1,
+    entries: [
+      { stringId: 'STR-HOME-001', screen: 'Home', element: 'heading', copy: 'Welcome back', file: 'src/home.tsx', line: 3 },
+      { stringId: 'STR-R-001', screen: 'Home', element: 'helper', copy: 'One', file: 'src/home.tsx', line: 4 },
+      { stringId: 'STR-R-002', screen: 'Home', element: 'helper', copy: 'Two', file: 'src/home.tsx', line: 5 },
+      { stringId: 'STR-R-003', screen: 'Home', element: 'helper', copy: 'Three', file: 'src/home.tsx', line: 6 },
+    ],
+  };
+  const scenario = (env?: Record<string, string>): Scenario => ({
+    config: baseConfig,
+    contentSystem: autoContentSystem,
+    inventory: autoInventory,
+    appFiles: { 'src/home.tsx': 'export default function Home() {\n  return <h1>Welcome back</h1>;\n}\n' },
+    env,
+  });
+
+  it('reports auto and curated counts and the auto share without a threshold', () => {
+    const { code, out, report } = run(scenario());
+    expect(report.stats.autoRegisteredRows).toBe(3);
+    expect(report.stats.curatedRows).toBe(1);
+    expect(report.stats.autoShare).toBe(0.75);
+    expect(out).toMatch(/3 auto-registered \(STR-R-\*\), 1 curated, auto share 75\.0%/);
+    // Informational only: result is exactly as before.
+    expect(report.status).toBe('pass');
+    expect(code).toBe(0);
+  });
+
+  it('honours CONTENT_LINT_AUTO_PREFIX', () => {
+    const { report } = run(scenario({ CONTENT_LINT_AUTO_PREFIX: 'STR-HOME-' }));
+    expect(report.stats.autoRegisteredRows).toBe(1);
+    expect(report.stats.curatedRows).toBe(3);
+  });
+
+  it('fails with auto-registered-share-exceeded when the share is above the threshold', () => {
+    const { code, report } = run(scenario({ CONTENT_LINT_MAX_AUTO_SHARE: '0.5' }));
+    expect(code).toBe(1);
+    expect(report.status).toBe('fail');
+    expect(codesOf(report)).toContain('auto-registered-share-exceeded');
+  });
+
+  it('passes when the share is at or below the threshold', () => {
+    const atLimit = run(scenario({ CONTENT_LINT_MAX_AUTO_SHARE: '0.75' }));
+    expect(atLimit.code).toBe(0);
+    expect(atLimit.report.status).toBe('pass');
+    const below = run(scenario({ CONTENT_LINT_MAX_AUTO_SHARE: '1' }));
+    expect(below.code).toBe(0);
+    expect(codesOf(below.report)).not.toContain('auto-registered-share-exceeded');
+  });
+
+  it('treats an invalid threshold as a usage error (exit 2)', () => {
+    for (const bad of ['abc', '1.5', '-0.1', '50%']) {
+      const { code, out } = run(scenario({ CONTENT_LINT_MAX_AUTO_SHARE: bad }));
+      expect(code).toBe(2);
+      expect(out).toMatch(/usage error/);
+    }
   });
 });

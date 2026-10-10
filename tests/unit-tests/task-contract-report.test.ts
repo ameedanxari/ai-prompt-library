@@ -25,6 +25,9 @@ function taskFile(
     fixtureAllowance?: string;
     fixtureRetirementTask?: string;
     releaseExclusionCheck?: string;
+    risk?: string;
+    modelTier?: string;
+    turnBudget?: string;
     legacy?: boolean;
   },
 ) {
@@ -68,6 +71,10 @@ function taskFile(
     if (opts.fixtureRetirementTask !== undefined) lines.push(`- **Fixture retirement task:** ${opts.fixtureRetirementTask}`);
     if (opts.releaseExclusionCheck !== undefined) lines.push(`- **Release exclusion check:** ${opts.releaseExclusionCheck}`);
   }
+
+  if (opts.risk !== undefined) lines.push(`- **Risk:** ${opts.risk}`);
+  if (opts.modelTier !== undefined) lines.push(`- **Model tier:** ${opts.modelTier}`);
+  if (opts.turnBudget !== undefined) lines.push(`- **Turn budget:** ${opts.turnBudget}`);
 
   return parsePlanTaskFile(filename, lines.join('\n'));
 }
@@ -421,6 +428,84 @@ describe('task contract report', () => {
       'fixture-allowance-missing-retirement-task',
       'invalid-composition-map',
     ]);
+  });
+
+  describe('execution routing fields', () => {
+    const base = {
+      file: '`src/routing.ts`',
+      phase: 'mvp',
+      depends: 'none',
+      test: '`npm test -- routing`',
+    };
+
+    it('leaves units without Risk, Model tier, or Turn budget clean', () => {
+      const report = buildTaskContractReport([taskFile('tasks-routing.md', base)]);
+
+      expect(report.issues).toEqual([]);
+      expect(report.summary.blocked).toBe(false);
+      expect(report.units[0].risk).toBeUndefined();
+      expect(report.units[0].modelTier).toBeUndefined();
+      expect(report.units[0].turnBudget).toBeUndefined();
+    });
+
+    it('carries valid routing fields into the contract without issues', () => {
+      const report = buildTaskContractReport([
+        taskFile('tasks-routing.md', {
+          ...base,
+          risk: 'High',
+          modelTier: ' Advanced ',
+          turnBudget: '40',
+        }),
+      ]);
+
+      expect(report.issues).toEqual([]);
+      expect(report.units[0]).toMatchObject({ risk: 'high', modelTier: 'advanced', turnBudget: 40 });
+    });
+
+    it.each([
+      ['risk', 'severe', 'invalid-risk', 'declares invalid Risk severe'],
+      ['modelTier', 'gpt-9', 'invalid-model-tier', 'declares invalid Model tier gpt-9'],
+      ['turnBudget', '0', 'invalid-turn-budget', 'declares invalid Turn budget 0'],
+      ['turnBudget', '501', 'invalid-turn-budget', 'declares invalid Turn budget 501'],
+      ['turnBudget', '12.5', 'invalid-turn-budget', 'declares invalid Turn budget 12.5'],
+      ['turnBudget', 'many', 'invalid-turn-budget', 'declares invalid Turn budget many'],
+    ])('blocks invalid %s value %s', (field, value, code, message) => {
+      const report = buildTaskContractReport([
+        taskFile('tasks-routing.md', { ...base, [field]: value }),
+      ]);
+
+      expect(report.summary.blocked).toBe(true);
+      expect(report.issues.map((issue) => issue.code)).toEqual([code]);
+      expect(report.issues[0]).toMatchObject({ severity: 'error' });
+      expect(report.issues[0].message).toContain(message);
+    });
+
+    it('validates routing fields on legacy-schema units too', () => {
+      const report = buildTaskContractReport([
+        taskFile('tasks-routing.md', { ...base, legacy: true, risk: 'severe' }),
+      ]);
+
+      expect(report.issues.map((issue) => issue.code)).toContain('invalid-risk');
+    });
+
+    it('warns without blocking when a high-risk unit declares no Model tier', () => {
+      const report = buildTaskContractReport([
+        taskFile('tasks-routing.md', { ...base, risk: 'high' }),
+      ]);
+
+      expect(report.issues.map((issue) => issue.code)).toEqual(['high-risk-without-model-tier']);
+      expect(report.issues[0].severity).toBe('warning');
+      expect(report.summary.blocked).toBe(false);
+    });
+
+    it('does not warn when a high-risk unit declares a Model tier or risk is lower', () => {
+      const report = buildTaskContractReport([
+        taskFile('tasks-high.md', { ...base, risk: 'high', modelTier: 'frontier' }),
+        taskFile('tasks-medium.md', { ...base, file: '`src/other.ts`', risk: 'medium' }),
+      ]);
+
+      expect(report.issues).toEqual([]);
+    });
   });
 
   it('blocks non-runtime artifacts that claim Swift or Kotlin runtime paths', () => {

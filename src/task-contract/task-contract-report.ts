@@ -10,7 +10,9 @@ import {
   type ArtifactKind,
   type CompositionMap,
   type EvidenceLevel,
+  type ModelTier,
   type PlanGraph,
+  type RiskLevel,
   type TaskDependencyRef,
   type TaskPhase,
   type TaskSchemaVersion,
@@ -55,6 +57,10 @@ export type TaskContractIssueCode =
   | 'missing-evidence-level'
   | 'invalid-evidence-level'
   | 'invalid-composition-map'
+  | 'invalid-risk'
+  | 'invalid-model-tier'
+  | 'invalid-turn-budget'
+  | 'high-risk-without-model-tier'
   | 'fixture-allowance-missing-retirement-task'
   | 'fixture-allowance-missing-release-exclusion-check'
   | 'missing-runtime-reachability'
@@ -166,6 +172,12 @@ export interface TaskContractUnitEntry {
   releaseExclusionCheck?: string;
   fixtureAllowanceMissingRetirementTask?: true;
   fixtureAllowanceMissingReleaseExclusionCheck?: true;
+  risk?: RiskLevel;
+  invalidRisk?: string;
+  modelTier?: ModelTier;
+  invalidModelTier?: string;
+  turnBudget?: number;
+  invalidTurnBudget?: string;
 }
 
 /**
@@ -321,6 +333,12 @@ function toUnitEntry(file: ParsedPlanFile, unit: ParsedTaskUnit): TaskContractUn
     releaseExclusionCheck: unit.releaseExclusionCheck,
     fixtureAllowanceMissingRetirementTask: unit.fixtureAllowanceMissingRetirementTask,
     fixtureAllowanceMissingReleaseExclusionCheck: unit.fixtureAllowanceMissingReleaseExclusionCheck,
+    risk: unit.risk,
+    invalidRisk: unit.invalidRisk,
+    modelTier: unit.modelTier,
+    invalidModelTier: unit.invalidModelTier,
+    turnBudget: unit.turnBudget,
+    invalidTurnBudget: unit.invalidTurnBudget,
   };
 }
 
@@ -631,6 +649,47 @@ function buildIssues(
             `${unit.canonicalId} classifies non-runtime work as ${unit.artifactKind} but claims a Swift, Kotlin, or production runtime source path.`,
           ));
         }
+      }
+
+      // Optional execution-routing fields: checked for every schema version.
+      if (unit.invalidRisk !== undefined) {
+        issues.push(unitIssue(
+          file,
+          unit,
+          'invalid-risk',
+          'error',
+          `${unit.canonicalId} declares invalid Risk ${unit.invalidRisk}; expected low, medium, or high.`,
+        ));
+      }
+
+      if (unit.invalidModelTier !== undefined) {
+        issues.push(unitIssue(
+          file,
+          unit,
+          'invalid-model-tier',
+          'error',
+          `${unit.canonicalId} declares invalid Model tier ${unit.invalidModelTier}; expected lookup, standard, advanced, or frontier.`,
+        ));
+      }
+
+      if (unit.invalidTurnBudget !== undefined) {
+        issues.push(unitIssue(
+          file,
+          unit,
+          'invalid-turn-budget',
+          'error',
+          `${unit.canonicalId} declares invalid Turn budget ${unit.invalidTurnBudget}; expected an integer from 1 to 500.`,
+        ));
+      }
+
+      if (unit.risk === 'high' && !unit.modelTier && unit.invalidModelTier === undefined) {
+        issues.push(unitIssue(
+          file,
+          unit,
+          'high-risk-without-model-tier',
+          'warning',
+          `${unit.canonicalId} is high risk but declares no Model tier; state which tier should execute it.`,
+        ));
       }
 
       if (unit.invalidPhase) {

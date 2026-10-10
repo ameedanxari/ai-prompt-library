@@ -17,11 +17,20 @@
 # the same existing file during a refinement plan and are recorded in
 # the ledger without blocking execution.
 #
+# A path with exactly ONE creating task (any change type other than
+# `modify-existing`) plus any number of `modify-existing` tasks is the
+# normal "one task creates it, later tasks refine it" pattern and is NOT
+# a collision. Two or more creating tasks for one path still are.
+# Non-blocking warning `modify-before-create`: a `modify-existing` task in
+# the same plan file as the creator whose number is lower than the
+# creator's (R2 modifies a file that R5 creates). Warnings are listed in
+# an "Ordering warnings" section and on the console; exit code is unchanged.
+#
 # Usage:
 #   bash .ai-prompts/scripts/build-path-ledger.sh [prompts/outputs/current]
 #
 # Exit codes:
-#   0  ledger written, no collisions
+#   0  ledger written, no collisions (ordering warnings do not change this)
 #   1  ledger written, collisions detected (listed in output)
 #   2  preconditions missing (no plan files at all)
 
@@ -112,16 +121,40 @@ total_paths=$(wc -l < "$rows_file" | tr -d ' ')
 
 # ---- Collision detection ----------------------------------------------
 #
-# Collision A: the same path is claimed by two different (slug, tid)
-# pairs. This is the "two tasks write the same file" case.
+# Collision A: the same path is created by two or more different
+# (slug, tid) pairs. This is the "two tasks write the same file" case.
+# One creator plus any number of `modify-existing` rows is allowed.
 collision_a=$(awk -F'|' '{
   key = $4
   pairs[key] = pairs[key] ? pairs[key]"; "$1":"$2"("$3")" : $1":"$2"("$3")"
   count[key]++
-  if ($3 != "modify-existing") blocking[key] = 1
+  if ($3 != "modify-existing") creators[key]++
 } END {
-  for (k in count) if (count[k] > 1 && blocking[k]) print k"\t"pairs[k]
+  for (k in count) if (count[k] > 1 && creators[k] > 1) print k"\t"pairs[k]
 }' "$rows_file" | sort)
+
+# Ordering warning `modify-before-create`: a path with exactly one creator
+# whose same-plan-file `modify-existing` row has a lower task number than
+# the creator (same T/R prefix, so T-vs-R numbering is never compared).
+ordering_warnings=$(awk -F'|' '
+  function tnum(t) { return substr(t, 2) + 0 }
+  function tpre(t) { return substr(t, 1, 1) }
+  {
+    n++
+    rs[n] = $1; rt[n] = $2; rc[n] = $3; rp[n] = $4
+    if ($3 != "modify-existing") { creators[$4]++; cs[$4] = $1; ct[$4] = $2 }
+  }
+  END {
+    for (i = 1; i <= n; i++) {
+      p = rp[i]
+      if (rc[i] != "modify-existing" || creators[p] != 1) continue
+      if (rs[i] != cs[p] || tpre(rt[i]) != tpre(ct[p])) continue
+      if (tnum(rt[i]) < tnum(ct[p])) {
+        printf("%s\t%s:%s modifies it before %s:%s creates it (modify-before-create)\n", p, rs[i], rt[i], cs[p], ct[p])
+      }
+    }
+  }
+' "$rows_file" | sort -u)
 
 # Collision B: the same basename is declared in two different
 # directories under the same platform root (android/, ios/, src/,
@@ -193,6 +226,9 @@ fi
   echo "generated_by: scripts/build-path-ledger.sh"
   echo "plan_files: ${#plan_files[@]}"
   echo "total_paths: $total_paths"
+  w_count=0
+  [ -n "$ordering_warnings" ] && w_count=$(printf "%s\n" "$ordering_warnings" | wc -l | tr -d ' ')
+  echo "ordering_warnings: $w_count"
   if [ $has_collisions -eq 0 ]; then
     echo "collisions: 0"
     echo "ledger_state: clean"
@@ -257,33 +293,93 @@ fi
     echo ""
   fi
 
+  if [ -n "$ordering_warnings" ]; then
+    echo "## Ordering warnings"
+    echo ""
+    echo "Non-blocking (\`modify-before-create\`): a task modifies a file that a"
+    echo "later task in the same plan file creates. Reorder the tasks, or make"
+    echo "the earlier task the creator, before the executor reaches it."
+    echo ""
+    echo '| Path | Warning |'
+    echo '|---|---|'
+    while IFS=$'\t' read -r p detail; do
+      [ -z "$p" ] && continue
+      echo "| \`$p\` | $detail |"
+    done <<< "$ordering_warnings"
+    echo ""
+  fi
+
   echo "## Paths by feature"
   echo ""
   if [ "$total_paths" -eq 0 ]; then
     echo "_No file paths declared yet._"
   else
     current_slug=""
+    # A path with exactly one creator plus modify-existing rows is listed
+    # once, on the creator's line, with every other claimant appended
+    # (creator first). Other paths keep one line per claimant.
+    annotated=$(mktemp)
+    awk -F'|' '
+      {
+        n++
+        rs[n] = $1; rt[n] = $2; rc[n] = $3; rp[n] = $4
+        count[$4]++
+        if ($3 != "modify-existing") creators[$4]++
+      }
+      END {
+        for (i = 1; i <= n; i++) {
+          p = rp[i]
+          multi = (count[p] > 1 && creators[p] == 1)
+          if (multi && rc[i] == "modify-existing") continue
+          extra = ""
+          if (multi) {
+            for (j = 1; j <= n; j++) {
+              if (rp[j] == p && rc[j] == "modify-existing") {
+                extra = extra (extra ? ", " : "") "tasks-" rs[j] ".md:" rt[j] " (" rc[j] ")"
+              }
+            }
+          }
+          printf("%s|%s|%s|%s|%s\n", rs[i], rt[i], rc[i], p, extra)
+        }
+      }
+    ' "$rows_file" > "$annotated"
     # Sort rows by slug then task id then path for a stable ledger.
-    sort -t'|' -k1,1 -k2,2 -k4,4 "$rows_file" | while IFS='|' read -r slug tid change path; do
+    sort -t'|' -k1,1 -k2,2 -k4,4 "$annotated" | while IFS='|' read -r slug tid change path extra; do
       if [ "$slug" != "$current_slug" ]; then
         [ -n "$current_slug" ] && echo ""
         echo "### $slug"
         echo ""
         current_slug="$slug"
       fi
-      echo "- \`$path\` — tasks-$slug.md:$tid ($change)"
+      if [ -n "$extra" ]; then
+        echo "- \`$path\` — tasks-$slug.md:$tid ($change); also modified by: $extra"
+      else
+        echo "- \`$path\` — tasks-$slug.md:$tid ($change)"
+      fi
     done
+    rm -f "$annotated"
   fi
   echo ""
 } > "$LEDGER"
 
 rm -f "$rows_file"
 
+print_ordering_warnings() {
+  [ -z "$ordering_warnings" ] && return 0
+  echo "⚠️  ordering warnings (modify-before-create, non-blocking):"
+  while IFS=$'\t' read -r p detail; do
+    [ -z "$p" ] && continue
+    echo "   - $p: $detail"
+  done <<< "$ordering_warnings"
+}
+
 if [ $has_collisions -eq 0 ]; then
   echo "✅ path ledger: clean ($total_paths paths across ${#plan_files[@]} plan files) — wrote $LEDGER"
+  print_ordering_warnings
   exit 0
 else
   echo "❌ path ledger: collisions detected — wrote $LEDGER"
+  print_ordering_warnings
   echo ""
   echo "Open $LEDGER and resolve the collisions listed there before"
   echo "running the executor. The collisions are produced by the plan"

@@ -115,6 +115,25 @@ describe('execution status derivation', () => {
     );
   });
 
+  it('treats a flagged follow-up record as authoritative instead of a duplicate', () => {
+    const report = deriveExecutionTerminalState(
+      [doneRecord({ status: 'blocked' }), doneRecord({ followUp: true })],
+      passingGates,
+    );
+    expect(report.reasons).toEqual([]);
+    expect(report.taskReasons['tasks-cleanup.md#T1'] ?? []).not.toContain(
+      'duplicate canonical execution record',
+    );
+  });
+
+  it('rejects a follow-up record with no earlier record', () => {
+    const report = deriveExecutionTerminalState([doneRecord({ followUp: true })], passingGates);
+    expect(report.state).toBe('blocked');
+    expect(report.taskReasons['tasks-cleanup.md#T1']).toContain(
+      'follow-up record has no earlier canonical record',
+    );
+  });
+
   it('fails closed on missing evidence for tier-zero risks', () => {
     const report = deriveExecutionTerminalState([doneRecord({
       requiredEvidenceLevel: 'device',

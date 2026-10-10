@@ -103,7 +103,12 @@ On top of the entry-point + this file, load:
    `prompts/outputs/current/epics.md` (greenfield) — for progress
    grouping and user-facing summaries, not execution ordering.
 3. `prompts/outputs/current/execution-log.md` if it exists — resume
-   point.
+   point. Read the frontmatter (the envelope) only. When you need a
+   packet's history, load just that packet's entries with
+   `bash .ai-prompts/scripts/execution-log-slice.sh prompts/outputs/current <plan-file>`;
+   never load the whole log into context, and never hand it to a subagent.
+   The same applies to `task-contract.json`: use
+   `bash .ai-prompts/scripts/task-contract-slice.sh prompts/outputs/current <plan-file> [R<n>]`.
 4. `prompts/outputs/current/path-ledger.md` — the authoritative list of
    every file path the plan owns. Keep this open (or re-read on demand)
    before every file write. If `finalize.sh` wrote the ledger as part
@@ -319,6 +324,24 @@ The `taskId` must equal the unit's `canonicalId` in `task-contract.json`
 }
 ```
 
+Two optional extensions keep records honest without busywork:
+
+- **Follow-up records.** When a later round touches a unit that already
+  has a record, append a new record for the same `taskId` with
+  `"followUp": true`. The last record in log order is authoritative;
+  earlier ones stay as history. A repeated `taskId` without the flag is
+  still rejected as `duplicate-canonical-record`, and a follow-up with no
+  earlier record is rejected as `orphan-follow-up-record`. Do not invent
+  extra unit ids or amendment prose to work around a second touch.
+- **File-bound evidence.** Add `"coveredPaths"` (the files the evidence
+  proves) and `"pathsDigest"` to `buildEvidence`. Compute the digest with
+  `bash .ai-prompts/scripts/check-evidence-currency.sh --digest <path>...`.
+  Evidence then stays current until one of those files changes, so a
+  docs-only or unrelated commit does not force a re-run. Check currency
+  with `bash .ai-prompts/scripts/check-evidence-currency.sh prompts/outputs/current`
+  (exit 1 lists stale records). Records without `coveredPaths` remain
+  bound to the whole-tree `sourceRevision`.
+
 `requiredEvidenceLevel` MUST equal the task contract's declared `Evidence
 level`. Every acceptance item needs an evidence link. `done` requires
 passing test evidence at the declared level, current passing build evidence,
@@ -369,6 +392,9 @@ repeat:
       1. Read the full contents of the chosen prompt file.
          This IS the implementation prompt — it contains all the
          context, guidance, patterns, and constraints the AI needs.
+         If any unit declares `Risk: high`, run the **design-first
+         step** (see "Subagent dispatch and cost discipline") before
+         writing implementation code.
       2. Implement the feature as described in the prompt.
          The prompt is self-contained: treat it the same way you
          would if a user had copy-pasted it into a fresh chat.
@@ -405,6 +431,70 @@ repeat:
     Review findings that require remediation return to this execution loop
     through generated remediation-review task files.
 ```
+
+### Subagent dispatch and cost discipline
+
+Most of an autonomous run's cost is long contexts re-read on every turn.
+Keep contexts short, agent sessions short, and expensive models for the
+work only they can do.
+
+**Route each unit by its `Model tier`.** Map the tiers to the host's
+models: `lookup` → the cheapest model (read-only searches, log triage,
+summaries); `standard` → a mid-tier model (implementation against the
+packet's precise change, tests, mechanical edits); `advanced` → the
+strongest everyday model (design, subtle bugs, the risky core of
+security, tenant-isolation, migration and data-model work); `frontier` →
+the most capable model, only for final judgment or as the last fallback.
+A unit without a tier runs on `standard`. Always name the model on every
+subagent call; never let a subagent silently inherit the coordinator's
+model. Route by the task, not by how risky the project is: give the
+`advanced` model the design and the critical diff, and the routine
+remainder of the same change to `standard`.
+
+**Fall back only on a real limit.** When a call fails with a rate-limit,
+quota or overload error, re-run that task on the next tier up that is not
+known to be exhausted (`lookup` → `standard` → `advanced` → `frontier`).
+Remember exhausted tiers for the session, re-probe them after about an
+hour, and send new work to its normal tier again as soon as it answers.
+Work must never stop only because a cheaper tier is exhausted.
+
+**Bound every agent.** One agent, one unit or one tightly related group
+of units, an explicit file list, the exact hand-back wanted, and a stop
+condition. Pass the unit's `Turn budget` (default 60 tool calls); the
+agent hands back its status when it reaches the budget, finished or not.
+Two short agents beat one long one. Give agents slices (packet text,
+`task-contract-slice.sh`, `execution-log-slice.sh`), never whole logs,
+contracts or ledgers.
+
+**Never spawn an agent to wait.** Start an agent only when its inputs
+exist. The coordinator waits for long work (test suites, stack runs) with
+a background command that notifies on completion; reviewers start only
+after the evidence they read is complete.
+
+**Test narrowly, regress once.** An implementation agent runs the unit's
+own `Test` command, not the full suite. After a task, the coordinator
+runs `bash .ai-prompts/scripts/select-impacted-tests.sh prompts/outputs/current --worktree`
+and runs only the listed commands; paths the script reports as unmapped
+have no declared test, so add one or name the gap. The full regression
+runs once per gap (see "Broader regression check after each gap") in the
+background, and its results are reused while `check-evidence-currency.sh`
+reports them current.
+
+**Design-first for `Risk: high`.** Before any implementation code for a
+high-risk unit (privacy, authentication, tenant isolation, migrations,
+money movement, destructive operations):
+
+1. Write the unit's acceptance tests first and run them; they must fail
+   for the reason the unit exists. Record the command and failure as a
+   `- **Pre-fix proof:**` line in the journal entry.
+2. Have an independent reviewer on the `advanced` tier, blind to your
+   implementation narrative, review the intended change and those tests
+   against the packet's acceptance and the threat it addresses. Record
+   the reviewer's verdict as `- **Design review:**` in the journal entry.
+3. Only then implement, and make the same tests pass.
+
+A design caught wrong here costs one short review. The same mistake caught
+by the semantic review costs a full remediation round.
 
 ### Why delivery-order.md and task-graph.json
 
@@ -723,7 +813,16 @@ handoff yet. Write the semantic-review checkpoint described in
 one reviewer blind to the implementation narrative.
 
 Run the eight dimension prompts, synthesis, completion challenge, and, when
-needed, remediation planner. The challenge must write
+needed, remediation planner. The first review after implementation is a
+**full** review. Later fix rounds may run a **delta** review that
+re-reviews only the dimensions the round's changes affect and carries the
+other reports forward; declare it in `review/review-scope.json` (see
+"Review modes" in the semantic-review prompt). A delta review can return
+`remediation_required`, `partial` or `blocked`, but never
+`verified_complete`: the release decision always needs a full review at
+the release-candidate revision. Start reviewers only after the evidence
+they read (test runs, receipts, mechanical evidence) is complete for the
+revision under review. The challenge must write
 `prompts/outputs/current/review/completion-decision.json`. Then run:
 
 ```bash

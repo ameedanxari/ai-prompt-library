@@ -9,7 +9,17 @@
 #   outputs-dir  default prompts/outputs/current
 #   app-root     default . (the application repository root)
 #
-# Exit codes: 0 pass / not-applicable, 1 blocking findings, 2 prerequisite error.
+# Auto-registration audit (informational unless a threshold is set):
+#   CONTENT_LINT_AUTO_PREFIX     stringId prefix of auto-registered rows
+#                                (default STR-R-); all other rows are "curated"
+#   CONTENT_LINT_MAX_AUTO_SHARE  optional number in [0, 1]; when set and the
+#                                auto-registered share of inventory rows
+#                                exceeds it, the lint fails with issue code
+#                                auto-registered-share-exceeded. Unset: the
+#                                counts are reported but do not affect the result.
+#
+# Exit codes: 0 pass / not-applicable, 1 blocking findings, 2 prerequisite or
+# usage error (including an invalid CONTENT_LINT_MAX_AUTO_SHARE).
 
 set -uo pipefail
 
@@ -38,6 +48,15 @@ SCRIPT_DIR="$(resolve_script_dir)"
 # shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"
+
+AUTO_PREFIX="${CONTENT_LINT_AUTO_PREFIX:-STR-R-}"
+MAX_AUTO_SHARE="${CONTENT_LINT_MAX_AUTO_SHARE:-}"
+if [ -n "$MAX_AUTO_SHARE" ] && ! [[ "$MAX_AUTO_SHARE" =~ ^(0(\.[0-9]+)?|\.[0-9]+|1(\.0+)?)$ ]]; then
+  echo "content-lint usage error: CONTENT_LINT_MAX_AUTO_SHARE must be a number between 0 and 1 (got: $MAX_AUTO_SHARE)" >&2
+  exit 2
+fi
+export CONTENT_LINT_AUTO_PREFIX="$AUTO_PREFIX"
+export CONTENT_LINT_MAX_AUTO_SHARE="$MAX_AUTO_SHARE"
 
 if [ ! -d "$TARGET_DIR" ]; then
   echo "content-lint prerequisite error: target directory does not exist: $TARGET_DIR" >&2
@@ -283,6 +302,7 @@ for (const [key, locations] of shortcutsGlobal) {
 
 // Content-inventory cross-check: the build must account for its strings.
 const modelStringIds = new Set([...contentSystem.matchAll(/\bSTR-[A-Z0-9-]+\b/g)].map((match) => match[0]));
+let inventoryStats = null;
 if (!fs.existsSync(inventoryPath)) {
   issues.push({ code: 'missing-content-inventory', file: path.basename(inventoryPath), message: 'content-inventory.json is missing; builds with a content system must emit their string table with provenance.' });
 } else {
@@ -298,8 +318,11 @@ if (!fs.existsSync(inventoryPath)) {
     issues.push({ code: 'empty-content-inventory', file: path.basename(inventoryPath), message: 'content-inventory.json has no entries; a UI build always ships strings.' });
   }
   const headingCopy = new Map();
+  const autoPrefix = process.env.CONTENT_LINT_AUTO_PREFIX || 'STR-R-';
+  let autoRegisteredRows = 0;
   for (const entry of entries) {
     const stringId = String(entry?.stringId || '');
+    if (stringId.startsWith(autoPrefix)) autoRegisteredRows += 1;
     if (!stringId || !modelStringIds.has(stringId)) {
       issues.push({ code: 'unknown-string-id', file: String(entry?.file || path.basename(inventoryPath)), line: entry?.line, message: `Inventory entry ${stringId || '<missing id>'} has no matching String ID in content-system.md.` });
     }
@@ -313,12 +336,29 @@ if (!fs.existsSync(inventoryPath)) {
       }
     }
   }
+  if (inventory) {
+    const curatedRows = entries.length - autoRegisteredRows;
+    const autoShare = entries.length === 0 ? 0 : autoRegisteredRows / entries.length;
+    inventoryStats = { autoRegisteredRows, curatedRows, autoShare: Math.round(autoShare * 10000) / 10000, autoPrefix };
+    inventoryStats.rawShare = autoShare;
+  }
+}
+
+if (inventoryStats) {
+  const maxShareRaw = process.env.CONTENT_LINT_MAX_AUTO_SHARE || '';
+  if (maxShareRaw !== '' && inventoryStats.rawShare > Number(maxShareRaw)) {
+    issues.push({ code: 'auto-registered-share-exceeded', file: path.basename(inventoryPath), message: `${inventoryStats.autoRegisteredRows} of ${inventoryStats.autoRegisteredRows + inventoryStats.curatedRows} inventory rows (${(inventoryStats.rawShare * 100).toFixed(1)}%) are auto-registered under "${process.env.CONTENT_LINT_AUTO_PREFIX || 'STR-R-'}", above the allowed ${maxShareRaw} (CONTENT_LINT_MAX_AUTO_SHARE); curate the register by hand instead of registering every source literal.` });
+  }
 }
 
 issues.sort((a, b) => `${a.file}:${a.code}:${a.line ?? 0}`.localeCompare(`${b.file}:${b.code}:${b.line ?? 0}`));
 finish(issues.length === 0 ? 'pass' : 'fail', true,
   issues.length === 0 ? 'surface copy passes the content lint' : 'blocking content-lint findings',
-  { filesScanned: files.length, bannedTermCount: bannedTerms.length });
+  {
+    filesScanned: files.length,
+    bannedTermCount: bannedTerms.length,
+    ...(inventoryStats ? { autoRegisteredRows: inventoryStats.autoRegisteredRows, curatedRows: inventoryStats.curatedRows, autoShare: inventoryStats.autoShare, autoPrefix: inventoryStats.autoPrefix } : {}),
+  });
 NODE
 }
 
@@ -331,6 +371,8 @@ report_status="$("$RESOLVED_NODE" -e 'const fs=require("node:fs"); process.stdou
 issue_count="$("$RESOLVED_NODE" -e 'const fs=require("node:fs"); process.stdout.write(String(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).issues.length))' "$REPORT")"
 warning_count="$("$RESOLVED_NODE" -e 'const fs=require("node:fs"); process.stdout.write(String(JSON.parse(fs.readFileSync(process.argv[1], "utf8")).warnings.length))' "$REPORT")"
 echo "Content-lint report: $REPORT (status=$report_status, issues=$issue_count, warnings=$warning_count)"
+# shellcheck disable=SC2016  # literal node -e program: JS template placeholders must not be shell-expanded
+"$RESOLVED_NODE" -e 'const fs=require("node:fs"); const s=JSON.parse(fs.readFileSync(process.argv[1], "utf8")).stats||{}; if (typeof s.autoRegisteredRows==="number") console.log(`Content register: ${s.autoRegisteredRows} auto-registered (${s.autoPrefix}*), ${s.curatedRows} curated, auto share ${(s.autoShare*100).toFixed(1)}%`)' "$REPORT"
 case "$report_status" in
   pass)
     echo "✅ content-lint gate: pass"

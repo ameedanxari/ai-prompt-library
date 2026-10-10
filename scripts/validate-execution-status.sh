@@ -144,14 +144,40 @@ for raw_record in re.findall(r"```execution-status-record\s*\n(.*?)```", log_tex
         add_issue("malformed-canonical-record", f"cannot parse execution-status-record: {exc}")
 
 records_by_id = {}
+record_history = {}
 for record in records:
     task_id = record.get("taskId") if isinstance(record, dict) else None
     if not task_id:
         add_issue("missing-task-id", "canonical record has no taskId")
         continue
+    follow_up = record.get("followUp") is True
     if task_id in records_by_id:
-        add_issue("duplicate-canonical-record", "multiple canonical records exist", task_id)
+        if not follow_up:
+            add_issue("duplicate-canonical-record", "multiple canonical records exist", task_id)
+        record_history.setdefault(task_id, []).append(records_by_id[task_id])
+    elif follow_up:
+        add_issue("orphan-follow-up-record", "followUp record has no earlier canonical record for this taskId", task_id)
+    # The last record in log order is authoritative; earlier ones are history.
     records_by_id[task_id] = record
+
+PATHS_DIGEST_PATTERN = re.compile(r"\Asha256:[0-9a-f]{64}\Z")
+for task_id, record in records_by_id.items():
+    build = record.get("buildEvidence")
+    if not isinstance(build, dict):
+        continue
+    has_paths = "coveredPaths" in build
+    has_digest = "pathsDigest" in build
+    if not (has_paths or has_digest):
+        continue
+    if has_paths != has_digest:
+        add_issue("malformed-evidence-binding", "buildEvidence needs coveredPaths and pathsDigest together", task_id)
+        continue
+    covered = build.get("coveredPaths")
+    digest = build.get("pathsDigest")
+    if not isinstance(covered, list) or not covered or not all(isinstance(item, str) and item for item in covered):
+        add_issue("malformed-evidence-binding", "coveredPaths must be a non-empty list of path strings", task_id)
+    if not isinstance(digest, str) or not PATHS_DIGEST_PATTERN.match(digest):
+        add_issue("malformed-evidence-binding", "pathsDigest must match sha256:<64 hex>", task_id)
 
 units = contract.get("units", [])
 units_by_id = {unit.get("canonicalId"): unit for unit in units if unit.get("canonicalId")}
@@ -368,6 +394,7 @@ report = {
     "valid": not issues,
     "next_task": next_task,
     "record_count": len(records_by_id),
+    "follow_up_chain_count": len(record_history),
     "contract_unit_count": len(units_by_id),
     "production_verification_passed": production_passed,
     "release_gate_passed": release_gate_value,

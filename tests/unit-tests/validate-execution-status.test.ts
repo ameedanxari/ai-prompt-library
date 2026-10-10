@@ -54,12 +54,13 @@ function fixture(options: {
   journalStatus?: string;
   journalTestResult?: string;
   executionRecord?: Record<string, unknown>;
+  executionRecords?: Record<string, unknown>[];
   contractEvidence?: string;
   title?: string;
   productionPassed?: boolean;
 } = {}) {
   const planDir = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-status-'));
-  const executionRecord = options.executionRecord ?? record();
+  const executionRecords = options.executionRecords ?? [options.executionRecord ?? record()];
   const journalStatus = options.journalStatus ?? 'done';
   fs.writeFileSync(path.join(planDir, 'execution-log.md'), [
     '---',
@@ -78,10 +79,12 @@ function fixture(options: {
     '  - ✅ cleanup behavior is verified',
     '- **Status:** ' + journalStatus,
     '',
-    '```execution-status-record',
-    JSON.stringify(executionRecord, null, 2),
-    '```',
-    '',
+    ...executionRecords.flatMap((entry) => [
+      '```execution-status-record',
+      JSON.stringify(entry, null, 2),
+      '```',
+      '',
+    ]),
   ].join('\n'), 'utf8');
   fs.writeFileSync(path.join(planDir, 'task-contract.json'), JSON.stringify({
     units: [{
@@ -233,5 +236,162 @@ describe('validate-execution-status.sh', () => {
     } finally {
       fs.rmSync(planDir, { recursive: true, force: true });
     }
+  });
+
+  describe('follow-up records', () => {
+    const codes = (result: { report: any }) =>
+      result.report.issues.map((issue: { code: string }) => issue.code);
+
+    it('judges a valid follow-up chain by the last record', () => {
+      const planDir = fixture({
+        executionRecords: [
+          record(),
+          record({ followUp: true, buildEvidence: { outcome: 'pass', command: 'npm run typecheck', recordedAt: '2026-08-01T00:00:00Z', current: true } }),
+        ],
+      });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(0);
+        expect(result.report).toMatchObject({ valid: true, record_count: 1, follow_up_chain_count: 1 });
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('does not validate history: a stale first record is ignored once a follow-up is current', () => {
+      const staleFirst = record({
+        buildEvidence: { outcome: 'pass', command: 'npm run typecheck', recordedAt: '2026-07-10T00:01:00Z', current: false },
+      });
+      const planDir = fixture({ executionRecords: [staleFirst, record({ followUp: true })] });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(0);
+        expect(codes(result)).not.toContain('stale-or-failing-build');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('treats a stale last record as authoritative', () => {
+      const planDir = fixture({
+        executionRecords: [
+          record(),
+          record({
+            followUp: true,
+            buildEvidence: { outcome: 'pass', command: 'npm run typecheck', recordedAt: '2026-08-01T00:00:00Z', current: false },
+          }),
+        ],
+      });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('stale-or-failing-build');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('still rejects a duplicate record that lacks followUp', () => {
+      const planDir = fixture({ executionRecords: [record(), record()] });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('duplicate-canonical-record');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('rejects a duplicate whose followUp flag is not literally true', () => {
+      const planDir = fixture({ executionRecords: [record(), record({ followUp: 'yes' })] });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('duplicate-canonical-record');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('rejects an orphan follow-up record with no earlier record', () => {
+      const planDir = fixture({ executionRecords: [record({ followUp: true })] });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('orphan-follow-up-record');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('judges a blocked-then-done chain by the done follow-up', () => {
+      const planDir = fixture({
+        // Envelope no longer lists the unit as blocked, which would be inconsistent for the first record.
+        executionRecords: [
+          record({ status: 'blocked', reason: 'external approval pending' }),
+          record({ followUp: true }),
+        ],
+      });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(0);
+        expect(result.report).toMatchObject({ valid: true, terminal_state: 'verified_production' });
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('judges a done-then-blocked chain by the blocked follow-up envelope check', () => {
+      const planDir = fixture({
+        journalStatus: 'blocked',
+        executionRecords: [record(), record({ followUp: true, status: 'blocked', reason: 'regressed' })],
+      });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('record-envelope-status-disagreement');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+  });
+
+  describe('file-bound build evidence shape', () => {
+    const build = (extra: Record<string, unknown>) => ({
+      outcome: 'pass',
+      command: 'npm run typecheck',
+      recordedAt: '2026-07-10T00:01:00Z',
+      current: true,
+      ...extra,
+    });
+    const digest = `sha256:${'a'.repeat(64)}`;
+
+    it('accepts coveredPaths with a well-formed pathsDigest', () => {
+      const planDir = fixture({
+        executionRecord: record({ buildEvidence: build({ coveredPaths: ['src/a.ts'], pathsDigest: digest }) }),
+      });
+      try {
+        expect(run(planDir).code).toBe(0);
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it.each([
+      ['coveredPaths without pathsDigest', { coveredPaths: ['src/a.ts'] }],
+      ['pathsDigest without coveredPaths', { pathsDigest: digest }],
+      ['empty coveredPaths', { coveredPaths: [], pathsDigest: digest }],
+      ['non-string coveredPaths', { coveredPaths: [1], pathsDigest: digest }],
+      ['bad digest format', { coveredPaths: ['src/a.ts'], pathsDigest: 'sha1:abc' }],
+    ])('rejects %s', (_label, extra) => {
+      const planDir = fixture({ executionRecord: record({ buildEvidence: build(extra) }) });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(result.report.issues).toContainEqual(expect.objectContaining({ code: 'malformed-evidence-binding' }));
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
   });
 });

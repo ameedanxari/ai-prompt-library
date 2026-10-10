@@ -186,4 +186,141 @@ describe('build-path-ledger.sh', () => {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  describe('creator + modifiers', () => {
+    const withSandbox = (fn: (dir: string) => void) => {
+      const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-creator-'));
+      try {
+        fn(sandbox);
+      } finally {
+        fs.rmSync(sandbox, { recursive: true, force: true });
+      }
+    };
+
+    it('treats one creator plus two modifiers as clean and lists all claimants, creator first', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-core.md',
+          [
+            '## T1 · create',
+            '- **Change type:** new-file',
+            '- **File:** `src/core/engine.ts`',
+            '## T2 · tweak',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/core/engine.ts`',
+          ].join('\n'),
+        );
+        writeTask(
+          sandbox,
+          'tasks-extra.md',
+          [
+            '## T1 · tweak elsewhere',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/core/engine.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger, out } = run(sandbox);
+        expect(code).toBe(0);
+        expect(out).not.toMatch(/ordering warnings/);
+        expect(ledger!).toMatch(/ledger_state: clean/);
+        expect(ledger!).toMatch(/ordering_warnings: 0/);
+        expect(ledger!).not.toMatch(/## Ordering warnings/);
+        const lines = ledger!.split('\n').filter((l) => l.includes('`src/core/engine.ts`'));
+        expect(lines).toHaveLength(1);
+        expect(lines[0]).toMatch(/^- `src\/core\/engine\.ts` — tasks-core\.md:T1 \(new-file\)/);
+        expect(lines[0]).toContain('tasks-core.md:T2 (modify-existing)');
+        expect(lines[0]).toContain('tasks-extra.md:T1 (modify-existing)');
+      });
+    });
+
+    it('still flags two creators of the same path as a collision (exit 1)', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-a.md',
+          ['## T1 · a', '- **Change type:** new-file', '- **File:** `src/x/thing.ts`'].join('\n'),
+        );
+        writeTask(
+          sandbox,
+          'tasks-b.md',
+          [
+            '## T1 · b',
+            '- **Change type:** new-file',
+            '- **File:** `src/x/thing.ts`',
+            '## T2 · c',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/x/thing.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger } = run(sandbox);
+        expect(code).toBe(1);
+        expect(ledger!).toMatch(/ledger_state: collisions_detected/);
+        expect(ledger!).toMatch(/Same path claimed by multiple tasks/);
+      });
+    });
+
+    it('warns (exit 0) when a modifier is numbered before the creator in the same plan file', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'remediation-fix.md',
+          [
+            '## R2 · early modify',
+            '- **Change type:** modify-existing',
+            '- **File:** `src/fix/helper.ts`',
+            '## R5 · late create',
+            '- **Change type:** new-file',
+            '- **File:** `src/fix/helper.ts`',
+          ].join('\n'),
+        );
+        const { code, ledger, out } = run(sandbox);
+        expect(code).toBe(0);
+        expect(out).toMatch(/modify-before-create/);
+        expect(ledger!).toMatch(/ledger_state: clean/);
+        expect(ledger!).toMatch(/ordering_warnings: 1/);
+        expect(ledger!).toMatch(/## Ordering warnings/);
+        expect(ledger!).toMatch(/`src\/fix\/helper\.ts` \| fix:R2 modifies it before fix:R5/);
+      });
+    });
+
+    it('does not warn when the modifier is in a different plan file than the creator', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-a.md',
+          ['## T5 · create', '- **Change type:** new-file', '- **File:** `src/a/mod.ts`'].join('\n'),
+        );
+        writeTask(
+          sandbox,
+          'tasks-b.md',
+          ['## T1 · modify', '- **Change type:** modify-existing', '- **File:** `src/a/mod.ts`'].join('\n'),
+        );
+        const { code, ledger } = run(sandbox);
+        expect(code).toBe(0);
+        expect(ledger!).toMatch(/ordering_warnings: 0/);
+      });
+    });
+
+    it('keeps modify-only paths clean with one line per claimant', () => {
+      withSandbox((sandbox) => {
+        writeTask(
+          sandbox,
+          'tasks-a.md',
+          ['## T1 · m1', '- **Change type:** modify-existing', '- **File:** `src/old/legacy.ts`'].join('\n'),
+        );
+        writeTask(
+          sandbox,
+          'tasks-b.md',
+          ['## T1 · m2', '- **Change type:** modify-existing', '- **File:** `src/old/legacy.ts`'].join('\n'),
+        );
+        const { code, ledger } = run(sandbox);
+        expect(code).toBe(0);
+        expect(ledger!).toMatch(/ledger_state: clean/);
+        expect(ledger!).toContain('- `src/old/legacy.ts` — tasks-a.md:T1 (modify-existing)');
+        expect(ledger!).toContain('- `src/old/legacy.ts` — tasks-b.md:T1 (modify-existing)');
+        expect(ledger!).not.toMatch(/also modified by/);
+      });
+    });
+  });
 });

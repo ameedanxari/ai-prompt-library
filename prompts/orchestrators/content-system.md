@@ -290,4 +290,10 @@ After writing both files, **STOP and present** to the user:
 - `executor.md` rule 6 — surface-copy hygiene at execution time.
 - `revise-outputs.md` C18 — validates this file's schema.
 - `.ai-prompts/scripts/validate-content-lint.sh` — mechanical enforcement against
-  the built application source.
+  the built application source. It also reports how much of the register
+  was auto-registered from source literals (`STR-R-` rows by default,
+  `CONTENT_LINT_AUTO_PREFIX` to change) versus curated by a person. An
+  auto-registered row only proves the string is listed, not that its copy
+  was reviewed, so a passing lint with a high auto share is not evidence of
+  good copy. Set `CONTENT_LINT_MAX_AUTO_SHARE` (0–1) to make the share a
+  gate once the curated register covers the primary flows.

@@ -5,6 +5,60 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — cost discipline and earlier quality checks
+
+A long gap-closure run spent about two thirds of its tokens on long-lived
+implementation agents and a fifth on full eight-dimension re-reviews, and
+still found new defects late in each round. These changes cut the
+multipliers and move the design check before the code.
+
+### Added
+- **Delta semantic review.** `review/review-scope.json` (`mode: delta`,
+  `baseRevision`, `dimensions`) lets a fix round re-review only the affected
+  dimensions and carry the rest forward. A delta bundle can never conclude
+  `verified_complete`; the release decision still needs a full review. New
+  issue codes: `invalid-review-scope`, `delta-scope-missing-base`,
+  `delta-scope-missing-dimensions`, `delta-report-revision-mismatch`,
+  `delta-review-cannot-verify-complete`.
+- **Unit routing fields.** Optional `Risk` (low/medium/high), `Model tier`
+  (lookup/standard/advanced/frontier) and `Turn budget` (1–500) on task
+  units, parsed into `risk`, `modelTier`, `turnBudget`. Invalid values are
+  blocking (`invalid-risk`, `invalid-model-tier`, `invalid-turn-budget`);
+  `high-risk-without-model-tier` warns.
+- **Follow-up execution records.** A later record for the same `taskId`
+  with `"followUp": true` supersedes the earlier one, in both the shell
+  validator and `deriveExecutionTerminalState`. Unflagged repeats still fail
+  as `duplicate-canonical-record`; `orphan-follow-up-record` catches a
+  follow-up with nothing to follow.
+- **File-bound evidence.** `buildEvidence.coveredPaths` + `pathsDigest`,
+  validated for shape (`malformed-evidence-binding`), and
+  `scripts/check-evidence-currency.sh` to recompute digests at a revision
+  (`--digest` prints one). Evidence survives unrelated and docs-only commits.
+- `scripts/select-impacted-tests.sh` maps changed paths to the `Test`
+  commands of the units that own them and lists unmapped paths.
+- `scripts/execution-log-slice.sh` and `scripts/task-contract-slice.sh`
+  return one packet's log entries or contract units (about 4–6% of the full
+  files on a real project) so agents never load the whole artifacts.
+- Content lint reports auto-registered versus curated register rows;
+  optional `CONTENT_LINT_MAX_AUTO_SHARE` gate
+  (`auto-registered-share-exceeded`).
+
+### Changed
+- `build-path-ledger.sh`: one creating task plus any number of
+  `modify-existing` tasks on a path is no longer a collision; two creators
+  still are. A modifier numbered before its creator in the same packet is a
+  non-blocking `modify-before-create` ordering warning.
+- `executor.md`: new "Subagent dispatch and cost discipline" section (route
+  by model tier, explicit model on every call, fallback only on real limits,
+  turn budgets, no waiting agents, narrow tests with one regression per gap,
+  design-first step for `Risk: high`); startup loads slices instead of the
+  whole log and contract; records document follow-ups and file-bound
+  evidence; the semantic-review gate allows delta reviews for fix rounds.
+- `semantic-review-and-validation.md`: new "Review modes" section.
+- `audit-and-remediate.md`: packet template carries the three routing
+  fields with guidance on setting them.
+- `content-system.md`: explains the auto-registered share.
+
 ## [Unreleased] — corpus split, `validators` subpath, repository hygiene
 
 The library had outgrown two of its own assumptions: that a module lives in
