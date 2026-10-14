@@ -275,6 +275,12 @@ fi
   echo "total_plan_tasks: $total_tasks"
   echo "satisfied_on_disk: $satisfied_count"
   echo "excused_blocked_failed_deferred: $excused_count"
+  # The frontmatter's own declared counts, so the envelope report agrees with the
+  # execution-log lists it was derived from; the excuse count above covers only the
+  # declared tasks whose File is missing on disk.
+  echo "declared_blocked_tasks: $(printf "%s" "$blocked_list" | grep -c . || true)"
+  echo "declared_failed_tasks: $(printf "%s" "$failed_list" | grep -c . || true)"
+  echo "declared_deferred_tasks: $(printf "%s" "$deferred_list" | grep -c . || true)"
   echo "silent_skips: $silent_count"
   echo "completion_dimensions:"
   echo "  planning: pass"
