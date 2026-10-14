@@ -152,7 +152,9 @@ total_tasks=0
 # and returns "<slug>:<tid>" or "?:<tid>" for the wildcard case.
 normalise_excuse() {
   local raw="$1"
-  # Collapse ".md:" into ":" so tasks-foo.md:T3 → tasks-foo:T3.
+  # Collapse ".md:" (and the "#" form the status validator and the records use)
+  # into ":" so tasks-foo.md:T3 and tasks-foo.md#T3 → tasks-foo:T3.
+  raw="${raw/.md#/:}"
   raw="${raw/.md:/:}"
   # Drop trailing ".md" if present (e.g. bare filename reference).
   raw="${raw%.md}"
