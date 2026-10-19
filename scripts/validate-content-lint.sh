@@ -188,8 +188,9 @@ const MARKUP_EXTENSIONS = new Set(['.tsx', '.jsx', '.html', '.vue', '.svelte']);
 // markup-capable files, JSX/HTML text nodes (text between > and <).
 const HEADER_CONTEXT = /\bheaders?\b|setRequestHeader/i;
 const HEADER_TOKEN_LITERAL = /^[A-Z][A-Za-z0-9]*(?:-[A-Z0-9][A-Za-z0-9]*)+$/;
-const scannableSpans = (line, markup) => {
+const scannableSpans = (line, markup, sourceText, lineOffset = sourceText.indexOf(line)) => {
   const spans = [];
+  const typedUnion = line.match(/(?:\btype\s+\w+\s*=|\b[A-Za-z_$][\w$]*\s*:\s*)\s*["'][\w-]+["'](?:\s*\|\s*["'][\w-]+["'])+/);
   // A comment line is never user-visible copy. Multiword terms already strip
   // comments before matching; doing it here extends the same rule to
   // single-word terms, whose backtick-quoted identifiers in JSDoc
@@ -199,6 +200,53 @@ const scannableSpans = (line, markup) => {
   // Template-literal interpolation source (`${candidate.canonicalName}`)
   // is code, not user-visible copy — scan only the literal text around it.
   for (const match of quoted) {
+    const before = line.slice(0, match.index);
+    const sourceBefore = sourceText.slice(0, lineOffset + match.index);
+    const following = line.slice(match.index + match[0].length);
+    // Module specifiers, translation lookup keys, and object property names
+    // are identifiers. Their spelling must not be treated as rendered copy.
+    if (/\bfrom\s*$/.test(before)) continue;
+    if (/^\s*import\s*$/.test(before)) continue; // side-effect import
+    if (/\b(?:require|import)\s*\(\s*$/.test(before)) continue;
+    if (/\b(?:t|translate|formatMessage)\s*\(\s*$/.test(before)) continue;
+    if (/\bAppError\([^)]*$/.test(before) && /^[a-z][\w-]*\.[a-z0-9_.-]+$/.test(match[2])) continue;
+    const inJsxTag = markup && /<[^>]*$/.test(before);
+    const inJsxExpression = markup && /\{[^{}]*$/.test(before);
+    if (/^\/(?:api\/|triage(?:\/|$))/.test(match[2])) {
+      const routePosition = /\b(?:href\s*=\s*(?:\{\s*)?|router\.(?:push|replace)\(\s*|fetch\(\s*)`?\s*$/.test(before);
+      const routeVariable = before.match(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*$/)?.[1];
+      const routeHelper = sourceBefore.match(/\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*\([^)]*\)\s*=>\s*$/)?.[1];
+      const routeName = routeVariable || routeHelper;
+      const routeFeedsFetch = !inJsxTag && !inJsxExpression && routeName
+        && new RegExp(`\\bfetch\\s*\\(\\s*(?:\\x60(?:\\$\\{)?)?${routeName}\\b`).test(sourceText);
+      if (routePosition || routeFeedsFetch) continue;
+    }
+    // Translation keys are non-rendered only in explicit lookup calls above.
+    // Other dotted strings, including rendered JSX expressions, remain copy.
+    if (typedUnion && match.index >= typedUnion.index && match.index < typedUnion.index + typedUnion[0].length) continue;
+    if (!inJsxTag && !inJsxExpression && /\btype\s+\w+\s*=\s*(?:["'][\w-]+["']\s*\|\s*)*$/.test(sourceBefore)) continue;
+    const enumCollection = sourceBefore.match(/\bconst\s+([A-Z_]+)(?:\s*:[^=;]+)?\s*=\s*[\[{][^;]*$/)?.[1];
+    if (!inJsxTag && !inJsxExpression && enumCollection && /^[A-Z_]+(?:,[A-Z_]+)*$/.test(match[2])) {
+      const mappedToCopy = enumCollection.endsWith('_ACTIVITIES')
+        && new RegExp(`\\b${match[2]}\\s*:\\s*["'][a-z][\\w-]*(?:\\.[\\w-]+)+["']`).test(sourceText)
+        && /\btranslateKey\s*\(/.test(sourceText);
+      const queryValue = sourceText.match(new RegExp(`\\bconst\\s+(\\w+)\\s*=\\s*${enumCollection}\\s*\\[`))?.[1];
+      const usedAsQuery = enumCollection.endsWith('_KINDS') && queryValue
+        && new RegExp(`\\.set\\s*\\(\\s*["'][^"']+["']\\s*,\\s*${queryValue}\\s*\\)`).test(sourceText);
+      if (mappedToCopy || usedAsQuery) continue;
+    }
+    if (/\b(?:id|name|type|htmlFor|aria-describedby|data-[\w-]+)\s*=\s*$/.test(before) && !/\b(?:aria-label|title|placeholder|alt)\s*=\s*$/.test(before)) continue;
+    if (/\blabelKey\s*:\s*$/.test(before)) continue;
+    if (/\b[A-Z_]*STORAGE_KEY\s*=\s*$/.test(before)) continue;
+    if (/(?:RatePerHourCents|PriceCents|Minutes|Days|Pct|Order)\s*:\s*$/.test(before)) continue;
+    const metadataHelper = before.match(/\b(money|whole)\s*\(\s*$/)?.[1];
+    if (metadataHelper && new RegExp(`\\bconst\\s+${metadataHelper}\\s*=\\s*\\(\\s*field\\s*:`).test(sourceText)) continue;
+    if (/\bset\s*\(\s*$/.test(before) && /function\s+set\s*<\s*\w+\s+extends\s+keyof\s+Values\s*>\s*\(\s*key\s*:\s*\w+/.test(sourceText)) continue;
+    if (/^(?:done|current|todo)$/.test(match[2])
+      && (/(?:===|!==|==|!=)\s*$/.test(before) || /\breturn\s*\[[^\]]*$/.test(before))) continue;
+    if (!inJsxTag && !inJsxExpression && /\b[A-Z_]+_FIELDS\s*=\s*\[[^\]]*$/.test(before)) continue;
+    if ((/^\s*case\s+$/.test(before) || /(?:===|!==|==|!=)\s*$/.test(before)) && /^[A-Z][A-Z0-9_]*$/.test(match[2])) continue;
+    if (/^\s*[:,{]\s*$/.test(before.slice(before.lastIndexOf('\n') + 1)) && /^\s*:/.test(following)) continue;
     const body = match[2].replace(/\$\{[^}]*\}/g, ' ');
     // A quoted literal in canonical HTTP-header casing ("Idempotency-Key",
     // "X-Correlation-ID") is a wire identifier, not prose. Requiring each
@@ -222,14 +270,12 @@ const scannableSpans = (line, markup) => {
   }
   return spans;
 };
-const termRegExp = (term) => new RegExp(term.split(/\s+/).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+'), 'i');
-// Multiword terms scan whole markup lines (JSX text is unquoted), but code
-// comments are not user-visible copy — strip them first. "//" after
-// whitespace or at line start is a comment; "://" in URLs is not.
-const stripComments = (line) => line
-  .replace(/\{\/\*[\s\S]*?\*\/\}/g, ' ')
-  .replace(/^\s*(?:\/\/|\/?\*).*$/, ' ')
-  .replace(/(^|\s)\/\/.*$/, '$1');
+const termRegExp = (term) => {
+  const escaped = term.split(/\s+/).map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')).join('\\s+');
+  const left = /^[A-Za-z0-9_]/.test(term) ? '(?<![A-Za-z0-9_])' : '';
+  const right = /[A-Za-z0-9_]$/.test(term) ? '(?![A-Za-z0-9_])' : '';
+  return new RegExp(`${left}${escaped}${right}`, 'i');
+};
 const identifierRegs = identifierPatterns.map((pattern) => new RegExp(pattern));
 const fixtureRegs = fixtureMarkers.map((pattern) => new RegExp(pattern, 'i'));
 const shortcutsByFile = new Map();
@@ -243,26 +289,82 @@ for (const file of files) {
     continue;
   }
   const markup = MARKUP_EXTENSIONS.has(path.extname(file.relative).toLowerCase());
-  const lines = text.split(/\r?\n/);
-  lines.forEach((line, lineIndex) => {
-    const lineNumber = lineIndex + 1;
-    const spans = scannableSpans(line, markup);
+  const checkSpans = (spans, lineNumber, catalogKey = '') => {
     const spanText = spans.join(' ␟ ');
     for (const banned of bannedTerms) {
-      const allowed = list(banned.allowedContexts).map(globToRegExp);
-      if (allowed.length > 0 && matchesAny(allowed, file.relative)) continue;
+      const allowedContexts = list(banned.allowedContexts).map(String);
+      const allowedByFile = allowedContexts.some((context) => !context.startsWith('catalog:')
+        && globToRegExp(context).test(file.relative));
+      const allowedByCatalog = catalogKey && allowedContexts.some((context) =>
+        context.startsWith('catalog:') && globToRegExp(context.slice('catalog:'.length)).test(catalogKey));
+      if (allowedByFile || allowedByCatalog) continue;
       const regExp = termRegExp(banned.term);
-      const multiword = /\s/.test(banned.term.trim());
-      const haystack = multiword ? `${spanText} ${markup ? stripComments(line) : ''}` : spanText;
-      if (haystack && regExp.test(haystack)) {
+      if (spanText && regExp.test(spanText)) {
         issues.push({ code: 'banned-surface-term', file: file.relative, line: lineNumber, term: banned.term, message: `Banned surface term "${banned.term}" in user-visible copy${banned.reason ? ` (${banned.reason})` : ''}.` });
       }
     }
     for (const marker of fixtureRegs) {
+      marker.lastIndex = 0;
       if (spanText && marker.test(spanText)) {
         issues.push({ code: 'fixture-data-in-ui-source', file: file.relative, line: lineNumber, message: `Fixture marker ${marker.source} appears in UI source outside excluded fixture paths.` });
         break;
       }
+    }
+  };
+
+  if (path.extname(file.relative).toLowerCase() === '.json') {
+    let catalog;
+    try {
+      catalog = JSON.parse(text);
+    } catch (error) {
+      issues.push({ code: 'invalid-surface-catalog', file: file.relative, message: `UI copy catalog is not valid JSON: ${error.message}` });
+      continue;
+    }
+    let searchOffset = 0;
+    const visitCatalog = (value, keyPath = [], valueLine = 1) => {
+      if (typeof value === 'string') {
+        const key = keyPath.join('.');
+        checkSpans([value], valueLine, key);
+      } else if (Array.isArray(value)) {
+        value.forEach((entry, index) => visitCatalog(entry, [...keyPath, String(index)], valueLine));
+      } else if (value && typeof value === 'object') {
+        for (const [key, entry] of Object.entries(value)) {
+          const token = JSON.stringify(key);
+          const position = text.indexOf(token, searchOffset);
+          if (position >= 0) searchOffset = position + token.length;
+          const lineNumber = position < 0 ? valueLine : text.slice(0, position).split('\n').length;
+          visitCatalog(entry, [...keyPath, key], lineNumber);
+        }
+      }
+    };
+    visitCatalog(catalog);
+    continue;
+  }
+
+  const lines = text.split(/\r?\n/);
+  let markupTextDepth = 0;
+  let inJsxComment = false;
+  let lineOffset = 0;
+  lines.forEach((line, lineIndex) => {
+    const lineNumber = lineIndex + 1;
+    const spans = scannableSpans(line, markup, text, lineOffset);
+    lineOffset += line.length + (text[lineOffset + line.length] === '\r' ? 2 : 1);
+    if (markup && markupTextDepth > 0 && !inJsxComment) {
+      const plainText = line.trim();
+      if (/^[A-Za-z][^<>{}=;`"']*$/.test(plainText)
+        && !/^(import|export|const|let|var|return|function|type|interface|case|default|if|else|try|catch|throw|await|switch|break|continue)\b/.test(plainText)) {
+        spans.push(plainText);
+      }
+    }
+    checkSpans(spans, lineNumber);
+    if (markup) {
+      if (line.includes('{/*')) inJsxComment = true;
+      if (line.includes('*/}')) inJsxComment = false;
+      const textTags = '(?:main|section|article|div|p|span|button|label|h[1-6]|li|td|th|a|option|strong|em|summary|legend|small|b|i)';
+      const closing = [...line.matchAll(new RegExp(`<\\/${textTags}\\s*>`, 'gi'))].length;
+      const opening = [...line.matchAll(new RegExp(`<${textTags}(?:\\s[^>]*|\\s*)>`, 'gi'))]
+        .filter((match) => !/\/\s*>$/.test(match[0])).length;
+      markupTextDepth = Math.max(0, markupTextDepth + opening - closing);
     }
     for (const identifier of identifierRegs) {
       if (identifier.test(line)) {

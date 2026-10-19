@@ -150,11 +150,15 @@ if [ "$ready" != "true" ]; then
     add_blocking_artifact "baseline-task-coverage.md"
     add_blocking_issue "baseline task coverage has gaps"
   fi
-  if grep -q "user-review checkpoints" "$FINALIZE_OUTPUT"; then
+  # The stage header and successful validator both mention this gate.
+  # Only classify it as blocking when the validator reports a failure.
+  if grep -qE 'user-review checkpoints: fail|user-review checkpoints are missing or unordered' "$FINALIZE_OUTPUT"; then
     add_blocking_artifact "user-review-checkpoints.md"
     add_blocking_issue "user review checkpoints are missing or unordered"
   fi
-  if grep -q "screenshot matrix validation" "$FINALIZE_OUTPUT"; then
+  # Finalize also prints an informational skip when there are no screenshot
+  # matrices, so match its explicit failure status only.
+  if grep -q 'screenshot matrix validation: fail' "$FINALIZE_OUTPUT"; then
     add_blocking_artifact "tasks-*screenshots*.md"
     add_blocking_issue "screenshot matrix validation failed"
   fi

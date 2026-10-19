@@ -265,6 +265,83 @@ describe('content lint — clean pass and pair integrity', () => {
   });
 });
 
+describe('content lint — scans rendered copy rather than identifiers', () => {
+  const vocabularyConfig = {
+    ...baseConfig,
+    bannedSurfaceTerms: [
+      { term: 'dispatch', reason: 'staff vocabulary', allowedContexts: ['catalog:staff.*'] },
+      { term: 'allowance', reason: 'internal term', allowedContexts: [] },
+      { term: 'TODO', reason: 'unfinished copy', allowedContexts: [] },
+    ],
+  };
+
+  it('ignores imports, translation keys, and API routes but catches visible JSX text and attributes', () => {
+    const { report } = run({
+      config: vocabularyConfig,
+      contentSystem,
+      inventory: validInventory,
+      appFiles: {
+        'src/page.tsx': [
+          "import { dispatch } from '@/server/dispatch/allowance';",
+          "const response = fetch('/api/dispatch');",
+          "const todoLabelKey = 'todoLabel';",
+          'export default function Page() {',
+          "  return <><span>{t('dispatch.key')}</span><p>dispatch is ready</p><button aria-label=\"allowance\">TODO</button></>;",
+          '}',
+        ].join('\n'),
+      },
+    });
+    const findings = report.issues.filter((issue: { code: string }) => issue.code === 'banned-surface-term');
+    expect(findings.map((issue: { term: string }) => issue.term).sort()).toEqual(['TODO', 'allowance', 'dispatch']);
+    expect(findings.map((issue: { line: number }) => issue.line)).toEqual([5, 5, 5]);
+  });
+
+  it('scans catalogue values once and applies catalog allow-contexts to dotted keys', () => {
+    const { report } = run({
+      config: {
+        ...vocabularyConfig,
+        uiSourceGlobs: ['src/**/*.json'],
+      },
+      contentSystem,
+      inventory: validInventory,
+      appFiles: {
+        'src/i18n/messages/en-CA.json': JSON.stringify({
+          staff: { dispatch: 'Internal dispatch label', todo: 'To do' },
+          member: { dispatch: 'Dispatch is assigned', todo: 'A TODO remains' },
+            memberNoTerm: { dispatch: 'An offer is assigned' },
+        }, null, 2),
+      },
+    });
+    const findings = report.issues.filter((issue: { code: string }) => issue.code === 'banned-surface-term');
+    expect(findings.map((issue: { term: string }) => issue.term).sort()).toEqual(['TODO', 'dispatch']);
+    expect(findings).toHaveLength(2);
+  });
+
+  it('keeps visible JSX expressions and attributes in scope around code syntax', () => {
+    const { report } = run({
+      config: { ...baseConfig, bannedSurfaceTerms: [{ term: 'persisted', reason: 'database word', allowedContexts: [] }] },
+      contentSystem,
+      inventory: validInventory,
+      appFiles: {
+        'src/page.tsx': [
+          '<span>{"persisted.state"}</span>',
+          '<button aria-label="/api/persisted" />',
+          'const unfinishedLabel = "PERSISTED";',
+          'const state: "a" | "b" = current; const view = <p aria-label="persisted" />;',
+          'const label = text("persisted");',
+          '<input value="persisted" />',
+          'const feeUrl = (id: string) => `/api/fees/${id}`;',
+          'fetch(feeUrl(id));',
+          '<button aria-label="/api/persisted" />',
+        ].join('\n'),
+      },
+    });
+    const findings = report.issues.filter((issue: { code: string }) => issue.code === 'banned-surface-term');
+    expect(findings).toHaveLength(7);
+    expect(findings.every((issue: { term: string }) => issue.term === 'persisted')).toBe(true);
+  });
+});
+
 describe('content lint — auto-registered share audit', () => {
   // 3 auto-registered rows (STR-R-*) + 1 curated row (STR-HOME-001) = 75% auto.
   const autoContentSystem = `${contentSystem}| STR-R-001 | helper | One | default | auto |\n| STR-R-002 | helper | Two | default | auto |\n| STR-R-003 | helper | Three | default | auto |\n`;

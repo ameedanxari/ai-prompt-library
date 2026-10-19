@@ -157,6 +157,45 @@ describe('validate-ready-to-execute.sh', () => {
       expect(report).toMatch(/- `revise-report\.md`/);
       expect(report).toMatch(/executor_gate: fail/);
       expect(report).toMatch(/revise-report\.md/);
+      // The finalize output mentions the review stage and explicitly skips
+      // screenshot validation; neither is a blocker for this coverage failure.
+      expect(report).not.toMatch(/user review checkpoints are missing or unordered/);
+      expect(report).not.toMatch(/screenshot matrix validation failed/);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('reports a failed user-review checkpoint as a blocker', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ready-review-fail-'));
+    try {
+      writeFeature(sandbox, 'design-system');
+      fs.writeFileSync(
+        path.join(sandbox, 'tasks-design-system.md'),
+        [
+          '## T1 · design-system review artifact',
+          '- **Closes user story:** As a product owner, I want a design-system review artifact, so that I can approve the visual foundation.',
+          '- **Change type:** create-new',
+          '- **File:** `docs/design-system/review/index.html`',
+          '- **Precise change:** create a design-system review page.',
+          '- **Acceptance:**',
+          '  - Token swatches and components are visible.',
+          '- **Test:** `test -f docs/design-system/review/index.html`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +100',
+          '- **Phase:** foundation',
+          '',
+        ].join('\n'),
+      );
+      writeExternalAccounts(sandbox);
+      writeStreamAStubs(sandbox);
+
+      const result = run(sandbox);
+
+      expect(result.code).toBe(1);
+      const report = fs.readFileSync(path.join(sandbox, 'ready-to-execute-report.md'), 'utf8');
+      expect(report).toMatch(/user review checkpoints are missing or unordered/);
+      expect(report).toMatch(/user-review checkpoints: fail/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

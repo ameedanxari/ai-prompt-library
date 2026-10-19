@@ -25,6 +25,17 @@ function run(
   fs.writeFileSync(stderrFile, args.stderr, 'utf8');
   const outputJson = path.join(cwd, 'prompts', 'outputs', 'current', 'harness-diagnosis.json');
   fs.mkdirSync(path.dirname(outputJson), { recursive: true });
+  // Unit fixtures classify the supplied stderr, never an attached host device.
+  // adb waits indefinitely for a device when the Android SDK is installed
+  // but no device is available, so give the fixture an explicit no-device probe.
+  const bin = path.join(cwd, 'bin');
+  fs.mkdirSync(bin, { recursive: true });
+  fs.writeFileSync(path.join(bin, 'adb'), '#!/bin/sh\nexit 1\n', { mode: 0o755 });
+  fs.writeFileSync(
+    path.join(bin, 'find'),
+    '#!/bin/sh\ncase "$1" in "$VILLA_DIAGNOSE_FIXTURE"|"$VILLA_DIAGNOSE_FIXTURE"/*|.) exec /usr/bin/find "$@" ;; *) exit 0 ;; esac\n',
+    { mode: 0o755 },
+  );
   const cmd = [
     `bash "${DISPATCHER}"`,
     `--stack "${args.stack}"`,
@@ -37,7 +48,16 @@ function run(
   let out = '';
   let code = 0;
   try {
-    out = execSync(cmd, { encoding: 'utf8', cwd, stdio: ['ignore', 'pipe', 'pipe'] });
+    out = execSync(cmd, {
+      encoding: 'utf8',
+      cwd,
+      env: {
+        ...process.env,
+        PATH: `${bin}${path.delimiter}${process.env.PATH ?? ''}`,
+        VILLA_DIAGNOSE_FIXTURE: cwd,
+      },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
   } catch (e) {
     const err = e as { stdout?: Buffer; stderr?: Buffer; status?: number };
     out = (err.stdout?.toString() ?? '') + (err.stderr?.toString() ?? '');

@@ -13,7 +13,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'node:child_process';
+import { execFileSync, execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -52,6 +52,9 @@ function passingReviseReport(): string {
 }
 
 describe('validator — script exists', () => {
+  it('parses with the system Bash, including macOS Bash 3.2', () => {
+    expect(() => execFileSync('/bin/bash', ['-n', VALIDATOR], { encoding: 'utf8' })).not.toThrow();
+  });
   it('exists and is executable', () => {
     expect(fs.existsSync(VALIDATOR)).toBe(true);
     const stat = fs.statSync(VALIDATOR);
@@ -2914,6 +2917,51 @@ describe('validator — rejects quality violations', () => {
       }
       expect(exitCode).not.toBe(0);
       expect(stdout + stderr).toMatch(pattern);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('allows a quoted forbidden-copy example while still rejecting an unfinished TBD', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-tbd-context-'));
+    try {
+      const taskPath = path.join(sandbox, 'remediation-copy.md');
+      fs.writeFileSync(
+        taskPath,
+        [
+          '# Remediation — copy checks',
+          '',
+          'The catalogue exports BANNED_TERMS (for example, "TBD") as words the content model bans everywhere.',
+          '',
+          '## R1 · concrete copy rule',
+          '- **File:** `src/copy.ts`',
+          '- **Precise change:** Reject unfinished placeholders in user-facing copy.',
+          '- **Acceptance:**',
+          '  - The scanner reports a violation for unfinished copy.',
+          '  - The message includes the source location.',
+          '  - The check runs in CI.',
+          '',
+        ].join('\n'),
+      );
+
+      let output = '';
+      try {
+        output = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (error) {
+        const err = error as { stdout?: Buffer; stderr?: Buffer };
+        output = `${err.stdout?.toString() ?? ''}${err.stderr?.toString() ?? ''}`;
+      }
+      expect(output).not.toMatch(/hollow prompt detected/);
+
+      fs.appendFileSync(taskPath, "\n- **Implementation guidance:** Use the label 'TBD' here.\n");
+      let unfinishedOutput = '';
+      try {
+        unfinishedOutput = execSync(`bash "${VALIDATOR}" "${sandbox}"`, { encoding: 'utf8' });
+      } catch (error) {
+        const err = error as { stdout?: Buffer; stderr?: Buffer };
+        unfinishedOutput = `${err.stdout?.toString() ?? ''}${err.stderr?.toString() ?? ''}`;
+      }
+      expect(unfinishedOutput).toMatch(/hollow prompt detected/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

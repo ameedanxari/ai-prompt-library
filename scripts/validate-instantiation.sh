@@ -53,7 +53,7 @@ FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|
 # **Acceptance:** header.
 TAUTOLOGIES='^\s*[-*]\s+(it\s+(works?|passes?|runs?|builds?)|(the\s+|all\s+)?(tests?|everything)\s+pass(es)?|works?|builds?|runs?|no errors?|success(ful)?|done|functional|complete)\s*\.?\s*$'
 
-HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Implementation guidance here|TODO:|TBD)'
+HOLLOW_PROMPT_PATTERN='(?i)(Component details here|Implementation details for|Implementation guidance here|TODO:)'
 GENERIC_UI_PATTERN='(make it beautiful|beautifully crafted|modern UI|polished UI|nice design|clean design)'
 # Note: the bare token "graph" was deliberately removed from this pattern.
 # It matched backend/tooling usage (build-task-graph.sh, task-graph.json,
@@ -939,9 +939,33 @@ for f in "${files[@]}"; do
 
 
   # 4b. Hollow prompt detection.
-  if grep -niE "$HOLLOW_PROMPT_PATTERN" "$f" >/dev/null 2>&1; then
+  # A quoted TBD is allowed when discussing literal banned copy (for
+  # example, a catalogue rule). An unquoted TBD remains an unfinished
+  # placeholder. Keep the check line based so other hollow markers on the
+  # same line still fail.
+  hollow_matches=$(python3 - "$f" "$HOLLOW_PROMPT_PATTERN" <<'PY'
+import re
+import sys
+
+path, pattern = sys.argv[1:]
+boilerplate = re.compile(pattern, re.IGNORECASE)
+tbd = re.compile(r"\bTBD\b", re.IGNORECASE)
+quoted = re.compile(r"([\"'" + chr(96) + r"])TBD\1", re.IGNORECASE)
+documented_banned_copy = re.compile(
+    r"\bBANNED_TERMS\b|\b(?:banned|forbidden|prohibited)\b.{0,100}\b(?:terms?|words?|copy|vocabulary)\b"
+    r"|\b(?:terms?|words?|copy|vocabulary)\b.{0,100}\b(?:banned|forbidden|prohibited)\b",
+    re.IGNORECASE,
+)
+for number, line in enumerate(open(path, encoding="utf-8"), start=1):
+    has_quoted_banned_term = quoted.search(line) and documented_banned_copy.search(line)
+    remaining_line = quoted.sub("", line) if has_quoted_banned_term else line
+    if boilerplate.search(line) or tbd.search(remaining_line):
+        print(f"{number}:{line.rstrip()}")
+PY
+)
+  if [ -n "$hollow_matches" ]; then
     echo "❌ $f: hollow prompt detected (contains boilerplate placeholders)"
-    grep -niE "$HOLLOW_PROMPT_PATTERN" "$f" | sed 's/^/   /'
+    printf '%s\n' "$hollow_matches" | sed 's/^/   /'
     echo "   The prompt MUST contain actual, dissolved guidance from a module."
     echo "   Do NOT bypass Step 3 module loading."
     fail=1
