@@ -54,6 +54,7 @@ function fixture(options: {
   envelopeBlocked?: string;
   journalStatus?: string;
   journalTestResult?: string;
+  journalHistory?: { status: string; testResult?: string }[];
   executionRecord?: Record<string, unknown>;
   executionRecords?: Record<string, unknown>[];
   contractEvidence?: string;
@@ -74,6 +75,11 @@ function fixture(options: {
     '',
     '# Execution Log',
     '',
+    ...(options.journalHistory ?? []).flatMap((entry) => [
+      `### \`tasks-cleanup.md\` — ${entry.status}`,
+      `- **Test result:** ${entry.testResult ?? 'not run'}`,
+      '',
+    ]),
     `### \`tasks-cleanup.md\` — ${journalStatus}`,
     `- **Test result:** ${options.journalTestResult ?? 'pass'}`,
     '- **Acceptance verified:**',
@@ -337,6 +343,70 @@ describe('validate-execution-status.sh', () => {
         const result = run(planDir);
         expect(result.code).toBe(0);
         expect(result.report).toMatchObject({ valid: true, terminal_state: 'verified_production' });
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it.each(['blocked', 'failed', 'deferred'])(
+      'does not require a historical %s journal entry in the current envelope after closure',
+      (status) => {
+        const planDir = fixture({
+          journalHistory: [{ status }],
+          executionRecords: [record({ status }), record({ followUp: true })],
+        });
+        try {
+          const result = run(planDir);
+          expect(result.code).toBe(0);
+          expect(result.report).toMatchObject({ valid: true, terminal_state: 'verified_production' });
+        } finally {
+          fs.rmSync(planDir, { recursive: true, force: true });
+        }
+      },
+    );
+
+    it.each(['blocked', 'failed', 'deferred'])(
+      'still requires the latest %s journal and record in the matching envelope',
+      (status) => {
+        const planDir = fixture({
+          journalHistory: [{ status: 'done', testResult: 'pass' }],
+          journalStatus: status,
+          executionRecords: [record(), record({ followUp: true, status })],
+        });
+        try {
+          const result = run(planDir);
+          expect(result.code).toBe(1);
+          expect(codes(result)).toEqual(expect.arrayContaining([
+            'journal-envelope-status-disagreement',
+            'record-envelope-status-disagreement',
+          ]));
+        } finally {
+          fs.rmSync(planDir, { recursive: true, force: true });
+        }
+      },
+    );
+
+    it('rejects a done follow-up journal when the authoritative record remains blocked', () => {
+      const planDir = fixture({
+        journalHistory: [{ status: 'blocked' }],
+        envelopeBlocked: '[tasks-cleanup.md#T1]',
+        executionRecord: record({ status: 'blocked' }),
+      });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('journal-record-status-disagreement');
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    });
+
+    it('still rejects a historical done journal that claims passing closure with failing tests', () => {
+      const planDir = fixture({ journalHistory: [{ status: 'done', testResult: 'fail' }] });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(1);
+        expect(codes(result)).toContain('journal-done-with-failing-test');
       } finally {
         fs.rmSync(planDir, { recursive: true, force: true });
       }

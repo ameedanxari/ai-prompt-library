@@ -322,7 +322,11 @@ for section in journal_sections:
         add_issue("journal-done-with-failing-test", "journal marks done while Test result is not pass", prompt)
     if status == "done" and re.search(r"^\s*[-*]\s*(?:❌|\[ \])", body, re.M):
         add_issue("journal-unmet-acceptance", "journal marks done with unmet acceptance", prompt)
-    if status in {"blocked", "failed", "deferred"}:
+    # Only the latest journal section describes the current envelope. Earlier
+    # blocked/failed/deferred sections remain audit history after a follow-up.
+    # Keep the done/evidence checks above for every section so contradictory
+    # completion claims are still reported.
+    if status in {"blocked", "failed", "deferred"} and section is journal_by_prompt[prompt]:
         envelope_entries = {
             "blocked": blocked_entries,
             "failed": failed_entries,
