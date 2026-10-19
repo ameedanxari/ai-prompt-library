@@ -213,7 +213,7 @@ const scannableSpans = (line, markup, sourceText, lineOffset = sourceText.indexO
     const inJsxTag = markup && /<[^>]*$/.test(before);
     const inJsxExpression = markup && /\{[^{}]*$/.test(before);
     if (/^\/(?:api\/|triage(?:\/|$))/.test(match[2])) {
-      const routePosition = /\b(?:href\s*=\s*(?:\{\s*)?|router\.(?:push|replace)\(\s*|fetch\(\s*)`?\s*$/.test(before);
+      const routePosition = /\b(?:href\s*=\s*(?:\{\s*)?|router\.(?:push|replace)\(\s*|fetch\(\s*)`?\s*$/.test(sourceBefore);
       const routeVariable = before.match(/\b(?:const|let|var)\s+([A-Za-z_$][\w$]*)\s*=\s*$/)?.[1];
       const routeHelper = sourceBefore.match(/\bconst\s+([A-Za-z_$][\w$]*)\s*=\s*\([^)]*\)\s*=>\s*$/)?.[1];
       const routeName = routeVariable || routeHelper;

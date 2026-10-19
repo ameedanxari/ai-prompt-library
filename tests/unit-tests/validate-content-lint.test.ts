@@ -296,6 +296,21 @@ describe('content lint — scans rendered copy rather than identifiers', () => {
     expect(findings.map((issue: { line: number }) => issue.line)).toEqual([5, 5, 5]);
   });
 
+  it.each([
+    'await fetch(\n  `/api/dispatch/${id}`,\n  { method: "POST" },\n);',
+    'const view = <a href={\n  `/api/dispatch/${id}`\n}>Open</a>;',
+    'router.push(\n  `/api/dispatch/${id}`\n);',
+  ])('ignores multiline transport destinations but still scans rendered route text: %s', (transport) => {
+    const { report } = run({
+      config: vocabularyConfig,
+      contentSystem,
+      inventory: validInventory,
+      appFiles: { 'src/page.tsx': `${transport}\nconst copy = <p>{"/api/dispatch"}</p>;` },
+    });
+    const findings = report.issues.filter((issue: { code: string }) => issue.code === 'banned-surface-term');
+    expect(findings.map((issue: { term: string }) => issue.term)).toEqual(['dispatch']);
+  });
+
   it('scans catalogue values once and applies catalog allow-contexts to dotted keys', () => {
     const { report } = run({
       config: {
