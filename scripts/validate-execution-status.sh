@@ -313,12 +313,24 @@ for task_id, unit in units_by_id.items():
         add_issue("tier-zero-evidence-missing", "critical task has no evidence record", task_id)
 
 journal_by_prompt = {section["prompt"]: section for section in journal_sections}
+
+def journal_test_passed(result):
+    result = result.strip().lower()
+    if re.match(r"^pass\b", result):
+        return True
+    # Older journals name the checked area before the affirmative outcome.
+    # Match only that leading clause, never a later mention of a passing rerun.
+    return bool(re.match(
+        r"^(?!(?:no|not|some|few|failed|failing|pending|unknown)\b)"
+        r"[a-z][a-z0-9_-]* checks pass(?=[.!;:]|$)", result,
+    ))
+
 for section in journal_sections:
     body = section["body"]
     prompt = section["prompt"]
     status = section["status"]
     test_results = re.findall(r"\*\*Test result:\*\*\s*([^\n]+)", body, re.I)
-    if status == "done" and any(not result.strip().lower().startswith("pass") for result in test_results):
+    if status == "done" and any(not journal_test_passed(result) for result in test_results):
         add_issue("journal-done-with-failing-test", "journal marks done while Test result is not pass", prompt)
     if status == "done" and re.search(r"^\s*[-*]\s*(?:❌|\[ \])", body, re.M):
         add_issue("journal-unmet-acceptance", "journal marks done with unmet acceptance", prompt)

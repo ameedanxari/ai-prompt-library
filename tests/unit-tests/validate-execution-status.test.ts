@@ -144,6 +144,56 @@ describe('validate-execution-status.sh', () => {
     }
   });
 
+  it('accepts a leading affirmative named-check result without rewriting journal history', () => {
+    const planDir = fixture({
+      journalTestResult: 'Ledger checks pass. Initial failures were resolved through isolated reruns.',
+    });
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report.valid).toBe(true);
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    'Ledger checks fail. A separate check passed.',
+    'Ledger checks not run.',
+    'Ledger checks unknown.',
+    'Not all checks pass.',
+    'No checks pass.',
+    'Some checks pass.',
+    'passable',
+  ])('rejects a non-affirmative named-check result: %s', (journalTestResult) => {
+    const planDir = fixture({ journalTestResult });
+    try {
+      expect(run(planDir).report.issues.map((issue: { code: string }) => issue.code))
+        .toContain('journal-done-with-failing-test');
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not let passing named-check prose override failing canonical evidence', () => {
+    const planDir = fixture({
+      journalTestResult: 'Ledger checks pass.',
+      executionRecord: record({
+        testEvidence: [{ id: 'integration-test', level: 'integration', outcome: 'fail' }],
+      }),
+    });
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.valid).toBe(false);
+      expect(result.report.issues.map((issue: { code: string }) => issue.code))
+        .not.toContain('journal-done-with-failing-test');
+      expect(result.report.issues.length).toBeGreaterThan(0);
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
   it('rejects a blocked journal and record missing from the envelope', () => {
     const planDir = fixture({
       journalStatus: 'blocked',
