@@ -21,14 +21,25 @@ if [ ! -f "$LOG" ]; then
   exit 2
 fi
 
-python3 - "$GRAPH" "$LOG" <<'PY'
+EXEC_LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib" python3 - "$GRAPH" "$LOG" "$PLAN_DIR" <<'PY'
 import json
+import os
 import re
 import sys
 
-graph_path, log_path = sys.argv[1], sys.argv[2]
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["EXEC_LOG_LIB"])
+from execution_log import load_logical_log  # noqa: E402
+
+graph_path, log_path, plan_dir = sys.argv[1], sys.argv[2], sys.argv[3]
 graph = json.load(open(graph_path, encoding="utf-8"))
-log = open(log_path, encoding="utf-8").read().splitlines()
+# Rotated journal entries are read from journal_archives (older first).
+logical = load_logical_log(plan_dir, open(log_path, encoding="utf-8").read())
+if logical.missing:
+    for name in logical.missing:
+        print(f"❌ journal archive listed in {log_path} cannot be read: {name}", file=sys.stderr)
+    sys.exit(2)
+log = logical.text.splitlines()
 
 order = []
 for line in log:

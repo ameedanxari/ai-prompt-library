@@ -60,13 +60,26 @@ if [ ! -f "$LOG" ]; then
   exit 2
 fi
 
-python3 - "$LOG" "$PLAN_FILE" "$RECORDS_ONLY" <<'PY'
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+EXEC_LOG_LIB="$SCRIPT_DIR/lib" python3 - "$LOG" "$PLAN_FILE" "$RECORDS_ONLY" "$TARGET_DIR" <<'PY'
 import json
+import os
 import re
 import sys
 
-log_path, plan, records_only = sys.argv[1], sys.argv[2], sys.argv[3] == "1"
-lines = open(log_path, encoding="utf-8").read().splitlines()
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["EXEC_LOG_LIB"])
+from execution_log import load_logical_log  # noqa: E402
+
+log_path, plan, records_only, target_dir = sys.argv[1], sys.argv[2], sys.argv[3] == "1", sys.argv[4]
+main_text = open(log_path, encoding="utf-8").read()
+# Entries rotated into journal_archives are read transparently (archives first).
+logical = load_logical_log(target_dir, main_text)
+if logical.missing:
+    for name in logical.missing:
+        print(f"❌ journal archive listed in {log_path} cannot be read: {name}", file=sys.stderr)
+    sys.exit(2)
+lines = main_text.splitlines()
 
 # Frontmatter: first line `---` up to the next `---`.
 frontmatter = []
@@ -85,7 +98,8 @@ in_fence = False
 fence_info = ""
 block = None          # (start_line_index, [lines]) of an open status-record fence
 blocks = []           # (start_line_index, raw text, entry or None)
-for idx, line in enumerate(lines[body_start:], start=body_start):
+body_lines = logical.body.splitlines()
+for idx, line in enumerate(body_lines):
     if line.startswith("```"):
         if not in_fence:
             in_fence = True

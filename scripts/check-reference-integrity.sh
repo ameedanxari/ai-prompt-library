@@ -167,6 +167,7 @@ PRODUCERS=(
   "user-review-checkpoints.md|scripts/finalize.sh"
   "revise-report.md|scripts/revise.sh"
   "execution-log.md|prompts/orchestrators/executor.md"
+  "owner-decisions.md|prompts/orchestrators/executor.md"
   "resumption-checkpoint.md|prompts/orchestrators/ai-agent-entry-point.md"
 )
 : > "$work/orphans.txt"

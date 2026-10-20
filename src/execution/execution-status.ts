@@ -54,6 +54,15 @@ export interface BuildEvidenceRecord {
   pathsDigest?: string;
 }
 
+export const BLOCKED_ON_KINDS = ['owner-decision', 'dependency', 'environment'] as const;
+export type BlockedOnKind = (typeof BLOCKED_ON_KINDS)[number];
+
+/** Why a blocked record is blocked; `owner-decision` ids resolve to `## <id>` headings in owner-decisions.md. */
+export interface BlockedOnReference {
+  kind: BlockedOnKind;
+  id?: string;
+}
+
 export interface TaskUnitExecutionRecord {
   taskId: string;
   status: TaskExecutionStatus;
@@ -65,6 +74,57 @@ export interface TaskUnitExecutionRecord {
   reason?: string;
   /** Marks a later record for a taskId already recorded; the last record in log order is authoritative. */
   followUp?: boolean;
+  blockedOn?: BlockedOnReference;
+}
+
+/** Separator between archives and the main log (a `##` line ends any journal section). */
+export const EXECUTION_LOG_ARCHIVE_BOUNDARY = '\n## (journal archive boundary)\n\n';
+
+const FRONTMATTER_PATTERN = /^---[ \t]*\r?\n([\s\S]*?)\r?\n---[ \t]*(?:\r?\n|$)/;
+
+function splitFrontmatter(text: string): { frontmatter: string; rest: string } {
+  const match = FRONTMATTER_PATTERN.exec(text);
+  if (!match) return { frontmatter: '', rest: text };
+  return { frontmatter: match[1] ?? '', rest: text.slice(match[0].length) };
+}
+
+/**
+ * Archive paths (relative to the project root) listed under `journal_archives`
+ * in the execution log's frontmatter, as block or inline YAML list.
+ */
+export function parseJournalArchives(logText: string): string[] {
+  const { frontmatter } = splitFrontmatter(logText);
+  const lines = frontmatter.split(/\r?\n/);
+  const unquote = (value: string): string => value.trim().replace(/^["']|["']$/g, '');
+  for (let index = 0; index < lines.length; index += 1) {
+    const match = /^journal_archives:\s*(.*)$/.exec(lines[index] ?? '');
+    if (!match) continue;
+    const inline = (match[1] ?? '').trim();
+    if (inline.startsWith('[')) {
+      return inline.replace(/^\[/, '').replace(/\]$/, '').split(',').map(unquote).filter(Boolean);
+    }
+    if (inline && inline !== 'null' && inline !== '~') return [unquote(inline)];
+    const items: string[] = [];
+    for (const follow of lines.slice(index + 1)) {
+      const item = /^\s+-\s+(.*?)\s*$/.exec(follow);
+      if (!item) break;
+      const value = unquote(item[1] ?? '');
+      if (value) items.push(value);
+    }
+    return items;
+  }
+  return [];
+}
+
+/**
+ * Logical execution log: archives in listed order (they are older), then the
+ * main log, so "the last record in log order is authoritative" still holds.
+ * `archiveTexts` are the archive file contents in `parseJournalArchives` order.
+ */
+export function composeLogicalExecutionLog(mainLogText: string, archiveTexts: string[]): string {
+  if (archiveTexts.length === 0) return mainLogText;
+  const bodies = archiveTexts.map((archive) => splitFrontmatter(archive).rest);
+  return bodies.join(EXECUTION_LOG_ARCHIVE_BOUNDARY) + EXECUTION_LOG_ARCHIVE_BOUNDARY + mainLogText;
 }
 
 export interface ExecutionGateState {

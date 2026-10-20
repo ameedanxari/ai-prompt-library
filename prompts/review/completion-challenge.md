@@ -28,10 +28,19 @@ user outcomes explicitly.
   `nextTask` is null.
 - `remediation_required`: locally actionable findings remain; `nextTask` names
   the first remediation task.
-- `blocked`: proof requires a user decision, credential, external action, or
-  unavailable environment; `nextTask` names the blocker record.
+- `blocked`: every open finding is `needsOwner` (attached to an
+  `owner-decisions.md` row) or waits on an environment the agent cannot
+  provide; `nextTask` is `owner-decisions.md`. Findings whose row is
+  `decided` or `accepted-risk` are resolved by that decision and are not
+  counted as open.
 - `partial`: review is incomplete or required evidence is unavailable but
   additional local validation can proceed.
+
+Decide `remediation_required` only when at least one `locallyActionable`
+finding remains. A bundle whose unresolved set has not shrunk for two
+rounds, or whose only open items wait on the owner, is `blocked`, and the
+decision says which owner rows would unblock it. Another remediation round
+in that state spends the budget on records.
 
 Absence of reported defects is not proof. File count, task status, and passing
 mechanical checks are supporting evidence only.

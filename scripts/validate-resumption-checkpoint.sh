@@ -52,6 +52,9 @@ def path_exists_for_reload(raw: str, checkpoint_path: Path) -> bool:
     candidates = [path]
     if raw.startswith("prompts/outputs/current/"):
         candidates.append(checkpoint_path.parent / Path(raw).name)
+    elif raw.startswith("prompts/outputs/archive/"):
+        # rotated execution-log archives sit beside the checkpoint's directory
+        candidates.append(checkpoint_path.parent.parent / "archive" / Path(raw).name)
     else:
         candidates.append(checkpoint_path.parent / raw)
 
@@ -141,6 +144,7 @@ for reload_file in reload_files:
         issues.append(f"re_load_files contains placeholder/comment/glob entry: {reload_file}")
     if not (
         reload_file.startswith("prompts/outputs/current/")
+        or reload_file.startswith("prompts/outputs/archive/")
         or Path(reload_file).is_absolute()
         or reload_file in trusted_orchestrators
     ):

@@ -226,6 +226,8 @@ test_suite_state: green | red | unknown
 regressions_since_green: []            # prompt filenames that introduced red
 external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
 harness_recoveries: []     # appended by the diagnose-harness pipeline; each entry is { task, classification, action, result, at }
+decision_policy: ask       # ask | recommend — see "Owner-decision protocol"; set once from the owner's instruction
+journal_archives: []       # written by rotate-execution-log.sh; older done entries live there, validators read them
 ---
 
 # Execution Log
@@ -324,7 +326,14 @@ The `taskId` must equal the unit's `canonicalId` in `task-contract.json`
 }
 ```
 
-Two optional extensions keep records honest without busywork:
+Three optional extensions keep records honest without busywork:
+
+- **Blocked-on.** A `blocked` record names what it waits for:
+  `"blockedOn": {"kind": "owner-decision", "id": "D-003"}` (a row in
+  `owner-decisions.md`, which must exist), `{"kind": "dependency",
+  "id": "tasks-auth.md#T2"}` or `{"kind": "environment", "id":
+  "docker-daemon"}`. The status report counts owner-blocked units
+  separately, so "blocked" never hides "waiting for the owner".
 
 - **Follow-up records.** When a later round touches a unit that already
   has a record, append a new record for the same `taskId` with
@@ -419,10 +428,19 @@ repeat:
       8. Present the ⏸ CHECKPOINT (see below).
 
     if status != `done`:
-      surface the blocker to the user and stop the current phase.
-      Do NOT skip ahead to a later phase — a foundation/mvp failure
-      almost always implies later tasks will fail too. Move on only
-      when the user gives explicit guidance.
+      classify the blocker (see "Owner-decision protocol"):
+      - `owner-decision`: record or reuse one row in
+        `owner-decisions.md`, set `blockedOn` on the record, and
+        continue with the next runnable task that does not depend on
+        it. Under `decision_policy: recommend`, an assumable decision
+        is taken on the recommendation and the task continues.
+      - `environment` (missing runtime, daemon, credential) or
+        `dependency`: log `blocked` with the one-line reason and
+        continue with the next runnable task in the same phase.
+      - a `failed` foundation or mvp task: stop the phase and report.
+        Later phases will fail on the same cause.
+      Never stop the whole run for one blocked task when runnable
+      tasks remain; never retry a blocked task in the same session.
 
     after each phase boundary in delivery-order.md (when the next
     task in the list belongs to a later phase): run broader
@@ -581,9 +599,21 @@ Show:
    `"Prompt [status]. [One-line explanation]. Say **Continue** to skip
    to the next prompt, or provide guidance. If starting a new chat, paste exactly: **Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.**"`
 
-**Wait for the user to say "Continue".** Do NOT auto-advance.
+**Under `decision_policy: ask` (the default), wait for the user to say
+"Continue".** Do NOT auto-advance.
 
-Do **NOT** attempt to execute multiple prompts in one turn or suggest a "Continue N" loop. Context overflow is the primary cause of AI steering off-track and hallucinating code. After executing one prompt, updating the codebase, and writing the status to `execution-log.md`, you must fully stop and strongly recommend the user start a new chat for the next task.
+**Under `decision_policy: recommend`** the owner has already said to
+continue until complete. Print the same checkpoint summary, do not wait,
+and start the next runnable task in a fresh, bounded context (one
+subagent per unit where the host allows it, otherwise a new chat). Stop
+only at the conditions in "When to stop". Do not re-ask for
+authorisation each session; the policy is in the envelope.
+
+Do **NOT** execute multiple prompts in one long-lived context. Context
+overflow is the primary cause of AI steering off-track and hallucinating
+code. One prompt per context: after executing one prompt, updating the
+codebase, and writing the status to `execution-log.md`, end that context
+(hand back from the subagent, or recommend a new chat under `ask`).
 
 ### Build-green gate (after every task)
 
@@ -774,9 +804,11 @@ pause, surface the regression, and do not proceed to the next gap.
 3. **Follow the prompt's testing approach.** If the prompt describes
    specific tests to write or commands to run, do exactly that.
 
-4. **Stop on the first missing prerequisite or blocker.** Do not
-   fabricate APIs or dependencies that don't exist. Log as `blocked`
-   and move on to the next prompt, surfacing blockers at the end.
+4. **Never fabricate a prerequisite.** Do not invent APIs, keys or
+   dependencies that don't exist. Classify the blocker as the loop
+   above says (owner-decision, environment, dependency), log it once,
+   and move on to the next runnable prompt. Blockers are surfaced
+   together at the next stop, grouped by decision, not one at a time.
 
 5. **Never skip verification.** If the build gate or tests cannot run
    (environment missing, credentials unavailable), the prompt is
@@ -803,9 +835,151 @@ pause, surface the regression, and do not proceed to the next gap.
 Stop the loop and report when any of the following is true:
 - Every gap has all tasks marked `done`.
 - A broader regression check failed after a gap closure.
-- More than 3 consecutive tasks land in `blocked` status (the plan is
-  probably wrong for this codebase; re-audit).
+- More than 3 consecutive tasks land in `blocked` or `failed` for
+  `environment` or `dependency` reasons (the plan is probably wrong for
+  this codebase; re-audit).
+- **No runnable task remains.** Every remaining task is blocked on an
+  owner decision that is not assumable, on an environment the agent
+  cannot provide, or on another such task. Write the "Owner input
+  needed" report (see "Report format"), set `next_task:
+  owner-decisions.md`, and stop. Do not start a review round, do not
+  re-plan, do not write further records: nothing the agent can do will
+  change the outcome until the owner answers.
 - The user interrupted.
+
+Stopping for owner input is a success state of the loop, not a failure.
+A run that ends with twelve clear questions and a recommendation for
+each is worth more than a run that spends the same budget documenting
+why it could not answer them.
+
+## Owner-decision protocol
+
+Some work cannot be finished by the agent: a credential or account only
+the owner can create, money to be spent, a legal or policy call, a
+product choice the brief does not settle, a risk only the owner may
+accept. The protocol keeps those out of the task list and in one place.
+
+**One file: `prompts/outputs/current/owner-decisions.md`.** One `## D-NNN`
+section per decision, never one per finding or per unit. Schema:
+
+```markdown
+## D-003 · Which AI provider serves research in production?
+
+- **Status:** open | assumed | decided | accepted-risk | withdrawn
+- **Class:** assumable | needs-owner
+- **Asked:** 2026-10-14
+- **Unblocks:** remediation-real-discovery-adapters.md#R3, G12, FIND-FUNCTIONAL-20261014-001
+- **Question:** <one or two sentences the owner can answer without reading anything else>
+- **Options:**
+  - (a) <option> — <cost / risk in one line>
+  - (b) <option> — <cost / risk in one line>
+- **Recommendation:** (a), because <one sentence grounded in the product vision or an industry norm>
+- **Default if unanswered:** (a) with the sandbox credential, labelled unproven until the real one exists
+- **Decided:** <date> by <owner | agent on recommendation> → (a)
+```
+
+**Class.**
+- `assumable`: a product or engineering choice the agent can make on the
+  owner's recorded vision and ordinary industry practice, and reverse
+  later at modest cost (naming, a default limit, which of two equivalent
+  libraries, a retention period inside the legal norm, a UI pattern).
+- `needs-owner`: anything that spends money, binds the owner legally,
+  creates or shares an account or credential, accepts a security or
+  privacy risk, ships to real users, or contradicts the brief. These
+  are never assumed, whatever the decision policy says.
+
+**Decision policy.** The envelope field `decision_policy` is `ask` by
+default. The owner may set it to `recommend` ("decide on your
+recommendation", "continue until complete", `/goal` pre-authorisation).
+Under `recommend`, an `assumable` decision is recorded as `assumed` with
+the recommendation and work continues at once; `needs-owner` decisions
+still stop the run when nothing else is runnable. Under `ask`, every
+open decision stops the run at the next checkpoint. Record the policy
+once, when the owner states it; do not ask again every session.
+
+**Batching.** Add a row the first time a blocker is met. Every later
+unit, finding or gate that waits on the same answer references the
+existing row instead of creating a new one. The planner and the review
+synthesis attach findings to rows (see those prompts); the executor
+attaches units through the record field
+`"blockedOn": {"kind": "owner-decision", "id": "D-003"}`. The validator
+rejects a reference to a row that does not exist.
+
+**Answering.** When the owner answers (in chat, in the file, or by
+pre-authorising), set `Decided`, flip the status, and re-run only the
+units the row lists under `Unblocks`. An `accepted-risk` row resolves
+its findings for the completion decision; they are listed as accepted
+risk, not as unresolved.
+
+**Asking well.** A question the owner can answer in one line, with the
+options priced and a recommendation, gets answered. A page of context
+does not. Keep every section under fifteen lines.
+
+## Evidence economy
+
+The records exist so that a future session, a reviewer, or the owner can
+find what was done and why without re-reading the chat, and so that a
+release decision rests on evidence that still matches the code. They are
+not a paper trail for its own sake. Field runs that ignored this wrote
+ninety lines of records for every line of product code, demoted six
+hundred finished units over bookkeeping bullets and never shipped.
+
+**Per unit, write exactly this and nothing more:**
+- One journal entry of at most twelve lines in the schema above.
+- One `execution-status-record`, or one follow-up record when the unit
+  is touched again. Evidence items are pointers: a command and an
+  `artifact` path. The artifact is the test runner's own output file,
+  kept to its last 200 lines when the runner is verbose.
+- A `- **Pre-fix proof:**` line for `Risk: high` units only.
+
+**Never write:**
+- Copies of test logs, patches of the agent's own diff, process
+  snapshots, hash manifests of evidence directories, or README files
+  inside evidence directories. The commit holds the diff; the runner's
+  output holds the result.
+- A raw evidence directory per unit. Raw output lives under one
+  directory per regression run (`reports/<run-id>/`), referenced by the
+  records of every unit that run proves.
+- A docs-only commit whose purpose is to "retain", "checkpoint" or
+  "record" state. `resumption-checkpoint.md`, `execution-log.md` and
+  `owner-decisions.md` are committed with the task that changed them.
+- Follow-up records whose only purpose is to re-attach evidence to an
+  untouched unit ("compatibility follow-ups"). Stale file-bound evidence
+  is refreshed by the next regression run at a phase boundary or
+  release candidate, which stamps every record it proves; it is never
+  refreshed unit by unit.
+- Prose that duplicates a record, a plan, or an earlier entry. Link the
+  earlier entry by task id.
+
+**Acceptance bullets must be locally provable.** A unit's acceptance is
+met by that unit's own test at its declared evidence level. Bullets
+that depend on a later event ("a second reviewer confirms", "the blind
+re-review at the release commit passes", "a failing run is retained
+before the fix", "the receipt is accepted") are release-gate conditions,
+not unit acceptance; the planner must not write them and the executor
+must not add them. A unit recorded `done` stays `done` when a later
+round introduces a new rule: the new rule applies to units touched from
+then on. Demoting finished work in bulk is a planning defect, not
+honesty.
+
+**Size limits, enforced.**
+- `resumption-checkpoint.md`: at most forty lines. It names where to
+  resume and which files to load; it is not a log.
+- `execution-log.md`: run
+  `bash .ai-prompts/scripts/rotate-execution-log.sh prompts/outputs/current`
+  at every phase boundary and whenever the file exceeds 1 MiB. It moves
+  older `done` entries to `prompts/outputs/archive/execution-log-NNN.md`
+  and lists the archives in the envelope's `journal_archives`; every
+  validator reads the archives transparently, and resumption never
+  loads them. Never exempt the log from the oversized-file check
+  instead.
+- Review bundles and regression runs: keep the current one and the one
+  before it; older bundles are kept by git history, not on disk.
+
+**Budget per round.** A remediation round runs at most 25 units before
+the next regression and delta review. A round that touched no runtime
+code (records, plans, copy in `prompts/`) gets no review round at all:
+there is nothing new to review.
 
 ## Semantic-review gate (MANDATORY after implementation)
 
@@ -925,14 +1099,24 @@ Execution complete. Summary:
 
   Regression state:  <all green | N tests red — see log>
 
-Blockers requiring your decision:
-  - G<x> R<y>: <one-line summary + what the user needs to decide>
+Owner input needed (from owner-decisions.md; nothing else is runnable):
+  - D-003 needs-owner · <question in one line>
+      options (a) … (b) … — recommendation (a) — unblocks 14 units, G12
+  - D-007 assumed on recommendation (b) — confirm or overturn
+
+Environment blockers (the agent cannot provide these):
+  - <docker daemon | SIGNALFORGE_DRILL_AI_API_KEY | …> — unblocks <n> units
 
 Next step options:
-  [A] Fix the blocker and resume → re-invoke the executor.
-  [B] Re-audit (plan drifted from reality) → re-invoke audit-and-remediate.
-  [C] Accept current state as done (blockers become known-issues).
+  [A] Answer the decisions above (one line each) and say Continue.
+  [B] Set decision_policy: recommend — assumable rows are taken on the
+      recommendation; needs-owner rows still wait for you.
+  [C] Accept current state as done (open rows become accepted-risk).
+  [D] Re-audit (plan drifted from reality) → re-invoke audit-and-remediate.
 ```
+
+The report lists decisions, not units. Ten units waiting on one
+credential are one line. Never list the same question twice.
 
 ## See also
 

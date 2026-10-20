@@ -41,11 +41,16 @@ Follow `.ai-prompts/prompts/review/README.md` exactly.
 A **full** review re-runs all eight dimensions against one source revision.
 It is required for the first review after implementation and for any
 `verified_complete` decision, so a release decision always rests on a full
-review at the release-candidate revision.
+review at the release-candidate revision. Run it also when a fix round
+changed shared foundations (auth, tenancy, data model) or more than about
+a third of the reviewed surface.
 
-A **delta** review serves fix rounds. It re-reviews only the dimensions the
-round's changes can affect and carries the other reports forward unchanged.
-Declare it in `review/review-scope.json`:
+A **delta** review is the default for every other fix round. It re-reviews
+only the dimensions the round's changes can affect and carries the other
+reports forward unchanged. Do not run a full review "to be safe": a full
+eight-dimension review of an unchanged surface finds the same findings
+again at the same cost and is the single largest avoidable expense of a
+long run. Declare the delta in `review/review-scope.json`:
 
 ```json
 {
@@ -93,6 +98,37 @@ than about a third of the reviewed surface or changed shared foundations
 Start reviewers only after the evidence they read is complete for the
 revision under review. Never start a reviewer that has to wait or poll for
 test runs or receipts.
+
+## When not to review, and when to stop reviewing
+
+A review round costs eight reviewer contexts, a synthesis, a challenge and
+a plan. It is justified only by new runtime behaviour to review.
+
+- **No review without runtime change.** If the paths changed since the
+  base bundle are all records, plans, evidence or copy under `prompts/`
+  and `reports/`, there is nothing to review: carry the bundle forward
+  unchanged, and go back to the executor or to the owner-decision stop.
+- **Convergence guard.** Compare the unresolved finding IDs with the two
+  previous bundles. If the count did not fall in two consecutive rounds,
+  or any `high` finding has been unresolved for three rounds, the loop is
+  not converging on remediation. Stop the review loop and write one
+  `owner-decisions.md` row per stuck cluster with the options
+  (accept the risk, rescope the requirement, provide the missing input)
+  and a recommendation. Do not plan another remediation round until the
+  owner answers or `decision_policy: recommend` resolves the assumable
+  rows.
+- **Owner-dependent findings leave the loop.** The synthesis classifies
+  every finding whose closure needs an owner input (credential, account,
+  money, legal, policy, risk acceptance, external capacity) as
+  `needsOwner` and attaches it to an `owner-decisions.md` row. Such a
+  finding is not "unresolved" for the planner: it is waiting, and it
+  never becomes a task unit. The completion decision for a bundle whose
+  only open findings are `needsOwner` is `blocked` with `nextTask:
+  owner-decisions.md`.
+- **Accepted and deferred rows count once.** A finding attached to a row
+  in status `accepted-risk` or `decided` is resolved by that decision in
+  every later round; re-raising it is a reviewer defect to note in the
+  synthesis, not a new unresolved finding.
 
 ## Phase 0: Review preflight
 

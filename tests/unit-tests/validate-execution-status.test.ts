@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { execFileSync } from 'node:child_process';
+import { execFileSync, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const VALIDATOR = path.join(REPO_ROOT, 'scripts', 'validate-execution-status.sh');
+const ROTATE = path.join(REPO_ROOT, 'scripts', 'rotate-execution-log.sh');
 
 function run(planDir: string): { code: number; out: string; report: any } {
   let code = 0;
@@ -393,5 +394,197 @@ describe('validate-execution-status.sh', () => {
         fs.rmSync(planDir, { recursive: true, force: true });
       }
     });
+  });
+});
+
+/** Move a fixture dir under <root>/prompts/outputs/current so project-root-relative paths resolve. */
+function rehome(fixtureDir: string): { root: string; planDir: string } {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-status-root-'));
+  const planDir = path.join(root, 'prompts', 'outputs', 'current');
+  fs.mkdirSync(planDir, { recursive: true });
+  for (const name of fs.readdirSync(fixtureDir)) {
+    fs.copyFileSync(path.join(fixtureDir, name), path.join(planDir, name));
+  }
+  fs.rmSync(fixtureDir, { recursive: true, force: true });
+  return { root, planDir };
+}
+
+/**
+ * Re-home a fixture under <root>/prompts/outputs/current and move everything
+ * from the first journal header onward (or `tail` if given) into
+ * prompts/outputs/archive/execution-log-001.md, listing it in journal_archives.
+ */
+function archiveJournal(fixtureDir: string, tail = ''): { root: string; planDir: string } {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'execution-status-root-'));
+  const planDir = path.join(root, 'prompts', 'outputs', 'current');
+  const archiveDir = path.join(root, 'prompts', 'outputs', 'archive');
+  fs.mkdirSync(planDir, { recursive: true });
+  fs.mkdirSync(archiveDir, { recursive: true });
+  for (const name of fs.readdirSync(fixtureDir)) {
+    fs.copyFileSync(path.join(fixtureDir, name), path.join(planDir, name));
+  }
+  fs.rmSync(fixtureDir, { recursive: true, force: true });
+  const logPath = path.join(planDir, 'execution-log.md');
+  const log = fs.readFileSync(logPath, 'utf8');
+  const split = log.indexOf('### `tasks-cleanup.md`');
+  const head = log.slice(0, split).replace('---\n\n# Execution Log', 'journal_archives:\n  - prompts/outputs/archive/execution-log-001.md\n---\n\n# Execution Log');
+  fs.writeFileSync(path.join(archiveDir, 'execution-log-001.md'),
+    '---\narchived_from: execution-log.md\narchived_at: 2026-10-19T00:00:00Z\nsections: 1\n---\n' + log.slice(split));
+  fs.writeFileSync(logPath, head + tail);
+  return { root, planDir };
+}
+
+describe('validate-execution-status.sh with rotated journal archives', () => {
+  it('reads journal entries and records from a listed archive', () => {
+    const { root, planDir } = archiveJournal(fixture());
+    try {
+      expect(fs.readFileSync(path.join(planDir, 'execution-log.md'), 'utf8')).not.toContain('execution-status-record');
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report).toMatchObject({ valid: true, record_count: 1 });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('lets a follow-up record in the main log supersede an archived one', () => {
+    const stale = record({ buildEvidence: { ...record().buildEvidence, current: false } });
+    const fixed = record({ followUp: true });
+    const { root, planDir } = archiveJournal(
+      fixture({ executionRecord: stale }),
+      ['```execution-status-record', JSON.stringify(fixed, null, 2), '```', ''].join('\n'),
+    );
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report).toMatchObject({ valid: true, record_count: 1, follow_up_chain_count: 1 });
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('still flags an archived stale record when nothing supersedes it', () => {
+    const stale = record({ buildEvidence: { ...record().buildEvidence, current: false } });
+    const { root, planDir } = archiveJournal(fixture({ executionRecord: stale }));
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.issues).toContainEqual(expect.objectContaining({ code: 'stale-or-failing-build' }));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('reports missing-journal-archive when a listed archive is gone', () => {
+    const { root, planDir } = archiveJournal(fixture());
+    try {
+      fs.rmSync(path.join(root, 'prompts', 'outputs', 'archive', 'execution-log-001.md'));
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.issues).toContainEqual(expect.objectContaining({ code: 'missing-journal-archive' }));
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('validate-execution-status.sh blockedOn references', () => {
+  const blockedFixture = (blockedOn: unknown) => fixture({
+    envelopeBlocked: '[tasks-cleanup.md#T1]',
+    journalStatus: 'blocked',
+    executionRecord: record({ status: 'blocked', reason: 'owner must decide', blockedOn }),
+  });
+
+  it('accepts a known owner-decision id and counts it', () => {
+    const planDir = blockedFixture({ kind: 'owner-decision', id: 'D-003' });
+    try {
+      fs.writeFileSync(path.join(planDir, 'owner-decisions.md'), '# Owner decisions\n\n## D-002 — other\n\n## D-003 — pricing\n');
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report).toMatchObject({ valid: true, terminal_state: 'blocked', blockedOnOwner: 1 });
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    ['an unknown id', '# Owner decisions\n\n## D-004 — other\n'],
+    ['a longer id sharing the prefix', '# Owner decisions\n\n## D-0030 — other\n'],
+    ['no owner-decisions.md', null],
+  ])('issues unknown-decision-reference for %s', (_label, content) => {
+    const planDir = blockedFixture({ kind: 'owner-decision', id: 'D-003' });
+    try {
+      if (content !== null) fs.writeFileSync(path.join(planDir, 'owner-decisions.md'), content);
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.issues).toContainEqual(expect.objectContaining({
+        code: 'unknown-decision-reference',
+        task_id: 'tasks-cleanup.md#T1',
+      }));
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it('rejects an unknown blockedOn kind', () => {
+    const planDir = blockedFixture({ kind: 'vibes', id: 'x' });
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.issues).toContainEqual(expect.objectContaining({ code: 'invalid-blocked-on-kind' }));
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it('accepts dependency and environment kinds without owner-decisions.md', () => {
+    for (const kind of ['dependency', 'environment']) {
+      const planDir = blockedFixture({ kind, id: 'whatever' });
+      try {
+        const result = run(planDir);
+        expect(result.code).toBe(0);
+        expect(result.report.blockedOnOwner).toBe(0);
+      } finally {
+        fs.rmSync(planDir, { recursive: true, force: true });
+      }
+    }
+  });
+});
+
+describe('validate-execution-status.sh across rotation', () => {
+  it('sees the same authoritative records before and after rotate-execution-log.sh', () => {
+    const stale = record({ buildEvidence: { ...record().buildEvidence, current: false } });
+    const fixed = record({ followUp: true });
+    const dir = fixture({ executionRecord: stale });
+    const logPath = path.join(dir, 'execution-log.md');
+    // A second, later section for the same prompt carries the follow-up record.
+    fs.appendFileSync(logPath, [
+      '### `tasks-cleanup.md` — done',
+      '- **Test result:** pass',
+      '- **Acceptance verified:**',
+      '  - ✅ cleanup behavior is verified',
+      '```execution-status-record',
+      JSON.stringify(fixed, null, 2),
+      '```',
+      '',
+    ].join('\n'));
+    const { root, planDir } = rehome(dir);
+    try {
+      const before = run(planDir);
+      expect(before.code).toBe(0);
+
+      const rotate = spawnSync('/bin/bash', [ROTATE, planDir, '--max-bytes', '100', '--keep', '0'], { encoding: 'utf8' });
+      expect(rotate.status).toBe(0);
+      const rotated = fs.readFileSync(path.join(planDir, 'execution-log.md'), 'utf8');
+      expect(rotated).toContain('journal_archives:');
+      expect(rotated).not.toContain('"current": false');
+      expect(fs.readFileSync(path.join(root, 'prompts', 'outputs', 'archive', 'execution-log-001.md'), 'utf8')).toContain('"current": false');
+
+      const after = run(planDir);
+      expect(after.code).toBe(0);
+      expect(after.report).toEqual(before.report);
+    } finally {
+      fs.rmSync(root, { recursive: true, force: true });
+    }
   });
 });

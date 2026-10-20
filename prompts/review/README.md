@@ -122,9 +122,12 @@ erase a critical or high finding.
 - `blocked`
 - `remediation_required`
 
-Only `verified_complete` may use `nextTask: null`. Every other decision names a
-locally runnable next task or an explicit blocker and requires
-`review/remediation-plan.md` covering every unresolved finding.
+Only `verified_complete` may use `nextTask: null`. `remediation_required`
+names a locally runnable next task and requires `review/remediation-plan.md`
+covering every `locallyActionable` unresolved finding. `blocked` names
+`owner-decisions.md`, whose open rows cover every `needsOwner` finding; it
+needs no remediation plan, because nothing in it is runnable. Findings
+resolved by a `decided` or `accepted-risk` row are not unresolved.
 
 Run:
 

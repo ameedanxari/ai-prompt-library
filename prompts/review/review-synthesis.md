@@ -29,6 +29,20 @@ All seven required dimension reports for one source revision.
 - Critical accepted risk is still blocking.
 - `verified_complete` requires zero unresolved findings and passing functional
   validation.
+- Classify every canonical finding by who can close it. `locallyActionable`
+  findings go to the remediation planner. `needsOwner` findings (closure
+  needs a credential, account, money, legal or policy call, risk
+  acceptance or external capacity) get a `decisionId` from
+  `prompts/outputs/current/owner-decisions.md`: reuse the row that already
+  covers the same question, otherwise add one row with options and a
+  recommendation. One row per question, never one per finding.
+- A finding whose row is `decided` or `accepted-risk` is resolved by that
+  decision. List it under `resolvedByDecision`, not under unresolved, and
+  note the re-raise in `reviewerDefects` when a dimension reported it
+  again without new evidence.
+- Collapse repeats across dimensions: eight reports describing the same
+  defect in the same behaviour are one canonical finding with eight
+  sources, not eight findings.
 
 ## Output
 
@@ -36,7 +50,11 @@ Write `review/review-synthesis.json` with:
 
 - `schemaVersion`, `synthesisId`, `sourceRevision`, and `synthesizedAt`.
 - `includedReviewIds` containing all seven review IDs.
-- `canonicalFindings` containing every unique finding.
+- `canonicalFindings` containing every unique finding, each with
+  `closure: "locallyActionable" | "needsOwner"` and, for `needsOwner`,
+  its `decisionId`.
+- `resolvedByDecision` and `needsOwner` ID lists beside the open,
+  blocking and resolved lists; `reviewerDefects` for re-raised items.
 - `disagreements` preserving dissent.
 - `unresolvedFindingIds`, `blockingFindingIds`, and `resolvedFindingIds`.
 - `completionRecommendation`.

@@ -164,4 +164,46 @@ describe('execution-log-slice.sh', () => {
     expect(code).toBe(2);
     expect(err).toContain('execution log not found');
   });
+
+  it('reads packet entries and records that live in a journal archive', () => {
+    const root = fs.mkdtempSync(path.join(os.tmpdir(), 'exec-log-slice-root-'));
+    dirs.push(root);
+    const current = path.join(root, 'prompts', 'outputs', 'current');
+    const archiveDir = path.join(root, 'prompts', 'outputs', 'archive');
+    fs.mkdirSync(current, { recursive: true });
+    fs.mkdirSync(archiveDir, { recursive: true });
+    fs.writeFileSync(path.join(archiveDir, 'execution-log-001.md'), [
+      '---', 'archived_from: execution-log.md', 'sections: 1', '---',
+      '### `remediation-delta.md` — done',
+      '- **Scope:** delta archived entry',
+      record('remediation-delta.md#R1'),
+      '',
+    ].join('\n'));
+    fs.writeFileSync(path.join(current, 'execution-log.md'), [
+      '---', 'session_id: abc', 'journal_archives:', '  - prompts/outputs/archive/execution-log-001.md', '---',
+      '', '# Execution Log', '',
+      '### `remediation-delta.md` — done', '- **Scope:** delta follow-up',
+      record('remediation-delta.md#R2'), '',
+    ].join('\n'));
+
+    const { code, out } = run([current, 'remediation-delta.md']);
+    expect(code).toBe(0);
+    expect(out).toContain('delta archived entry');
+    expect(out).toContain('delta follow-up');
+    expect(out.indexOf('delta archived entry')).toBeLessThan(out.indexOf('delta follow-up'));
+    expect(out).toContain('journal_archives:');
+    expect(out).not.toContain('archived_from');
+
+    const records = run([current, 'remediation-delta.md', '--records-only']);
+    expect(records.code).toBe(0);
+    expect(JSON.parse(records.out).map((r: { taskId: string }) => r.taskId)).toEqual([
+      'remediation-delta.md#R1',
+      'remediation-delta.md#R2',
+    ]);
+
+    fs.rmSync(path.join(archiveDir, 'execution-log-001.md'));
+    const missing = run([current, 'remediation-delta.md']);
+    expect(missing.code).toBe(2);
+    expect(missing.err).toContain('execution-log-001.md');
+  });
 });

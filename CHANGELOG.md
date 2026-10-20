@@ -5,6 +5,96 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — run economy: stop for the owner, bounded records, log rotation
+
+Two field runs on the previous revision showed the failure this entry
+fixes. A gap-closure run wrote 2.6 million lines of records against
+300 thousand lines of product code and tests over two weeks, demoted
+637 finished units over acceptance bullets that no unit could prove
+("a second reviewer confirms", "the blind re-review at the release
+commit passes"), ran eight full review rounds that each re-raised the
+same findings, and never stopped to ask the owner for the credentials,
+approvals and capacity that 31 of 34 release gates were waiting on. A
+greenfield run on the same revision wrote 164 "compatibility follow-up"
+records only to keep old evidence current and grew its execution log to
+17 MB, then patched the library's oversized-file check to let it grow
+further. The library's promise is reliable production delivery on weak
+models with limited context; records that nobody reads and loops that
+cannot end are the opposite of that.
+
+### Added
+- **Owner-decision protocol** (`executor.md`, "Owner-decision protocol").
+  One file, `prompts/outputs/current/owner-decisions.md`, one `## D-NNN`
+  row per question with options, a recommendation, a default and the
+  units, gates and findings it unblocks. Rows are `assumable` (a
+  product or engineering choice the agent may take on the owner's
+  recorded vision) or `needs-owner` (money, legal, credentials,
+  accounts, risk acceptance, shipping to users): the latter are never
+  assumed. The envelope field `decision_policy: ask | recommend` records
+  the owner's standing instruction once; under `recommend`, assumable
+  rows are taken on the recommendation and execution checkpoints no
+  longer wait.
+- **"No runnable task remains" stop.** When every remaining unit waits
+  on an owner row or an environment the agent cannot provide, the
+  executor writes the "Owner input needed" report (decisions, not
+  units), sets `next_task: owner-decisions.md` and stops. The entry
+  point routes that state to the decisions file instead of the executor.
+- **`blockedOn` on execution records.** `{"kind": "owner-decision" |
+  "dependency" | "environment", "id": ...}`; `validate-execution-status.sh`
+  rejects an owner-decision reference without a matching row
+  (`unknown-decision-reference`, `invalid-blocked-on-kind`) and reports
+  `blockedOnOwner` beside the other counts.
+- **`scripts/rotate-execution-log.sh`.** Moves older `done` journal
+  entries and their records to `prompts/outputs/archive/execution-log-NNN.md`
+  and lists the archives in the envelope's `journal_archives`. Every
+  consumer of the log (status, envelope, slice, evidence currency,
+  release readiness, resumption checkpoint, `execution-status.ts`)
+  reads the archives transparently; resumption never loads them. The
+  executor runs it at phase boundaries and whenever the log passes 1 MiB.
+- **Evidence economy** (`executor.md`, "Evidence economy"). What a unit
+  writes (one journal entry of at most twelve lines, one record with
+  artifact pointers) and what it never writes (log copies, self-patches,
+  process snapshots, hash manifests, per-unit evidence directories,
+  "retain checkpoint" docs-only commits, follow-up records that only
+  re-attach evidence). Stale file-bound evidence is refreshed by the next
+  regression run at a phase boundary, never unit by unit.
+- **Convergence guard and review economy**
+  (`semantic-review-and-validation.md`, "When not to review"). No review
+  round without runtime changes; delta review is the default for fix
+  rounds and full review is reserved for the first review, foundations
+  and the release candidate; when unresolved findings do not fall for
+  two rounds or a `high` finding is open for three, the loop stops and
+  writes owner rows instead of another plan.
+- **Owner-dependent findings leave the loop.** The synthesis classifies
+  each finding `locallyActionable` or `needsOwner` with a `decisionId`;
+  the planner makes units only for the former; the completion challenge
+  decides `blocked` with `nextTask: owner-decisions.md` when only owner
+  rows remain, and findings covered by a `decided` or `accepted-risk` row
+  are resolved by that decision in every later round.
+
+### Changed
+- **Acceptance bullets must be locally provable** by the unit's own test
+  at its evidence level (`audit-and-remediate.md`, `remediation-planner.md`,
+  `executor.md`). Bullets that wait on a later event are release-gate
+  conditions and may not appear in a unit. A unit recorded `done` is not
+  demoted when a later round introduces a rule.
+- **Remediation rounds are bounded.** At most 25 runnable units per
+  round; the rest sit in a `## Backlog` section of the plan and are not
+  materialized. `Risk`, `Model tier` and `Turn budget` are required on
+  every planned unit (legacy units still parse).
+- **Blocked units no longer stop the run or get skipped silently.** The
+  executor's two contradictory rules (stop the phase vs. move on) are
+  replaced by one: classify the blocker, record it once, continue with
+  the next runnable task, stop when nothing runnable remains.
+- **Gaps made of evidence work are not gaps** (`audit-and-remediate.md`).
+- `resumption-checkpoint.md` is capped at forty lines; review bundles and
+  regression runs keep the current and previous one on disk.
+
+### Not changed, on purpose
+- The 10 MB oversized-file check in `safety-check-commit.sh` keeps no
+  exemption for the execution log or the task contract. Rotation is the
+  remedy; exempting the ledger was how the greenfield run reached 17 MB.
+
 ## [Unreleased] — cost discipline and earlier quality checks
 
 A long gap-closure run spent about two thirds of its tokens on long-lived

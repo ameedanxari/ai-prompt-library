@@ -143,8 +143,11 @@ dependency graph, Phase as tiebreak: foundation < mvp < expand < polish;
 see drill-down Step 3.8). Severity orders gaps in `gap-list.md` during
 planning; it does not reorder execution. The executor runs the
 Precise change, runs the named Test, checks Acceptance bullets, logs
-the outcome. Stops on regressions, 3+ consecutive blockers, or user
-interrupt.
+the outcome. Stops on regressions, 3+ consecutive environment blockers,
+when no runnable task remains (owner input needed), or on user
+interrupt. Owner-dependent work is never a task: it is one row in
+`owner-decisions.md` with options and a recommendation, and the
+executor reports those rows, not the units behind them.
 
 On test/build failure the executor runs the **harness-diagnosis
 pipeline** (`.ai-prompts/scripts/diagnose-harness.sh` + per-stack catalogs under
@@ -162,7 +165,8 @@ when `MY_PROJECT.md` opts in.
 
 `execution-log.md` carries a YAML handoff envelope (session_id,
 parent_session, last_completed_task, next_task, blocked_tasks,
-test_suite_state, regressions_since_green, external_keys_needed).
+test_suite_state, regressions_since_green, external_keys_needed,
+decision_policy, journal_archives).
 A new agent resuming work reads only the envelope and continues from
 `next_task`. Cross-session continuity requires no other state.
 
@@ -271,7 +275,9 @@ Under `prompts/outputs/current/`:
 | `remediation-<gap>.md` | audit-remediate Step 3 |
 | `revise-report.md` | `.ai-prompts/scripts/revise.sh` (writes YAML frontmatter; never hand-write) |
 | `execution-log.md` | executor (includes YAML handoff envelope) |
-| `resumption-checkpoint.md` | written at checkpoints to enable selective context loading |
+| `resumption-checkpoint.md` | written at checkpoints to enable selective context loading (at most forty lines) |
+| `owner-decisions.md` | executor, planner and review synthesis: one row per question the owner must answer or the agent assumed on its recommendation |
+| `../archive/execution-log-NNN.md` | `.ai-prompts/scripts/rotate-execution-log.sh`: older `done` journal entries and records moved out of `execution-log.md`; validators read them, resumption never loads them |
 
 Each step runs in a **fresh context**. Do not carry the previous step's full
 artifact forward; load only the specific slice the current step is expanding.

@@ -186,12 +186,20 @@ _Audited: <today's ISO date — obtain via `date +%Y-%m-%d`, do not guess>_
 one-line description. Gap granularity: one gap = one cohesive remediation
 effort (roughly equivalent to one epic in the greenfield engine).
 
-When `review/review-synthesis.json` exists, preserve every unresolved finding
-ID in `gap-list.md`. Add `- **Finding IDs:** ...` to each covered gap and include
-a coverage table proving every unresolved finding maps to a gap. Do not drop a
+When `review/review-synthesis.json` exists, preserve every `locallyActionable`
+unresolved finding ID in `gap-list.md`. Add `- **Finding IDs:** ...` to each
+covered gap and include a coverage table proving every such finding maps to
+a gap. `needsOwner` findings map to their `owner-decisions.md` row in a
+separate "Waiting on the owner" table and get no gap. Do not drop a
 minority finding or average away a blocker. If semantic review recommends
 `verified_complete`, record why each original requirement is proved before
 emitting an empty gap list.
+
+Gaps that exist only to produce records (receipts, retained runs, evidence
+manifests, "proof" of an earlier gap) are not gaps. Evidence is produced by
+the unit that changes behaviour and by the regression run at the phase
+boundary; a gap list made of evidence work is the signature of a loop that
+has stopped building.
 
 ```markdown
 # Gap List
@@ -408,9 +416,24 @@ Fixture metadata (`Composition map`, `Fixture allowance`,
 also goes INSIDE the owning `## Rn` task section — never in narrative
 prose — for the same parser-constraint reason.
 
-**Risk, model tier and turn budget** are optional, but set them on every
-unit you write; the executor routes and bounds agents by them, and a unit
-without them runs as `standard` with a 60-call budget.
+**Risk, model tier and turn budget** are required on every unit you write;
+the executor routes and bounds agents by them. (The parser still accepts a
+legacy unit without them and runs it as `standard` with a 60-call budget,
+so an older plan keeps working.)
+
+**Acceptance bullets are provable by the unit's own `Test`** at its
+evidence level. A bullet that waits on a later event (a second reviewer,
+the release re-review, a retained failing run, an accepted receipt) is a
+release-gate condition and goes in the gate, never in the unit. Units
+that exist only to produce evidence for other units are not units.
+
+**Owner-dependent work is a decision, not a unit.** When closing a gap
+needs a credential, an account, money, a legal or policy call, a risk
+acceptance or external capacity, write one row in
+`prompts/outputs/current/owner-decisions.md` (schema in `executor.md`,
+"Owner-decision protocol") with options and a recommendation, and
+reference its id from the units it unblocks. Never generate a unit whose
+only action is "obtain X from the owner".
 
 - `Risk: high` for units that touch privacy rights, authentication or
   sessions, tenant isolation, migrations, money movement, or destructive

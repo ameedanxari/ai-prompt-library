@@ -102,6 +102,7 @@ If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equi
 3. **Path 3 — Execution-Phase Fast Path (fallback when checkpoint missing but execution is in flight).** If Path 2 didn't apply (no checkpoint) **and** `force_reload == false`, look for `prompts/outputs/current/execution-log.md`. If it exists with a parseable YAML envelope whose `next_task` is non-null:
    - **Skip the planning re-read entirely.** Do NOT load `epics.md`, `brief-keywords.md`, `features-*.md`, or any `tasks-*.md` other than the one named by `next_task`.
    - Route directly to `.ai-prompts/prompts/orchestrators/executor.md`. The executor's own preflight will run `.ai-prompts/scripts/validate-ready-to-execute.sh`, confirm `ready_to_execute: true`, and read the envelope to resume from `next_task`.
+   - **If `next_task` is `owner-decisions.md`**, the run is waiting for the owner. Do not load the executor. Read `prompts/outputs/current/owner-decisions.md`, present the `open` rows (question, options, recommendation, what each unblocks) and stop. If the user's message answers a row, or sets `decision_policy: recommend`, record the answers in the file and the envelope, then route to the executor, which re-runs only the units those rows unblock. Under `recommend`, rows of class `assumable` are taken on their recommendation without asking; rows of class `needs-owner` are never assumed.
    - This branch is the correct behavior for any in-flight project whose planning is already complete; the planning artifacts are stable on disk and do not need to be re-read into context.
 
 4. **Path 4 — No-State Force-Reload (last resort).** If none of the above matched (i.e. `force_reload == false`, no checkpoint, and no usable execution-log), there is no cheap path. Fall back to the same full re-read as Path 1: read `epics.md`, `brief-keywords.md`, all `features-*.md`, and all `tasks-*.md` if they exist. Proceed through Steps A–F to route. Write a fresh `resumption-checkpoint.md` afterward so the next resumption hits Path 2.
@@ -315,6 +316,15 @@ the relevant outputs before advancing.
 
 If the user says "Continue N" (e.g. "Continue 3"), run N checkpoints
 before the next stop.
+
+If the user says to continue until complete, to decide open questions on
+the agent's recommendation, or pre-authorises every checkpoint (for
+example through a `/goal`), record `decision_policy: recommend` in the
+execution-log envelope once. From then on, execution checkpoints are
+informational and the executor stops only at its "When to stop"
+conditions: regressions, no runnable task, or an owner decision that is
+not assumable. Planning checkpoints (Steps 1–3 and the planning hard
+stop) still wait, because the plan is the owner's to approve.
 
 Each engine runs its own internal pipeline:
 

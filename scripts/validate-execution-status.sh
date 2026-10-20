@@ -13,6 +13,7 @@ LOG="$PLAN_DIR/execution-log.md"
 CONTRACT="$PLAN_DIR/task-contract.json"
 GRAPH="$PLAN_DIR/task-graph.json"
 REPORT="$PLAN_DIR/execution-status-report.json"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 if [ ! -d "$PLAN_DIR" ]; then
   echo "execution status: plan directory not found: $PLAN_DIR" >&2
@@ -31,11 +32,15 @@ fi
 
 temporary_report="$(mktemp "$REPORT.tmp.XXXXXX")" || exit 2
 validation_status=0
-python3 - "$PLAN_DIR" "$temporary_report" <<'PY' || validation_status=$?
+EXEC_LOG_LIB="$SCRIPT_DIR/lib" python3 - "$PLAN_DIR" "$temporary_report" <<'PY' || validation_status=$?
 import json
 import os
 import re
 import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["EXEC_LOG_LIB"])
+from execution_log import load_logical_log  # noqa: E402
 
 plan_dir, report_path = sys.argv[1:3]
 
@@ -117,6 +122,13 @@ except ValueError as exc:
     print(f"execution status: {exc}", file=sys.stderr)
     sys.exit(2)
 
+# Rotated journal entries live in archives listed in the frontmatter; the
+# logical log is the archives (older) followed by the main log.
+logical_log = load_logical_log(plan_dir, log_text)
+for missing_archive in logical_log.missing:
+    add_issue("missing-journal-archive", f"journal_archives lists a file that cannot be read: {missing_archive}")
+log_text = logical_log.text
+
 blocked_entries = parse_inline_list(envelope.get("blocked_tasks"))
 failed_entries = parse_inline_list(envelope.get("failed_tasks"))
 deferred_entries = parse_inline_list(envelope.get("deferred_tasks"))
@@ -159,6 +171,37 @@ for record in records:
         add_issue("orphan-follow-up-record", "followUp record has no earlier canonical record for this taskId", task_id)
     # The last record in log order is authoritative; earlier ones are history.
     records_by_id[task_id] = record
+
+BLOCKED_ON_KINDS = {"owner-decision", "dependency", "environment"}
+blocked_on_owner = 0
+owner_decisions_path = os.path.join(plan_dir, "owner-decisions.md")
+owner_decisions_text = None
+for task_id, record in records_by_id.items():
+    if "blockedOn" not in record:
+        continue
+    blocked_on = record.get("blockedOn")
+    kind = blocked_on.get("kind") if isinstance(blocked_on, dict) else None
+    if kind not in BLOCKED_ON_KINDS:
+        add_issue("invalid-blocked-on-kind", f"blockedOn.kind must be one of {sorted(BLOCKED_ON_KINDS)}, got {kind!r}", task_id)
+        continue
+    if kind != "owner-decision" or record.get("status") != "blocked":
+        continue
+    blocked_on_owner += 1
+    decision_id = blocked_on.get("id")
+    if owner_decisions_text is None:
+        try:
+            with open(owner_decisions_path, encoding="utf-8") as handle:
+                owner_decisions_text = handle.read()
+        except OSError:
+            owner_decisions_text = ""
+    if not isinstance(decision_id, str) or not decision_id or not re.search(
+        r"^## " + re.escape(decision_id) + r"\b", owner_decisions_text, re.M
+    ):
+        add_issue(
+            "unknown-decision-reference",
+            f"blockedOn owner-decision {decision_id!r} has no '## <id>' heading in owner-decisions.md",
+            task_id,
+        )
 
 PATHS_DIGEST_PATTERN = re.compile(r"\Asha256:[0-9a-f]{64}\Z")
 for task_id, record in records_by_id.items():
@@ -394,6 +437,7 @@ report = {
     "valid": not issues,
     "next_task": next_task,
     "record_count": len(records_by_id),
+    "blockedOnOwner": blocked_on_owner,
     "follow_up_chain_count": len(record_history),
     "contract_unit_count": len(units_by_id),
     "production_verification_passed": production_passed,
@@ -411,7 +455,7 @@ if issues:
         print(f"  - {issue['code']}{location}: {issue['message']}")
     sys.exit(1)
 
-print(f"execution status: valid ({len(records_by_id)} records, terminal_state={terminal_state})")
+print(f"execution status: valid ({len(records_by_id)} records, terminal_state={terminal_state}, blockedOnOwner={blocked_on_owner})")
 PY
 
 if [ -s "$temporary_report" ]; then

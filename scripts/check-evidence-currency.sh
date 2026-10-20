@@ -126,13 +126,17 @@ if [ "$PYTHON_MODE" = "report" ]; then
 fi
 
 currency_status=0
-python3 - "$PYTHON_MODE" "$REPO" "$REV" "$WORKTREE" "$TARGET_DIR" "$temporary_report" "${POSITIONAL[@]+"${POSITIONAL[@]}"}" <<'PY' || currency_status=$?
+EXEC_LOG_LIB="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/lib" python3 - "$PYTHON_MODE" "$REPO" "$REV" "$WORKTREE" "$TARGET_DIR" "$temporary_report" "${POSITIONAL[@]+"${POSITIONAL[@]}"}" <<'PY' || currency_status=$?
 import hashlib
 import json
 import os
 import re
 import subprocess
 import sys
+
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["EXEC_LOG_LIB"])
+from execution_log import load_logical_log  # noqa: E402
 
 mode, repo, rev, worktree_flag, target_dir, report_path = sys.argv[1:7]
 extra_paths = sys.argv[7:]
@@ -177,6 +181,13 @@ try:
 except OSError as exc:
     print(f"evidence currency: cannot read {log_path}: {exc}", file=sys.stderr)
     sys.exit(2)
+# Rotated entries live in the archives listed under journal_archives (older first).
+logical_log = load_logical_log(target_dir, log_text)
+if logical_log.missing:
+    for name in logical_log.missing:
+        print(f"evidence currency: journal archive listed in {log_path} cannot be read: {name}", file=sys.stderr)
+    sys.exit(2)
+log_text = logical_log.text
 
 authoritative = {}
 for raw in re.findall(r"```execution-status-record\s*\n(.*?)```", log_text, re.S):

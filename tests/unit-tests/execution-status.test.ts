@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import {
+  composeLogicalExecutionLog,
   deriveExecutionTerminalState,
+  parseJournalArchives,
   satisfiesEvidenceLevel,
   type TaskUnitExecutionRecord,
 } from '../../src/execution/execution-status.js';
@@ -161,5 +163,36 @@ describe('execution status derivation', () => {
     expect(satisfiesEvidenceLevel('integration', 'unit')).toBe(false);
     expect(satisfiesEvidenceLevel('integration', 'device')).toBe(true);
     expect(satisfiesEvidenceLevel('external', 'device')).toBe(false);
+  });
+});
+
+describe('journal archive helpers', () => {
+  const main = [
+    '---',
+    'next_task: null',
+    'journal_archives:',
+    '  - prompts/outputs/archive/execution-log-001.md',
+    '  - "prompts/outputs/archive/execution-log-002.md"',
+    '---',
+    '',
+    '# Execution Log',
+  ].join('\n');
+
+  it('parses block and inline journal_archives lists', () => {
+    expect(parseJournalArchives(main)).toEqual([
+      'prompts/outputs/archive/execution-log-001.md',
+      'prompts/outputs/archive/execution-log-002.md',
+    ]);
+    expect(parseJournalArchives('---\njournal_archives: [a.md, b.md]\n---\n')).toEqual(['a.md', 'b.md']);
+    expect(parseJournalArchives('---\nnext_task: null\n---\n')).toEqual([]);
+    expect(parseJournalArchives('no frontmatter')).toEqual([]);
+  });
+
+  it('puts archives before the main log and drops archive frontmatter', () => {
+    const archive = '---\narchived_from: execution-log.md\nsections: 1\n---\n### `tasks-a.md` — done\n';
+    const logical = composeLogicalExecutionLog(main, [archive]);
+    expect(logical.indexOf('### `tasks-a.md`')).toBeLessThan(logical.indexOf('# Execution Log'));
+    expect(logical).not.toContain('archived_from');
+    expect(composeLogicalExecutionLog(main, [])).toBe(main);
   });
 });
