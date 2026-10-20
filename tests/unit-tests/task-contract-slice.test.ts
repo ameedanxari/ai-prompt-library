@@ -1,3 +1,4 @@
+import storage from '../../scripts/lib/task-contract.cjs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -46,6 +47,16 @@ afterEach(() => {
 });
 
 describe('task-contract-slice.sh', () => {
+  it('selects the same packet from a sharded contract', () => {
+    const dir = fixture();
+    const filename = path.join(dir, 'task-contract.json');
+    const value = JSON.parse(fs.readFileSync(filename, 'utf8'));
+    value.padding = 'x'.repeat(6000);
+    storage.writeTaskContract(filename, value, { maxBytes: 4096 });
+    const result = run([dir, 'tasks-beta.md', 'T1']);
+    expect(result.code).toBe(0);
+    expect(JSON.parse(result.out).map((u: { canonicalId: string }) => u.canonicalId)).toEqual(['tasks-beta.md#T1']);
+  });
   it('prints only the units of a remediation packet', () => {
     const dir = fixture();
     const { code, out } = run([dir, 'remediation-alpha.md']);

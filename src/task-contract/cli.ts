@@ -2,6 +2,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { writeTaskContract, pruneTaskContractShards } from './storage.js';
 import {
   buildTaskContractReport,
   type TaskContractReport,
@@ -35,7 +36,8 @@ export function buildTaskContractFile(
   });
 
   fs.mkdirSync(path.dirname(outPath), { recursive: true });
-  fs.writeFileSync(outPath, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+  writeTaskContract(outPath, report);
+  if (process.env.TASK_CONTRACT_DEFER_PRUNE !== '1') pruneTaskContractShards(outPath);
 
   return report;
 }

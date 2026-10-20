@@ -1,3 +1,4 @@
+import { readTaskContract } from '../../src/task-contract/storage.js';
 import { describe, expect, it } from 'vitest';
 import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -49,6 +50,30 @@ function taskLines(opts: {
 }
 
 describe('task graph and delivery-order scripts', () => {
+  it('builds graph, delivery order and phase validation from automatically sharded output', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-sharded-'));
+    try {
+      for (let index = 0; index < 10; index++) {
+        const lines = taskLines({ title: `Foundation ${index}`, file: `src/foundation-${index}.ts`, phase: 'foundation' });
+        lines[5] = `- **Precise change:** ${'a'.repeat(1024 * 1024)}`;
+        writeTask(sandbox, `tasks-foundation-${index}.md`, lines);
+      }
+      const graphResult = run(`bash "${BUILD_GRAPH}" "${sandbox}"`);
+      expect(graphResult.code, graphResult.out).toBe(0);
+      const filename = path.join(sandbox, 'task-contract.json');
+      expect(JSON.parse(fs.readFileSync(filename, 'utf8')).storageFormat).toBe('task-contract-shards/v1');
+      const contract = readTaskContract(filename);
+      const graph = JSON.parse(fs.readFileSync(path.join(sandbox, 'task-graph.json'), 'utf8'));
+      expect(contract.units).toHaveLength(10);
+      expect(graph.nodes.map((node: { id: string }) => node.id)).toEqual(contract.graphs.files.nodes.map((node) => node.id));
+      const orderResult = run(`bash "${BUILD_ORDER}" "${sandbox}"`);
+      expect(orderResult.code, orderResult.out).toBe(0);
+      expect(fs.readFileSync(path.join(sandbox, 'delivery-order.md'), 'utf8')).toContain('tasks-foundation-9.md');
+      const phaseResult = run(`bash "${path.join(REPO_ROOT, 'scripts/validate-phase-order.sh')}" "${sandbox}"`);
+      expect(phaseResult.code, phaseResult.out).toBe(0);
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  }, 30000);
+
   it('build-task-graph.sh writes dependency metadata and topological order', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'graph-ok-'));
     try {

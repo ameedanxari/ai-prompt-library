@@ -33,6 +33,8 @@
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
   echo "usage: $(basename "$0") [TARGET_DIR] [--base REV] [--head REV] [--worktree] [--json]" >&2
 }
@@ -75,11 +77,15 @@ REPO_ROOT="$(git -C "$TARGET_DIR" rev-parse --show-toplevel 2>/dev/null)" || {
   exit 2
 }
 
-python3 - "$CONTRACT" "$REPO_ROOT" "$BASE" "$HEAD_REV" "$WORKTREE" "$JSON" <<'PY'
+TASK_CONTRACT_LIB="$SCRIPT_DIR/lib" python3 - "$CONTRACT" "$REPO_ROOT" "$BASE" "$HEAD_REV" "$WORKTREE" "$JSON" <<'PY'
 import json
 import re
 import subprocess
 import sys
+import os
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["TASK_CONTRACT_LIB"])
+from task_contract import load_task_contract
 
 contract_path, repo, base, head, worktree, as_json = sys.argv[1:7]
 worktree = worktree == "1"
@@ -105,8 +111,8 @@ if worktree:
 changed = sorted(changed)
 
 try:
-    contract = json.load(open(contract_path, encoding="utf-8"))
-except ValueError as exc:
+    contract = load_task_contract(contract_path)
+except (ValueError, OSError) as exc:
     print(f"❌ task contract is not valid JSON: {exc}", file=sys.stderr)
     sys.exit(2)
 

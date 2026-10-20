@@ -1,3 +1,4 @@
+import storage from '../../scripts/lib/task-contract.cjs';
 import { afterEach, describe, expect, it } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -69,6 +70,18 @@ afterEach(() => {
 });
 
 describe('select-impacted-tests.sh', () => {
+  it('maps changed paths from a sharded contract', () => {
+    const { repo, plan } = fixture();
+    const filename = path.join(plan, 'task-contract.json');
+    const value = JSON.parse(fs.readFileSync(filename, 'utf8'));
+    value.padding = 'x'.repeat(6000);
+    storage.writeTaskContract(filename, value, { maxBytes: 4096 });
+    write(repo, 'src/a.ts', 'a1');
+    commit(repo, 'change');
+    const result = run([plan]);
+    expect(result.code).toBe(0);
+    expect(result.out.trim()).toBe('npm test -- a');
+  });
   it('maps changed paths to unique declared test commands in a stable order', () => {
     const { repo, plan } = fixture();
     write(repo, 'src/b.ts', 'b1');

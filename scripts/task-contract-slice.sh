@@ -18,6 +18,8 @@
 
 set -uo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 usage() {
   echo "usage: $(basename "$0") [TARGET_DIR] PLAN_FILE [UNIT_ID]" >&2
 }
@@ -61,14 +63,18 @@ if [ ! -f "$CONTRACT" ]; then
   exit 2
 fi
 
-python3 - "$CONTRACT" "$PLAN_FILE" "$UNIT_ID" <<'PY'
+TASK_CONTRACT_LIB="$SCRIPT_DIR/lib" python3 - "$CONTRACT" "$PLAN_FILE" "$UNIT_ID" <<'PY'
 import json
 import sys
+import os
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["TASK_CONTRACT_LIB"])
+from task_contract import load_task_contract
 
 contract_path, plan, unit_id = sys.argv[1], sys.argv[2], sys.argv[3]
 try:
-    contract = json.load(open(contract_path, encoding="utf-8"))
-except ValueError as exc:
+    contract = load_task_contract(contract_path)
+except (ValueError, OSError) as exc:
     print(f"❌ task contract is not valid JSON: {exc}", file=sys.stderr)
     sys.exit(2)
 

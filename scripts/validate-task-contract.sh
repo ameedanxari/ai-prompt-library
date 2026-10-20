@@ -53,15 +53,18 @@ if ! command -v python3 >/dev/null 2>&1; then
   exit 2
 fi
 
-python3 - "$CONTRACT" <<'PY'
+TASK_CONTRACT_LIB="$SCRIPT_DIR/lib" python3 - "$CONTRACT" <<'PY'
 import json
 import sys
+import os
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["TASK_CONTRACT_LIB"])
+from task_contract import load_task_contract
 
 contract_path = sys.argv[1]
 
 try:
-    with open(contract_path, encoding="utf-8") as handle:
-        contract = json.load(handle)
+    contract = load_task_contract(contract_path)
 except Exception as exc:
     print(f"❌ cannot read task contract {contract_path}: {exc}", file=sys.stderr)
     sys.exit(2)

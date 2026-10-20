@@ -1,3 +1,4 @@
+import storage from '../../scripts/lib/task-contract.cjs';
 import { describe, expect, it } from 'vitest';
 import { execFileSync, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
@@ -109,6 +110,18 @@ function fixture(options: {
 }
 
 describe('validate-execution-status.sh', () => {
+  it('validates the same status evidence from a sharded contract', () => {
+    const planDir = fixture();
+    try {
+      const filename = path.join(planDir, 'task-contract.json');
+      const value = JSON.parse(fs.readFileSync(filename, 'utf8'));
+      value.padding = 'x'.repeat(6000);
+      storage.writeTaskContract(filename, value, { maxBytes: 4096 });
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report).toMatchObject({ valid: true, contract_unit_count: 1, terminal_state: 'verified_production' });
+    } finally { fs.rmSync(planDir, { recursive: true, force: true }); }
+  });
   it('is executable', () => {
     expect(fs.existsSync(VALIDATOR)).toBe(true);
     expect((fs.statSync(VALIDATOR).mode & 0o111) !== 0).toBe(true);
