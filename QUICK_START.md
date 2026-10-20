@@ -541,6 +541,32 @@ const report = buildTaskContractReportForDirectory('prompts/outputs/current');
 console.log(report.summary.blocked);
 ```
 
+Large task contracts are stored automatically as a `task-contract.json` index
+with `storageFormat: task-contract-shards/v1` and content-addressed JSON payloads
+in `task-contract-shards/*.json.shard`. The logical schema remains version 2;
+small reports retain their existing JSON layout. Shards target 4 MiB and all
+written artifacts are limited to 8 MiB, below the 10 MiB commit safety limit.
+Commit the index and its shard directory together. The `.shard` suffix keeps
+formatters from changing immutable bytes covered by the index's SHA-256 digest
+and byte count. After successful index publication, generation removes obsolete shards while
+preserving shards referenced by other indexes in the same directory.
+
+Use the supported reader instead of parsing the index as a complete report:
+
+```js
+import { readTaskContract } from 'ai-prompt-library/task-contract';
+const report = readTaskContract('prompts/outputs/current/task-contract.json');
+```
+
+Python scripts use `load_task_contract(path)` from
+`scripts/lib/task_contract.py`; Node shell gates and the TypeScript API share
+`scripts/lib/task-contract.cjs`. Both readers support legacy reports, validate
+shard paths, sizes, digests and counts, and reject missing or corrupt shards.
+Graph, delivery order, finalization, status, validation, slices and impacted-test
+selection continue to consume the complete logical contract through these
+readers. Generation installs immutable shards before the shell wrapper
+atomically replaces the index, so a failed generation preserves its prior input.
+
 ## If something goes wrong mid-run, or you need to resume
 
 Paste this and the agent will pick up where it left off:

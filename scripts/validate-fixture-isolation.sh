@@ -41,11 +41,12 @@ fi
 # shellcheck disable=SC2317,SC2329  # invoked indirectly via write_atomic_report; SC2317 is the pre-0.10 code for the same finding
 produce_report() {
   local temporary="$1"
-  "$RESOLVED_NODE" - "$CONTRACT" "$temporary" <<'NODE'
+  TASK_CONTRACT_LIB="$SCRIPT_DIR/lib/task-contract.cjs" "$RESOLVED_NODE" - "$CONTRACT" "$temporary" <<'NODE'
 const fs = require('node:fs');
 
 const [contractPath, reportPath] = process.argv.slice(2);
-const contract = JSON.parse(fs.readFileSync(contractPath, 'utf8'));
+const { readTaskContract } = require(process.env.TASK_CONTRACT_LIB);
+const contract = readTaskContract(contractPath);
 const units = Array.isArray(contract.units) ? contract.units : [];
 const fixtureMaps = new Set(['test-fixture', 'screenshot', 'preview', 'demo']);
 // A unit is fixture-relevant when EITHER signal says so. Keying off the

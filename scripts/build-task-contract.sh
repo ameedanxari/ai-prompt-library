@@ -80,7 +80,7 @@ if [ -d "$PACKAGE_ROOT/src/task-contract" ] && [ -f "$PACKAGE_ROOT/tsconfig.buil
     printf '{"type":"module"}\n' > "$ISOLATED_BUILD_DIR/package.json"
     if ! "$NODE_BIN" "$TYPESCRIPT_CLI" \
       -p "$PACKAGE_ROOT/tsconfig.build.json" \
-      --outDir "$ISOLATED_BUILD_DIR" >/dev/null 2>&1
+      --outDir "$ISOLATED_BUILD_DIR/dist" >/dev/null 2>&1
     then
       echo "task contract: failed to build isolated TypeScript CLI" >&2
       write_toolchain_failure_report \
@@ -91,7 +91,9 @@ if [ -d "$PACKAGE_ROOT/src/task-contract" ] && [ -f "$PACKAGE_ROOT/tsconfig.buil
         "$NODE_DECISION" >/dev/null 2>&1 || true
       exit 2
     fi
-    CLI="$ISOLATED_BUILD_DIR/task-contract/cli.js"
+    mkdir -p "$ISOLATED_BUILD_DIR/scripts/lib"
+    cp "$SCRIPT_DIR/lib/task-contract.cjs" "$ISOLATED_BUILD_DIR/scripts/lib/task-contract.cjs"
+    CLI="$ISOLATED_BUILD_DIR/dist/task-contract/cli.js"
   elif [ ! -f "$CLI" ]; then
     if ! require_tool npm resolve_npm; then
       resolver_decision="$TOOLCHAIN_LAST_DECISION"
@@ -126,13 +128,17 @@ fi
 
 generate_task_contract() {
   local temporary_report="$1"
-  "$NODE_BIN" "$CLI" "$TARGET_DIR" "$temporary_report"
+  TASK_CONTRACT_DEFER_PRUNE=1 "$NODE_BIN" "$CLI" "$TARGET_DIR" "$temporary_report"
 }
 
 if ! write_atomic_report "$OUT" generate_task_contract; then
   echo "task contract: generation failed; previous report preserved" >&2
   exit 2
 fi
+
+# Publication succeeded; now obsolete immutable payloads can be removed safely.
+TASK_CONTRACT_LIB="$SCRIPT_DIR/lib/task-contract.cjs" "$NODE_BIN" -e \
+  'require(process.env.TASK_CONTRACT_LIB).pruneTaskContractShards(process.argv[1])' "$OUT" || exit 2
 
 printf 'task contract report committed atomically: %s (node: %s; resolver: %s)\n' \
   "$OUT" \

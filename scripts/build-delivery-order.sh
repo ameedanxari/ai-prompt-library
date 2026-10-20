@@ -67,12 +67,15 @@ if [ "$contract_status" -ne 0 ]; then
   exit 3
 fi
 
-python3 - "$TARGET_DIR" "$OUTPUT_FILE" <<'PYEOF'
+TASK_CONTRACT_LIB="$SCRIPT_DIR/lib" python3 - "$TARGET_DIR" "$OUTPUT_FILE" <<'PYEOF'
 import datetime
 import heapq
 import json
 import os
 import sys
+sys.dont_write_bytecode = True
+sys.path.insert(0, os.environ["TASK_CONTRACT_LIB"])
+from task_contract import load_task_contract
 from collections import defaultdict
 
 target_dir, output_path = sys.argv[1], sys.argv[2]
@@ -85,7 +88,7 @@ if not os.path.exists(contract_path):
     print(f"❌ task contract not found: {contract_path}", file=sys.stderr)
     sys.exit(3)
 
-contract = json.load(open(contract_path, encoding="utf-8"))
+contract = load_task_contract(contract_path)
 units_by_file = defaultdict(list)
 for unit in contract["units"]:
     units_by_file[unit["file"]].append(unit)

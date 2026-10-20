@@ -41,6 +41,7 @@ import sys
 sys.dont_write_bytecode = True
 sys.path.insert(0, os.environ["EXEC_LOG_LIB"])
 from execution_log import load_logical_log  # noqa: E402
+from task_contract import load_task_contract
 
 plan_dir, report_path = sys.argv[1:3]
 
@@ -112,10 +113,10 @@ def add_issue(code, message, task_id=None):
 try:
     with open(os.path.join(plan_dir, "execution-log.md"), encoding="utf-8") as handle:
         log_text = handle.read()
-    contract = load_json("task-contract.json")
+    contract = load_task_contract(os.path.join(plan_dir, "task-contract.json"))
     graph = load_json("task-graph.json")
     envelope = parse_envelope(log_text)
-except ValueError as exc:
+except (ValueError, OSError) as exc:
     with open(report_path, "w", encoding="utf-8") as handle:
         json.dump({"status": "prerequisite-error", "issues": [{"code": "malformed-input", "message": str(exc)}]}, handle, indent=2)
         handle.write("\n")
