@@ -50,6 +50,16 @@ records which revision a run matches and migrates the run on resumption.
   them; `build-task-contract.sh` installs shards before the atomic index
   replace and prunes obsolete shards only after publication.
 
+### Fixed
+- **Harness diagnosis no longer hangs without a device.**
+  `diagnose-harness-android.sh` read `adb logcat` whenever `adb` was on the
+  PATH; with no device or emulator attached, adb waits forever, which stalled
+  the executor's diagnosis step and the library's own pre-commit suite (the
+  android test in `diagnose-harness.test.ts`). Logcat is now read only when
+  `adb get-state` reports a device, and both it and `flutter doctor -v` run
+  under a `run_bounded` watchdog (5, 15 and 30 seconds), since macOS ships no
+  `timeout`.
+
 ## [Unreleased] — run economy: stop for the owner, bounded records, log rotation
 
 Two field runs on the previous revision showed the failure this entry
