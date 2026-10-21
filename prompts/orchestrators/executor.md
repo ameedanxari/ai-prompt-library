@@ -228,6 +228,7 @@ external_keys_needed: [STRIPE_SECRET_KEY, FIREBASE_SERVER_KEY]
 harness_recoveries: []     # appended by the diagnose-harness pipeline; each entry is { task, classification, action, result, at }
 decision_policy: ask       # ask | recommend — see "Owner-decision protocol"; set once from the owner's instruction
 journal_archives: []       # written by rotate-execution-log.sh; older done entries live there, validators read them
+library_revision: <output of `git -C .ai-prompts rev-parse HEAD` — rewritten on every envelope update; the entry point compares it on resumption, see .ai-prompts/docs/upgrade.md>
 ---
 
 # Execution Log
@@ -258,6 +259,14 @@ journal_archives: []       # written by rotate-execution-log.sh; older done entr
   old one, and keep every prior journal entry intact. The executor is
   append-only for journal entries and atomic-replace for the envelope.
 - `updated_at` ticks on every task transition.
+- `library_revision` is rewritten on every envelope update from
+  `git -C .ai-prompts rev-parse HEAD` (write `unknown` when `.ai-prompts` is
+  not a git checkout). It records which library revision the run's
+  artifacts match. On resumption the entry point compares it with the
+  checked-out library and, when they differ, applies the steps in
+  `.ai-prompts/docs/upgrade.md` for every revision after the recorded one
+  before resuming, then records the new value. The executor never applies
+  upgrade steps itself; it only keeps the field current.
 - `next_task` is computed: first task in `delivery-order.md` manifest order that
   is not in `done` / `blocked` / `deferred` / `failed`; when no implementation
   task remains, use

@@ -242,6 +242,22 @@ your prompt contains execute-signal words ("fix", "implement", "close
 the gaps", "write the tests", etc.), it should not output an A/B/C/D
 preference menu — you already authorised the run.
 
+**Owner decisions:** work the agent cannot finish (a credential or
+account only you can create, money to spend, a legal or product call the
+brief does not settle, a risk only you may accept) is not planned around.
+Each question becomes one `## D-NNN` row in
+`prompts/outputs/current/owner-decisions.md` with priced options, a
+recommendation, a default and the units it unblocks. When nothing
+runnable is left the executor stops with an "Owner input needed" report
+and sets `next_task: owner-decisions.md`. Answer a row in chat or by
+setting its `Decided` line and `Status`; only the units it lists re-run.
+Saying "decide on your recommendation" once records
+`decision_policy: recommend` in the envelope: `assumable` rows (reversible
+product or engineering choices) are then taken on the recommendation
+without stopping. It never covers `needs-owner` rows: money, legal
+commitments, accounts and credentials, accepting a security or privacy
+risk, shipping to real users, or contradicting the brief.
+
 ---
 
 ## Who this is for
@@ -316,6 +332,7 @@ preference menu — you already authorised the run.
 | `scripts/fix-user-stories.sh` | Auto-fixer for the mechanical "missing comma before 'so that'" pattern in `Closes user story` lines. Idempotent. |
 | `scripts/scaffold-screenshot-captures.sh` | Generates the full app-store screenshot task matrix (2 tooling + locales × devices × frames captures) with canonical schema pre-filled, so weak models don't have to expand the matrix by hand. |
 | `scripts/reset-integration.sh` | Force-reset for consumer projects (purges stale state, refreshes steering, rewrites `AGENTS.md`). |
+| `docs/upgrade.md` | Per-revision steps the entry point applies, once, when a run resumes on a newer library than its envelope's `library_revision`. |
 | `docs/optional/` | Load-on-demand safeguard docs. |
 
 ---

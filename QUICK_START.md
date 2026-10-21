@@ -567,6 +567,40 @@ selection continue to consume the complete logical contract through these
 readers. Generation installs immutable shards before the shell wrapper
 atomically replaces the index, so a failed generation preserves its prior input.
 
+## Owner decisions
+
+Some work only you can finish: an account or credential to create, money
+to spend, a legal or product call the brief does not settle, a risk only
+you may accept. The agent does not plan around these. It writes each one
+as a row in `prompts/outputs/current/owner-decisions.md` and keeps
+building whatever does not depend on it.
+
+**Where the questions appear.** Each row is a `## D-NNN` section with a
+one-line question, priced options, the agent's recommendation, the
+default it will use if you never answer, and what the row unblocks. When
+nothing runnable is left, the agent stops with an "Owner input needed"
+report listing the open rows; `execution-log.md` then shows
+`next_task: owner-decisions.md`, and "Continue" shows you the rows again
+instead of running more tasks.
+
+**How to answer a row.** Reply in chat ("D-003: (a)", or a sentence), or
+edit the row: set `Decided` to the date and your choice and change
+`Status` to `decided` (or `accepted-risk` when you accept the risk the
+row describes). The agent re-runs only the units the row lists under
+`Unblocks`.
+
+**`decision_policy: recommend`.** Saying "decide on your recommendation"
+or "continue until complete" once sets `decision_policy: recommend` in
+the `execution-log.md` envelope. From then on, `assumable` rows (naming,
+a default limit, which of two equivalent libraries, a UI pattern,
+anything reversible at modest cost) are taken on the recommendation
+without stopping, and the row records `assumed`. It never covers
+`needs-owner` rows: anything that spends money, binds you legally,
+creates or shares an account or credential, accepts a security or
+privacy risk, ships to real users, or contradicts your brief. Those
+still stop the run until you answer. The default policy is `ask`, which
+stops at the next checkpoint for every open row.
+
 ## If something goes wrong mid-run, or you need to resume
 
 Paste this and the agent will pick up where it left off:

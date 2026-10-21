@@ -72,6 +72,43 @@ If conditions 2 or 3 are FALSE (i.e., disk has state to resume from), there is n
 
 ---
 
+### Guard: Library-revision upgrade check
+
+Runs on every resumption that reads `prompts/outputs/current/execution-log.md`
+(Path 1 when the log exists, Path 2 with `phase: execution`, Path 3), before
+the executor or an engine loads. The library under `.ai-prompts` can move
+while a run is in flight; a run started on an older revision keeps its old
+artifacts until something migrates them. This guard is that something.
+
+1. Read `library_revision` from the envelope and the checked-out revision:
+   ```bash
+   git -C .ai-prompts rev-parse HEAD
+   ```
+   If the command fails (`.ai-prompts` is not a git checkout), skip the rest
+   of this guard, tell the user once that upgrade detection is unavailable,
+   and continue to the next guard.
+2. If the two values are equal, continue to the next guard. Nothing else
+   to do.
+3. Otherwise read `.ai-prompts/docs/upgrade.md`. Each section is headed by
+   a library revision, oldest first. A section applies when its revision
+   is later than the recorded one:
+   ```bash
+   git -C .ai-prompts rev-list <recorded>..HEAD | grep -q "^<section revision>"
+   ```
+   When `library_revision` is missing from the envelope, is `unknown`, or
+   `rev-list` cannot resolve it, every section applies.
+4. Apply the applicable sections in order, each step once, before
+   resuming anything. A step whose work is already done (the file exists,
+   the field is set, nothing to rotate) is skipped, not repeated.
+5. Rewrite the envelope's `library_revision` with the value from step 1
+   (atomic replace of the envelope; the executor keeps it current from
+   then on). Report in one line which sections were applied and which
+   files changed, then continue to the next guard. The changed files are
+   committed with the next task, never as a docs-only commit.
+
+Never apply a section whose revision the recorded value already includes,
+and never run this guard twice in one session.
+
 ### Guard: Selective Disk-State Loading via Checkpoint
 
 If the user's prompt is `"Continue"` or `"Continue where you left off"` (or equivalent resumption request), evaluate these conditions in order. The first match wins — do not also run later paths.

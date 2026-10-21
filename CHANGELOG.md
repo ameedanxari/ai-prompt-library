@@ -5,6 +5,51 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — upgrade path for in-flight runs, owner-decision docs, sharded task contracts
+
+The run-economy change below reached the two in-flight runs only because
+their owner pasted a hand-written migration prompt telling the agent to
+rotate the log, build the decisions file and restore demoted units. The
+library had no notion of "the library changed under a run". It now
+records which revision a run matches and migrates the run on resumption.
+
+### Added
+- **`library_revision` in the execution-log envelope** (`executor.md`,
+  "Output artifact"). Written from `git -C .ai-prompts rev-parse HEAD` at
+  every envelope update; `unknown` when the library is not a git checkout.
+- **Upgrade check on resumption** (`ai-agent-entry-point.md`, "Guard:
+  Library-revision upgrade check"). When the recorded revision differs
+  from the checked-out one, the entry point reads `docs/upgrade.md`,
+  applies the sections for every revision after the recorded one, once
+  and in order, records the new revision and then resumes. An envelope
+  without the field gets every section.
+- **`docs/upgrade.md`.** One section per revision that changes what an
+  in-flight run must look like, one line per step with the command or
+  the file to write. The first section covers b813268: rotate the log,
+  build `owner-decisions.md` from an external-decisions table, restore
+  units demoted by unprovable acceptance bullets through follow-up
+  records under one decision row, record `decision_policy` from the
+  owner's standing instruction, and drop any local exemption of the log
+  from the oversized-file check.
+- **"Owner decisions" in `README.md` and `QUICK_START.md`.** Where the
+  questions appear, how to answer a row, what `decision_policy:
+  recommend` means and what it never covers.
+- **Sharded task contracts** (`scripts/lib/task-contract.cjs`,
+  `scripts/lib/task_contract.py`, `src/task-contract/storage.ts`; ported
+  from the VillaRenovations library copy, commit 3462541). A
+  `task-contract.json` over 8 MiB is written as an index
+  (`storageFormat: task-contract-shards/v1`) plus content-addressed
+  `task-contract-shards/<sha256>.json.shard` files of at most 4 MiB,
+  so the contract stays under the 10 MB commit safety limit without an
+  exemption. Small contracts keep their JSON layout. `readTaskContract`
+  (Node) and `load_task_contract` (Python) return the same logical
+  report for either layout and fail closed on a missing, corrupt,
+  oversized, traversing or unversioned shard. Every consumer (graph,
+  delivery order, phase order, status, fixture-isolation and
+  walking-skeleton gates, slices, impacted-test selection) reads through
+  them; `build-task-contract.sh` installs shards before the atomic index
+  replace and prunes obsolete shards only after publication.
+
 ## [Unreleased] — run economy: stop for the owner, bounded records, log rotation
 
 Two field runs on the previous revision showed the failure this entry
