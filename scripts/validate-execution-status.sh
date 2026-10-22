@@ -319,6 +319,15 @@ def journal_test_passed(result):
     result = result.strip().lower()
     if re.match(r"^pass\b", result):
         return True
+    # Completed count summaries occur in older browser-verification journals.
+    # Require an exact, nonzero tally and an affirmative result at the end.
+    count_summary = re.fullmatch(r"(\d+)/(\d+)\s+.+\bpass(?:ed)?[.!]?", result)
+    if count_summary:
+        passed, total = map(int, count_summary.groups())
+        return passed == total > 0 and not re.search(
+            r"\b(?:fail(?:ed|s|ure|ures|ing)?|errors?|partial(?:ly)?|no|not|pending|unknown)\b",
+            result,
+        )
     # Older journals name the checked area before the affirmative outcome.
     # Match only that leading clause, never a later mention of a passing rerun.
     return bool(re.match(

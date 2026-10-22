@@ -171,6 +171,39 @@ describe('validate-execution-status.sh', () => {
   });
 
   it.each([
+    '12/12 official browser cases across vendor, owner, and admin routes pass.',
+    '52/52 final production browser cases passed.',
+  ])('accepts a complete count-leading journal result: %s', (journalTestResult) => {
+    const planDir = fixture({ journalTestResult });
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(0);
+      expect(result.report.valid).toBe(true);
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    '11/12 official browser cases pass.',
+    '12/12 official browser cases pass; 1 failed.',
+    '12/12 official browser cases pass. One error remains.',
+    '12/12 official browser cases pass, partial verification.',
+    '0/0 official browser cases pass.',
+    '12/12 official browser cases fail. A later rerun passed.',
+  ])('rejects an incomplete or contradicted count-leading result: %s', (journalTestResult) => {
+    const planDir = fixture({ journalTestResult });
+    try {
+      const result = run(planDir);
+      expect(result.code).toBe(1);
+      expect(result.report.issues.map((issue: { code: string }) => issue.code))
+        .toContain('journal-done-with-failing-test');
+    } finally {
+      fs.rmSync(planDir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
     'Ledger checks fail. A separate check passed.',
     'Ledger checks not run.',
     'Ledger checks unknown.',
