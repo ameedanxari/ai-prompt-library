@@ -173,6 +173,8 @@ describe('validate-execution-status.sh', () => {
   it.each([
     '12/12 official browser cases across vendor, owner, and admin routes pass.',
     '52/52 final production browser cases passed.',
+    '12/12 official browser cases (desktop/mobile twice on the same database); initial complete desktop3/3 and join/closeout14/14 regression checks; 143 focused unit (including10 deterministic-time) and40 closeout unit/DOM tests; E2E seed11 integration and124 foundation unit checks; media/closeout/home/inspection91 integration with one existing ffmpeg skip; fieldwork60 and billing34 integrations (10 closeout API cases overlap the media set). Production build, worker build, compile gate, full lint/format, readiness and content gates pass. No full all-files suite or release completion is claimed.',
+    '52/52 final production browser cases (38 reserved-screen/navigation/auth/a11y/photo-slice plus six join and eight closeout); 170 unit/DOM assertions; 53 unique passing integration assertions in three files, one existing ffmpeg skip. The route proof processes real GPS-bearing JPEGs, binds the real container without provider/port substitutes, consumes45 LABOR minutes, closes/posts with no invoice/fee, creates the exact ordered completion/approval record, resolves the request, replays delivery safely and verifies the audit chain. Production/worker builds, compile, full lint/format, i18n, readiness and content lint pass. Existing catalogue values are unchanged; all40 additions equal the content model.',
   ])('accepts a complete count-leading journal result: %s', (journalTestResult) => {
     const planDir = fixture({ journalTestResult });
     try {
@@ -191,6 +193,9 @@ describe('validate-execution-status.sh', () => {
     '12/12 official browser cases pass, partial verification.',
     '0/0 official browser cases pass.',
     '12/12 official browser cases fail. A later rerun passed.',
+    '12/12 official browser cases not passed; other checks pass.',
+    '12/12 official browser cases not run; other checks pass.',
+    '12/12 official browser cases; no tests passed, but other gates pass.',
   ])('rejects an incomplete or contradicted count-leading result: %s', (journalTestResult) => {
     const planDir = fixture({ journalTestResult });
     try {
