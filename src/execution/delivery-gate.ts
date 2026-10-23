@@ -8,7 +8,7 @@ import { deliveryProjections } from './delivery-projections.js';
 export * from '../delivery/types.js';
 export { parseDeliveryManifest, resolveDeliveryScope } from '../delivery/manifest.js';
 export {
-  deliveryScopeDigest, deliveryEvidenceBinding, deliveryReviewBinding, readDeliveryRequirements,
+  deliveryScopeDigest, deliveryEvidenceBinding, deliveryReviewBinding, deliveryDesignReviewBinding, readDeliveryRequirements,
 } from '../delivery/validation.js';
 
 /** One gate for the package API and shell entry points. Outcome metadata does

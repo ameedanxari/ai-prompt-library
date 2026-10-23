@@ -56,7 +56,7 @@ describe('outcome delivery source, evidence and acceptance contract', () => {
     f.evidence(); f.manifest.evidenceRefs.filter(e => e.capture).forEach(e => { e.capture!.composed = false; }); f.accept(); expect(f.validate('advance').valid).toBe(false);
   });
   it('rejects renamed text screenshots, empty artifacts and escaped artifact paths', () => {
-    const f = fixture('web'); f.reviewScope(); f.evidence(); const screenshot = f.manifest.evidenceRefs.find(e => e.kind === 'image')!; screenshot.artifact = f.write(screenshot.artifact.path, 'This text file claims to be a screenshot'); f.accept(); expect(f.validate('advance').issues.join('\n')).toContain('composed image capture');
+    const f = fixture('web'); f.reviewScope(); f.evidence(); const screenshot = f.manifest.evidenceRefs.find(e => e.kind === 'image' && e.capture?.state === 'success')!; screenshot.artifact = f.write(screenshot.artifact.path, 'This text file claims to be a screenshot'); f.accept(); expect(f.validate('advance').issues.join('\n')).toContain('composed image capture');
     screenshot.artifact = f.write(screenshot.artifact.path, Buffer.alloc(0)); f.accept(); expect(f.validate('advance').valid).toBe(false);
     screenshot.artifact.path = '../outside.png'; expect(f.validate('advance').valid).toBe(false);
   });

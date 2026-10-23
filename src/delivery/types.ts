@@ -1,6 +1,6 @@
 /** Outcome delivery v1. Paths are relative to projectRoot unless explicitly noted. */
 export type DeliveryStage = 'plan' | 'execute' | 'advance' | 'release';
-export type EvidenceKind = 'execution' | 'recovery' | 'image' | 'consumer' | 'operation' | 'evaluation' | 'render' | 'production-integration';
+export type EvidenceKind = 'execution' | 'recovery' | 'image' | 'consumer' | 'operation' | 'evaluation' | 'render' | 'production-integration' | 'design-review';
 export interface FileBinding { path: string; sha256: string }
 export interface SourceInput extends FileBinding { id: string }
 /** Stored in a sourceInputs JSON file, not inferred from implementer-supplied gates. */
@@ -14,7 +14,23 @@ export interface RequirementRecord {
   surfaceIds: string[];
   checks: { id: string; kind: 'success' | 'recovery'; description: string }[];
 }
-export interface RequirementDocument { schemaVersion: 1; originalSources: FileBinding[]; requirements: RequirementRecord[] }
+export interface DesignContract {
+  surfaceId: string;
+  sourceRefs: string[];
+  criteria: {
+    id: string;
+    dimension: 'intent' | 'composition' | 'hierarchy' | 'responsive' | 'typography' | 'imagery' | 'interaction';
+    sourceRef: string;
+    sourceLocation: string;
+    expectation: string;
+  }[];
+  contexts: { id: string; viewport: string; theme: string }[];
+}
+export interface DesignComparison {
+  schemaVersion: 1;
+  comparisons: { criterionId: string; contextId: string; imageEvidenceId: string; observation: string; result: 'pass' | 'fail' }[];
+}
+export interface RequirementDocument { schemaVersion: 1; originalSources: FileBinding[]; requirements: RequirementRecord[]; designs?: DesignContract[] }
 export interface DeliveryTarget {
   id: string;
   environment: string;
@@ -77,14 +93,14 @@ export interface DeliveryEvidence {
   observedAt: string;
   result: 'pass' | 'fail';
   /** UI captures identify the actual composed state, not a component catalogue. */
-  capture?: { surfaceId: string; state: 'entry' | 'success' | 'recovery'; viewport: string; composed: boolean };
+  capture?: { surfaceId: string; state: 'entry' | 'success' | 'recovery'; viewport: string; theme?: string; route?: string; composed: boolean };
   consumer?: string;
   productionComposition: boolean;
   releaseCandidate?: string;
 }
 export interface DeliveryDecision {
   id: string;
-  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward';
+  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review';
   outcomeIds: string[];
   scopeDigest: string;
   /** Raw artifacts, canonical full evidence records and reviewed plan content. */
@@ -165,5 +181,5 @@ export interface DeliveryReport {
   stage: DeliveryStage;
   issues: string[];
   metrics: { pendingWords: number; pendingBytes: number; pendingUnits: number; pendingSlices: number; reviewRounds: number; reworkUnits: number; observedTokens?: number };
-  completion: { planReady: boolean; proofAccepted: boolean; sliceAccepted: boolean; releaseReady: boolean; acceptedOutcomeIds: string[]; technicallyVerifiedOutcomeIds: string[]; excludedOutcomeIds: string[]; staleOutcomeIds: string[] };
+  completion: { planReady: boolean; proofAccepted: boolean; sliceAccepted: boolean; releaseReady: boolean; acceptedOutcomeIds: string[]; designAcceptedOutcomeIds: string[]; technicallyVerifiedOutcomeIds: string[]; excludedOutcomeIds: string[]; staleOutcomeIds: string[] };
 }

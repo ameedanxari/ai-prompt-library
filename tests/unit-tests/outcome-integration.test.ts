@@ -41,6 +41,19 @@ afterEach(() => {
 });
 
 describe('outcome delivery entry-point integration', () => {
+  it('enforces design comparison through the public delivery gate before accepting visual proof', () => {
+    const f = createDeliveryFixture('web');
+    fs.writeFileSync(path.join(f.run, 'tasks-proof.md'), task);
+    f.reviewScope(); f.evidence(); f.accept(); f.save();
+    expect(validateDeliveryRun(f.run, { stage: 'advance', trustedReviewProvider: f.provider }).valid).toBe(true);
+    f.manifest.decisionRefs = f.manifest.decisionRefs.filter(d => d.kind !== 'design-review'); f.save();
+    const report = validateDeliveryRun(f.run, { stage: 'advance', trustedReviewProvider: f.provider });
+    expect(report.completion.technicallyVerifiedOutcomeIds).toContain('O1');
+    expect(report.completion.designAcceptedOutcomeIds).toEqual([]);
+    expect(report.valid).toBe(false);
+    expect(report.issues.join(' ')).toContain('trusted design review');
+  });
+
   it('requires executable prompts to match the reviewed bounded slice', () => {
     const f = fixture();
     expect(validateDeliveryRun(f.run, { stage: 'plan', trustedReviewProvider: f.provider }).valid).toBe(true);

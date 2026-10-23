@@ -15,6 +15,7 @@ are TRUE do not check whether they belong in front of a user; this one does.
 - `content-system.md` (voice pack, glossary, content model, first-run spec,
   seed/demo policy) and `content-lint.config.json`.
 - `ux-flows.md` screen map and state matrices.
+- Digest-bound authoritative written design documents and visual references, plus the surface's `RequirementDocument.designs` criteria and required viewport/theme contexts. Where none exist, use the explicitly reviewed proposed direction and preserve that distinction.
 - The shipped UI source, rendered screens or screenshots when available, and
   `content-inventory.json`.
 - `content-lint-report.json` (mechanical pre-pass — cite it, do not repeat it).
@@ -60,6 +61,9 @@ evidence; any failure is a finding (severity high or critical):
     matches the content model, and covers the screens walked.
 
 ## Finding rules
+
+- Compare actual composed entry captures against each source criterion at every required context (phone and desktop for web). Judge intent, material/warmth, composition, hierarchy, content density and responsive behavior; approved tokens/fonts or working navigation cannot prove fidelity. Retain concise `design-review` comparisons with criterion/context IDs, same-outcome current entry image IDs, observations and pass/fail results. The entry capture route must exactly match the outcome entry point. A failed/missing comparison or rejected review blocks design acceptance and unrelated breadth; repair the same proof.
+- Design acceptance needs a separate policy-appropriate trusted `design-review` decision bound by `deliveryDesignReviewBinding`, not a functional acceptance receipt. Comparisons and captures cannot use carry-forward. Automated validation enforces coverage, freshness and provenance; visual fidelity remains the reviewer's judgment.
 
 - Judge from the persona's chair; "technically accurate" is not a defense.
 - Cite the screen, the exact string or element, and the checklist item.

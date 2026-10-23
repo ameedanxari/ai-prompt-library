@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { canonical, deliveryEvidenceBinding, deliveryReviewBinding, deliveryScopeDigest, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
+import { canonical, deliveryDesignReviewBinding, deliveryEvidenceBinding, deliveryReviewBinding, deliveryScopeDigest, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
 import type { DeliveryDecision, DeliveryManifest, DeliveryScope, DeliverySurface, RequirementDocument, ReviewBinding, TrustedReviewProvider } from '../../src/delivery/index.js';
 export const deliveryFixtureRoots: string[] = [];
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9eQAAAAASUVORK5CYII=', 'base64');
@@ -14,8 +14,13 @@ export function createDeliveryFixture(kind: DeliverySurface['kind'] = 'api') {
   const write = (relative: string, content: string | Buffer) => { const file = path.join(root, relative); fs.mkdirSync(path.dirname(file), { recursive: true }); fs.writeFileSync(file, content); return { path: relative, sha256: sha256(content) }; };
   write('AGENTS.md', 'Project root marker'); const original = write('brief.md', 'Deliver a useful consumer result and reachable recovery.'); const source = write('app.ts', 'export const production = true;');
   const requirements: RequirementDocument = { schemaVersion: 1, originalSources: [original], requirements: [{ id: 'R1', description: 'Useful result and recovery', sourceRefs: ['brief.md'], explicit: true, nonWaivable: false, releaseRequired: true, surfaceIds: ['main'], checks: [{ id: 'success', kind: 'success', description: 'Consumer receives useful persisted result' }, { id: 'recovery', kind: 'recovery', description: 'Consumer reaches recovery after failure' }] }] };
-  const input = write('requirements.json', JSON.stringify(requirements));
   const visual = ['web','native','desktop'].includes(kind);
+  if (visual) {
+    const design = write('design.md', 'Warm family-home materials; clear hierarchy, restrained composition and compact mobile comparison.');
+    requirements.originalSources.push(design);
+    requirements.designs = [{ surfaceId: 'main', sourceRefs: ['design.md'], criteria: ['intent','composition','hierarchy','responsive'].map(dimension => ({ id: dimension, dimension: dimension as any, sourceRef: 'design.md', sourceLocation: 'line 1', expectation: `Observe documented ${dimension} in the actual composition` })), contexts: [{ id: 'phone', viewport: '390x844', theme: 'light' }, { id: 'desktop', viewport: '1440x900', theme: 'light' }] }];
+  }
+  const input = write('requirements.json', JSON.stringify(requirements));
   write('runs/current/tasks-proof.md', '# Proof\n\n## T1\nImplement useful result and its recovery with real composition.\n');
   const manifest: DeliveryManifest = {
     schemaVersion: 1, kind: 'outcome-delivery', runId: 'run-1', scopeRevision: 1, projectRoot: '../..', sourceInputs: [{ id: 'brief-requirements', ...input }],
@@ -41,16 +46,35 @@ export function createDeliveryFixture(kind: DeliverySurface['kind'] = 'api') {
     for (const kind of kinds) {
       const id = `${outcomeId}-${kind}-${manifest.evidenceRefs.length}`; const image = kind.startsWith('image-');
       const artifact = write(`evidence/${id}.${image ? 'png' : 'log'}`, image ? png : `Executed production consumer: ${outcomeId} ${kind}; meaningful output retained; recovered successfully.`);
-      manifest.evidenceRefs.push({ id, outcomeId, checkId: kind.includes('recovery') ? 'recovery' : 'success', kind: image ? 'image' : kind as any, targetId: surface.target.id, ...b, artifact, command: image ? 'capture actual composed target' : 'installed-consumer --clean --exercise-result-and-recovery', observedResult: 'Observed useful result and real recovery', observedAt: '2026-01-01T00:00:00Z', result: 'pass', consumer: 'installed real consumer 1.0', productionComposition: true, releaseCandidate: manifest.releaseCandidate, ...(image ? { capture: { surfaceId: surface.id, state: kind.slice(6) as any, viewport: '390x844', composed: true } } : {}) });
+      manifest.evidenceRefs.push({ id, outcomeId, checkId: kind.includes('recovery') ? 'recovery' : 'success', kind: image ? 'image' : kind as any, targetId: surface.target.id, ...b, artifact, command: image ? 'capture actual composed target' : 'installed-consumer --clean --exercise-result-and-recovery', observedResult: 'Observed useful result and real recovery', observedAt: '2026-01-01T00:00:00Z', result: 'pass', consumer: 'installed real consumer 1.0', productionComposition: true, releaseCandidate: manifest.releaseCandidate, ...(image ? { capture: { surfaceId: surface.id, state: kind.slice(6) as any, viewport: '390x844', theme: 'light', route: o.entryPoint, composed: true } } : {}) });
+    }
+    const design = requirements.designs?.find(d => d.surfaceId === o.surfaceId);
+    if (design) {
+      const entry = manifest.evidenceRefs.filter(e => e.outcomeId === outcomeId && e.capture?.state === 'entry').at(-1)!;
+      const images = design.contexts.map(context => {
+        const id = `${outcomeId}-design-${context.id}-${manifest.evidenceRefs.length}`;
+        const image = { ...entry, id, artifact: write(`evidence/${id}.png`, png), capture: { ...entry.capture!, viewport: context.viewport, theme: context.theme } };
+        manifest.evidenceRefs.push(image); return image;
+      });
+      const id = `${outcomeId}-comparison-${manifest.evidenceRefs.length}`;
+      const comparisons = design.criteria.flatMap(c => design.contexts.map((context, index) => ({ criterionId: c.id, contextId: context.id, imageEvidenceId: images[index].id, observation: `Compared rendered ${c.dimension} with documented intent at ${context.viewport}`, result: 'pass' })));
+      manifest.evidenceRefs.push({ ...entry, id, kind: 'design-review', capture: undefined, artifact: write(`evidence/${id}.json`, JSON.stringify({ schemaVersion: 1, comparisons })) });
     }
     save();
   };
+  const acceptDesign = (outcomeIds = manifest.outcomes.filter(o => requirements.designs?.some(d => d.surfaceId === o.surfaceId)).map(o => o.id)) => {
+    if (!outcomeIds.length) return;
+    const binding = deliveryDesignReviewBinding(scope(), outcomeIds);
+    const id = `design-${store.size}`;
+    trust({ id, kind: 'design-review', ...binding, reviewer: { id: 'reviewer', contextId: 'review-context', role: 'independent' }, provenance: { kind: 'review-session', reference: `trusted://${id}` }, result: 'approved', reason: 'Compared actual rendered composition with authoritative design intent and all required contexts' }, binding);
+  };
   const accept = (sliceId = 'proof') => {
+    acceptDesign();
     const slice = manifest.slices.find(s => s.id === sliceId)!; const binding = deliveryReviewBinding(scope(), slice.outcomeIds);
     const id = `accept-${sliceId}-${store.size}`; const d: DeliveryDecision = { id, kind: 'acceptance', ...binding, reviewer: { id: 'reviewer', contextId: 'review-context', role: 'independent' }, provenance: { kind: 'review-session', reference: `trusted://${id}` }, result: 'approved', reason: 'Independently exercised consumer and inspected all retained raw artifacts' };
     slice.acceptanceDecisionId = id; trust(d, binding);
   };
   const validate = (stage: 'plan'|'execute'|'advance'|'release' = 'plan', trustedReviews = true) => { save(); return validateDelivery(run, { stage, trustedReviewProvider: trustedReviews ? provider : undefined }); };
-  save(); return { root, run, manifest, requirements, write, save, scope, trust, reviewScope, evidence, accept, validate, provider };
+  save(); return { root, run, manifest, requirements, write, save, scope, trust, reviewScope, evidence, acceptDesign, accept, validate, provider };
 }
 

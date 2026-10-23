@@ -52,7 +52,7 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     if (['data','ml'].includes(s.kind)) assert(text(t.identity.input) && text(t.identity.evaluationSet), `data target ${s.id} requires input/evaluationSet`);
   }
   assert(new Set(m.surfaces.map((s: any) => s.target.id)).size === m.surfaces.length, 'target IDs must be unique');
-  const evidenceKinds = ['execution','recovery','image','consumer','operation','evaluation','render','production-integration'];
+  const evidenceKinds = ['execution','recovery','image','consumer','operation','evaluation','render','production-integration','design-review'];
   const checks = (cs: any) => Array.isArray(cs) && cs.length > 0 && cs.every((c: any) => record(c) && text(c.id) && ['success','recovery'].includes(c.kind) && text(c.description)) && new Set(cs.map((c: any) => c.id)).size === cs.length;
   for (const o of m.outcomes) {
     keys(o, 'id requirementIds actor entryPoint surfaceId applicability applicabilityReason releaseRequired requiredEvidenceKinds checks dependencies decisionId', 'outcome');
@@ -77,18 +77,18 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   for (const e of m.evidenceRefs) {
     keys(e, 'id outcomeId checkId kind targetId targetDigest targetContextDigest snapshotDigest artifact command observedResult observedAt result capture consumer productionComposition releaseCandidate', 'evidence');
     if (record(e.artifact)) keys(e.artifact, 'path sha256', 'artifact');
-    if (record(e.capture)) keys(e.capture, 'surfaceId state viewport composed', 'capture');
+    if (record(e.capture)) keys(e.capture, 'surfaceId state viewport theme route composed', 'capture');
     assert(text(e.outcomeId) && text(e.checkId) && evidenceKinds.includes(e.kind) && text(e.targetId) && hash(e.targetDigest) && hash(e.snapshotDigest) && binding(e.artifact), `invalid evidence ${e.id}`);
     assert(e.targetContextDigest === undefined || hash(e.targetContextDigest), `invalid targetContextDigest ${e.id}`);
     assert(text(e.command) && text(e.observedResult) && text(e.observedAt) && ['pass','fail'].includes(e.result) && typeof e.productionComposition === 'boolean', `invalid execution record ${e.id}`);
-    if (e.capture !== undefined) assert(record(e.capture) && text(e.capture.surfaceId) && ['entry','success','recovery'].includes(e.capture.state) && text(e.capture.viewport) && typeof e.capture.composed === 'boolean', `invalid capture ${e.id}`);
+    if (e.capture !== undefined) assert(record(e.capture) && text(e.capture.surfaceId) && ['entry','success','recovery'].includes(e.capture.state) && text(e.capture.viewport) && (e.capture.theme === undefined || text(e.capture.theme)) && (e.capture.route === undefined || text(e.capture.route)) && typeof e.capture.composed === 'boolean', `invalid capture ${e.id}`);
   }
   for (const d of m.decisionRefs) {
     keys(d, 'id kind outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget', 'decision');
     if (record(d.reviewer)) keys(d.reviewer, 'id contextId role', 'reviewer');
     if (record(d.provenance)) keys(d.provenance, 'kind reference', 'provenance');
     if (record(d.budget)) keys(d.budget, 'maxUnits maxWords maxBytes maxSlices', 'extension limits');
-    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
+    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
     assert(record(d.reviewer) && text(d.reviewer.id) && text(d.reviewer.contextId) && ['owner','independent','agent'].includes(d.reviewer.role) && record(d.provenance) && ['owner-message','review-session','external'].includes(d.provenance.kind) && text(d.provenance.reference) && ['approved','rejected'].includes(d.result) && text(d.reason), `invalid reviewer provenance ${d.id}`);
     if (d.requirementIds !== undefined) assert(strings(d.requirementIds), `invalid requirement IDs ${d.id}`);
     if (d.evidenceIds !== undefined) assert(strings(d.evidenceIds), `invalid evidence IDs ${d.id}`);
