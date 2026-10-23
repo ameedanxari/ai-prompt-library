@@ -22,6 +22,12 @@ resolve_script_dir() {
 }
 
 SCRIPT_DIR="$(resolve_script_dir)"
+
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" plan
+  exit $?
+fi
 # shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/lib/toolchain.sh"

@@ -14,6 +14,10 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
+    "./delivery": {
+      "types": "./dist/execution/delivery-gate.d.ts",
+      "import": "./dist/execution/delivery-gate.js"
+    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
@@ -48,6 +52,7 @@
     }
   },
   "files": [
+    "dist/delivery",
     "dist/index.*",
     "dist/completion",
     "dist/execution",
@@ -82,6 +87,7 @@
     "LICENSE"
   ],
   "bin": {
+    "ai-prompt-validate-delivery": "./scripts/validate-delivery.sh",
     "ai-prompt-build-task-contract": "./scripts/build-task-contract.sh",
     "ai-prompt-finalize": "./scripts/finalize.sh",
     "ai-prompt-generate-design-review": "./scripts/generate-design-system-review-artifact.sh",

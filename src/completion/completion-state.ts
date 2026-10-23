@@ -34,6 +34,7 @@ export interface CompletionGateResult {
 
 export interface CompletionReport {
   generatedBy: string;
+  verificationScope: 'caller-supplied-dimensions';
   state: CompletionState;
   nextTask: string | null;
   nextTaskMeaning: string;
@@ -63,6 +64,8 @@ export function createCompletionGateResult(
   };
 }
 
+/** Legacy local-state aggregation; supplied dimensions cannot establish full
+ * product release readiness. Use validateDeliveryRun(..., {stage: 'release'}). */
 export function deriveCompletionState(
   dimensions: Record<CompletionDimension, CompletionGateResult>,
 ): CompletionState {
@@ -77,9 +80,6 @@ export function deriveCompletionState(
     return 'partial';
   }
 
-  if (dimensions.release_readiness.status === 'pass') {
-    return 'release_ready';
-  }
   if (dimensions.production_verification.status === 'pass') {
     return 'verified_production';
   }
@@ -100,6 +100,7 @@ export function buildCompletionReport(input: {
 }): CompletionReport {
   return {
     generatedBy: input.generatedBy,
+    verificationScope: 'caller-supplied-dimensions',
     state: deriveCompletionState(input.dimensions),
     nextTask: input.nextTask,
     nextTaskMeaning: input.nextTask === null

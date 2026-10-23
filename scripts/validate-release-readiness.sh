@@ -18,6 +18,24 @@ set -uo pipefail
 
 ROOT="${1:-$(pwd)}"
 
+resolve_delivery_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir link
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    link="$(readlink "$source")"
+    case "$link" in /*) source="$link" ;; *) source="$dir/$link" ;; esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_delivery_script_dir)"
+
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$ROOT"; then
+  delivery_run_gate "$ROOT" release
+  exit $?
+fi
+
 if [ ! -d "$ROOT" ]; then
   echo "❌ repository root not found: $ROOT" >&2
   exit 2
@@ -268,11 +286,14 @@ def evaluate_release_gates(document: dict) -> dict:
 
 def write_release_gate_reports(source_path: Path, evaluation: dict, package_ready: bool) -> tuple[Path, Path]:
     report_dir = source_path.parent
-    release_ready = package_ready and evaluation["promotion_allowed"]
+    # This legacy list checks supplied gates, not authoritative product coverage
+    # or raw evidence. Only the shared outcome release gate can prove readiness.
+    release_ready = False
     json_report = {
         "schema_version": 1,
         "generated_by": "scripts/validate-release-readiness.sh",
         "package_ready": package_ready,
+        "verification_scope": "package-and-supplied-gates-only",
         "release_ready": release_ready,
         **evaluation,
     }

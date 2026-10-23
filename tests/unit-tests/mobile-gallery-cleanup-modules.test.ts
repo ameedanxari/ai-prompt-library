@@ -47,6 +47,8 @@ describe('mobile gallery cleanup modules', () => {
     const baseline = read('prompts/orchestrators/baseline-task-shapes.md');
     expect(baseline).toMatch(/For local-only native apps, do not invent an\s+endpoint switcher/);
     expect(baseline).toMatch(/native local UI action/);
+    expect(baseline).toMatch(/user-controlled deletion/);
+    expect(baseline).toMatch(/real OS\/device evidence/);
     expect(baseline).toMatch(/local store \/ file directory \/ app-owned cache location/);
   });
 });

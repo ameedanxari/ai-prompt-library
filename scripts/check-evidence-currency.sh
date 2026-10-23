@@ -66,6 +66,27 @@ if [ "$WORKTREE" -eq 1 ] && [ -n "$REV" ]; then
   echo "evidence currency: --rev and --worktree are mutually exclusive" >&2
   exit 2
 fi
+# Outcome runs bind current files directly; never reinterpret a historical Git check.
+if [ "$DIGEST_MODE" -eq 0 ]; then
+  source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    delivery_dir="$(cd -P "$(dirname "$source")" && pwd)"
+    delivery_link="$(readlink "$source")"
+    case "$delivery_link" in /*) source="$delivery_link" ;; *) source="$delivery_dir/$delivery_link" ;; esac
+  done
+  SCRIPT_DIR="$(cd -P "$(dirname "$source")" && pwd)"
+  source "$SCRIPT_DIR/lib/delivery.sh"
+  delivery_target="${POSITIONAL[0]:-prompts/outputs/current}"
+  if delivery_requested "$delivery_target"; then
+    if [ -n "$REV" ] || [ -n "$REPO" ] || [ "${#POSITIONAL[@]}" -gt 1 ]; then
+      echo "Outcome evidence uses manifest-bound current files; --rev/--repo overrides are unsupported" >&2
+      exit 2
+    fi
+    delivery_run_gate "$delivery_target" plan
+    exit $?
+  fi
+fi
+
 if [ "$WORKTREE" -eq 0 ] && [ -z "$REV" ]; then
   if [ "$DIGEST_MODE" -eq 1 ]; then WORKTREE=1; else REV="HEAD"; fi
 fi

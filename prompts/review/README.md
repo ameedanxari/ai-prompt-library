@@ -18,7 +18,7 @@ completion.
 | `user-outcome` | `user-outcome-validation.md` | `review/user-outcome-review.json` |
 | `content-experience` | `content-experience-review.md` | `review/content-experience-review.json` |
 
-All paths are relative to `prompts/outputs/current/`.
+For outcome runs, paths are relative to the selected isolated run. Reports project the manifest; legacy report shapes do not independently grant outcome acceptance. Scope reviews to the active slice or full release as appropriate.
 
 ## Reviewer isolation
 
@@ -126,15 +126,16 @@ Only `verified_complete` may use `nextTask: null`. `remediation_required`
 names a locally runnable next task and requires `review/remediation-plan.md`
 covering every `locallyActionable` unresolved finding. `blocked` names
 `owner-decisions.md`, whose open rows cover every `needsOwner` finding; it
-needs no remediation plan, because nothing in it is runnable. Findings
-resolved by a `decided` or `accepted-risk` row are not unresolved.
+needs no remediation plan, because nothing in it is runnable. A decided/accepted-risk row is not behavioral evidence; only authorized scope decisions may exclude waivable duties, and exclusions remain exclusions.
 
 Run:
 
 ```bash
-bash .ai-prompts/scripts/validate-semantic-review.sh prompts/outputs/current
+bash .ai-prompts/scripts/validate-semantic-review.sh <run-directory>
 ```
 
 Exit `0` permits the executor to proceed to honest handoff. Exit `1` means the
 review is structurally valid but remediation or a blocker remains. Exit `2`
 means the review bundle is missing or internally inconsistent.
+
+For outcome acceptance/release also run `validate-delivery.sh` at the appropriate stage. Inspect actual raw outputs and independently exercise the primary result. Authenticate reviewer/owner provenance through trusted receipts bound to scope/artifact digests; self-authored identity/approval flags are insufficient. Required reviews stay pending without that access.

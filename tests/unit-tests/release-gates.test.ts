@@ -122,6 +122,14 @@ describe('release gate evaluation', () => {
 
     expect(result.results.find((item) => item.id === 'GATE-SCORE-001')?.decision).toBe('fail');
     expect(result.promotionAllowed).toBe(true);
-    expect(result.releaseReady).toBe(true);
+    // Passing supplied thresholds is not proof that every product obligation
+    // was supplied, or that its evidence was observed on the release target.
+    expect(result.releaseReady).toBe(false);
+  });
+
+  it('does not turn an optional-only gate list into a product release claim', () => {
+    const result = evaluateReleaseGates([gate({ kind: 'scorecard', blocking: false })]);
+    expect(result.promotionAllowed).toBe(true);
+    expect(result.releaseReady).toBe(false);
   });
 });

@@ -77,3 +77,5 @@ contract with `dimension: content-experience`. Record the checklist as
 `validationScenarios` (one scenario per item above, with outcome and
 evidence). This report is the primary evidence for the `fresh-account`
 release gate (`GATE-FRESH-ACCOUNT-001`).
+
+For outcome runs bind every claim to the manifest outcome/check, original requirement, actual target/configuration/provider mode and retained current raw evidence. Inspect actual composed captures for visual surfaces and independently exercise the primary consumer journey plus relevant recovery. A component catalogue, build or fake provider cannot prove release readiness. Required acceptance needs resolved trusted owner/reviewer provenance; self-authored approval flags are insufficient. Preserve full release obligations and pending decisions.

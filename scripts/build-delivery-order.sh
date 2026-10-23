@@ -41,6 +41,12 @@ resolve_script_dir() {
 }
 SCRIPT_DIR="$(resolve_script_dir)"
 
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" project
+  exit $?
+fi
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "❌ $TARGET_DIR does not exist" >&2
   exit 3

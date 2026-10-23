@@ -67,9 +67,9 @@ manual wiring is not required. If you are setting up by hand, include
 this block near the top of your project's `AGENTS.md`:
 
 ```markdown
-## AI Prompt Library Steering (Auto-Managed)
-Always load and follow:
-- `.ai-prompts/prompts/steering/library-context.md`
-- `.ai-prompts/prompts/steering/architecture-guard.md`
-- `.ai-prompts/prompts/steering/change-review.md`
+## AI Prompt Library Steering
+Before nontrivial work, read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`.
+Follow its four-mode routing and selected run contract; load other assets only on demand.
 ```
+
+New runs use isolated outcome manifests, bounded slices and actual target evidence. The root checkpoint selects the run with `run_directory`. Do not override this with exhaustive IDE-native feature/task generation, automatic resets or self-granted acceptance. See `.ai-prompts/docs/delivery-contract.md`.

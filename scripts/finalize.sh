@@ -52,6 +52,15 @@ resolve_script_dir() {
   cd -P "$(dirname "$source")" && pwd
 }
 SCRIPT_DIR="$(resolve_script_dir)"
+
+# Outcome runs share scope and evidence validation; legacy plans retain their reader.
+# shellcheck source=lib/delivery.sh
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" plan
+  exit $?
+fi
+
 PACKAGE_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 # shellcheck source=.ai-prompts/scripts/lib/toolchain.sh
 # shellcheck disable=SC1091

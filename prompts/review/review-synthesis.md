@@ -6,7 +6,7 @@ Merge independent dimension reports into one canonical, lossless review result.
 
 ## Inputs
 
-All seven required dimension reports for one source revision.
+All eight required dimension reports for one source revision.
 
 ## Method
 
@@ -33,13 +33,10 @@ All seven required dimension reports for one source revision.
   findings go to the remediation planner. `needsOwner` findings (closure
   needs a credential, account, money, legal or policy call, risk
   acceptance or external capacity) get a `decisionId` from
-  `prompts/outputs/current/owner-decisions.md`: reuse the row that already
+  the selected run’s `owner-decisions.md`: reuse the row that already
   covers the same question, otherwise add one row with options and a
   recommendation. One row per question, never one per finding.
-- A finding whose row is `decided` or `accepted-risk` is resolved by that
-  decision. List it under `resolvedByDecision`, not under unresolved, and
-  note the re-raise in `reviewerDefects` when a dimension reported it
-  again without new evidence.
+- A decision closes only what its actual authority/provenance permits. It cannot prove missing behavior, erase explicit requirements without owner authority, or waive non-waivable duties. Retain exclusions as exclusions and preserve unresolved proof obligations.
 - Collapse repeats across dimensions: eight reports describing the same
   defect in the same behaviour are one canonical finding with eight
   sources, not eight findings.
@@ -49,7 +46,7 @@ All seven required dimension reports for one source revision.
 Write `review/review-synthesis.json` with:
 
 - `schemaVersion`, `synthesisId`, `sourceRevision`, and `synthesizedAt`.
-- `includedReviewIds` containing all seven review IDs.
+- `includedReviewIds` containing all eight review IDs.
 - `canonicalFindings` containing every unique finding, each with
   `closure: "locallyActionable" | "needsOwner"` and, for `needsOwner`,
   its `decisionId`.
@@ -59,3 +56,5 @@ Write `review/review-synthesis.json` with:
 - `unresolvedFindingIds`, `blockingFindingIds`, and `resolvedFindingIds`.
 - `completionRecommendation`.
 - `rationale` and evidence references.
+
+For outcome acceptance/release also run `validate-delivery.sh` at the appropriate stage. Inspect actual raw outputs and independently exercise the primary result. Authenticate reviewer/owner provenance through trusted receipts bound to scope/artifact digests; self-authored identity/approval flags are insufficient. Required reviews stay pending without that access.

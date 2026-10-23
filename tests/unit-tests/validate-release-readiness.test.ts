@@ -302,7 +302,7 @@ describe('validate-release-readiness.sh', () => {
       )).toMatchObject({
         package_ready: true,
         promotion_allowed: true,
-        release_ready: true,
+        release_ready: false,
         blocking_gate_ids: [],
       });
     } finally {

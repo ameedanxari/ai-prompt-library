@@ -1,5 +1,6 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
+import { resolveDeliveryScope } from '../delivery/index.js';
 
 export const PHASES = ['foundation', 'mvp', 'expand', 'polish'] as const;
 export const ARTIFACT_KINDS = [
@@ -199,6 +200,11 @@ export function parsePlanTaskFile(
 }
 
 export function parsePlanTaskDirectory(targetDir: string): ParsedPlanFile[] {
+  const delivery = resolveDeliveryScope(targetDir);
+  if (delivery) {
+    return delivery.activeFiles.filter((file) => isPlanTaskFilename(path.basename(file)))
+      .sort().map((file) => parsePlanTaskFile(path.basename(file), fs.readFileSync(file, 'utf8'), file));
+  }
   const entries = fs.readdirSync(targetDir)
     .filter(isPlanTaskFilename)
     .sort();

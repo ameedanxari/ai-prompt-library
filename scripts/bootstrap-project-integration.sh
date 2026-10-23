@@ -40,6 +40,7 @@ mkdir -p prompts/outputs/current/logs/build-gate
 mkdir -p prompts/outputs/current/logs/harness
 mkdir -p prompts/outputs/current/logs/revise
 mkdir -p prompts/outputs/current/logs/safety
+mkdir -p prompts/outputs/runs
 mkdir -p prompts/outputs/archive
 mkdir -p prompts/outputs/field-tests
 mkdir -p prompts/working_copy
@@ -93,37 +94,28 @@ MANAGED_BLOCK=""
 read -r -d '' MANAGED_BLOCK <<'EOF' || true
 ## AI Prompt Library Steering (Auto-Managed — do not edit)
 
-Before handling any non-trivial request, read this one file:
-1. `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` — entry point.
+Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` before
+non-trivial work. It chooses one mode: Trivial, Execute, Gap-closure or
+Greenfield, and loads only the applicable engine. External input and research
+policies load only when relevant; do not auto-load the module catalogue.
 
-The entry point's routing logic selects ONE of four modes and then loads
-the matching engine on demand:
-- **Trivial** (single-file edit) → no engine load.
-- **Execute** (validated plan exists) → loads `.ai-prompts/prompts/orchestrators/executor.md`.
-- **Gap-closure** (existing codebase, audit/finish requested) → loads `.ai-prompts/prompts/orchestrators/audit-and-remediate.md`.
-- **Greenfield** (new project) → loads `.ai-prompts/prompts/orchestrators/drill-down-engine.md`.
+New runs use `delivery-manifest.json` in an isolated directory under
+`prompts/outputs/runs/`. Keep the full outcome and release scope; expand only
+the next bounded slice. Prove a useful running outcome before expanding
+breadth. Visual products require inspected composed screens and journeys;
+headless products require actual consumer/operational evidence.
 
-If `MY_PROJECT.md` lists external material or the project already has
-source code under `working_copy/`, the entry point also reads
-`.ai-prompts/prompts/orchestrators/external-input-handler.md` before the
-chosen engine.
+Resume through the checkpoint's `run_directory`; validate it and load only
+the active slice. Invalid or missing migrated state must not fall back to
+legacy processing. Existing legacy plans remain inspectable without deleting
+or rewriting their history. Never infer product acceptance from task counts.
 
-Do NOT auto-load anything else under `.ai-prompts/prompts/orchestrators/`
-without following the entry-point routing.
+Follow the checkpoint protocol and persisted authorization. User-requested
+planning/review stops require the user's response. Explicit authorization to
+finish permits ordinary slice transitions within scope, but is not design
+approval, scope-change consent, or permission for consequential external acts.
+Surface a runnable target, evidence and limitations at each product checkpoint.
 
-**Resumption.** If the user says `Continue` (or any resumption verb), the
-entry point picks the cheapest valid path automatically: checkpoint
-resumption if `prompts/outputs/current/resumption-checkpoint.md` exists,
-execution-phase fast path if `execution-log.md` has a non-null `next_task`,
-or a full force-reload only when neither shortcut is available (or the
-user explicitly asks for `rebuild` / `force reload`). If neither artifact
-exists and the user said only `Continue`, the entry point surfaces an
-ambiguous-resumption error.
-
-Follow the entry point's checkpoint protocol exactly. At every engine
-checkpoint, stop, summarize progress, and wait for the user to say
-`Continue` before moving to the next step. Do not auto-advance across
-planning checkpoints.
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
 

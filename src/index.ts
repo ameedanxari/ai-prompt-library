@@ -1,5 +1,6 @@
 export * from './completion/completion-state.js';
 export * from './execution/execution-status.js';
+export * from './execution/delivery-gate.js';
 export * from './release/release-gates.js';
 export * from './review/index.js';
 export * from './task-contract/index.js';

@@ -9,6 +9,7 @@
     "sourceMap": false
   },
   "include": [
+    "src/delivery/**/*.ts",
     "src/index.ts",
     "src/completion/**/*.ts",
     "src/execution/**/*.ts",

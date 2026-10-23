@@ -4,7 +4,7 @@
 When the drill-down engine (or any orchestrator) uses this template:
 1. Every placeholder — including {{variables}}, <TBD>, [project name], and generic
    field/function/endpoint names — MUST be replaced with project-specific values
-   before output is written to prompts/outputs/current/.
+   before output is written to the selected run directory.
 2. The template filename MUST NOT appear in task output. Dissolve the template
    into concrete content; do not reference its source.
 3. No strings beginning with ".ai-prompts/prompts/" may appear in the output
@@ -28,7 +28,7 @@ Define a reusable component library aligned to the product’s mockups and inter
    requested redesign or rebrand.
 7. Pair component catalog work with a static design-system review artifact
    at `docs/design-system/review/index.html` so the user can visually review
-   components, variants, states, and reference evidence before screen work.
+   components, variants, states, and reference evidence needed alongside the active composed-screen proof.
 
 ## Required Output Sections
 Ensure `design-system-component-catalog.md` includes:

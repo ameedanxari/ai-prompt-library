@@ -15,6 +15,26 @@
 set -uo pipefail
 
 TARGET="${1:-prompts/outputs/current/resumption-checkpoint.md}"
+
+delivery_script_source="${BASH_SOURCE[0]}"
+while [ -L "$delivery_script_source" ]; do
+  delivery_script_base="$(cd -P "$(dirname "$delivery_script_source")" && pwd)"
+  delivery_script_link="$(readlink "$delivery_script_source")"
+  case "$delivery_script_link" in
+    /*) delivery_script_source="$delivery_script_link" ;;
+    *) delivery_script_source="$delivery_script_base/$delivery_script_link" ;;
+  esac
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$delivery_script_source")" && pwd)"
+
+# Outcome runs share scope and evidence validation; legacy plans retain their reader.
+# shellcheck source=lib/delivery.sh
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET"; then
+  delivery_run_gate "$TARGET" resolve
+  exit $?
+fi
+
 if [ -d "$TARGET" ]; then
   CHECKPOINT="$TARGET/resumption-checkpoint.md"
 else

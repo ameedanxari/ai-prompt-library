@@ -1,7 +1,7 @@
 # Design System Modules
 
 ## Purpose
-Provide explicit prompt modules for building and enforcing a production-ready design system before screen-level implementation.
+Provide explicit prompt modules for building and enforcing a design system alongside the active composed-screen proof.
 
 ## Modules
 - `token-architecture.md` - Defines design tokens, naming, and platform mappings.
@@ -20,58 +20,14 @@ Provide explicit prompt modules for building and enforcing a production-ready de
   depth, and motion rules for artful native UI without sacrificing
   accessibility.
 - `screen-fidelity-audit.md` - Verifies screen output fidelity against provided mockups.
-- `component-implementation-sequencing.md` - Enforces reusable component foundation tasks before screen-level implementation.
+- `component-implementation-sequencing.md` - Sequences necessary reusable components within the active slice.
 
-## Required Outputs
-When these modules are selected, they should drive:
-- `prompts/outputs/current/ui-reference-source-map.md` when greenfield
-  UI exists without authoritative design context.
-- `prompts/outputs/current/features-*.md` feature specs that identify
-  token, component, state, responsive, and accessibility requirements.
-- `prompts/outputs/current/tasks-*.md` implementation prompts that
-  sequence token/component foundation before screen work.
-- `docs/DESIGN_TOKENS.md` (auto-generated)
-- `docs/design-system/review/index.html` (static visual review artifact
-  linking token/component decisions to Mobbin/Figma/product/platform
-  reference evidence)
-- `docs/DESIGN_FIDELITY_AUDIT.md` (auto-generated)
-- `docs/DESIGN_SYSTEM_GOVERNANCE.md` (governance charter)
-- `docs/DESIGN_SYSTEM_VERSIONING.md` (versioning policy)
-- `.github/workflows/design-token-validation.yml` (CI/CD enforcement)
-- Infrastructure: `src/core/design-tokens/tokens.json`, generation scripts, linting rules
+## Slice-scoped use
 
-> **Path note:** every `docs/…` reference in these modules denotes a
-> file the agent **creates in the consumer project** (`<project>/docs/…`)
-> at execution time — not a file in this library. (Library docs are
-> always referenced as `.ai-prompts/docs/…`.)
-- Current task prompts must dissolve module guidance directly. Do not
-  reference legacy template paths in generated output.
+Select only modules needed for the actual visual outcome or concrete design risk. Create only useful supporting artifacts; no automatic governance, token-generation or catalogue inventory is required before composed screens. Existing tokens/components should be reused and extended.
 
-## Example Composition
-```markdown
-#[[module:design-system/token-architecture.md]]
-#[[module:design-system/token-generation-pipeline.md]]
-#[[module:design-system/component-system.md]]
-#[[module:design-system/component-implementation-pattern.md]]
-#[[module:design-system/loading-states-and-animations.md]]
-#[[module:design-system/design-to-code-validation.md]]
-#[[module:design-system/governance-and-maintenance.md]]
-#[[module:design-system/design-system-review-artifact.md]]
-#[[module:design-system/dashboard-screen-patterns.md]]
-#[[module:design-system/data-visualization-system.md]]
-#[[module:design-system/native-visual-effects-and-motion.md]]
-#[[module:design-system/component-implementation-sequencing.md]]
-#[[module:design-system/screen-fidelity-audit.md]]
-```
+Inspect actual provided visual references and preserve source constraints; inaccessible references remain uncertainty. The active slice includes relevant content, accessibility, responsive/device states and recovery. A catalogue or token approval cannot establish composed-screen acceptance: capture and inspect the actual application entry, useful success and relevant recovery on its declared target.
 
-This composition ensures:
-1. Tokens extracted and documented (token-architecture)
-2. Token generation infrastructure established (token-generation-pipeline)
-3. Components defined (component-system)
-4. Component structure standardized (component-implementation-pattern)
-5. Loading states and animations defined with motion tokens (loading-states-and-animations)
-6. Design-to-code alignment enforced (design-to-code-validation)
-7. Governance and maintenance processes established (governance-and-maintenance)
-8. Static HTML review artifact generated and presented for user feedback
-9. Implementation sequencing enforced (component-implementation-sequencing)
-10. Fidelity audits performed (screen-fidelity-audit)
+Keep detailed work within the shared slice budget and preserve deferred scope concisely. Required owner/independent review needs trustworthy provenance bound to reviewed artifacts and scope. Module examples are guidance, not authorization to invent scope, external actions or approval.
+
+Consumer-project `docs/…` paths in modules are examples for applicable supporting artifacts. Library documentation uses `.ai-prompts/docs/…`. Dissolve guidance into project-specific instructions rather than referencing templates in executable output.

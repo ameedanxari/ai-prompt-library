@@ -32,3 +32,5 @@ production adapters.
 
 Write `review/integration-review.json` using the dimension report contract with
 `dimension: integration-composition`.
+
+For outcome runs bind every claim to the manifest outcome/check, original requirement, actual target/configuration/provider mode and retained current raw evidence. Inspect actual composed captures for visual surfaces and independently exercise the primary consumer journey plus relevant recovery. A component catalogue, build or fake provider cannot prove release readiness. Required acceptance needs resolved trusted owner/reviewer provenance; self-authored approval flags are insufficient. Preserve full release obligations and pending decisions.

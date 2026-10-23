@@ -37,6 +37,15 @@ resolve_script_dir() {
 }
 SCRIPT_DIR="$(resolve_script_dir)"
 
+# Outcome runs share scope and evidence validation; legacy plans retain their reader.
+# shellcheck source=lib/delivery.sh
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" execute
+  exit $?
+fi
+
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "❌ target directory does not exist: $TARGET_DIR" >&2
   echo "usage: bash scripts/validate-ready-to-execute.sh [target-dir]" >&2

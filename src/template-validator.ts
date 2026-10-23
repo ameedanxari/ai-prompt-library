@@ -60,48 +60,35 @@ export class TemplateValidator {
   }
 
   validateStructure(): TemplateStructure {
-    const content = this.templateContent;
+    // Ignore illustrative markdown inside code fences when identifying form fields.
+    const content = this.templateContent.replace(/```[\s\S]*?```/g, '');
+    const headings = [...content.matchAll(/^##[ \t]+(.+?)[ \t]*$/gm)].map(match => match[1].trim());
+    const section = (pattern: RegExp): boolean => headings.some(heading => pattern.test(heading));
+    const required = headings.filter(heading => /\([^)]*\brequired\b[^)]*\)/i.test(heading));
+    const brief = section(/^brief\b/i);
+    const optional = /\boptional\b/i.test(content);
+    const config = section(/(?:tech(?:nical)? preferences|optional config)/i);
+    const references = section(/reference (?:material|assets)|external material|existing source/i);
+    const platforms = section(/platforms|delivery targets/i);
+    const constraints = section(/constraints/i);
+    const roles = section(/users|roles|outcomes/i);
+    const exclusions = section(/restrict|scope exclusions|non-goals/i);
+    const gettingStarted = /(?:save(?: this file)? as|minimum you must do|getting started|quick start)/i.test(content);
+    const proof = section(/first proof|acceptance|dry[- ]run/i) || /\bdry[- ]run\b/i.test(content);
+    const capabilities = section(/system capabilities|defaults the library/i) || (platforms && constraints);
+    const title = /^#[ \t]+My Project[ \t]*$/mi.test(content);
 
     return {
-      hasRequiredBrief: this.hasRequiredBriefField(content),
-      hasOptionalFields: this.hasOptionalFields(content),
-      servesAsReadme: this.servesAsReadme(content),
-      hasProjectBriefSection: this.hasSection(content, 'Brief'),
-      hasOptionalConfigSection: this.hasSection(content, 'Tech preferences'),
-      hasReferenceAssetsSection: this.hasSection(content, 'Reference material'),
-      hasDryRunOption: true, // No longer a dedicated section in the MD, handled by engine
-      hasGettingStartedSection: true, // Integrated into overview
-      hasSystemCapabilitiesSection: true // Replaced by "Defaults the library will assume"
+      hasRequiredBrief: brief && required.length === 1 && /^brief\b/i.test(required[0]),
+      hasOptionalFields: optional && config && references && platforms && constraints && roles && exclusions,
+      servesAsReadme: title && gettingStarted && brief && optional,
+      hasProjectBriefSection: brief,
+      hasOptionalConfigSection: config,
+      hasReferenceAssetsSection: references,
+      hasDryRunOption: proof,
+      hasGettingStartedSection: gettingStarted,
+      hasSystemCapabilitiesSection: capabilities,
     };
-  }
-
-  private hasRequiredBriefField(content: string): boolean {
-    return content.toLowerCase().includes('## brief') &&
-           content.toLowerCase().includes('optional');
-  }
-
-  private hasOptionalFields(content: string): boolean {
-    const optionalFields = [
-      'Platforms',
-      'Tech preferences',
-      'Users',
-      'Constraints',
-      'Reference',
-      'Restrict',
-      'Non-goals'
-    ];
-
-    return optionalFields.every(field =>
-      content.toLowerCase().includes(field.toLowerCase())
-    );
-  }
-
-  private servesAsReadme(content: string): boolean {
-    const hasTitle = /#\s+My Project/i.test(content);
-    const hasDescription = content.toLowerCase().includes('minimum you must do');
-    const hasInstructions = content.toLowerCase().includes('brief');
-
-    return hasTitle && hasDescription && hasInstructions;
   }
 
   /**

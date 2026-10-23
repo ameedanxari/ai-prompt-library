@@ -84,6 +84,7 @@ describe('package metadata', () => {
       sourceMap: false,
     });
     expect(buildConfig.include).toEqual([
+      'src/delivery/**/*.ts',
       'src/index.ts',
       'src/completion/**/*.ts',
       'src/execution/**/*.ts',
@@ -107,6 +108,7 @@ describe('package metadata', () => {
 
     expect(pkg.files).toEqual(expect.arrayContaining([
       'dist/index.*',
+      'dist/delivery',
       'dist/completion',
       'dist/execution',
       'dist/release',
@@ -215,6 +217,10 @@ describe('package metadata', () => {
 
     for (const expectedPath of [
       'dist/index.js',
+      'dist/delivery/index.js',
+      'dist/execution/delivery-gate.js',
+      'dist/execution/delivery-cli.js',
+      'scripts/validate-delivery.sh',
       'dist/index.d.ts',
       'dist/completion/completion-state.js',
       'dist/completion/completion-state.d.ts',
@@ -330,7 +336,9 @@ describe('package metadata', () => {
           "const releaseGates = await import('ai-prompt-library/release-gates');",
           "const semanticReview = await import('ai-prompt-library/semantic-review');",
           "const taskContract = await import('ai-prompt-library/task-contract');",
+          "const delivery = await import('ai-prompt-library/delivery');",
           'console.log(JSON.stringify({',
+          '  delivery: typeof delivery.validateDeliveryRun,',
           '  rootReport: typeof root.buildTaskContractReport,',
           '  completion: typeof root.deriveCompletionState,',
           '  releaseGate: typeof releaseGates.evaluateReleaseGates,',
@@ -345,6 +353,7 @@ describe('package metadata', () => {
         stdio: 'pipe',
       });
       expect(JSON.parse(importOutput)).toEqual({
+        delivery: 'function',
         rootReport: 'function',
         completion: 'function',
         releaseGate: 'function',
@@ -352,6 +361,18 @@ describe('package metadata', () => {
         parser: 'function',
         directoryReport: 'function',
       });
+
+      const deliveryHelp = execFileSync(path.join(consumerDir, 'node_modules', '.bin', 'ai-prompt-validate-delivery'), ['--help'], { cwd: consumerDir, encoding: 'utf8' });
+      expect(deliveryHelp).toContain('plan|execute|advance|release');
+      let refused = '';
+      try {
+        execFileSync(path.join(consumerDir, 'node_modules', '.bin', 'ai-prompt-validate-delivery'), [outputDir], { cwd: consumerDir, stdio: 'pipe' });
+      } catch (error) {
+        const failure = error as { status: number; stderr: Buffer };
+        expect(failure.status).toBe(2);
+        refused = failure.stderr.toString();
+      }
+      expect(refused).toContain('manifest required');
 
       let readyOutput = '';
       try {

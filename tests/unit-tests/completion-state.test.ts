@@ -38,6 +38,14 @@ const dimensions = (
 });
 
 describe('completion state model', () => {
+  it('cannot elevate supplied passing dimensions to verified full release', () => {
+    const supplied = dimensions();
+    for (const value of Object.values(supplied)) value.status = 'pass';
+    const report = buildCompletionReport({ generatedBy: 'test', nextTask: null, dimensions: supplied });
+    expect(report.state).toBe('verified_production');
+    expect(report.verificationScope).toBe('caller-supplied-dimensions');
+  });
+
   it('does not expose a bare complete terminal state', () => {
     expect(COMPLETION_STATES).not.toContain('complete');
   });

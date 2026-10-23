@@ -1,30 +1,5 @@
 # Orchestrators
 
-## Active (the only files you should auto-load)
+Start with `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`. It selects Trivial, Execute, Gap-closure or Greenfield. New-run engines share `rolling-delivery.md`: concise full outcome contract, bounded representative proof, evidence-backed acceptance, then subsequent slices. `legacy-workflow.md` is explicitly for existing legacy records.
 
-| File | Purpose |
-|---|---|
-| `ai-agent-entry-point.md` | Primary entry. Routes every request into one of four modes. |
-| `drill-down-engine.md` | **Greenfield mode.** Seed → Features → Tasks. Emits user-brief feature epics PLUS the production-readiness baseline. |
-| `audit-and-remediate.md` | **Gap-closure mode.** For existing codebases. Audit → Gaps → Remediation. |
-| `executor.md` | **Execute mode.** Runs an existing plan against real code. Maintains a YAML handoff envelope in `execution-log.md` for cross-session resume. |
-| `revise-outputs.md` | Runs between the planning engine and the executor. Checks coverage, schema, baseline completeness, external-services manifest, user-story linkage, platform coverage, Stream A artifacts, and source-ledger / regulated architecture quality. Canonical `revise-report.md` is written by `.ai-prompts/scripts/revise.sh`, not by hand. |
-| `content-system.md` | **Step 2.9 for UI projects.** Persona voice pack, voice/tone guide, glossary, page-level content model, first-run experience, seed/demo policy. UI tasks cite its String IDs. |
-| `external-input-handler.md` | Runs first when user provides designs / specs / existing code. |
-| `module-selection-index.md` | Intent → module lookup. Consulted at expansion time (not pre-loaded); load as many modules as the current expansion genuinely needs. |
-| `research-and-fanout-policy.md` | Mandatory research/source-ledger and worker fan-out policy for regulated, cloud, security, AI, large-corpus, and high-stakes planning. |
-| `baseline-task-shapes.md` | Schema rules for baseline epics (auth, admin, i18n, theming, a11y, tests, CI/CD, IaC, app-store, debug, privacy). Consulted during Step 3 of either engine. |
-| `self-maintain.md` | Runs the library's engines on the library itself. For maintainer use. Writes to `prompts/outputs/self-maintain/`, not `prompts/outputs/current/`. |
-
-See `../AGENTS.md` for the full flow, mode-selection logic, and hard
-rules.
-
-## Deprecated (not present — reference only)
-
-Earlier versions of this library shipped ~25 auxiliary orchestrators
-(auto setup, auto routing, stage pipeline, state management, quality
-gates, error recovery, COVE, A/B testing, parallel execution, self-
-healing, intelligent caching, template composition, etc.). Those have
-all been removed. If you encounter a consumer project whose
-`AGENTS.md` still references any of those files, run
-`bash .ai-prompts/scripts/reset-integration.sh --yes` from that project's root.
+Load external intake/research conditionally and specialist blueprints/modules only for actual slice/risk needs. `revise-outputs.md`, `semantic-review-and-validation.md`, `baseline-task-shapes.md` and `module-selection-index.md` share the same delivery contract; none requires all-project feature/task expansion. Outputs for new runs are isolated beneath `prompts/outputs/runs/<run-id>/`, selected by the root checkpoint.

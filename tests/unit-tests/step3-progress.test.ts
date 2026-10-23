@@ -113,35 +113,22 @@ describe('step3-progress.sh', () => {
   });
 });
 
-describe('integration with engine + steering + revise', () => {
-  it('engine Step 3 section references the progress script', () => {
-    const body = fs.readFileSync(
-      path.join(
-        REPO_ROOT,
-        'prompts',
-        'orchestrators',
-        'drill-down-engine.md',
-      ),
-      'utf8',
-    );
-    expect(body).toMatch(/bash \.ai-prompts\/scripts\/step3-progress\.sh/);
-    expect(body).toMatch(/Do NOT advance to the Revise Gate/);
+describe('legacy progress versus outcome contract', () => {
+  it('keeps legacy progress documented as file presence, not behavioral completion', () => {
+    const legacy = fs.readFileSync(path.join(REPO_ROOT, 'prompts/orchestrators/legacy-workflow.md'), 'utf8');
+    expect(legacy).toContain('step3-progress.sh');
+    expect(legacy).toMatch(/file-presence checklist/);
+    expect(legacy).toMatch(/not evidence that behavior works/);
+    const engine = fs.readFileSync(path.join(REPO_ROOT, 'prompts/orchestrators/drill-down-engine.md'), 'utf8');
+    expect(engine).toContain('rolling-delivery.md');
+    expect(engine).not.toMatch(/Do NOT advance to the Revise Gate/);
   });
 
-  it('steering file carries the progress-checklist guard', () => {
-    const body = fs.readFileSync(
-      path.join(REPO_ROOT, 'prompts', 'steering', 'library-context.md'),
-      'utf8',
-    );
-    expect(body).toMatch(/Progress-checklist guard/);
-    expect(body).toMatch(/step3-progress\.sh/);
-  });
-
-  it('revise.sh points at progress script from the coverage-gap section', () => {
-    const body = fs.readFileSync(
-      path.join(REPO_ROOT, 'scripts', 'revise.sh'),
-      'utf8',
-    );
-    expect(body).toMatch(/step3-progress\.sh/);
+  it('dispatches outcome runs through the shared gate and retains explicit legacy coverage help', () => {
+    const script = fs.readFileSync(SCRIPT, 'utf8');
+    expect(script).toMatch(/delivery_requested/);
+    expect(script).toMatch(/delivery_run_gate/);
+    const revise = fs.readFileSync(path.join(REPO_ROOT, 'scripts/revise.sh'), 'utf8');
+    expect(revise).toMatch(/step3-progress\.sh/);
   });
 });

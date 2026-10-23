@@ -30,9 +30,7 @@ user outcomes explicitly.
   the first remediation task.
 - `blocked`: every open finding is `needsOwner` (attached to an
   `owner-decisions.md` row) or waits on an environment the agent cannot
-  provide; `nextTask` is `owner-decisions.md`. Findings whose row is
-  `decided` or `accepted-risk` are resolved by that decision and are not
-  counted as open.
+  provide; `nextTask` is `owner-decisions.md`. Owner decisions do not prove behavior or waive hard obligations; only authorized scope changes may exclude waivable duties, and exclusions are not successful outcomes.
 - `partial`: review is incomplete or required evidence is unavailable but
   additional local validation can proceed.
 
@@ -50,3 +48,5 @@ mechanical checks are supporting evidence only.
 Write `review/completion-decision.json` containing decision, source revision,
 mechanical gate outcomes and evidence, semantic and functional pass flags,
 unresolved finding IDs, next task, rationale, and evidence paths.
+
+For outcome acceptance/release also run `validate-delivery.sh` at the appropriate stage. Inspect actual raw outputs and independently exercise the primary result. Authenticate reviewer/owner provenance through trusted receipts bound to scope/artifact digests; self-authored identity/approval flags are insufficient. Required reviews stay pending without that access.

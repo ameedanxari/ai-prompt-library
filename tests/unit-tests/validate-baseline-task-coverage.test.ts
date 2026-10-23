@@ -33,47 +33,15 @@ function withSandbox(run: (sandbox: string) => void) {
 }
 
 describe('validate-baseline-task-coverage.sh', () => {
-  it('documents every artifact kind, evidence level, and legacy migration rule', () => {
+  it('keeps baseline obligations applicable and units cohesive across artifact kinds', () => {
     const rules = fs.readFileSync(BASELINE_RULES, 'utf8');
-
-    for (const kind of [
-      'runtime-source',
-      'test-source',
-      'docs',
-      'config',
-      'asset',
-      'generated-evidence',
-      'external-action',
-    ]) {
-      expect(rules).toContain(`\`${kind}\``);
-    }
-    for (const level of [
-      'static',
-      'compile',
-      'unit',
-      'integration',
-      'ui-fixture',
-      'device',
-      'manual-review',
-      'external',
-    ]) {
-      expect(rules).toContain(`\`${level}\``);
-    }
-    expect(rules).toMatch(/Non-runtime work MUST NOT inject repository, persistence, UI/);
-    expect(rules).toMatch(/classified as `schemaVersion: legacy`/);
-    expect(rules).toMatch(/legacy-task-schema/);
-    expect(rules).toMatch(/#### `docs` task shape/);
-    expect(rules).toMatch(/docs\/privacy\/data-inventory\.md/);
-    expect(rules).toMatch(/#### `config` task shape/);
-    expect(rules).toMatch(/npm pack --dry-run --json/);
-    expect(rules).toMatch(/#### `asset` task shape/);
-    expect(rules).toMatch(/verify-screenshot\.sh/);
-    expect(rules).toMatch(/#### `generated-evidence` task shape/);
-    expect(rules).toMatch(/idempotent regeneration command/);
-    expect(rules).toMatch(/#### `external-action` task shape/);
-    expect(rules).toMatch(/N\/A \(external account action\)/);
-    expect(rules).toMatch(/manual-review.*external-accounts\.md/s);
-    expect(rules).toMatch(/One task unit owns one artifact kind/);
+    expect(rules).toMatch(/obligation checks, not an automatic epic\/task inventory/);
+    expect(rules).toMatch(/Do not split by artifact kind or file/);
+    expect(rules).toMatch(/applicable safety\/legal duties, which cannot be waived/);
+    expect(rules).toMatch(/Deferred obligations remain ledger rows/);
+    expect(rules).toMatch(/Controlled-provider\/fake evidence remains labelled/);
+    expect(rules).toMatch(/Legacy record schemas are supported/);
+    for (const topic of ['Identity/roles', 'Consent/privacy', 'Data integrity', 'Visual experience', 'Accessibility', 'Observability/operations', 'Release/distribution', 'Native', 'Data/ML/AI', 'Infrastructure', 'Documents/media']) expect(rules).toContain(topic);
   });
 
   it('is executable', () => {

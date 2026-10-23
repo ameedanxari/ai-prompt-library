@@ -11,7 +11,7 @@ best practices, or safety-critical architecture.
 Before writing product, architecture, compliance, security, privacy,
 deployment, or AI-safety decisions, perform targeted research when any
 trigger below is present in the user brief, `MY_PROJECT.md`,
-`project-context.md`, `brief-keywords.md`, or source material:
+`project-context.md`, the outcome ledger, or source material:
 
 - Regulated domains: healthcare, finance, education records, child
   safety, legal, insurance, identity, controlled substances, medical
@@ -47,7 +47,7 @@ primary sources are unavailable, record that as a source-ledger risk.
 
 When research is mandatory, write or update:
 
-`prompts/outputs/current/source-ledger.md`
+`source-ledger.md` inside the selected isolated run directory
 
 Use this schema:
 
@@ -136,7 +136,7 @@ Each worker must output only this schema:
 - high | medium | low - <reason>
 ```
 
-The final synthesizer is responsible for one coherent output. It must
+Workers provide bounded source facts/risks, not exhaustive implementation plans. Keep research detail within the pending-detail budget unless a reviewed extension applies. The final synthesizer is responsible for one coherent output. It must
 resolve conflicts into ADRs, not preserve contradictory recommendations
 from multiple workers.
 

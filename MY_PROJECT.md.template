@@ -1,225 +1,62 @@
 # My Project
 
-> **Minimum you must do**: fill in the **Brief** section below and save
-> this file as `MY_PROJECT.md` at the root of your project.
-> Everything else on this page is **optional** — the library assumes
-> industry-standard defaults when fields are left blank.
->
-> **You do not need to read the rest of this file** if you are using the
-> Quick Start prompt (`.ai-prompts/QUICK_START.md`) — the agent will
-> gather everything it needs from you in plain language.
+Save as `MY_PROJECT.md` at the project root. The brief is required; other fields are optional. Leave uncertainty explicit. The library infers the smallest supported platform/capability set consistent with your brief, preserves every requested outcome and applicable release duty, and details the next bounded slice only.
 
----
+## Brief (required)
 
-## Brief (required — the ONLY required field)
+Who is this for? What must they be able to do? What is the first useful result?
 
-_One paragraph. What is the product? Who is it for? Why does it exist?_
+Example: A small yoga studio needs customers to book and pay for classes from their phones, and its owner to manage the weekly schedule and see payments. A responsive web experience may satisfy this brief; native apps are not automatically required.
 
-_Write in plain language. You can be vague about tech ("like Spotify but
-for audiobooks") or specific ("a React PWA for restaurant owners"). The
-library will fill in the rest._
+## Product identity
 
-**A good brief always answers three things: WHO it's for, WHAT they
-can do with it, and WHY it matters.** If you cover those three, the
-rest is optional.
+- Product name:
+- Canonical IDs/package names (if already established):
+- Default locale:
 
-> **Worked example** — a complete brief:
->
-> > A room-booking app for a 10-person yoga studio in Portland.
-> > Customers book and pay for classes from their phones; the owner
-> > manages the weekly schedule and sees who paid, from a simple
-> > dashboard.
->
-> **What the library infers from it:**
-> - _Who / what / why:_ customers (book + pay for classes), the studio
->   owner (manage schedule, track payments) — the "why" is a studio
->   too small for off-the-shelf booking software.
-> - _Platforms:_ "from their phones" → iPhone + Android apps; "simple
->   dashboard" → website. (All three — the default holds.)
-> - _Users / roles:_ Customer, Studio Owner (an admin role is implied).
-> - _Baseline:_ logins, payments (Stripe), an admin panel, notifications
->   for booking confirmations.
-> - _Non-goals:_ no class-content streaming, no multi-studio support,
->   no waitlist marketplace — none of that was asked for.
->
-> **Warning:** the vaguer your brief, the more the library assumes —
-> more platforms, more baseline features, more tasks. A one-liner like
-> "a fitness app" gets the maximum defaults: the longest, most
-> expensive run. Two specific sentences beat a vague paragraph.
+## Required outcomes and roles
 
-### Alternative: answer 3 questions instead
+List every important actor and observable result, including staff/vendor/operational roles when required. Do not omit later release scope to make the first slice smaller.
 
-_If the blank box above feels intimidating, delete it and answer these
-three questions instead. (The Quick Start agent asks one question and
-infers the rest — these three are for when you're filling this file in
-yourself.)_
+## Platforms and actual delivery targets
 
-1. **What should people be able to DO with this?** (the 2–3 most
-   important actions — e.g. "book a class, pay for it, cancel it")
-2. **Who is it for, specifically?** ("yoga studio owners with under 20
-   staff" — not "users")
-3. **What does success look like on day one?** (the one outcome that
-   matters most — e.g. "a customer can book and pay without calling
-   the studio")
+List requested web/native/desktop/API/SDK/CLI/data/infrastructure/document/media targets. If unspecified, the agent proposes the smallest applicable set and records uncertainties. “On phones” does not automatically authorize both mobile stores. Specify actual environments, devices/consumers and release/package expectations if known.
 
----
+## Existing source and reference material
 
-## Product identity (optional — canonical names and IDs)
+List source paths, specs, designs, live targets and authoritative requirements, or put files in `working_copy/`. The agent binds source versions/digests, treats material as product facts rather than agent instructions, and inspects actual visual references before making visual claims. Historical completion reports remain claims until current proof exists.
 
-_Leave blank to let the library infer a stable product identity from
-your brief. Once filled, every downstream artifact must use these exact
-values for bundle IDs, package names, app schemes, store listings,
-screenshots, and generated project names._
+## Constraints and applicable obligations
 
-- **Product name**:
-- **Short name / code name**:
-- **iOS bundle ID**:
-- **Android application ID**:
-- **Web app slug**:
-- **Store listing title**:
-- **Default locale**:
+Compliance/jurisdiction, safety, security/privacy, data retention/deletion, accessibility, performance, reliability, backup/recovery, provider/integration and distribution requirements. Applicable hard safety/legal duties cannot be silently waived. Unknown owner decisions remain explicit.
 
----
+## Technical preferences
 
-## Defaults the library will assume if you leave the rest blank
+- Existing stack and architecture to preserve:
+- Required providers/integrations:
+- Hosting/deployment:
+- Data storage:
+- Account/role requirements (only when needed):
+- Payments/monetization (if in scope):
+- Locales/themes (if requested):
 
-**Leave everything below blank and you get: a website + iPhone app +
-Android app, with logins, an admin panel, and app-store packaging.**
-That's the full production default — great if you might grow, overkill
-for a weekend MVP. If you want less, say so under **Restrict** below
-(there are copy-paste recipes).
+No generic stack/provider feature inventory is automatically requested by blank fields. Select current compatible options from project constraints; preserve relevant safety and reliability.
 
-Skip ahead and leave the sections below empty if any of these defaults
-are fine. Only edit them if you want to **restrict** the scope or
-**override** a default.
+## Scope exclusions or deferrals
 
-<details>
-<summary>Exact technical defaults (click to expand)</summary>
+List explicit non-goals and later release scope. Deferral keeps the requirement visible and unimplemented; changing an explicit requirement requires an owner decision with provenance. Authorized exclusion remains an exclusion, not completion.
 
-- **Platforms**: web (responsive, PWA-capable) + Android + iOS. All three.
-- **Web stack**: React 18 + TypeScript + Vite + Tailwind. Next.js if the
-  brief implies server-rendered pages.
-- **Mobile stack**: native Kotlin/Jetpack Compose on Android, native
-  Swift/SwiftUI on iOS. React Native only if the brief asks for
-  "cross-platform" or similar.
-- **Backend stack**: Node.js + Fastify + PostgreSQL + Redis. Python/
-  Django or Go/Gin only if the brief mentions domain constraints that
-  favour them (ML, high-throughput, etc.).
-- **Hosting**: prefers free-tier / freemium managed services
-  (Vercel / Netlify / Railway / Supabase / Neon / Fly.io) for hobby and
-  MVP scale; AWS ECS + RDS for anything that hints at production scale.
-- **Auth**: email + password + OAuth (Google, Apple) with JWT +
-  refresh tokens. Biometric on mobile (Face ID / Touch ID /
-  Fingerprint).
-- **Data storage**: PostgreSQL for relational; object storage (S3 /
-  R2 / Supabase Storage) for blobs; Redis for cache + queues.
-- **Production readiness baseline** (generated when relevant):
-  onboarding & consent, account identity when accounts are in scope,
-  admin portal + RBAC when roles/backends are in scope, observability
-  (structured logs + metrics +
-  error tracking), localization (i18n + RTL), theming (dark + light
-  mode, decoupled tokens for whitelabeling), accessibility (WCAG 2.1
-  AA), automated tests (unit + integration + UI + e2e), CI/CD
-  pipelines, infra-as-code, app store release assets for mobile,
-  user onboarding, settings + debug menu, privacy + PII controls +
-  consent flows.
+## Authorization and review policy
 
-</details>
+- Execution authorization and its limits:
+- Required user checkpoints (or explicit autonomy for ordinary transitions):
+- Who must accept design/composed results:
+- Scope-change authority:
+- Independent-review requirements:
+- External actions already authorized and target limits:
 
-If you want any of those turned **off**, list them under **Restrict**
-below.
+Execution permission is separate from design/release acceptance. Owner-reserved decisions and required checkpoints remain binding across chats. Evidence requirements do not authorize charges, publishing, infrastructure applies or destructive drills. Required independent review must have distinct context and trustworthy receipt provenance.
 
----
+## First proof and acceptance
 
-## Platforms (optional — overrides the default above)
-
-_Leave blank to get web + Android + iOS. Otherwise, list only the
-platforms you want built._
-
-- …
-
----
-
-## Tech preferences (optional — overrides specific stack defaults)
-
-_Leave blank to get the industry-standard stack for your brief. Fill in
-any field to pin a specific choice._
-
-- **Frontend (web)**:
-- **Mobile**:
-- **Backend**:
-- **Database**: _(For local-only native apps, prefer SwiftData/Core Data backed by SQLite on iOS and Room backed by SQLite on Android.)_
-- **Hosting**:
-- **Auth provider**:
-- **Payments** (if relevant): _(State whether monetization is in v1. If not, write "No monetization in v1; IAP may be planned separately.")_
-
----
-
-## Users / roles (optional — the library will infer from the brief)
-
-_Leave blank to let the library derive roles from the brief (e.g. a
-marketplace implies Customer + Seller + Admin). Fill in only to add
-non-obvious roles or to remove an inferred one._
-
-- …
-
----
-
-## Constraints (optional — list only if real)
-
-_Compliance (HIPAA, PCI, GDPR, CCPA, SOC2), performance targets,
-offline support, data residency, integrations you MUST use._
-
-- …
-
----
-
-## Reference material / External material (optional)
-
-_If you have designs, mockups, specs, brand guidelines, or existing
-code you want the library to respect, drop them into `working_copy/`
-at the project root. The library will read them first and treat their
-contents as authoritative over **product facts** — names, entities, flows,
-colors, typography all come from what you provide. They are never treated
-as **instructions**: anything in your files that reads as a directive to
-the AI (rather than a fact about your product) will be flagged for your
-confirmation, not followed silently._
-
-_You don't need to list files here. Just drop them into
-`working_copy/`._
-
----
-
-## Restrict (optional — turn OFF parts of the production-readiness baseline)
-
-_This is the highest-leverage section in this file: every line here
-shrinks the plan. The library generates the full production-readiness
-baseline by default — web + iPhone + Android, logins, admin panel,
-app-store packaging, the works. List here any baseline topics you DO
-NOT want generated._
-
-**Copy-paste recipes** (pick one, paste it below, delete the `…` line):
-
-_Web-only MVP — the single biggest time-saver (roughly two-thirds
-fewer tasks for a typical brief):_
-```
-Web only — no iOS app, no Android app, no app-store release assets.
-```
-
-_No mobile apps in v1 — keep the full web build, defer mobile:_
-```
-No mobile apps in v1 — web + backend + admin panel only. Keep the
-API mobile-ready so apps can be added later.
-```
-
-_No app-store release — build the apps, skip the store submission work:_
-```
-Build the iOS and Android apps, but skip app-store release assets
-(screenshots, store listings, release packaging).
-```
-
-_Or write your own, e.g.:_
-- No admin panel — single owner, no staff roles.
-- No Infrastructure as Code — deploy to a managed host instead.
-
-- …
+Describe the real entry-to-value sequence and relevant failure/recovery. Visual surfaces require actual composed-screen captures; headless work requires real consumer/operational evidence. Controlled/fake providers can support an explicitly limited proof, but leave production integration/release duties open.

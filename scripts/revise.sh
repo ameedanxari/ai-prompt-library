@@ -31,6 +31,12 @@ resolve_script_dir() {
   cd -P "$(dirname "$source")" && pwd
 }
 SCRIPT_DIR="$(resolve_script_dir)"
+
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" plan
+  exit $?
+fi
 VALIDATOR="$SCRIPT_DIR/validate-instantiation.sh"
 PHASE_VALIDATOR="$SCRIPT_DIR/validate-phase-order.sh"
 

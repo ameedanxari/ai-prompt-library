@@ -15,6 +15,12 @@ GRAPH="$PLAN_DIR/task-graph.json"
 REPORT="$PLAN_DIR/execution-status-report.json"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$PLAN_DIR"; then
+  delivery_run_gate "$PLAN_DIR" advance
+  exit $?
+fi
+
 if [ ! -d "$PLAN_DIR" ]; then
   echo "execution status: plan directory not found: $PLAN_DIR" >&2
   exit 2

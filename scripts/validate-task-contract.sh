@@ -30,6 +30,12 @@ resolve_script_dir() {
 }
 SCRIPT_DIR="$(resolve_script_dir)"
 
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET"; then
+  delivery_run_gate "$TARGET" plan
+  exit $?
+fi
+
 if [ -d "$TARGET" ]; then
   CONTRACT="$TARGET/task-contract.json"
   build_status=0

@@ -1,121 +1,63 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import * as fc from 'fast-check';
-import { TemplateValidator } from '../../src/template-validator.js';
-import { join } from 'path';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
+import { TemplateValidator, type TemplateStructure } from '../../src/template-validator.js';
 
-/**
- * Feature: ai-prompt-library, Property 1: Template Structure Completeness
- * 
- * For any generated template, it should contain exactly one required field labeled "Brief", 
- * all specified optional fields for power users, and serve as both input form and documentation.
- * 
- * Validates: Requirements 1.1, 1.3, 1.5
- */
+const template = readFileSync(join(process.cwd(), 'MY_PROJECT.md.template'), 'utf8');
+function inspect(content: string): { structure: TemplateStructure; requirements: ReturnType<TemplateValidator['validateRequirements']> } {
+  const dir = mkdtempSync(join(tmpdir(), 'brief-validator-'));
+  try {
+    const file = join(dir, 'MY_PROJECT.md');
+    writeFileSync(file, content);
+    const validator = new TemplateValidator(file);
+    return { structure: validator.validateStructure(), requirements: validator.validateRequirements() };
+  } finally { rmSync(dir, { recursive: true, force: true }); }
+}
+const withoutSection = (content: string, heading: string) => content.replace(new RegExp(`^## ${heading}[^\\n]*\\n[\\s\\S]*?(?=^## |$(?![\\s\\S]))`, 'm'), '');
 
-describe('Property-Based Tests: Template Structure Validation', () => {
-  const templatePath = join(process.cwd(), 'MY_PROJECT.md.template');
-
-  it('Property 1: Template Structure Completeness - validates template has required structure', () => {
-    // Property-based test with 100+ iterations
-    fc.assert(
-      fc.property(
-        // Generator for different ways to access/validate the template
-        fc.record({
-          validationMethod: fc.constantFrom('structure', 'requirements', 'sections'),
-          checkOrder: fc.array(fc.constantFrom('brief', 'optional', 'readme'), { minLength: 1, maxLength: 3 })
-        }),
-        (testCase) => {
-          // For any validation approach, the template should maintain its structure
-          const validator = new TemplateValidator(templatePath);
-          
-          // Test the core property: template has complete structure
-          const structure = validator.validateStructure();
-          const requirements = validator.validateRequirements();
-          
-          // Property assertion: Template structure completeness
-          // The template must have exactly one required field (Brief)
-          expect(structure.hasRequiredBrief).toBe(true);
-          
-          // The template must have comprehensive optional fields for power users
-          expect(structure.hasOptionalFields).toBe(true);
-          
-          // The template must serve as both input form and README
-          expect(structure.servesAsReadme).toBe(true);
-          
-          // Validate all required sections exist
-          expect(structure.hasProjectBriefSection).toBe(true);
-          expect(structure.hasOptionalConfigSection).toBe(true);
-          expect(structure.hasReferenceAssetsSection).toBe(true);
-          expect(structure.hasDryRunOption).toBe(true);
-          expect(structure.hasGettingStartedSection).toBe(true);
-          expect(structure.hasSystemCapabilitiesSection).toBe(true);
-          
-          // Validate requirements compliance
-          expect(requirements.requirement_1_1).toBe(true); // Brief as only required field
-          expect(requirements.requirement_1_3).toBe(true); // Comprehensive optional fields
-          expect(requirements.requirement_1_5).toBe(true); // Dual purpose as README and input form
-          
-          // Property invariant: Structure remains consistent regardless of validation method
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
+describe('project brief validator', () => {
+  it('accepts the actual outcome template under newline/heading spacing variations', () => {
+    fc.assert(fc.property(fc.constantFrom('\n', '\r\n'), fc.integer({ min: 1, max: 4 }), (newline, spaces) => {
+      const content = template.replace(/^## /gm, '##' + ' '.repeat(spaces)).split('\n').join(newline);
+      const { structure, requirements } = inspect(content);
+      for (const value of Object.values(structure)) expect(value).toBe(true);
+      for (const value of Object.values(requirements)) expect(value).toBe(true);
+    }), { numRuns: 30 });
   });
 
-  it('Property 1 (Edge Case): Template structure validation with different content variations', () => {
-    // Test property with variations in how we might process the template
-    fc.assert(
-      fc.property(
-        fc.record({
-          caseVariation: fc.constantFrom('lowercase', 'uppercase', 'mixed'),
-          whitespaceHandling: fc.constantFrom('trim', 'preserve', 'normalize')
-        }),
-        (testCase) => {
-          const validator = new TemplateValidator(templatePath);
-          
-          // The property should hold regardless of how we process the content
-          const structure = validator.validateStructure();
-          
-          // Core property: Template always has the required structure elements
-          expect(structure.hasRequiredBrief && structure.hasOptionalFields && structure.servesAsReadme).toBe(true);
-          
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
+  it('rejects missing structural sections instead of reporting unconditional success', () => {
+    const mutations: [string, keyof TemplateStructure][] = [
+      ['Brief', 'hasRequiredBrief'],
+      ['Technical preferences', 'hasOptionalConfigSection'],
+      ['Existing source and reference material', 'hasReferenceAssetsSection'],
+      ['Platforms and actual delivery targets', 'hasSystemCapabilitiesSection'],
+      ['First proof and acceptance', 'hasDryRunOption'],
+    ];
+    fc.assert(fc.property(fc.constantFrom(...mutations), ([heading, field]) => {
+      const mutated = withoutSection(template, heading);
+      expect(mutated).not.toContain(`## ${heading}`);
+      expect(inspect(mutated).structure[field]).toBe(false);
+    }));
+    expect(inspect(template.replace('Save as `MY_PROJECT.md` at the project root.', '')).structure.hasGettingStartedSection).toBe(false);
+    expect(inspect('').structure).toEqual(Object.fromEntries(Object.keys(inspect(template).structure).map(key => [key, false])));
   });
 
-  it('Property 1 (Invariant): Template structure elements are mutually consistent', () => {
-    // Test that all structure elements are logically consistent with each other
-    fc.assert(
-      fc.property(
-        fc.integer({ min: 1, max: 10 }), // Arbitrary test parameter
-        (_iteration) => {
-          const validator = new TemplateValidator(templatePath);
-          const structure = validator.validateStructure();
-          const requirements = validator.validateRequirements();
-          
-          // Invariant: If template serves as README, it must have getting started section
-          if (structure.servesAsReadme) {
-            expect(structure.hasGettingStartedSection).toBe(true);
-          }
-          
-          // Invariant: If template has required brief, it must also have optional config
-          if (structure.hasRequiredBrief) {
-            expect(structure.hasOptionalConfigSection).toBe(true);
-          }
-          
-          // Invariant: Requirements validation should be consistent with structure validation
-          expect(requirements.requirement_1_1).toBe(structure.hasRequiredBrief);
-          expect(requirements.requirement_1_3).toBe(structure.hasOptionalFields);
-          expect(requirements.requirement_1_5).toBe(structure.servesAsReadme);
-          
-          return true;
-        }
-      ),
-      { numRuns: 100 }
-    );
+  it('requires only Brief and rejects missing optional scope/authority form structure', () => {
+    expect(inspect(template + '\n## Hosting (required)\nChoose a host.\n').structure.hasRequiredBrief).toBe(false);
+    expect(inspect(template.replace('Brief (required)', 'Brief')).structure.hasRequiredBrief).toBe(false);
+    expect(inspect(withoutSection(template, 'Scope exclusions or deferrals')).requirements.requirement_1_3).toBe(false);
+    expect(inspect(template + '\n```markdown\n## Fake (required)\n```\n').structure.hasRequiredBrief).toBe(true);
+  });
+
+  it('reasonably preserves a legacy brief without granting absent dry-run support', () => {
+    const legacy = '# My Project\nMinimum you must do: save this file as MY_PROJECT.md. Other sections are optional.\n## Brief (required)\n## Platforms\n## Tech preferences\n## Users / roles\n## Constraints\n## Reference material\n## Restrict / Non-goals\n## Defaults the library will assume\n';
+    const { structure, requirements } = inspect(legacy);
+    expect(structure.hasRequiredBrief).toBe(true);
+    expect(structure.hasOptionalFields).toBe(true);
+    expect(structure.servesAsReadme).toBe(true);
+    expect(structure.hasDryRunOption).toBe(false);
+    expect(Object.values(requirements)).toEqual([true, true, true]);
   });
 });

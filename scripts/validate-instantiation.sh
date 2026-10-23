@@ -27,6 +27,15 @@ resolve_script_dir() {
 }
 SCRIPT_DIR="$(resolve_script_dir)"
 
+# Outcome runs share scope and evidence validation; legacy plans retain their reader.
+# shellcheck source=lib/delivery.sh
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" plan
+  exit $?
+fi
+
+
 # Whole-file regex patterns that are always forbidden.
 GLOBAL_PATTERNS=(
   '\.ai-prompts/prompts/'

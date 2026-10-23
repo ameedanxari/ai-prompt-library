@@ -77,14 +77,15 @@ describe('module-selection-index', () => {
     expect(body).toMatch(/security\/audit-evidence-worm\.md/);
   });
 
-  it('routes artifact kinds before domain modules and splits mixed concerns', () => {
-    expect(body).toMatch(/Artifact-kind routing \(run before domain-module lookup\)/);
-    expect(body).toMatch(/Policy, privacy inventory.*`docs`/);
-    expect(body).toMatch(/App Store \/ Play listing copy.*`docs`/);
-    expect(body).toMatch(/Store-console upload.*`external-action`/);
-    expect(body).toMatch(/Generated report.*`generated-evidence`/);
-    expect(body).toMatch(/Runtime modules are permitted only when the unit names a real in-app/);
-    expect(body).toMatch(/split it into separate task\s+units with dependency edges/);
-    expect(body).toMatch(/runtime_consumer.*approval.*expiry/s);
+  it('routes artifact expertise without atomizing a useful multi-file outcome', () => {
+    expect(body).toMatch(/Artifact expertise before domain lookup/);
+    for (const kind of ['docs', 'asset', 'external-action', 'config', 'generated-evidence', 'test-source', 'runtime-source']) {
+      expect(body).toContain('`' + kind + '`');
+    }
+    expect(body).toMatch(/Runtime modules require a real runtime consumer/);
+    expect(body).toMatch(/never runtime code as a proxy/);
+    expect(body).toMatch(/cohesively combine these artifact kinds and affected paths/);
+    expect(body).toMatch(/authority, risk, independent dependencies/);
+    expect(body).not.toMatch(/split it into separate task\s+units|bytes ÷ 4/);
   });
 });

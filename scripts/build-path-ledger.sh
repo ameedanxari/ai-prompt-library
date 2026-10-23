@@ -38,6 +38,24 @@ set -uo pipefail
 
 TARGET_DIR="${1:-prompts/outputs/current}"
 
+resolve_delivery_script_dir() {
+  local source="${BASH_SOURCE[0]}"
+  while [ -L "$source" ]; do
+    local dir link
+    dir="$(cd -P "$(dirname "$source")" && pwd)"
+    link="$(readlink "$source")"
+    case "$link" in /*) source="$link" ;; *) source="$dir/$link" ;; esac
+  done
+  cd -P "$(dirname "$source")" && pwd
+}
+SCRIPT_DIR="$(resolve_delivery_script_dir)"
+
+source "$SCRIPT_DIR/lib/delivery.sh"
+if delivery_requested "$TARGET_DIR"; then
+  delivery_run_gate "$TARGET_DIR" project
+  exit $?
+fi
+
 if [ ! -d "$TARGET_DIR" ]; then
   echo "❌ $TARGET_DIR does not exist" >&2
   exit 2

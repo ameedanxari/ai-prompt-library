@@ -46,6 +46,8 @@ export interface ReleaseGateResult extends ReleaseGate {
 }
 
 export interface ReleaseGateEvaluation {
+  /** A supplied gate list cannot prove full product scope or evidence integrity.
+   * Use validateDeliveryRun(..., {stage:'release'}) for product readiness. */
   releaseReady: boolean;
   promotionAllowed: boolean;
   aggregateScore: number | null;
@@ -76,7 +78,7 @@ export function evaluateReleaseGates(gates: ReleaseGate[]): ReleaseGateEvaluatio
   const promotionAllowed = gates.length > 0 && blockingGateIds.length === 0;
 
   return {
-    releaseReady: promotionAllowed,
+    releaseReady: false,
     promotionAllowed,
     aggregateScore,
     blockingGateIds,

@@ -55,6 +55,6 @@ Before completing any change, verify:
 ## Library Principles to Maintain
 
 1. **Modular and Composable**: Templates are building blocks that combine to create solutions
-2. **Production-Ready Defaults**: Best practices are built-in, not optional
+2. **Applicable obligations**: Preserve relevant safety/reliability without inventing platforms or unrelated product features
 3. **Context-Agnostic**: Each template works independently without requiring prior context
 4. **Incremental Development**: Changes build on existing work without breaking it
