@@ -8,7 +8,7 @@
 #      where library assets do not exist).
 #   B. docs/ refs (bare or .ai-prompts/-qualified) that do not resolve on disk.
 #   C. output filenames whose documented producer never mentions them
-#      (output filename with no producer).
+#      (output filename with no producer or explicit legacy preservation owner).
 #
 # Conventions (stated once in prompts/AGENTS.md, "Path convention"):
 #   - prompts/outputs/... is NEVER qualified (engine output-path convention;
@@ -139,23 +139,25 @@ fi
 
 # ---------------------------------------------------------------- C. outputs have producers
 echo "== C. output filenames have producers =="
-# filename-pattern | file that must mention it (the producer)
+# filename-pattern | producer (or explicit legacy preservation owner)
 PRODUCERS=(
+  "delivery-manifest.json|prompts/orchestrators/rolling-delivery.md"
+  "project-context.md|prompts/orchestrators/external-input-handler.md"
   "product-vision.md|prompts/orchestrators/product-vision.md"
   "source-ledger.md|prompts/orchestrators/research-and-fanout-policy.md"
-  "epics.md|prompts/orchestrators/ai-agent-entry-point.md"
-  "brief-keywords.md|prompts/AGENTS.md"
-  "features-|prompts/AGENTS.md"
-  "external-accounts.md|prompts/orchestrators/audit-and-remediate.md"
-  "ui-reference-source-map.md|prompts/AGENTS.md"
+  "epics.md|prompts/orchestrators/legacy-workflow.md"
+  "brief-keywords.md|prompts/orchestrators/legacy-workflow.md"
+  "features-|prompts/orchestrators/legacy-workflow.md"
+  "external-accounts.md|prompts/orchestrators/legacy-workflow.md"
+  "ui-reference-source-map.md|prompts/orchestrators/legacy-workflow.md"
   "architecture.md|prompts/orchestrators/architecture-blueprint.md"
   "ux-flows.md|prompts/orchestrators/ux-blueprint.md"
   "content-system.md|prompts/orchestrators/content-system.md"
-  "tasks-|prompts/AGENTS.md"
+  "tasks-|prompts/orchestrators/legacy-workflow.md"
   "delivery-order.md|scripts/build-delivery-order.sh"
   "release-plan.md|prompts/orchestrators/release-plan.md"
   "store-submission.md|prompts/orchestrators/store-submission.md"
-  "audit-report.md|prompts/orchestrators/audit-and-remediate.md"
+  "audit-report.md|prompts/orchestrators/legacy-workflow.md"
   "gap-list.md|prompts/orchestrators/audit-and-remediate.md"
   "remediation-|prompts/orchestrators/audit-and-remediate.md"
   "task-schema-repair-report.md|scripts/repair-task-schema-fields.sh"
@@ -166,8 +168,8 @@ PRODUCERS=(
   "baseline-task-coverage.md|scripts/finalize.sh"
   "user-review-checkpoints.md|scripts/finalize.sh"
   "revise-report.md|scripts/revise.sh"
-  "execution-log.md|prompts/orchestrators/executor.md"
-  "owner-decisions.md|prompts/orchestrators/executor.md"
+  "execution-log.md|prompts/orchestrators/legacy-workflow.md"
+  "owner-decisions.md|prompts/orchestrators/legacy-workflow.md"
   "resumption-checkpoint.md|prompts/orchestrators/ai-agent-entry-point.md"
 )
 : > "$work/orphans.txt"

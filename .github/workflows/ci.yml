@@ -45,7 +45,7 @@ jobs:
         run: sudo apt-get update && sudo apt-get install -y shellcheck
 
       - name: Lint shell scripts
-        run: shellcheck scripts/*.sh scripts/lib/*.sh
+        run: shellcheck -P SCRIPTDIR scripts/*.sh scripts/lib/*.sh
 
   reference-integrity:
     runs-on: ubuntu-latest
