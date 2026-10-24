@@ -44,8 +44,11 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   for (const s of m.surfaces) {
     keys(s, 'id kind entryPoint target', 'surface');
     assert(kinds.includes(s.kind) && text(s.entryPoint) && record(s.target), `invalid surface ${s.id}`);
-    const t = s.target; keys(t, 'id environment providerMode bindings identity', 'target'); assert(text(t.id) && text(t.environment) && ['real','controlled','fake'].includes(t.providerMode), `invalid target ${s.id}`);
+    const t = s.target; keys(t, 'id environment providerMode bindings identity revision sharedPaths', 'target'); assert(text(t.id) && text(t.environment) && ['real','controlled','fake'].includes(t.providerMode), `invalid target ${s.id}`);
     assert(Array.isArray(t.bindings) && t.bindings.length && t.bindings.every(binding) && record(t.identity) && Object.values(t.identity).every(text), `missing source/config/input bindings or identity for ${s.id}`);
+    assert(t.revision === undefined || text(t.revision), 'invalid target revision');
+    assert(t.sharedPaths === undefined || strings(t.sharedPaths) && new Set(t.sharedPaths).size === t.sharedPaths.length, 'invalid shared dependency paths');
+    assert(new Set(t.bindings.map((b: any) => b.path)).size === t.bindings.length, 'duplicate target binding paths');
     for (const b of t.bindings) keys(b, 'path sha256', 'target binding');
     if (s.kind === 'native') assert(text(t.identity.os) && text(t.identity.device), `native target ${s.id} requires os/device`);
     if (s.kind === 'sdk') assert(text(t.identity.consumer) && text(t.identity.version), `SDK target ${s.id} requires consumer/version`);
@@ -55,7 +58,8 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   const evidenceKinds = ['execution','recovery','image','consumer','operation','evaluation','render','production-integration','design-review'];
   const checks = (cs: any) => Array.isArray(cs) && cs.length > 0 && cs.every((c: any) => record(c) && text(c.id) && ['success','recovery'].includes(c.kind) && text(c.description)) && new Set(cs.map((c: any) => c.id)).size === cs.length;
   for (const o of m.outcomes) {
-    keys(o, 'id requirementIds actor entryPoint surfaceId applicability applicabilityReason releaseRequired requiredEvidenceKinds checks dependencies decisionId', 'outcome');
+    keys(o, 'id requirementIds actor entryPoint surfaceId applicability applicabilityReason releaseRequired requiredEvidenceKinds checks dependencies decisionId bindingPaths', 'outcome');
+    assert(o.bindingPaths === undefined || strings(o.bindingPaths) && o.bindingPaths.length > 0 && new Set(o.bindingPaths).size === o.bindingPaths.length, 'invalid outcome dependency paths');
     for (const c of o.checks ?? []) keys(c, 'id kind description', 'check');
     for (const d of o.dependencies ?? []) keys(d, 'outcomeId kind', 'dependency');
     assert(strings(o.requirementIds) && o.requirementIds.length && text(o.actor) && text(o.entryPoint) && text(o.surfaceId), `invalid outcome ${o.id}`);
@@ -75,10 +79,11 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   const a = m.authorization; assert(record(a), 'invalid authorization'); keys(a, 'execution checkpoints designAcceptance scopeChange independentReview implementerContextId', 'authorization'); assert(record(a) && typeof a.execution === 'boolean' && ['every-slice','autonomous'].includes(a.checkpoints) && ['owner','independent','agent'].includes(a.designAcceptance) && ['owner','agent-applicability'].includes(a.scopeChange) && typeof a.independentReview === 'boolean' && text(a.implementerContextId), 'invalid authorization');
   const p = m.planningBudget; assert(record(p), 'invalid planning budget'); keys(p, 'corpusRoots ledgerFiles extensionDecisionId observedTokens reviewRounds reworkUnits', 'planning budget'); assert(record(p) && strings(p.corpusRoots) && p.corpusRoots.length && strings(p.ledgerFiles) && Number.isInteger(p.reviewRounds) && p.reviewRounds >= 0 && Number.isInteger(p.reworkUnits) && p.reworkUnits >= 0 && (p.observedTokens === undefined || Number.isInteger(p.observedTokens) && p.observedTokens >= 0), 'invalid planning budget');
   for (const e of m.evidenceRefs) {
-    keys(e, 'id outcomeId checkId kind targetId targetDigest targetContextDigest snapshotDigest artifact command observedResult observedAt result capture consumer productionComposition releaseCandidate', 'evidence');
+    keys(e, 'id outcomeId checkId kind targetId targetDigest targetContextDigest snapshotDigest reviewDigest artifact command observedResult observedAt result capture consumer productionComposition releaseCandidate', 'evidence');
     if (record(e.artifact)) keys(e.artifact, 'path sha256', 'artifact');
     if (record(e.capture)) keys(e.capture, 'surfaceId state viewport theme route composed', 'capture');
     assert(text(e.outcomeId) && text(e.checkId) && evidenceKinds.includes(e.kind) && text(e.targetId) && hash(e.targetDigest) && hash(e.snapshotDigest) && binding(e.artifact), `invalid evidence ${e.id}`);
+    assert(e.reviewDigest === undefined || hash(e.reviewDigest), 'invalid reviewDigest');
     assert(e.targetContextDigest === undefined || hash(e.targetContextDigest), `invalid targetContextDigest ${e.id}`);
     assert(text(e.command) && text(e.observedResult) && text(e.observedAt) && ['pass','fail'].includes(e.result) && typeof e.productionComposition === 'boolean', `invalid execution record ${e.id}`);
     if (e.capture !== undefined) assert(record(e.capture) && text(e.capture.surfaceId) && ['entry','success','recovery'].includes(e.capture.state) && text(e.capture.viewport) && (e.capture.theme === undefined || text(e.capture.theme)) && (e.capture.route === undefined || text(e.capture.route)) && typeof e.capture.composed === 'boolean', `invalid capture ${e.id}`);
@@ -88,7 +93,7 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     if (record(d.reviewer)) keys(d.reviewer, 'id contextId role', 'reviewer');
     if (record(d.provenance)) keys(d.provenance, 'kind reference', 'provenance');
     if (record(d.budget)) keys(d.budget, 'maxUnits maxWords maxBytes maxSlices', 'extension limits');
-    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
+    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review','release-review'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
     assert(record(d.reviewer) && text(d.reviewer.id) && text(d.reviewer.contextId) && ['owner','independent','agent'].includes(d.reviewer.role) && record(d.provenance) && ['owner-message','review-session','external'].includes(d.provenance.kind) && text(d.provenance.reference) && ['approved','rejected'].includes(d.result) && text(d.reason), `invalid reviewer provenance ${d.id}`);
     if (d.requirementIds !== undefined) assert(strings(d.requirementIds), `invalid requirement IDs ${d.id}`);
     if (d.evidenceIds !== undefined) assert(strings(d.evidenceIds), `invalid evidence IDs ${d.id}`);

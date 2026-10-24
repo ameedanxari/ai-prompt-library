@@ -6,9 +6,12 @@ import { parsePlanTaskDirectory } from '../task-contract/task-parser.js';
 import { deliveryProjections } from './delivery-projections.js';
 
 export * from '../delivery/types.js';
+export { planDeliveryReview, getDeliveryChangePolicy } from '../delivery/review-planner.js';
+export type { ReviewPlan, ReviewPurpose } from '../delivery/review-planner.js';
+export type { DeliveryChangePolicy } from '../delivery/lifecycle.js';
 export { parseDeliveryManifest, resolveDeliveryScope } from '../delivery/manifest.js';
 export {
-  deliveryScopeDigest, deliveryEvidenceBinding, deliveryReviewBinding, deliveryDesignReviewBinding, readDeliveryRequirements,
+  deliveryScopeDigest, deliveryEvidenceBinding, deliveryReviewBinding, deliveryDesignReviewBinding, deliveryReleaseReviewBinding, readDeliveryRequirements,
 } from '../delivery/validation.js';
 
 /** One gate for the package API and shell entry points. Outcome metadata does
