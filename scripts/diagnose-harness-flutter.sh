@@ -25,9 +25,30 @@ for cand in "$PWD/.flutter-test.json" "$PWD/test/.flutter-test.json"; do
 done
 
 DOCTOR_SNAPSHOT=""
+# Evidence collection must never block the diagnosis. Tools that talk to a
+# device or the network (adb, flutter doctor) can wait indefinitely when
+# nothing is attached, which hangs the executor's test run and the library's
+# own pre-commit suite. run_bounded runs a command with a watchdog and gives
+# up after the given number of seconds; macOS ships no `timeout`, so the
+# watchdog is a background sleep.
+run_bounded() {
+  local limit="$1"; shift
+  "$@" &
+  local cmd_pid=$!
+  ( sleep "$limit"; kill "$cmd_pid" 2>/dev/null ) &
+  local watchdog_pid=$!
+  wait "$cmd_pid" 2>/dev/null
+  local status=$?
+  kill "$watchdog_pid" 2>/dev/null
+  wait "$watchdog_pid" 2>/dev/null
+  return "$status"
+}
+
 if command -v flutter >/dev/null 2>&1; then
   DOCTOR_SNAPSHOT="$(mktemp)"
-  flutter doctor -v >"$DOCTOR_SNAPSHOT" 2>&1 || true
+  # flutter doctor checks the network and attached devices; bound it so a
+  # missing device or an offline host cannot stall the diagnosis.
+  run_bounded 30 flutter doctor -v >"$DOCTOR_SNAPSHOT" 2>&1 || true
 fi
 
 evidence_tmp="$(mktemp)"

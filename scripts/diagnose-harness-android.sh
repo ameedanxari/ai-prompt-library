@@ -22,6 +22,25 @@ STDERR_TEXT=""
 # Android-specific evidence: latest JUnit XML, logcat crash buffer,
 # Gradle daemon log.
 # ---------------------------------------------------------------------
+# Evidence collection must never block the diagnosis. Tools that talk to a
+# device or the network (adb, flutter doctor) can wait indefinitely when
+# nothing is attached, which hangs the executor's test run and the library's
+# own pre-commit suite. run_bounded runs a command with a watchdog and gives
+# up after the given number of seconds; macOS ships no `timeout`, so the
+# watchdog is a background sleep.
+run_bounded() {
+  local limit="$1"; shift
+  "$@" &
+  local cmd_pid=$!
+  ( sleep "$limit"; kill "$cmd_pid" 2>/dev/null ) &
+  local watchdog_pid=$!
+  wait "$cmd_pid" 2>/dev/null
+  local status=$?
+  kill "$watchdog_pid" 2>/dev/null
+  wait "$watchdog_pid" 2>/dev/null
+  return "$status"
+}
+
 TEST_RESULTS_DIR=""
 for d in "$PWD/android/app/build/test-results" "$PWD/app/build/test-results"; do
   [ -d "$d" ] && TEST_RESULTS_DIR="$d" && break
@@ -40,8 +59,10 @@ trap 'rm -f "$evidence_tmp"' EXIT
   if [ -n "$TEST_RESULTS_DIR" ]; then
     find "$TEST_RESULTS_DIR" -name '*.xml' -mmin -60 2>/dev/null | head -5 | while read -r f; do cat "$f" 2>/dev/null; done
   fi
-  if command -v adb >/dev/null 2>&1; then
-    adb logcat -d -b crash 2>/dev/null | tail -200 || true
+  # Only read logcat when a device or emulator is attached: without one,
+  # `adb logcat` waits for a device and never returns.
+  if command -v adb >/dev/null 2>&1 && run_bounded 5 adb get-state >/dev/null 2>&1; then
+    run_bounded 15 adb logcat -d -b crash 2>/dev/null | tail -200 || true
   fi
   [ -n "$GRADLE_DAEMON_LOG" ] && tail -200 "$GRADLE_DAEMON_LOG" 2>/dev/null
 } > "$evidence_tmp" 2>/dev/null
