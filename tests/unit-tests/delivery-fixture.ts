@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
-import { canonical, deliveryDesignReviewBinding, deliveryEvidenceBinding, deliveryReviewBinding, deliveryScopeDigest, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
+import { canonical, deliveryDesignReviewBinding, deliveryEvidenceBinding, deliveryReviewBinding, deliveryReleaseReviewBinding, deliveryScopeDigest, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
 import type { DeliveryDecision, DeliveryManifest, DeliveryScope, DeliverySurface, RequirementDocument, ReviewBinding, TrustedReviewProvider } from '../../src/delivery/index.js';
 export const deliveryFixtureRoots: string[] = [];
 const png = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a9eQAAAAASUVORK5CYII=', 'base64');
@@ -18,7 +18,7 @@ export function createDeliveryFixture(kind: DeliverySurface['kind'] = 'api') {
   if (visual) {
     const design = write('design.md', 'Warm family-home materials; clear hierarchy, restrained composition and compact mobile comparison.');
     requirements.originalSources.push(design);
-    requirements.designs = [{ surfaceId: 'main', sourceRefs: ['design.md'], criteria: ['intent','composition','hierarchy','responsive'].map(dimension => ({ id: dimension, dimension: dimension as any, sourceRef: 'design.md', sourceLocation: 'line 1', expectation: `Observe documented ${dimension} in the actual composition` })), contexts: [{ id: 'phone', viewport: '390x844', theme: 'light' }, { id: 'desktop', viewport: '1440x900', theme: 'light' }] }];
+    requirements.designs = [{ surfaceId: 'main', sourceRefs: ['design.md'], criteria: ['intent','composition','hierarchy','responsive'].map(dimension => ({ id: dimension, dimension: dimension as any, sourceRef: 'design.md', sourceLocation: 'line 1', expectation: `Observe documented ${dimension} in the actual composition`, applicability: { outcomeIds: ['O1'], exclusions: [] } })), contexts: [{ id: 'phone', viewport: '390x844', theme: 'light' }, { id: 'desktop', viewport: '1440x900', theme: 'light' }] }];
   }
   const input = write('requirements.json', JSON.stringify(requirements));
   write('runs/current/tasks-proof.md', '# Proof\n\n## T1\nImplement useful result and its recovery with real composition.\n');
@@ -58,7 +58,7 @@ export function createDeliveryFixture(kind: DeliverySurface['kind'] = 'api') {
       });
       const id = `${outcomeId}-comparison-${manifest.evidenceRefs.length}`;
       const comparisons = design.criteria.flatMap(c => design.contexts.map((context, index) => ({ criterionId: c.id, contextId: context.id, imageEvidenceId: images[index].id, observation: `Compared rendered ${c.dimension} with documented intent at ${context.viewport}`, result: 'pass' })));
-      manifest.evidenceRefs.push({ ...entry, id, kind: 'design-review', capture: undefined, artifact: write(`evidence/${id}.json`, JSON.stringify({ schemaVersion: 1, comparisons })) });
+      manifest.evidenceRefs.push({ ...entry, id, kind: 'design-review', capture: undefined, artifact: write(`evidence/${id}.json`, JSON.stringify({ schemaVersion: 2, comparisons, experience: design.contexts.map((context, index) => ({ contextId: context.id, imageEvidenceId: images[index].id, result: 'pass', observedStrengths: ['Material treatment and the content hierarchy preserve the documented family-home intent.'], contraryEvidence: [], rationale: `Inspected the composed entry at ${context.viewport}; restrained sections and compact comparison support its intended use.`, blockingFindings: [] })) })) });
     }
     save();
   };
@@ -73,6 +73,8 @@ export function createDeliveryFixture(kind: DeliverySurface['kind'] = 'api') {
     const slice = manifest.slices.find(s => s.id === sliceId)!; const binding = deliveryReviewBinding(scope(), slice.outcomeIds);
     const id = `accept-${sliceId}-${store.size}`; const d: DeliveryDecision = { id, kind: 'acceptance', ...binding, reviewer: { id: 'reviewer', contextId: 'review-context', role: 'independent' }, provenance: { kind: 'review-session', reference: `trusted://${id}` }, result: 'approved', reason: 'Independently exercised consumer and inspected all retained raw artifacts' };
     slice.acceptanceDecisionId = id; trust(d, binding);
+    const releaseBinding = deliveryReleaseReviewBinding(scope()); const releaseId = `release-${store.size}`;
+    trust({ id: releaseId, kind: 'release-review', ...releaseBinding, reviewer: { id: 'reviewer', contextId: 'release-review-context', role: 'independent' }, provenance: { kind: 'review-session', reference: `trusted://${releaseId}` }, result: 'approved', reason: 'Independently compared the original brief with complete delivered outcomes and exercised the cross-journey release candidate' }, releaseBinding);
   };
   const validate = (stage: 'plan'|'execute'|'advance'|'release' = 'plan', trustedReviews = true) => { save(); return validateDelivery(run, { stage, trustedReviewProvider: trustedReviews ? provider : undefined }); };
   save(); return { root, run, manifest, requirements, write, save, scope, trust, reviewScope, evidence, acceptDesign, accept, validate, provider };

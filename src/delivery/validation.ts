@@ -2,6 +2,9 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import type { DesignContract, DeliveryDecision, DeliveryEvidence, DeliveryManifest, DeliveryOutcome, DeliveryReport, DeliveryScope, DeliverySlice, DeliveryValidationOptions, FileBinding, RequirementDocument, RequirementRecord, ReviewBinding } from './types.js';
 import { parseDesignComparison, readDesignContracts, validateDesignComparison, validateDesignCoverage, visualSurface } from './design.js';
+import { requiredReviewRoles } from './review-policy.js';
+import { readDeliveryLifecycle, deliveryChangePolicy } from './lifecycle.js';
+import type { DeliveryLifecycle } from './types.js';
 import { canonical, confined, digest, resolveDeliveryScope, sha256 } from './manifest.js';
 
 function checkedFile(root: string, binding: FileBinding): Buffer {
@@ -11,13 +14,18 @@ function checkedFile(root: string, binding: FileBinding): Buffer {
   if (!content.length || sha256(content) !== binding.sha256) throw new Error(`delivery: empty, stale or mismatched artifact ${binding.path}`);
   return content;
 }
-export function readDeliveryRequirements(scope: DeliveryScope): { requirements: RequirementRecord[]; originalSources: FileBinding[]; designs: DesignContract[] } {
-  const requirements: RequirementRecord[] = []; const originalSources: FileBinding[] = []; const designs: DesignContract[] = [];
+export function readDeliveryRequirements(scope: DeliveryScope): { requirements: RequirementRecord[]; originalSources: FileBinding[]; designs: DesignContract[]; lifecycle?: DeliveryLifecycle } {
+  const requirements: RequirementRecord[] = []; const originalSources: FileBinding[] = []; const designs: DesignContract[] = []; let lifecycle: DeliveryLifecycle | undefined;
   const onlyKeys = (value: object, allowed: string) => Object.keys(value).every(k => allowed.split(' ').includes(k));
   for (const source of scope.manifest.sourceInputs) {
     const doc = JSON.parse(checkedFile(scope.projectRoot, source).toString('utf8')) as RequirementDocument;
-    if (!onlyKeys(doc, 'schemaVersion originalSources requirements designs') || doc.schemaVersion !== 1 || !Array.isArray(doc.requirements) || !doc.requirements.length || !Array.isArray(doc.originalSources) || !doc.originalSources.length) throw new Error(`delivery: invalid authoritative requirement document ${source.path}`);
+    if (!onlyKeys(doc, 'schemaVersion originalSources requirements designs lifecycle') || doc.schemaVersion !== 1 || !Array.isArray(doc.requirements) || !doc.requirements.length || !Array.isArray(doc.originalSources) || !doc.originalSources.length) throw new Error(`delivery: invalid authoritative requirement document ${source.path}`);
     for (const original of doc.originalSources) { if (!onlyKeys(original, 'path sha256')) throw new Error('delivery: original source bindings must remain concise'); checkedFile(scope.projectRoot, original); originalSources.push(original); }
+    const declaredLifecycle = readDeliveryLifecycle(doc.lifecycle, doc.originalSources, scope.manifest.surfaces.map(s => s.target.id));
+    if (declaredLifecycle) {
+      if (lifecycle && canonical(lifecycle) !== canonical(declaredLifecycle)) throw new Error('delivery: conflicting lifecycle declarations');
+      lifecycle = declaredLifecycle;
+    }
     designs.push(...readDesignContracts(doc.designs, doc.originalSources));
     for (const r of doc.requirements) {
       if (!r || !onlyKeys(r, 'id description sourceRefs explicit nonWaivable releaseRequired surfaceIds checks') || r.description?.trim().split(/\s+/).length > 120 || typeof r.id !== 'string' || !r.id.trim() || typeof r.description !== 'string' || !r.description.trim() || !Array.isArray(r.sourceRefs) || !r.sourceRefs.length || !r.sourceRefs.every(ref => doc.originalSources.some(s => s.path === ref)) || typeof r.explicit !== 'boolean' || typeof r.nonWaivable !== 'boolean' || typeof r.releaseRequired !== 'boolean' || !Array.isArray(r.surfaceIds) || !r.surfaceIds.length || !Array.isArray(r.checks) || !r.checks.length || !r.checks.every(c => c && onlyKeys(c, 'id kind description') && c.description?.trim().split(/\s+/).length <= 80 && typeof c.id === 'string' && c.id.trim() && ['success','recovery'].includes(c.kind) && typeof c.description === 'string' && c.description.trim()) || new Set(r.checks.map(c => c.id)).size !== r.checks.length) throw new Error(`delivery: invalid authoritative requirement ${r?.id}`);
@@ -25,54 +33,136 @@ export function readDeliveryRequirements(scope: DeliveryScope): { requirements: 
     }
   }
   if (new Set(requirements.map(r => r.id)).size !== requirements.length) throw new Error('delivery: duplicate authoritative requirement IDs');
-  validateDesignCoverage(designs, scope.manifest.surfaces);
-  return { requirements, originalSources, designs };
+  validateDesignCoverage(designs, scope.manifest.surfaces, scope.manifest.outcomes);
+  return { requirements, originalSources, designs, lifecycle };
 }
-/** Full source/obligation contract, for owner scope coverage/change decisions. */
+/** Source/obligation and reviewed dependency map, never deployment churn. */
 export function deliveryScopeDigest(manifest: DeliveryManifest): string {
-  return digest({ runId: manifest.runId, projectRoot: manifest.projectRoot, scopeRevision: manifest.scopeRevision, sourceInputs: manifest.sourceInputs, surfaces: manifest.surfaces, outcomes: manifest.outcomes, authorization: manifest.authorization });
+  const surfaces = manifest.surfaces.map(s => ({ ...s, target: { ...s.target, revision: undefined, bindings: s.target.bindings.map(b => b.path).sort() } }));
+  return digest({ runId: manifest.runId, projectRoot: manifest.projectRoot, scopeRevision: manifest.scopeRevision, sourceInputs: manifest.sourceInputs, surfaces, outcomes: manifest.outcomes, authorization: manifest.authorization });
 }
-/** Actual current content is hashed, rather than trusting revision labels. Relevant
- * dependency fingerprints are recursive so stale prerequisites propagate. */
-export function deliveryEvidenceBinding(scope: DeliveryScope, outcomeId: string): { targetDigest: string; targetContextDigest: string; snapshotDigest: string } {
-  const { requirements, originalSources, designs } = readDeliveryRequirements(scope);
-  const visiting = new Set<string>(); const cache = new Map<string, { targetDigest: string; targetContextDigest: string; snapshotDigest: string }>();
-  const visit = (id: string): { targetDigest: string; targetContextDigest: string; snapshotDigest: string } => {
+
+function outcomeBindings(scope: DeliveryScope, outcome: DeliveryOutcome): FileBinding[] {
+  const surface = scope.manifest.surfaces.find(s => s.id === outcome.surfaceId);
+  if (!surface) throw new Error(`delivery: unknown surface ${outcome.surfaceId}`);
+  const target = surface.target;
+  const classified = new Set([...(target.sharedPaths ?? []), ...scope.manifest.outcomes.filter(o => o.surfaceId === surface.id).flatMap(o => o.bindingPaths ?? [])]);
+  for (const p of classified) if (!target.bindings.some(b => b.path === p)) throw new Error(`delivery: dependency path missing from target bindings: ${p}`);
+  // Partial/unknown maps fail conservatively: no implementer-supplied omission can
+  // silently turn an unclassified source into an unrelated change.
+  const selective = target.sharedPaths !== undefined && outcome.bindingPaths !== undefined && target.bindings.every(b => classified.has(b.path));
+  const paths = new Set([...(target.sharedPaths ?? []), ...(outcome.bindingPaths ?? [])]);
+  return target.bindings.filter(b => !selective || paths.has(b.path)).map(b => ({ path: b.path, sha256: sha256(fs.readFileSync(confined(scope.projectRoot, b.path))) }));
+}
+
+/** Exact execution and stable review identities have deliberately different jobs. */
+export function deliveryEvidenceBinding(scope: DeliveryScope, outcomeId: string): { targetDigest: string; targetContextDigest: string; snapshotDigest: string; reviewDigest: string } {
+  const { requirements, originalSources, designs, lifecycle } = readDeliveryRequirements(scope);
+  type Binding = { targetDigest: string; targetContextDigest: string; snapshotDigest: string; reviewDigest: string };
+  const visiting = new Set<string>(); const cache = new Map<string, Binding>();
+  const visit = (id: string): Binding => {
     const previous = cache.get(id); if (previous) return previous;
     if (visiting.has(id)) throw new Error(`delivery: cyclic outcome dependency ${id}`); visiting.add(id);
     const outcome = scope.manifest.outcomes.find(o => o.id === id); if (!outcome) throw new Error(`delivery: unknown outcome ${id}`);
-    const surface = scope.manifest.surfaces.find(s => s.id === outcome.surfaceId); if (!surface) throw new Error(`delivery: unknown surface ${outcome.surfaceId}`);
-    const actualBindings = surface.target.bindings.map(b => ({ path: b.path, sha256: sha256(fs.readFileSync(confined(scope.projectRoot, b.path))) }));
+    const surface = scope.manifest.surfaces.find(s => s.id === outcome.surfaceId)!;
+    const actualBindings = outcomeBindings(scope, outcome);
+    const { bindings: _bindings, revision: _revision, ...context } = surface.target;
     const targetDigest = digest({ ...surface, target: { ...surface.target, bindings: actualBindings } });
-    const { bindings: _bindings, ...context } = surface.target;
-    const targetContextDigest = digest({ surfaceId: surface.id, kind: surface.kind, entryPoint: surface.entryPoint, target: context });
-    const dependencies = outcome.dependencies.map(d => ({ ...d, snapshotDigest: visit(d.outcomeId).snapshotDigest }));
-    const result = { targetDigest, targetContextDigest, snapshotDigest: digest({ runId: scope.manifest.runId, projectRoot: scope.projectRoot, outcome, requirements: requirements.filter(r => outcome.requirementIds.includes(r.id)), originalSources, ...(designs.some(d => d.surfaceId === surface.id) ? { designs: designs.filter(d => d.surfaceId === surface.id) } : {}), targetDigest, dependencies }) };
+    const semanticTargetDigest = digest({ surfaceId: surface.id, kind: surface.kind, entryPoint: surface.entryPoint, target: context });
+    const targetContextDigest = digest({ semanticTargetDigest, revision: surface.target.revision });
+    const deps = outcome.dependencies.map(d => ({ ...d, binding: visit(d.outcomeId) }));
+    const relevantRequirements = requirements.filter(r => outcome.requirementIds.includes(r.id));
+    const relevantDesigns = designs.filter(d => d.surfaceId === surface.id);
+    const sourceRefs = new Set([...relevantRequirements.flatMap(r => r.sourceRefs), ...relevantDesigns.flatMap(d => d.sourceRefs)]);
+    const common = { lifecycle, runId: scope.manifest.runId, projectRoot: scope.projectRoot, outcome, requirements: relevantRequirements, originalSources: originalSources.filter(s => sourceRefs.has(s.path)), designs: relevantDesigns };
+    const result = { targetDigest, targetContextDigest,
+      snapshotDigest: digest({ ...common, targetDigest, dependencies: deps.map(d => ({ outcomeId: d.outcomeId, kind: d.kind, snapshotDigest: d.binding.snapshotDigest })) }),
+      reviewDigest: digest({ ...common, semanticTargetDigest, bindings: actualBindings, dependencies: deps.map(d => ({ outcomeId: d.outcomeId, kind: d.kind, reviewDigest: d.binding.reviewDigest })) }) };
     visiting.delete(id); cache.set(id, result); return result;
   };
   return visit(outcomeId);
 }
-export function deliveryReviewBinding(scope: DeliveryScope, outcomeIds: string[], evidence: DeliveryEvidence[] = scope.manifest.evidenceRefs): ReviewBinding {
-  const ids = [...outcomeIds].sort();
-  return { outcomeIds: ids, scopeDigest: digest(ids.map(id => ({ id, ...deliveryEvidenceBinding(scope, id) }))), artifactDigests: [...new Set([...evidence.filter(e => ids.includes(e.outcomeId)).flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]), ...scope.manifest.slices.filter(s => s.outcomeIds.some(id => ids.includes(id))).flatMap(s => s.detailedFiles.map(f => sha256(fs.readFileSync(confined(scope.runDirectory, f)))))])].sort() };
+/** Outcome judgment covers observed behavior; fresh execution provenance remains
+ * exact-target-bound in validation and in the final release review. */
+function acceptanceEvidenceDigest(e: DeliveryEvidence): string {
+  return digest({ outcomeId: e.outcomeId, checkId: e.checkId, kind: e.kind, artifact: e.artifact.sha256, command: e.command, observedResult: e.observedResult, result: e.result, capture: e.capture, consumer: e.consumer, productionComposition: e.productionComposition });
 }
-/** Design acceptance pins rendered comparison evidence, not future implementation detail.
- * New journey logs/plan detail cannot invalidate an unchanged early design review. */
-export function deliveryDesignReviewBinding(scope: DeliveryScope, outcomeIds: string[]): ReviewBinding {
+export function deliveryReviewBinding(scope: DeliveryScope, outcomeIds: string[], evidence?: DeliveryEvidence[]): ReviewBinding {
   const ids = [...outcomeIds].sort();
-  const current = scope.manifest.evidenceRefs.filter(e => {
-    if (!ids.includes(e.outcomeId)) return false;
-    const b = deliveryEvidenceBinding(scope, e.outcomeId);
-    return e.snapshotDigest === b.snapshotDigest && e.targetDigest === b.targetDigest;
+  const current = (evidence ?? scope.manifest.evidenceRefs).filter(e => { if (!ids.includes(e.outcomeId) || !evidence && e.kind === 'design-review') return false; if (evidence) return true; const b = deliveryEvidenceBinding(scope, e.outcomeId); return e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest; });
+  const reviewedRecords = current.map(e => {
+    if (evidence) return e;
+    // Retain the ORIGINAL full signed observation, never overwrite it with new
+    // target labels. A separately retained current observation proves freshness.
+    return scope.manifest.evidenceRefs.find(old => old.kind !== 'design-review' && old.reviewDigest === e.reviewDigest && acceptanceEvidenceDigest(old) === acceptanceEvidenceDigest(e) && Date.parse(old.observedAt) <= Date.parse(e.observedAt)) ?? e;
   });
-  const reports = current.filter(e => e.kind === 'design-review');
-  const imageIds = new Set<string>();
-  for (const e of reports) {
-    try { for (const c of parseDesignComparison(checkedFile(scope.projectRoot, e.artifact)).comparisons) imageIds.add(c.imageEvidenceId); }
-    catch { /* Invalid evidence never passes validation; retain its identity in the binding. */ }
+  return { outcomeIds: ids, scopeDigest: digest(ids.map(id => ({ id, reviewDigest: deliveryEvidenceBinding(scope, id).reviewDigest }))), artifactDigests: [...new Set([...reviewedRecords.flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]), ...scope.manifest.slices.filter(s => s.outcomeIds.some(id => ids.includes(id))).flatMap(s => s.detailedFiles.map(f => sha256(fs.readFileSync(confined(scope.runDirectory, f)))))])].sort() };
+}
+
+/** Reuse only a judgment whose source inputs are unchanged and whose referenced
+ * pixels have been captured again on the exact current execution target. */
+function reusableDesignEvidence(scope: DeliveryScope, ids: string[], options?: DeliveryValidationOptions): { reports: DeliveryEvidence[]; images: DeliveryEvidence[] } {
+  const reports: DeliveryEvidence[] = []; const images: DeliveryEvidence[] = [];
+  for (const e of scope.manifest.evidenceRefs.filter(e => ids.includes(e.outcomeId) && e.kind === 'design-review')) {
+    try {
+      const b = deliveryEvidenceBinding(scope, e.outcomeId);
+      const outcome = scope.manifest.outcomes.find(o => o.id === e.outcomeId)!;
+      const target = scope.manifest.surfaces.find(s => s.id === outcome.surfaceId)!.target;
+      const observedAt = Date.parse(e.observedAt);
+      if (e.targetId !== target.id || !outcome.checks.some(c => c.id === e.checkId) || !Number.isFinite(observedAt) || observedAt > (options?.now ?? new Date()).getTime() + 60_000) continue;
+      const exact = e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest;
+      if (!exact && e.reviewDigest !== b.reviewDigest) continue;
+      if (e.result !== 'pass') continue;
+      const comparison = parseDesignComparison(checkedFile(scope.projectRoot, e.artifact));
+      const imageIds = new Set([...comparison.comparisons, ...comparison.experience].flatMap(c => c.imageEvidenceId ? [c.imageEvidenceId] : []));
+      const referenced: DeliveryEvidence[] = [];
+      for (const id of imageIds) {
+        const old = scope.manifest.evidenceRefs.find(i => i.id === id && i.kind === 'image' && i.outcomeId === e.outcomeId);
+        if (!old) throw new Error('missing design image');
+        checkedFile(scope.projectRoot, old.artifact);
+        const outcome = scope.manifest.outcomes.find(o => o.id === e.outcomeId)!;
+        const surface = scope.manifest.surfaces.find(s => s.id === outcome.surfaceId)!;
+        const eligible = (i: DeliveryEvidence) => {
+          const observedAt = Date.parse(i.observedAt);
+          return outcome.checks.some(c => c.id === i.checkId) && Number.isFinite(observedAt) && observedAt <= (options?.now ?? new Date()).getTime() + 60_000 &&
+            (options?.stage !== 'release' || !!scope.manifest.releaseCandidate && i.releaseCandidate === scope.manifest.releaseCandidate && i.productionComposition && surface.target.providerMode === 'real');
+        };
+        const current = scope.manifest.evidenceRefs.find(i => (i.targetDigest === old.targetDigest || Date.parse(i.observedAt) > Date.parse(old.observedAt)) && eligible(i) && i.kind === 'image' && i.outcomeId === e.outcomeId && i.targetId === e.targetId && i.targetDigest === b.targetDigest && i.snapshotDigest === b.snapshotDigest && i.result === 'pass' && i.artifact.sha256 === old.artifact.sha256 && canonical(i.capture) === canonical(old.capture));
+        if (!current) throw new Error('missing fresh equivalent capture');
+        if (!isImage(checkedFile(scope.projectRoot, current.artifact))) throw new Error('invalid rendered image');
+        referenced.push(old);
+      }
+      reports.push(e); images.push(...referenced);
+    } catch { /* Invalid reports cannot be reused or approved. */ }
   }
-  const selected = [...reports, ...current.filter(e => e.kind === 'image' && imageIds.has(e.id))];
-  return { outcomeIds: ids, scopeDigest: digest(ids.map(id => ({ id, ...deliveryEvidenceBinding(scope, id) }))), artifactDigests: [...new Set(selected.flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]))].sort() };
+  return { reports, images: [...new Map(images.map(e => [e.id, e])).values()] };
+}
+/** Readiness is separate from approval: do not spend a reviewer call on an
+ * incomplete capture packet or a comparison that already records a failure. */
+export function designReviewReady(scope: DeliveryScope, outcomeIds: string[]): boolean {
+  try {
+    const { designs } = readDeliveryRequirements(scope);
+    const selected = reusableDesignEvidence(scope, outcomeIds);
+    return outcomeIds.every(id => {
+      const outcome = scope.manifest.outcomes.find(o => o.id === id);
+      const contract = designs.find(d => d.surfaceId === outcome?.surfaceId);
+      const reports = selected.reports.filter(e => e.outcomeId === id);
+      if (!outcome || !contract || !reports.length) return false;
+      for (const report of reports) validateDesignComparison(parseDesignComparison(checkedFile(scope.projectRoot, report.artifact)), contract, outcome, selected.images);
+      return true;
+    });
+  } catch { return false; }
+}
+export function deliveryDesignReviewBinding(scope: DeliveryScope, outcomeIds: string[]): ReviewBinding {
+  const ids = [...outcomeIds].sort(); const selected = reusableDesignEvidence(scope, ids);
+  return { outcomeIds: ids, scopeDigest: digest(ids.map(id => ({ id, reviewDigest: deliveryEvidenceBinding(scope, id).reviewDigest }))), artifactDigests: [...new Set([
+    ...[...selected.reports, ...selected.images].flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]),
+  ])].sort() };
+}
+export function deliveryReleaseReviewBinding(scope: DeliveryScope): ReviewBinding {
+  const { originalSources } = readDeliveryRequirements(scope);
+  const binding = deliveryReviewBinding(scope, scope.manifest.outcomes.map(o => o.id));
+  return { ...binding, scopeDigest: digest({ scope: deliveryScopeDigest(scope.manifest), releaseCandidate: scope.manifest.releaseCandidate, execution: scope.manifest.outcomes.map(o => ({ id: o.id, ...deliveryEvidenceBinding(scope, o.id) })) }), artifactDigests: [...new Set([...binding.artifactDigests, ...scope.manifest.evidenceRefs.filter(e => { const b = deliveryEvidenceBinding(scope, e.outcomeId); return e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest; }).map(e => digest({ evidenceRecord: e })), ...originalSources.map(s => s.sha256)])].sort() };
 }
 function sameSet(a: string[], b: string[]): boolean { return canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort()) && new Set(a).size === a.length; }
 function isImage(data: Buffer): boolean {
@@ -99,10 +189,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       try { return options.trustedReviewProvider?.verify(d, binding) === true; } catch { return false; }
     };
     const trusted = (d: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent') => d?.result === 'approved' && authenticated(d, binding, role);
-    const acceptanceRoles: ('owner' | 'independent' | 'agent')[] = [];
-    if (m.authorization.checkpoints === 'every-slice' || m.authorization.designAcceptance === 'owner') acceptanceRoles.push('owner');
-    if (m.authorization.independentReview || m.authorization.designAcceptance === 'independent') acceptanceRoles.push('independent');
-    if (!acceptanceRoles.length) acceptanceRoles.push('agent');
+    const acceptanceRoles = requiredReviewRoles(m.authorization, 'acceptance');
     const canCarryForward = (e: DeliveryEvidence, currentContextDigest: string): boolean => {
       if (!e.targetContextDigest || e.targetContextDigest !== currentContextDigest) return false;
       // Authenticate the immutable old observation in the original trusted review,
@@ -118,8 +205,9 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       });
     };
     const scopeBinding: ReviewBinding = { scopeDigest: deliveryScopeDigest(m), outcomeIds: [...allIds].sort(), artifactDigests: [...new Set([...m.sourceInputs, ...originalSources].map(s => s.sha256))].sort() };
-    const coverageDecision = m.decisionRefs.find(d => d.kind === 'scope-review' && trusted(d, scopeBinding, m.authorization.designAcceptance));
-    if (!coverageDecision) issue('scope: original-source coverage review pending or provenance unverified');
+    const scopeApproved = requiredReviewRoles(m.authorization, 'scope-review').every(role => m.decisionRefs.some(d => d.kind === 'scope-review' && trusted(d, scopeBinding, role))) && !m.decisionRefs.some(d => d.kind === 'scope-review' && d.result === 'rejected' && authenticated(d, scopeBinding));
+    if (!scopeApproved) issue('scope: original-source coverage review pending or provenance unverified');
+    report.changePolicies = Object.fromEntries(m.surfaces.map(s => [s.target.id, deliveryChangePolicy(readDeliveryRequirements(scope).lifecycle, scopeApproved, s.target.id)]));
     const active = sliceById.get(m.activeSlice)!; const proof = sliceById.get(m.firstProofSlice);
     if (!proof || proof.kind !== 'proof') issue('scope: firstProofSlice must identify a representative proof slice');
     if (m.nextSlice && (!sliceById.has(m.nextSlice) || m.nextSlice === m.activeSlice)) issue('scope: invalid nextSlice');
@@ -170,6 +258,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       }
       for (const id of slice.outcomeIds) if (!slice.units.some(u => u.outcomeIds.includes(id))) issue(`scope: slice outcome ${id} lacks an implementation unit`);
     }
+    const reusable = reusableDesignEvidence(scope, allIds, options);
     const evidenceByOutcome = new Map<string, DeliveryEvidence[]>(); const evidenceFailures = new Map<string, string[]>();
     for (const e of m.evidenceRefs) {
       const fail = (s: string) => { const failures = evidenceFailures.get(e.outcomeId) ?? []; failures.push(`evidence ${e.id}: ${s}`); evidenceFailures.set(e.outcomeId, failures); };
@@ -178,15 +267,16 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
         const surface = m.surfaces.find(s => s.id === outcome.surfaceId)!;
         const binding = deliveryEvidenceBinding(scope, outcome.id);
         if (!outcome.checks.some(c => c.id === e.checkId)) throw new Error('unknown acceptance check');
-        if (e.targetId !== surface.target.id || (e.targetDigest !== binding.targetDigest || e.snapshotDigest !== binding.snapshotDigest) && (e.kind === 'design-review' || e.kind === 'image' || !canCarryForward(e, binding.targetContextDigest))) throw new Error('stale source, contract, dependency or target binding');
+        if (e.targetId !== surface.target.id || (e.targetDigest !== binding.targetDigest || e.snapshotDigest !== binding.snapshotDigest) && !(e.kind === 'design-review' && reusable.reports.some(r => r.id === e.id)) && (e.kind === 'design-review' || e.kind === 'image' || !canCarryForward(e, binding.targetContextDigest))) throw new Error('stale source, contract, dependency or target binding');
         // A changed manifest expected hash is itself stale, even if an evidence author rehashes current files.
         for (const b of surface.target.bindings) checkedFile(scope.projectRoot, b);
+        if (e.targetDigest === binding.targetDigest && m.evidenceRefs.slice(0, m.evidenceRefs.indexOf(e)).some(old => old.id !== e.id && old.targetDigest !== e.targetDigest && old.reviewDigest === e.reviewDigest && acceptanceEvidenceDigest(old) === acceptanceEvidenceDigest(e) && Date.parse(e.observedAt) <= Date.parse(old.observedAt))) throw new Error('new-target observation must be newer than retained historical evidence');
         const time = Date.parse(e.observedAt); if (!Number.isFinite(time) || time > (options.now ?? new Date()).getTime() + 60_000) throw new Error('invalid/future observation time');
         const raw = checkedFile(scope.projectRoot, e.artifact);
         if (e.result !== 'pass') throw new Error('observed execution failed');
         if (e.kind === 'image' && (!isImage(raw) || !e.capture || !e.capture.composed || e.capture.surfaceId !== outcome.surfaceId)) throw new Error('actual composed image capture required');
         if (['consumer','operation','evaluation','render'].includes(e.kind) && !e.consumer?.trim()) throw new Error('consumer/operation identity required');
-        if (options.stage === 'release' && (!m.releaseCandidate || e.releaseCandidate !== m.releaseCandidate || !e.productionComposition || surface.target.providerMode !== 'real')) throw new Error('real production composition and consistent release candidate required');
+        if (options.stage === 'release' && e.kind !== 'design-review' && (!m.releaseCandidate || e.releaseCandidate !== m.releaseCandidate || !e.productionComposition || surface.target.providerMode !== 'real')) throw new Error('real production composition and consistent release candidate required');
         const items = evidenceByOutcome.get(outcome.id) ?? []; items.push(e); evidenceByOutcome.set(outcome.id, items);
       } catch (error) { fail((error as Error).message); }
     }
@@ -199,7 +289,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       let rejectedComparison = false;
       for (const e of items.filter(e => e.kind === 'design-review')) {
         try {
-          validateDesignComparison(parseDesignComparison(checkedFile(scope.projectRoot, e.artifact)), contract, o, items);
+          validateDesignComparison(parseDesignComparison(checkedFile(scope.projectRoot, e.artifact)), contract, o, [...items, ...reusable.images.filter(i => i.outcomeId === o.id && items.some(current => current.kind === 'image' && current.artifact.sha256 === i.artifact.sha256 && canonical(current.capture) === canonical(i.capture)))]);
           designCompared.add(o.id);
         } catch (error) {
           rejectedComparison = true;
@@ -211,7 +301,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       if (rejectedComparison) designCompared.delete(o.id);
     }
     const designAccepted = new Set<string>();
-    const designRoles = [...new Set([m.authorization.designAcceptance, ...(m.authorization.independentReview ? ['independent' as const] : [])])];
+    const designRoles = requiredReviewRoles(m.authorization, 'design-review');
     for (const o of m.outcomes.filter(o => designCompared.has(o.id))) {
       const candidates = m.decisionRefs.filter(d => d.kind === 'design-review' && d.outcomeIds.includes(o.id));
       const approved = candidates.filter(d => d.outcomeIds.every(id => designCompared.has(id)) && trusted(d, deliveryDesignReviewBinding(scope, d.outcomeIds)));
@@ -240,8 +330,8 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       if (!slice.outcomeIds.every(id => technical.has(id) && (!visual(m.surfaces.find(s => s.id === outcomeById.get(id)?.surfaceId)?.kind ?? '') || designAccepted.has(id)))) return false;
       const ids = new Set([...(slice.acceptanceDecisionIds ?? []), ...(slice.acceptanceDecisionId ? [slice.acceptanceDecisionId] : [])]);
       const decisions = m.decisionRefs.filter(d => ids.has(d.id) && d.kind === 'acceptance');
-      const items = m.evidenceRefs.filter(e => slice.outcomeIds.includes(e.outcomeId));
-      const binding = deliveryReviewBinding(scope, slice.outcomeIds, items);
+      const binding = deliveryReviewBinding(scope, slice.outcomeIds);
+      if (m.decisionRefs.some(d => d.kind === 'acceptance' && d.result === 'rejected' && authenticated(d, binding))) return false;
       return acceptanceRoles.every(role => decisions.some(decision => trusted(decision, binding, role)));
     };
     const acceptedSlices = new Set<string>();
@@ -277,6 +367,8 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
         if (!accepted.has(id)) issue(`acceptance: outcome ${id} review pending or provenance unverified`);
       }
       if (options.stage === 'release') {
+        const releaseBinding = deliveryReleaseReviewBinding(scope);
+        if (!requiredReviewRoles(m.authorization, 'release-review').every(role => m.decisionRefs.some(d => d.kind === 'release-review' && trusted(d, releaseBinding, role))) || m.decisionRefs.some(d => d.kind === 'release-review' && d.result === 'rejected' && authenticated(d, releaseBinding))) issue('release: independent original-brief completeness and cross-journey review required');
         if (!report.completion.proofAccepted) issue('release: representative first proof not accepted');
         if (!m.releaseCandidate) issue('release: releaseCandidate identity required');
         if (!m.outcomes.some(o => o.releaseRequired && o.applicability === 'applicable')) issue('release: no applicable required outcomes');

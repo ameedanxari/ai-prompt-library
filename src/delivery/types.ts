@@ -1,3 +1,4 @@
+import type { DeliveryChangePolicy } from './lifecycle.js';
 /** Outcome delivery v1. Paths are relative to projectRoot unless explicitly noted. */
 export type DeliveryStage = 'plan' | 'execute' | 'advance' | 'release';
 export type EvidenceKind = 'execution' | 'recovery' | 'image' | 'consumer' | 'operation' | 'evaluation' | 'render' | 'production-integration' | 'design-review';
@@ -23,19 +24,52 @@ export interface DesignContract {
     sourceRef: string;
     sourceLocation: string;
     expectation: string;
+    /** Every applicable surface outcome must be covered or explicitly excluded by source. */
+    applicability: {
+      outcomeIds: string[];
+      exclusions: { outcomeId: string; sourceRef: string; sourceLocation: string; reason: string }[];
+    };
   }[];
   contexts: { id: string; viewport: string; theme: string }[];
 }
 export interface DesignComparison {
-  schemaVersion: 1;
-  comparisons: { criterionId: string; contextId: string; imageEvidenceId: string; observation: string; result: 'pass' | 'fail' }[];
+  schemaVersion: 2;
+  comparisons: {
+    criterionId: string;
+    contextId: string;
+    imageEvidenceId?: string;
+    observation: string;
+    result: 'pass' | 'fail' | 'not-applicable' | 'unverified';
+  }[];
+  /** A reviewer judges the composed experience separately from criterion/token compliance. */
+  experience: {
+    contextId: string;
+    imageEvidenceId?: string;
+    result: 'pass' | 'fail' | 'unverified';
+    observedStrengths: string[];
+    contraryEvidence: string[];
+    rationale: string;
+    blockingFindings: string[];
+  }[];
 }
-export interface RequirementDocument { schemaVersion: 1; originalSources: FileBinding[]; requirements: RequirementRecord[]; designs?: DesignContract[] }
+export interface DeliveryLifecycle {
+  stage: 'pre-launch' | 'live';
+  dataPolicy: 'disposable' | 'retain';
+  sourceRef: string;
+  sourceLocation: string;
+  /** Explicitly source-authorized disposable targets; never an instruction to perform a reset. */
+  resetTargetIds: string[];
+}
+export interface RequirementDocument { schemaVersion: 1; originalSources: FileBinding[]; requirements: RequirementRecord[]; designs?: DesignContract[]; lifecycle?: DeliveryLifecycle }
 export interface DeliveryTarget {
   id: string;
   environment: string;
   providerMode: 'real' | 'controlled' | 'fake';
   bindings: FileBinding[];
+  /** Volatile deployment/build identity; never a semantic scope change. */
+  revision?: string;
+  /** Reviewed shared dependencies. Omit for conservative whole-surface invalidation. */
+  sharedPaths?: string[];
   /** Native: OS/device. SDK: consumer/version. Data/ML: input/evaluation set. */
   identity: Record<string, string>;
 }
@@ -47,6 +81,8 @@ export interface DeliverySurface {
 }
 export interface DeliveryOutcome {
   id: string;
+  /** Reviewed route/consumer dependencies, combined with target.sharedPaths. */
+  bindingPaths?: string[];
   requirementIds: string[];
   actor: string;
   entryPoint: string;
@@ -87,6 +123,8 @@ export interface DeliveryEvidence {
   /** Immutable target semantics, excluding source file hashes; required for carry-forward. */
   targetContextDigest?: string;
   snapshotDigest: string;
+  /** Semantic source/dependency identity, excluding only target.revision. */
+  reviewDigest?: string;
   artifact: FileBinding;
   command: string;
   observedResult: string;
@@ -100,7 +138,7 @@ export interface DeliveryEvidence {
 }
 export interface DeliveryDecision {
   id: string;
-  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review';
+  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review' | 'release-review';
   outcomeIds: string[];
   scopeDigest: string;
   /** Raw artifacts, canonical full evidence records and reviewed plan content. */
@@ -177,6 +215,7 @@ export interface DeliveryValidationOptions {
   now?: Date;
 }
 export interface DeliveryReport {
+  changePolicies?: Record<string, DeliveryChangePolicy>;
   valid: boolean;
   stage: DeliveryStage;
   issues: string[];

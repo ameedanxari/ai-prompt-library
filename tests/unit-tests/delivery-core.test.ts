@@ -26,6 +26,7 @@ describe('outcome delivery source, evidence and acceptance contract', () => {
   });
   it.each(['every-slice','autonomous'] as const)('preserves cumulative owner and independent acceptance duties with %s transitions', checkpoints => {
     const f = fixture(); f.manifest.authorization.checkpoints = checkpoints; f.manifest.authorization.designAcceptance = 'owner';
+    f.reviewScope(); // Independent source review remains required alongside the owner.
     // Scope coverage itself is owner-reserved too.
     const sourceBinding = { scopeDigest: deliveryScopeDigest(f.manifest), outcomeIds: ['O1'], artifactDigests: [...f.manifest.sourceInputs.map(s => s.sha256), ...f.requirements.originalSources.map(s => s.sha256)].sort() };
     f.trust({ id: 'owner-scope', kind: 'scope-review', ...sourceBinding, reviewer: { id: 'owner', role: 'owner', contextId: 'owner-context' }, provenance: { kind: 'owner-message', reference: 'trusted://owner-scope' }, reason: 'Owner reviewed full original requirement coverage', result: 'approved' }, sourceBinding);
@@ -73,7 +74,7 @@ describe('outcome delivery source, evidence and acceptance contract', () => {
   it('carries source-stale evidence only with authenticated historical and fresh current-scope inspections', () => {
     const f = fixture(); f.reviewScope(); f.evidence(); f.accept();
     f.manifest.surfaces[0].target.bindings[0] = f.write('app.ts', 'export const production = true; // harmless documentation change'); f.reviewScope(); expect(f.validate('advance').valid).toBe(false);
-    const binding = deliveryReviewBinding(f.scope(), ['O1']); const carrier = { id: 'carry', kind: 'carry-forward' as const, ...binding, evidenceIds: f.manifest.evidenceRefs.map(e => e.id), reviewer: { id: 'reviewer', role: 'independent' as const, contextId: 'review-context' }, provenance: { kind: 'review-session' as const, reference: 'trusted://carry' }, reason: 'Independently inspected current diff and re-exercised result; original observation remains applicable', result: 'approved' as const };
+    const binding = deliveryReviewBinding(f.scope(), ['O1'], f.manifest.evidenceRefs); const carrier = { id: 'carry', kind: 'carry-forward' as const, ...binding, evidenceIds: f.manifest.evidenceRefs.map(e => e.id), reviewer: { id: 'reviewer', role: 'independent' as const, contextId: 'review-context' }, provenance: { kind: 'review-session' as const, reference: 'trusted://carry' }, reason: 'Independently inspected current diff and re-exercised result; original observation remains applicable', result: 'approved' as const };
     f.manifest.decisionRefs.push(carrier); f.accept(); expect(f.validate('advance').valid).toBe(false); // local forged receipt is insufficient
     f.manifest.decisionRefs = f.manifest.decisionRefs.filter(d => d.id !== 'carry'); f.trust(carrier, binding); f.accept(); expect(f.validate('advance').issues).toEqual([]);
     f.manifest.evidenceRefs[0].command = 'rewritten original observation'; f.accept(); expect(f.validate('advance').valid).toBe(false);

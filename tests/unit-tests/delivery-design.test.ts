@@ -47,6 +47,88 @@ describe('source-bound early design proof', () => {
     const f = fixture('web'); f.reviewScope(); f.evidence(); f.manifest.evidenceRefs = f.manifest.evidenceRefs.filter(e => e.kind !== 'design-review'); f.accept();
     const r = f.validate('advance'); expect(r.completion.technicallyVerifiedOutcomeIds).toEqual(['O1']); expect(r.completion.designAcceptedOutcomeIds).toEqual([]); expect(r.completion.proofAccepted).toBe(false); expect(r.valid).toBe(false);
   });
+  it('rejects legacy comparisons until experience and applicability are explicitly migrated', () => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => { (r as unknown as { schemaVersion: number }).schemaVersion = 1; });
+    f.accept(); expect(f.validate('advance').issues.join(' ')).toContain('explicitly migrate legacy comparisons');
+    delete (f.requirements.designs![0].criteria[0] as { applicability?: unknown }).applicability;
+    sourceChanged(f); expect(f.validate('plan').issues.join(' ')).toContain('migrate legacy design criteria explicitly');
+  });
+  it('requires experience review even when every source criterion and token passes', () => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => { delete (r as Partial<DesignComparison>).experience; }); f.accept();
+    const report = f.validate('advance');
+    expect(report.completion.technicallyVerifiedOutcomeIds).toEqual(['O1']);
+    expect(report.completion.designAcceptedOutcomeIds).toEqual([]);
+    expect(report.issues.join(' ')).toContain('separate composed experience verdict');
+  });
+  it.each(['fail', 'unverified', 'blocking'])('blocks a generic or uncertain experience despite passing criterion rows: %s', result => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => {
+      expect(r.comparisons.every(c => c.result === 'pass')).toBe(true);
+      const e = r.experience[0];
+      e.observedStrengths = ['The declared palette and type scale are present.'];
+      e.contraryEvidence = ['The stacked uniform cards obscure the primary comparison and the documented material character.'];
+      e.rationale = 'The composed entry reads as a generic dashboard; token matches do not deliver the intended experience.';
+      if (result === 'blocking') e.blockingFindings = ['Restore the intended hierarchy and material composition before acceptance.'];
+      else e.result = result as 'fail' | 'unverified';
+    }); f.accept();
+    const report = f.validate('advance');
+    expect(report.completion.technicallyVerifiedOutcomeIds).toEqual(['O1']);
+    expect(report.completion.designAcceptedOutcomeIds).toEqual([]);
+    expect(report.issues.join(' ')).toContain('rejected or unverified composed experience');
+  });
+  it.each(['missing', 'duplicate', 'unknown', 'no-strengths', 'no-rationale'])('requires complete, specific experience records: %s', mutation => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => {
+      if (mutation === 'missing') r.experience.pop();
+      if (mutation === 'duplicate') r.experience[1] = { ...r.experience[0] };
+      if (mutation === 'unknown') r.experience[0].contextId = 'never-captured';
+      if (mutation === 'no-strengths') r.experience[0].observedStrengths = [];
+      if (mutation === 'no-rationale') r.experience[0].rationale = '';
+    }); f.accept(); expect(f.validate('advance').completion.designAcceptedOutcomeIds).toEqual([]);
+  });
+  it.each(['criterion', 'experience'])('preserves uncaptured %s states as unverified, never accepted proof', area => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => {
+      const row = area === 'criterion' ? r.comparisons[0] : r.experience[0];
+      row.result = 'unverified'; delete row.imageEvidenceId;
+    }); f.accept();
+    expect(f.validate('advance').completion.designAcceptedOutcomeIds).toEqual([]);
+    changeComparison(f, r => { (area === 'criterion' ? r.comparisons[0] : r.experience[0]).result = 'pass'; }); f.accept();
+    expect(f.validate('advance').completion.designAcceptedOutcomeIds).toEqual([]);
+  });
+  it('requires explicit source authority for optional N/A criteria and preserves core applicability', () => {
+    const f = fixture('web');
+    f.requirements.originalSources[1] = f.write('design.md', 'Warm family-home materials; clear hierarchy, restrained composition and compact mobile comparison.\nO1 is text-only: imagery is not applicable to this comparison.');
+    const criterion = { ...f.requirements.designs![0].criteria[0], id: 'imagery', dimension: 'imagery' as const, expectation: 'The documented imagery exception applies only to this text comparison.', applicability: { outcomeIds: [] as string[], exclusions: [{ outcomeId: 'O1', sourceRef: 'design.md', sourceLocation: 'line 2: imagery exception', reason: 'This outcome is explicitly text-only under the documented direction.' }] } };
+    f.requirements.designs![0].criteria.push(criterion); sourceChanged(f); f.evidence();
+    changeComparison(f, r => { for (const c of r.comparisons.filter(c => c.criterionId === 'imagery')) { c.result = 'not-applicable'; c.observation = criterion.applicability.exclusions[0].reason; delete c.imageEvidenceId; } }); f.accept();
+    expect(f.validate('advance').valid).toBe(true);
+    criterion.applicability.exclusions[0].sourceLocation = ''; sourceChanged(f);
+    expect(f.validate('plan').issues.join(' ')).toContain('exclusion needs retained source authority');
+  });
+  it.each(['intent','composition','hierarchy','responsive'])('cannot use N/A authority to remove core %s from an applicable outcome', dimension => {
+    const f = fixture('web'); const c = f.requirements.designs![0].criteria.find(c => c.dimension === dimension)!;
+    c.applicability = { outcomeIds: [], exclusions: [{ outcomeId: 'O1', sourceRef: 'design.md', sourceLocation: 'line 1', reason: 'Claimed applicability exception' }] }; sourceChanged(f);
+    expect(f.validate('plan').issues.join(' ')).toContain(`needs applicable ${dimension} criterion`);
+  });
+  it('does not allow a reviewer to mark an applicable criterion N/A without source authority', () => {
+    const f = fixture('web'); f.reviewScope(); f.evidence();
+    changeComparison(f, r => { r.comparisons[0].result = 'not-applicable'; delete r.comparisons[0].imageEvidenceId; }); f.accept();
+    expect(f.validate('advance').issues.join(' ')).toContain('applicable criteria cannot be marked not-applicable');
+  });
+  it('requires applicability for every outcome and rejects unknown or contradictory outcome scopes', () => {
+    const f = fixture('web');
+    f.manifest.outcomes.push({ ...f.manifest.outcomes[0], id: 'O2', entryPoint: '/compare' }); sourceChanged(f);
+    expect(f.validate('plan').issues.join(' ')).toContain('needs explicit applicability for outcome O2');
+    for (const c of f.requirements.designs![0].criteria) c.applicability.outcomeIds.push('O2'); sourceChanged(f);
+    expect(f.validate('plan').valid).toBe(true);
+    const c = f.requirements.designs![0].criteria[0]; c.applicability.outcomeIds.push('unknown'); sourceChanged(f);
+    expect(f.validate('plan').issues.join(' ')).toContain('unknown/nonapplicable outcome');
+    c.applicability.outcomeIds.pop(); c.applicability.exclusions.push({ outcomeId: 'O1', sourceRef: 'design.md', sourceLocation: 'line 1', reason: 'Contradictory exception' }); sourceChanged(f);
+    expect(f.validate('plan').issues.join(' ')).toContain('must not overlap');
+  });
   it('requires a distinct trusted design decision, not only functional acceptance', () => {
     const f = fixture('web'); f.reviewScope(); f.evidence(); f.accept(); f.manifest.decisionRefs = f.manifest.decisionRefs.filter(d => d.kind !== 'design-review');
     expect(f.validate('advance').completion.designAcceptedOutcomeIds).toEqual([]);
