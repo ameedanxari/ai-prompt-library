@@ -5,6 +5,17 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — bootstrap re-run on macOS
+
+### Fixed
+- `bootstrap-project-integration.sh` no longer aborts when re-run on a project
+  that already has the managed AGENTS.md block. BSD awk (macOS) rejects
+  multi-line `-v` values, so the script stopped before updating the block and
+  `.ai-prompts-version`. The block is now read from a temporary file.
+- A legacy managed block without the end marker is now detected by its heading
+  and replaced up to the next level-2 section, instead of a second block being
+  appended.
+
 ## [Unreleased] — plan gate: owner attestation, architecture contract, release trains
 
 A read-only review of a generated consultancy plan found that the plan could
