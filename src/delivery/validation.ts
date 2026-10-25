@@ -1,4 +1,5 @@
 import * as fs from 'node:fs';
+import { validatePlanningIntegrity } from './planning-integrity.js';
 import * as path from 'node:path';
 import type { DesignContract, DeliveryDecision, DeliveryEvidence, DeliveryManifest, DeliveryOutcome, DeliveryReport, DeliveryScope, DeliverySlice, DeliveryValidationOptions, FileBinding, RequirementDocument, RequirementRecord, ReviewBinding } from './types.js';
 import { parseDesignComparison, readDesignContracts, validateDesignComparison, validateDesignCoverage, visualSurface } from './design.js';
@@ -36,10 +37,21 @@ export function readDeliveryRequirements(scope: DeliveryScope): { requirements: 
   validateDesignCoverage(designs, scope.manifest.surfaces, scope.manifest.outcomes);
   return { requirements, originalSources, designs, lifecycle };
 }
+/** Source review and validation must inspect the same exact current sidecars. */
+export function readDeliveryPlanningInputs(scope: DeliveryScope): FileBinding[] {
+  const inputs = scope.manifest.planningInputs ?? [];
+  const actual = inputs.map(binding => { checkedFile(scope.projectRoot, binding); return confined(scope.projectRoot, binding.path); }).sort();
+  if (scope.manifest.schemaVersion === 2) {
+    const expected = ['planning-integrity.json', 'review-findings.json'].map(file => path.join(scope.runDirectory, file)).sort();
+    if (JSON.stringify(expected) !== JSON.stringify(actual)) throw new Error('planning: both current run sidecars must be bound in planningInputs');
+  }
+  return inputs;
+}
+
 /** Source/obligation and reviewed dependency map, never deployment churn. */
 export function deliveryScopeDigest(manifest: DeliveryManifest): string {
   const surfaces = manifest.surfaces.map(s => ({ ...s, target: { ...s.target, revision: undefined, bindings: s.target.bindings.map(b => b.path).sort() } }));
-  return digest({ runId: manifest.runId, projectRoot: manifest.projectRoot, scopeRevision: manifest.scopeRevision, sourceInputs: manifest.sourceInputs, surfaces, outcomes: manifest.outcomes, authorization: manifest.authorization });
+  return digest({ runId: manifest.runId, projectRoot: manifest.projectRoot, scopeRevision: manifest.scopeRevision, sourceInputs: manifest.sourceInputs, planningInputs: manifest.planningInputs, surfaces, outcomes: manifest.outcomes, authorization: manifest.authorization });
 }
 
 function outcomeBindings(scope: DeliveryScope, outcome: DeliveryOutcome): FileBinding[] {
@@ -173,6 +185,18 @@ function isImage(data: Buffer): boolean {
 }
 const visual = visualSurface;
 
+/** Outcomes whose current inputs can block execution of the detailed units. */
+export function deliveryExecutionOutcomeIds(manifest: DeliveryManifest, slice: DeliverySlice): string[] {
+  const selected = new Set(slice.units.flatMap(unit => unit.outcomeIds));
+  const pending = [...selected];
+  for (let index = 0; index < pending.length; index++) {
+    for (const dependency of manifest.outcomes.find(outcome => outcome.id === pending[index])?.dependencies ?? []) {
+      if (!selected.has(dependency.outcomeId)) { selected.add(dependency.outcomeId); pending.push(dependency.outcomeId); }
+    }
+  }
+  return [...selected];
+}
+
 export function validateDelivery(targetDir: string, options: DeliveryValidationOptions): DeliveryReport {
   const report: DeliveryReport = { valid: false, stage: options.stage, issues: [], metrics: { pendingWords: 0, pendingBytes: 0, pendingUnits: 0, pendingSlices: 0, reviewRounds: 0, reworkUnits: 0 }, completion: { planReady: false, proofAccepted: false, sliceAccepted: false, releaseReady: false, acceptedOutcomeIds: [], designAcceptedOutcomeIds: [], technicallyVerifiedOutcomeIds: [], excludedOutcomeIds: [], staleOutcomeIds: [] } };
   const issue = (s: string) => { if (!report.issues.includes(s)) report.issues.push(s); };
@@ -180,6 +204,19 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
   try {
     const scope = resolveDeliveryScope(targetDir, { allowLegacy: false })!; const m = scope.manifest;
     const { requirements, originalSources, designs } = readDeliveryRequirements(scope);
+    readDeliveryPlanningInputs(scope);
+
+    const activePlan = m.slices.find(s => s.id === m.activeSlice)!;
+    const executeOutcomeIds = [...new Set(activePlan.units.flatMap(unit => unit.outcomeIds))];
+    const planning = validatePlanningIntegrity({ projectRoot: scope.projectRoot, runDirectory: scope.runDirectory, stage: options.stage,
+      required: m.schemaVersion === 2, originalSources, requirementIds: requirements.map(r => r.id),
+      units: m.slices.find(s => s.id === m.activeSlice)!.units.map(u => ({ id: u.id, filePaths: u.affectedPaths, nodeIds: u.planningNodeIds })),
+      knownTargets: [...m.outcomes.map(o => o.id), ...m.slices.flatMap(s => [s.id, ...s.units.map(u => u.id)])],
+      targetIds: options.stage === 'release' ? undefined : [m.activeSlice, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(m, activePlan) : activePlan.outcomeIds), ...activePlan.units.map(u => u.id)],
+    });
+    report.planningIntegrity = { assessed: planning.assessed, blockers: planning.blockers, warnings: planning.warnings };
+    for (const problem of planning.issues) issue(`${problem.code}: ${problem.target}: ${problem.message}`);
+
     const allIds = m.outcomes.map(o => o.id); const outcomeById = new Map(m.outcomes.map(o => [o.id, o])); const sliceById = new Map(m.slices.map(s => [s.id, s]));
     const authenticated = (d: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent'): boolean => {
       if (!d || d.scopeDigest !== binding.scopeDigest || !sameSet(d.artifactDigests, binding.artifactDigests) || !sameSet(d.outcomeIds, binding.outcomeIds)) return false;
@@ -204,7 +241,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
         return trusted(d, binding, m.authorization.independentReview ? 'independent' : m.authorization.designAcceptance);
       });
     };
-    const scopeBinding: ReviewBinding = { scopeDigest: deliveryScopeDigest(m), outcomeIds: [...allIds].sort(), artifactDigests: [...new Set([...m.sourceInputs, ...originalSources].map(s => s.sha256))].sort() };
+    const scopeBinding: ReviewBinding = { scopeDigest: deliveryScopeDigest(m), outcomeIds: [...allIds].sort(), artifactDigests: [...new Set([...m.sourceInputs, ...(m.planningInputs ?? []), ...originalSources].map(s => s.sha256))].sort() };
     const scopeApproved = requiredReviewRoles(m.authorization, 'scope-review').every(role => m.decisionRefs.some(d => d.kind === 'scope-review' && trusted(d, scopeBinding, role))) && !m.decisionRefs.some(d => d.kind === 'scope-review' && d.result === 'rejected' && authenticated(d, scopeBinding));
     if (!scopeApproved) issue('scope: original-source coverage review pending or provenance unverified');
     report.changePolicies = Object.fromEntries(m.surfaces.map(s => [s.target.id, deliveryChangePolicy(readDeliveryRequirements(scope).lifecycle, scopeApproved, s.target.id)]));
@@ -256,7 +293,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
         }
         preceding.add(unit.id);
       }
-      for (const id of slice.outcomeIds) if (!slice.units.some(u => u.outcomeIds.includes(id))) issue(`scope: slice outcome ${id} lacks an implementation unit`);
+      for (const id of slice.outcomeIds) if (!slice.deferredOutcomeIds?.includes(id) && !slice.units.some(u => u.outcomeIds.includes(id))) issue(`scope: slice outcome ${id} lacks an implementation unit`);
     }
     const reusable = reusableDesignEvidence(scope, allIds, options);
     const evidenceByOutcome = new Map<string, DeliveryEvidence[]>(); const evidenceFailures = new Map<string, string[]>();
@@ -327,6 +364,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     };
     for (const o of m.outcomes) { deliveryEvidenceBinding(scope, o.id); isTechnical(o.id); }
     const sliceAccepted = (slice: DeliverySlice): boolean => {
+      if (slice.deferredOutcomeIds?.length) return false;
       if (!slice.outcomeIds.every(id => technical.has(id) && (!visual(m.surfaces.find(s => s.id === outcomeById.get(id)?.surfaceId)?.kind ?? '') || designAccepted.has(id)))) return false;
       const ids = new Set([...(slice.acceptanceDecisionIds ?? []), ...(slice.acceptanceDecisionId ? [slice.acceptanceDecisionId] : [])]);
       const decisions = m.decisionRefs.filter(d => ids.has(d.id) && d.kind === 'acceptance');
@@ -348,14 +386,20 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     if (proof) for (const surface of m.surfaces) if (!proof.outcomeIds.some(id => outcomeById.get(id)?.surfaceId === surface.id)) issue(`proof: representative proof omits surface ${surface.id}`);
     if (!report.completion.proofAccepted && active.id !== proof?.id) issue('proof: first proof must be accepted before advancing breadth');
     if (!m.authorization.execution && options.stage !== 'plan') issue('authorization: execution has not been granted');
-    for (const id of active.outcomeIds) for (const dependency of outcomeById.get(id)?.dependencies ?? []) {
-      if (active.outcomeIds.includes(dependency.outcomeId)) continue;
+    // Only declared units execute while the proof is being refined. A detailed
+    // unit cannot skip readiness for an outcome whose implementation is deferred.
+    const readinessOutcomeIds = active.deferredOutcomeIds?.length && ['plan','execute'].includes(options.stage) ? executeOutcomeIds : active.outcomeIds;
+    for (const id of readinessOutcomeIds) for (const dependency of outcomeById.get(id)?.dependencies ?? []) {
+      if (readinessOutcomeIds.includes(dependency.outcomeId)) continue;
       if (!(dependency.kind === 'technical' ? technical : accepted).has(dependency.outcomeId)) issue(`dependency: ${id} requires ${dependency.kind} prerequisite ${dependency.outcomeId}`);
     }
     validateBudget(scope, acceptedSlices, designAccepted, report, trusted, scopeBinding, new Set([...evidenceByOutcome.values()].flat().map(e => confined(scope.projectRoot, e.artifact.path))), options.trustedProjectionProvider);
     const planIssues = report.issues.length;
     report.completion.planReady = planIssues === 0;
     if (options.stage === 'advance' || options.stage === 'release') {
+      for (const slice of options.stage === 'release' ? m.slices : [active]) {
+        if (slice.deferredOutcomeIds?.length) issue(`PROOF_REFINEMENT_PENDING: ${slice.id}: refine deferred outcomes before ${options.stage}: ${slice.deferredOutcomeIds.join(', ')}`);
+      }
       const requiredIds = options.stage === 'release' ? m.outcomes.filter(o => o.applicability === 'applicable' && o.releaseRequired).map(o => o.id) : active.outcomeIds;
       for (const id of requiredIds) {
         const outcome = outcomeById.get(id)!;
@@ -415,6 +459,7 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
       const raw = path.join(dir, entry.name); const file = confined(scope.projectRoot, path.relative(scope.projectRoot, raw)); const stat = fs.statSync(file);
       if (stat.isDirectory()) { scan(file); continue; }
       if (!stat.isFile() || file === path.join(scope.runDirectory, 'delivery-manifest.json')) continue;
+      if (path.dirname(file) === scope.runDirectory && ['planning-integrity.json', 'review-findings.json'].includes(path.basename(file))) continue;
       // Retained raw artifacts and versioned authoritative source records are not implementation prompts.
       if (currentEvidenceArtifacts.has(file) || m.sourceInputs.some(s => confined(scope.projectRoot, s.path) === file) || originalPaths.has(file)) continue;
       if (seen.has(file)) continue; seen.add(file);

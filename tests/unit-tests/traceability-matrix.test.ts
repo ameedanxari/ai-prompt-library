@@ -34,6 +34,61 @@ describe('traceability matrix', () => {
     ]);
   });
 
+  it('requires exact requirement links despite a shared feature and flow', () => {
+    const matrix = buildTraceabilityMatrix({
+      requirements: [
+        { id: 'REQ-A', critical: true, featureIds: ['FEAT-SHARED'], flowIds: ['FLOW-SHARED'] },
+        { id: 'REQ-B', critical: true, featureIds: ['FEAT-SHARED'], flowIds: ['FLOW-SHARED'] },
+      ],
+      features: [{ id: 'FEAT-SHARED', requirementIds: ['REQ-A', 'REQ-B'] }],
+      flows: [{ id: 'FLOW-SHARED', requirementIds: ['REQ-A', 'REQ-B'] }],
+      tasks: [{ id: 'TASK-A', requirementIds: ['REQ-A'], featureIds: ['FEAT-SHARED'], flowIds: ['FLOW-SHARED'] }],
+      tests: [{ id: 'TEST-A', requirementIds: ['REQ-A'], flowIds: ['FLOW-SHARED'], taskIds: ['TASK-A'] }],
+      releaseGates: [{ id: 'GATE-SHARED', flowIds: ['FLOW-SHARED'] }],
+    });
+
+    expect(matrix.rows.find((row) => row.sourceId === 'REQ-B')).toMatchObject({
+      taskIds: [], testIds: [], releaseGateIds: [],
+    });
+    expect(findTraceabilityGaps(matrix)).toMatchObject([
+      { code: 'missing-critical-requirement-evidence', sourceId: 'REQ-B' },
+      { code: 'missing-critical-requirement-task-coverage', sourceId: 'REQ-B' },
+    ]);
+  });
+
+  it('accepts the union of exact requirement links across separate tasks', () => {
+    const matrix = buildTraceabilityMatrix({
+      requirements: [{ id: 'REQ-A', critical: true }, { id: 'REQ-B', critical: true }],
+      tasks: [
+        { id: 'TASK-A', requirementIds: ['REQ-A'] },
+        { id: 'TASK-B', requirementIds: ['REQ-B'] },
+      ],
+      tests: [{ id: 'TEST-A', taskIds: ['TASK-A'] }],
+      releaseGates: [{ id: 'GATE-B', requirementIds: ['REQ-B'] }],
+    });
+
+    expect(findTraceabilityGaps(matrix)).toEqual([]);
+  });
+
+  it('honors evidence requirement scope on a task covering multiple requirements', () => {
+    const input: TraceabilityMatrixInput = {
+      requirements: [{ id: 'REQ-A', critical: true }, { id: 'REQ-B', critical: true }],
+      tasks: [{ id: 'TASK-SHARED', requirementIds: ['REQ-A', 'REQ-B'] }],
+      tests: [{ id: 'TEST-A', requirementIds: ['REQ-A'], taskIds: ['TASK-SHARED'] }],
+      releaseGates: [{ id: 'GATE-A', requirementIds: ['REQ-A'], taskIds: ['TASK-SHARED'] }],
+    };
+
+    expect(findTraceabilityGaps(buildTraceabilityMatrix(input))).toMatchObject([
+      { code: 'missing-critical-requirement-evidence', sourceId: 'REQ-B' },
+    ]);
+    for (const test of [
+      { id: 'TEST-BOTH', requirementIds: ['REQ-A', 'REQ-B'], taskIds: ['TASK-SHARED'] },
+      { id: 'TEST-TASK', taskIds: ['TASK-SHARED'] },
+    ]) {
+      expect(findTraceabilityGaps(buildTraceabilityMatrix({ ...input, tests: [test] }))).toEqual([]);
+    }
+  });
+
   it('flags feature dependency metadata dropped from covering tasks', () => {
     const matrix = buildTraceabilityMatrix({
       features: [

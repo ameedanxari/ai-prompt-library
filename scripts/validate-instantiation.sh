@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 # Validate that engine outputs are fully instantiated:
 #   - no template references or unreplaced placeholders,
-#   - File: fields name a single concrete file, not a directory or
-#     "multiple files",
+#   - File: fields enumerate concrete files, not directories or vague groups,
 #   - acceptance criteria are not tautological ("tests pass", "works").
 #
 # Scans both greenfield outputs (tasks-*.md from drill-down-engine) and
@@ -52,7 +51,7 @@ GLOBAL_PATTERNS=(
 )
 
 # Per-line patterns that, when matched on a "File:" line, indicate the
-# File field points at a directory or group rather than one file.
+# File field points at a directory or vague group rather than concrete files.
 # shellcheck disable=SC2016  # literal ERE; the backticks are pattern text, not command substitution
 FILE_LINE_DIR_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*`[^`]+/`'
 FILE_LINE_MULTI_PATTERN='^\s*[-*]?\s*\*\*File:\*\*.*\((multiple|several|various|all)\b'
@@ -221,7 +220,9 @@ fi
 # task coverage gaps, artifact-contract changes without reviewed
 # overrides, and incomplete override records.
 semantic_traceability_tmp=$(mktemp)
-if python3 - "$TARGET_DIR" > "$semantic_traceability_tmp" 2>/dev/null <<'PY'
+if ! command -v python3 >/dev/null 2>&1; then
+  semantic_traceability_result="unavailable"
+elif python3 - "$TARGET_DIR" > "$semantic_traceability_tmp" 2>/dev/null <<'PY'
 import os
 import re
 import sys
@@ -366,6 +367,21 @@ for task in tasks:
         else:
             valid_overrides.add(source)
 
+# Shared features/flows do not establish coverage of an individual requirement.
+# Aggregate explicit links across tasks so splitting a feature remains legitimate.
+requirement_ids = sorted({
+    requirement_id
+    for feature in features.values()
+    for requirement_id in feature["requirement_ids"]
+})
+for requirement_id in requirement_ids:
+    if not any(requirement_id in task["requirement_ids"] for task in tasks):
+        issues.append((
+            "missing-requirement-task-coverage",
+            requirement_id,
+            "requirement has no explicitly linked task coverage",
+        ))
+
 for feature_id, feature in sorted(features.items()):
     covering_tasks = [
         task for task in tasks
@@ -417,23 +433,27 @@ PY
 then
   semantic_traceability_result=$(cat "$semantic_traceability_tmp")
 else
-  semantic_traceability_result="skip"
+  semantic_traceability_result="error:$?"
 fi
 rm -f "$semantic_traceability_tmp"
-if [ "$semantic_traceability_result" = "skip" ]; then
-  echo "⚠️  semantic traceability check skipped (python3 not available)"
+if [ "$semantic_traceability_result" = "unavailable" ]; then
+  echo "❌ semantic-loss: tooling-unavailable: python3 is required for semantic traceability"
+  fail=1
+elif [ "$semantic_traceability_result" = "ok" ]; then
+  :
+elif printf "%s\n" "$semantic_traceability_result" | head -n 1 | grep -q '^fail$'; then
+  echo "❌ semantic-loss: traceability matrix found blocking issue(s)"
+  printf "%s\n" "$semantic_traceability_result" | tail -n +2 | while IFS="$(printf '\t')" read -r code source message; do
+    [ -z "$code" ] && continue
+    echo "   - $code: $source — $message"
+  done
+  echo "   Regenerate from drill-down Step 2/3 so requirement IDs,"
+  echo "   flow IDs, feature dependencies, artifact contracts, and reviewed"
+  echo "   overrides are preserved mechanically."
+  fail=1
 else
-  if printf "%s\n" "$semantic_traceability_result" | head -n 1 | grep -q '^fail$'; then
-    echo "❌ semantic-loss: traceability matrix found blocking issue(s)"
-    printf "%s\n" "$semantic_traceability_result" | tail -n +2 | while IFS="$(printf '\t')" read -r code source message; do
-      [ -z "$code" ] && continue
-      echo "   - $code: $source — $message"
-    done
-    echo "   Regenerate from drill-down Step 2/3 so requirement IDs,"
-    echo "   flow IDs, feature dependencies, artifact contracts, and reviewed"
-    echo "   overrides are preserved mechanically."
-    fail=1
-  fi
+  echo "❌ semantic-loss: checker-failed: semantic traceability checker failed or returned invalid output ($semantic_traceability_result)"
+  fail=1
 fi
 
 # 0b-iii. Gap→remediation coverage (C3). If gap-list.md exists, every
@@ -901,51 +921,15 @@ for f in "${files[@]}"; do
 
   # 3. File field that says "(multiple files ...)" or similar.
   if grep -niE "$FILE_LINE_MULTI_PATTERN" "$f" >/dev/null 2>&1; then
-    echo "❌ $f: File: field names a group, not a single file"
+    echo "❌ $f: File: field names a group without enumerating concrete files"
     grep -niE "$FILE_LINE_MULTI_PATTERN" "$f" | sed 's/^/   /'
     fail=1
   fi
 
-  # 3b. File field with comma-separated backticked paths — another
-  # one-task-per-file violation. Field test #6 surfaced 5 tasks like:
-  #     **File:** `android/app/build.gradle.kts`, `ios/Cleaner/Config.xcconfig`
-  # which read as "one task writes to two files" — exactly what check 3
-  # intends to reject. Check 3's pattern missed it because the model
-  # used real paths separated by ", ` " rather than the phrase
-  # "(multiple files)". Explicit detection here.
-  #
-  # Phase 7 exemption: pipe-separated cross-platform paths
-  # (`ios/path` | `android/path`) are the canonical format for
-  # dual-platform tasks and are NOT a multi-file violation. The pipe
-  # represents the SAME logical component on two platforms. Skip
-  # detection when exactly 2 backticked paths are separated by " | ".
-  multi_backtick=$(awk '
-    /^[[:space:]]*-[[:space:]]*\*\*File:\*\*/ || /^[[:space:]]*-[[:space:]]*File:/ {
-      # If the line uses the pipe separator for cross-platform paths,
-      # exempt it from the multi-backtick check.
-      if ($0 ~ /`[^`]+`[[:space:]]*\|[[:space:]]*`[^`]+`/) next
-      # Count backticked tokens on this line.
-      s = $0
-      count = 0
-      while (match(s, /`[^`]+`/)) {
-        count++
-        s = substr(s, RSTART + RLENGTH)
-      }
-      if (count > 1) printf "%d:%s\n", NR, $0
-    }
-  ' "$f")
-  if [ -n "$multi_backtick" ]; then
-    echo "❌ $f: File: field names more than one file path"
-    printf "%s\n" "$multi_backtick" | sed 's/^/   /'
-    echo "   Each task MUST write to exactly one file. Split this task"
-    echo "   into N tasks, one per file, each with its own acceptance"
-    echo "   criteria and test."
-    echo "   Note: cross-platform paths using the pipe separator"
-    echo "   (\`ios/path\` | \`android/path\`) are allowed — they represent"
-    echo "   the same logical file on two platforms."
-    fail=1
-  fi
-
+  # 3b. Coherent units may enumerate several concrete files (for example,
+  # source, its regression test, and required configuration). Path ownership
+  # and collisions are checked for every declared path by the canonical
+  # task contract and path ledger; path count alone is not a defect.
 
   # 4b. Hollow prompt detection.
   # A quoted TBD is allowed when discussing literal banned copy (for
@@ -1317,49 +1301,49 @@ PY
     fi
   fi
 
-  # 6a. File-count-mismatch detector: if a task's Acceptance section
-  # lists N distinct file paths and N > 1, and the task's File field
-  # names only one file, the task is implicitly creating N files
-  # — a covert collapse. Scan each task section.
+  # 6a. Acceptance must not introduce undeclared output files. Concrete
+  # multi-file units are valid; compare creation assertions against every
+  # declared File path rather than imposing a one-file task shape.
   mismatch_report=$(awk '
-    BEGIN { in_task = 0; in_accept = 0; task_title = ""; file_field = ""; accept_paths = ""; paths_n = 0 }
+    BEGIN { in_task = 0; in_accept = 0; task_title = ""; file_field = ""; accept_paths = ""; fenced = 0 }
     function flush() {
-      # Count distinct paths mentioned in the Accept section that differ
-      # from the File field path. If > 1 distinct, flag.
+      # Count distinct output paths not declared in the File field.
       n = split(accept_paths, arr, ",")
       seen[""] = 1
       distinct = 0
       for (i = 1; i <= n; i++) {
         p = arr[i]
-        if (p != "" && p != file_field && !(p in seen)) {
+        if (p != "" && !(p in declared) && !(p in seen)) {
           seen[p] = 1; distinct++
         }
       }
-      # Require: File field set, at least 2 distinct extra paths that
-      # share the same parent directory shape as File field
-      # (reduces false positives on general test references).
-      if (file_field != "" && distinct >= 2) {
-        printf "   %s\n      File: is one path but Acceptance names %d additional file paths (implicit collapse across files)\n", task_title, distinct
+      if (file_field != "" && distinct >= 1) {
+        printf "   %s\n      Acceptance names %d undeclared output file paths (implicit collapse across files)\n", task_title, distinct
       }
       for (k in seen) delete seen[k]
+      for (k in declared) delete declared[k]
       accept_paths = ""; distinct = 0
     }
+    /^[[:space:]]*(```|~~~)/ { fenced = !fenced; next }
+    fenced { next }
     /^## / {
       if (in_task) flush()
       in_task = 1; in_accept = 0
       task_title = $0; file_field = ""; accept_paths = ""
       next
     }
-    /^-[[:space:]]*\*\*File:\*\*/ {
-      # Extract backticked path.
-      if (match($0, /`[^`]+`/)) {
-        file_field = substr($0, RSTART + 1, RLENGTH - 2)
+    /^[[:space:]]*[-*]?[[:space:]]*\*\*File(:\*\*|\*\*:)/ {
+      file_field = $0
+      s = $0
+      while (match(s, /`[^`]+`/)) {
+        declared[substr(s, RSTART + 1, RLENGTH - 2)] = 1
+        s = substr(s, RSTART + RLENGTH)
       }
       in_accept = 0
       next
     }
-    /^-[[:space:]]*\*\*Acceptance:\*\*/ { in_accept = 1; next }
-    /^-[[:space:]]*\*\*/ { in_accept = 0; next }
+    /^[[:space:]]*[-*]?[[:space:]]*\*\*Acceptance(:\*\*|\*\*:)/ { in_accept = 1; next }
+    /^[[:space:]]*[-*]?[[:space:]]*\*\*/ { in_accept = 0; next }
     {
       if (in_accept) {
         # Only count a bullet when it is asserting that a specific path
@@ -1379,8 +1363,8 @@ PY
           s = $0
           while (match(s, /`[^`]+`/)) {
             token = substr(s, RSTART + 1, RLENGTH - 2)
-            # Only count things that look like file paths with / and an extension.
-            if (token ~ /\// && token ~ /\.[a-zA-Z0-9]+$/) {
+            # Root-level configuration and lockfiles are outputs too.
+            if (token !~ /[[:space:]]/ && token ~ /\.[a-zA-Z0-9]+$/) {
               accept_paths = accept_paths token ","
             }
             s = substr(s, RSTART + RLENGTH)
@@ -1391,7 +1375,7 @@ PY
     END { if (in_task) flush() }
   ' "$f")
   if [ -n "$mismatch_report" ]; then
-    echo "❌ $f: task has File: one path but Acceptance lists multiple file paths"
+    echo "❌ $f: Acceptance names undeclared output file paths"
     printf "%s\n" "$mismatch_report"
     fail=1
   fi
@@ -1655,7 +1639,9 @@ fi
 # never checked mechanically; the StorageCleaner schema alignment relied
 # on a manual Python script to verify acyclicity.
 if [ ${#files[@]} -gt 0 ]; then
-  dag_result=$(python3 -c "
+  if ! command -v python3 >/dev/null 2>&1; then
+    dag_result="unavailable"
+  elif dag_result=$(python3 -c "
 import sys, os, re
 from collections import defaultdict, deque
 
@@ -1665,7 +1651,7 @@ for fn in os.listdir(target_dir):
     if not fn.startswith('tasks-') or not fn.endswith('.md'):
         continue
     deps = []
-    with open(os.path.join(target_dir, fn)) as fh:
+    with open(os.path.join(target_dir, fn), encoding='utf-8') as fh:
         for line in fh:
             if '**Depends on:**' in line or '**Depends on**:' in line:
                 refs = re.findall(r'tasks-[a-z0-9][a-z0-9-]*\.md', line)
@@ -1698,13 +1684,18 @@ if len(ordered) == len(all_nodes):
 else:
     cycle_nodes = sorted(all_nodes - set(ordered))
     print('cycle:' + ','.join(cycle_nodes))
-" "$TARGET_DIR" 2>/dev/null || echo "skip")
+" "$TARGET_DIR" 2>/dev/null); then
+    :
+  else
+    dag_result="error:$?"
+  fi
 
   case "$dag_result" in
     ok)
       ;;
-    skip)
-      echo "⚠️  DAG cycle check skipped (python3 not available)"
+    unavailable)
+      echo "❌ DAG cycle check: tooling-unavailable: python3 is required"
+      fail=1
       ;;
     cycle:*)
       cycle_list=${dag_result#cycle:}
@@ -1713,6 +1704,10 @@ else:
       echo "   a valid execution order:"
       echo "$cycle_list" | tr ',' '\n' | sed 's/^/   - /'
       echo "   Fix by removing or reversing one dependency in the cycle."
+      fail=1
+      ;;
+    *)
+      echo "❌ DAG cycle check: checker-failed: checker failed or returned invalid output ($dag_result)"
       fail=1
       ;;
   esac
@@ -1801,6 +1796,6 @@ else
   echo "🚨 instantiation issues detected — regenerate the offending task(s)."
   echo "   For tasks-*.md: re-run drill-down-engine Step 3 with strict dissolution."
   echo "   For remediation-*.md: re-run audit-and-remediate Step 3; each task"
-  echo "   must name ONE concrete file and have non-tautological acceptance."
+  echo "   must declare concrete files and have non-tautological acceptance."
   exit 1
 fi

@@ -1,6 +1,6 @@
 import type { DeliveryScope, DeliveryValidationOptions, ReviewBinding } from './types.js';
 import { canonical } from './manifest.js';
-import { designReviewReady, validateDelivery, deliveryDesignReviewBinding, deliveryReleaseReviewBinding, deliveryReviewBinding, deliveryScopeDigest, readDeliveryRequirements } from './validation.js';
+import { designReviewReady, validateDelivery, deliveryDesignReviewBinding, deliveryReleaseReviewBinding, deliveryReviewBinding, deliveryScopeDigest, readDeliveryRequirements, readDeliveryPlanningInputs } from './validation.js';
 import { deliveryChangePolicy } from './lifecycle.js';
 
 import { requiredReviewRoles, reviewRoleSatisfies } from './review-policy.js';
@@ -16,12 +16,12 @@ export interface ReviewPlan {
 const same = (a: string[], b: string[]) => canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort()) && new Set(a).size === a.length;
 /** Call before dispatching a reviewer. A new session is not a new review input. */
 export function planDeliveryReview(scope: DeliveryScope, kind: ReviewPurpose, outcomeIds: string[], options: Pick<DeliveryValidationOptions, 'trustedReviewProvider'> = {}): ReviewPlan {
-  const m = scope.manifest; const requirements = readDeliveryRequirements(scope);
+  const m = scope.manifest; const requirements = readDeliveryRequirements(scope); const planningInputs = readDeliveryPlanningInputs(scope);
   if (!['scope-review','design-review','acceptance','release-review'].includes(kind)) throw new Error('delivery: unknown review purpose');
   if (!outcomeIds.length || new Set(outcomeIds).size !== outcomeIds.length || outcomeIds.some(id => !m.outcomes.some(o => o.id === id))) throw new Error('delivery: invalid review outcomes');
   const all = m.outcomes.map(o => o.id).sort();
   if (['scope-review','release-review'].includes(kind) && !same(outcomeIds, all)) throw new Error('delivery: original-scope reviews must cover the complete outcome ledger');
-  const binding = kind === 'scope-review' ? { scopeDigest: deliveryScopeDigest(m), outcomeIds: all, artifactDigests: [...new Set([...m.sourceInputs, ...requirements.originalSources].map(s => s.sha256))].sort() }
+  const binding = kind === 'scope-review' ? { scopeDigest: deliveryScopeDigest(m), outcomeIds: all, artifactDigests: [...new Set([...m.sourceInputs, ...planningInputs, ...requirements.originalSources].map(s => s.sha256))].sort() }
     : kind === 'design-review' ? deliveryDesignReviewBinding(scope, outcomeIds)
     : kind === 'release-review' ? deliveryReleaseReviewBinding(scope)
     : deliveryReviewBinding(scope, outcomeIds);
@@ -41,7 +41,9 @@ export function planDeliveryReview(scope: DeliveryScope, kind: ReviewPurpose, ou
     const applicable = m.outcomes.filter(o => outcomeIds.includes(o.id) && o.applicability === 'applicable');
     ready = status.valid && applicable.every(o => status.completion.technicallyVerifiedOutcomeIds.includes(o.id) &&
       (!requirements.designs.some(d => d.surfaceId === o.surfaceId) || status.completion.designAcceptedOutcomeIds.includes(o.id)));
-    if (kind === 'release-review') ready &&= applicable.filter(o => o.releaseRequired).every(o => status.completion.acceptedOutcomeIds.includes(o.id));
+    const deferred = m.slices.flatMap(slice => slice.deferredOutcomeIds ?? []);
+    if (outcomeIds.some(id => deferred.includes(id))) ready = false;
+    if (kind === 'release-review') ready &&= !deferred.length && applicable.filter(o => o.releaseRequired).every(o => status.completion.acceptedOutcomeIds.includes(o.id));
   }
   if (!ready) return { action: 'blocked', binding, missingRoles, decisionIds: current.map(d => d.id), reason: 'Required source validation, execution, or composed experience evidence is missing, failed or unverified. Repair the evidence/result before dispatching a review.' };
   if (!missingRoles.length) return { action: 'reuse', binding, missingRoles, decisionIds: current.map(d => d.id), reason: 'Current inputs already have every required trusted review. Retain the judgment; run only applicable execution checks.' };

@@ -70,7 +70,7 @@ describe('finalize.sh', () => {
           '## T1 · x',
           '- **Closes user story:** As a user, I want x, so that y.',
           '- **Change type:** create-new',
-          '- **File:** `src/a.ts`',
+          '- **File:** `src/a.ts`, `src/a.test.ts`',
           '- **Depends on:** none',
           '- **Precise change:** add function.',
           '- **Acceptance:**',
@@ -89,7 +89,7 @@ describe('finalize.sh', () => {
       );
       writeStreamAStubs(sandbox);
       const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
-      expect(code).toBe(0);
+      expect(code, out + (fs.existsSync(path.join(sandbox, 'revise-report.md')) ? fs.readFileSync(path.join(sandbox, 'revise-report.md'), 'utf8') : '')).toBe(0);
       expect(out).toMatch(/executor_gate: pass/);
       // The canonical revise-report.md exists and is fresh.
       const report = fs.readFileSync(path.join(sandbox, 'revise-report.md'), 'utf8');
@@ -159,7 +159,7 @@ describe('finalize.sh', () => {
           '## T1 · cancel',
           '- **Closes user story:** As a user, I want to cancel so that I can return to the previous workflow.',
           '- **Change type:** create-new',
-          '- **File:** `src/cancel.ts`',
+          '- **File:** `src/cancel.ts`, `src/cancel.test.ts`',
           '- **Depends on:** none',
           '- **Precise change:** add cancel().',
           '- **Acceptance:**',
@@ -178,7 +178,7 @@ describe('finalize.sh', () => {
       );
       writeStreamAStubs(sandbox);
       const { out, code } = run(`bash "${FINALIZE}" "${sandbox}"`);
-      expect(code).toBe(0);
+      expect(code, out + (fs.existsSync(path.join(sandbox, 'revise-report.md')) ? fs.readFileSync(path.join(sandbox, 'revise-report.md'), 'utf8') : '')).toBe(0);
       expect(out).toMatch(/executor_gate: pass/);
       // Verify the mechanical fix was applied.
       const taskFile = fs.readFileSync(
@@ -205,7 +205,7 @@ describe('finalize.sh', () => {
           '## T1 · alpha',
           '- **Closes user story:** As a user, I want alpha, so that y.',
           '- **Change type:** create-new',
-          '- **File:** `src/alpha.ts`',
+          '- **File:** `src/alpha.ts`, `src/alpha.test.ts`',
           '- **Depends on:** none',
           '- **Precise change:** add alpha().',
           '- **Acceptance:**',
@@ -391,7 +391,7 @@ describe('finalize.sh', () => {
           '## T1 · alpha',
           '- **Closes user story:** As a user, I want alpha, so that y.',
           '- **Change type:** create-new',
-          '- **File:** `src/alpha.ts`',
+          '- **File:** `src/alpha.ts`, `src/alpha.test.ts`',
           '- **Depends on:** none',
           '- **Precise change:** add alpha().',
           '- **Acceptance:**',
@@ -411,7 +411,7 @@ describe('finalize.sh', () => {
       writeStreamAStubs(sandbox);
       const first = run(`bash "${FINALIZE}" "${sandbox}"`);
       const second = run(`bash "${FINALIZE}" "${sandbox}"`);
-      expect(first.code).toBe(0);
+      expect(first.code, first.out).toBe(0);
       expect(second.code).toBe(0);
       expect(first.out).toMatch(/executor_gate: pass/);
       expect(second.out).toMatch(/executor_gate: pass/);

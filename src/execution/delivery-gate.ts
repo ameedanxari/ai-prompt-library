@@ -1,4 +1,4 @@
-import { confined, resolveDeliveryScope, validateDelivery } from '../delivery/index.js';
+import { confined, resolveDeliveryScope, validateDelivery, validatePlanningIntegrity, deliveryExecutionOutcomeIds } from '../delivery/index.js';
 import type { DeliveryReport, DeliveryValidationOptions } from '../delivery/index.js';
 import { buildTaskContractReport } from '../task-contract/task-contract-report.js';
 import { parsePlanTaskDirectory } from '../task-contract/task-parser.js';
@@ -6,6 +6,8 @@ import { parsePlanTaskDirectory } from '../task-contract/task-parser.js';
 import { deliveryProjections } from './delivery-projections.js';
 
 export * from '../delivery/types.js';
+export { validatePlanningIntegrity, matchesPlanningGlob } from '../delivery/planning-integrity.js';
+export type { PlanningContext, PlanningIssue, PlanningReport } from '../delivery/planning-integrity.js';
 export { planDeliveryReview, getDeliveryChangePolicy } from '../delivery/review-planner.js';
 export type { ReviewPlan, ReviewPurpose } from '../delivery/review-planner.js';
 export type { DeliveryChangePolicy } from '../delivery/lifecycle.js';
@@ -45,6 +47,7 @@ export function validateDeliveryRun(
       issues.push(`Active unit ${id} has no executable task section`);
       continue;
     }
+    if (scope.manifest.schemaVersion === 2 && (!parsed.risk || !parsed.modelTier || !parsed.turnBudget)) issues.push(`RISK_METADATA_MISSING: ${id} needs explicit risk, suitable model tier and bounded turn budget`);
     let pathsMatch = false;
     try {
       const normalize = (paths: string[]) => [...new Set(paths.map((file) => confined(scope.projectRoot, file, false)))].sort();
@@ -71,6 +74,12 @@ export function validateDeliveryRun(
   for (const id of actual.keys()) {
     if (!declared.has(id)) issues.push(`Executable task ${id} is not accounted for in the active slice`);
   }
+  const planning = validatePlanningIntegrity({ projectRoot: scope.projectRoot, runDirectory: scope.runDirectory, stage: options.stage,
+    knownTargets: [...scope.manifest.outcomes.map(o => o.id), ...scope.manifest.slices.flatMap(s => [s.id, ...s.units.map(u => u.id)])],
+    required: scope.manifest.schemaVersion === 2, units: [...actual].map(([id, unit]) => ({ id, filePaths: unit.filePaths, test: unit.test, nodeIds: declared.get(id)?.planningNodeIds })),
+    targetIds: options.stage === 'release' ? undefined : [slice.id, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(scope.manifest, slice) : slice.outcomeIds), ...slice.units.map(u => u.id)],
+  });
+  for (const problem of planning.issues) issues.push(`${problem.code}: ${problem.target}: ${problem.message}`);
   // A unit cannot hide extra implementation instructions as an unowned task file.
   const names = new Set(files.map((file) => file.filename));
   if (names.size !== files.length) issues.push('Active task filenames must be unique across directories');
@@ -82,3 +91,4 @@ export function validateDeliveryRun(
     completion: { ...report.completion, planReady: false, sliceAccepted: false, releaseReady: false },
   };
 }
+export * from '../delivery/comparison.js';

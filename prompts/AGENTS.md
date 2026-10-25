@@ -2,6 +2,8 @@
 
 Read `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md` before nontrivial work. It routes to exactly one of four modes: Trivial, Execute, Gap-closure, Greenfield. Load specialist modules only for the active slice and applicable risks.
 
+New runs use `schemaVersion: 2` with required `planning-integrity.json` and `review-findings.json` companions; see `.ai-prompts/docs/planning-integrity.md`. Version 1 runs remain explicitly legacy/unassessed for planning-integrity assurance. Existing-plan audits are read-only even when a checkpoint exists; regeneration, execution or migration requires the corresponding user request. Preserve run identity and source/decision/evidence history when an authorized migration is needed.
+
 New runs use the versioned `delivery-manifest.json` outcome contract. The shared workflow is `.ai-prompts/prompts/orchestrators/rolling-delivery.md`; the contract guide is `.ai-prompts/docs/delivery-contract.md`. Preserve every requested outcome and applicable release obligation in the concise ledger. Detail one representative proof slice before expanding breadth. Do not generate exhaustive epics, features or tasks upfront.
 
 Outputs live in an isolated `prompts/outputs/runs/<run-id>/` relative to the library root. The root `prompts/outputs/current/resumption-checkpoint.md` selects that directory with `run_directory`. Resolve and validate it before reading tasks. Do not reset consumer state or silently replace historical runs. Existing legacy task runs use only the explicitly selected legacy path in `.ai-prompts/prompts/orchestrators/legacy-workflow.md`; a missing or invalid manifest in a migrated run is an error, never a legacy fallback.

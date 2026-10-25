@@ -3,6 +3,7 @@ import { execSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
+import { evaluateReleaseGate, type ReleaseGate } from '../../src/release/release-gates.js';
 
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'validate-release-readiness.sh');
@@ -253,6 +254,48 @@ describe('validate-release-readiness.sh', () => {
       expect(result.out).toMatch(/actual 99 is below threshold 100/);
       const markdown = fs.readFileSync(path.join(dir, 'release-gate-report.md'), 'utf8');
       expect(markdown).toMatch(/GATE-PRIVACY-001.*100.*99.*yes.*fail/);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
+  });
+
+  it.each([
+    { label: 'below 100 percent', actualValue: 99, missing: false, code: 1 },
+    { label: 'complete evidence at 100 percent', actualValue: 100, missing: false, code: 0 },
+    { label: 'missing evidence at 100 percent', actualValue: 100, missing: true, code: 1 },
+  ])('matches the API tier-zero fresh-account gate with $label', ({ actualValue, missing, code }) => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'release-readiness-fresh-account-'));
+    try {
+      writeFixtureRoot(dir, validPackageJson());
+      const candidate = releaseGate({
+        id: 'GATE-FRESH-ACCOUNT-001',
+        kind: 'fresh-account',
+        dimension: 'fresh-account-entry',
+        threshold: 80,
+        actualValue,
+        blocking: false,
+        ...(missing ? { actualEvidence: [] } : {}),
+      }) as unknown as ReleaseGate;
+      writeGates(dir, [candidate as unknown as Record<string, unknown>]);
+
+      const result = run(dir);
+      const report = JSON.parse(fs.readFileSync(path.join(dir, 'release-readiness-report.json'), 'utf8'));
+      const expected = evaluateReleaseGate(candidate);
+
+      expect(result.code).toBe(code);
+      expect(result.out).not.toContain('unknown gate kind');
+      expect(report.gates[0]).toMatchObject({
+        schemaValid: true,
+        effectiveThreshold: 100,
+        hardGate: true,
+        decision: expected.decision,
+        blockingReason: expected.blockingReason,
+        missingEvidence: expected.missingEvidence,
+      });
+      expect(report.promotion_allowed).toBe(code === 0);
+      expect(report.release_ready).toBe(false);
+      if (actualValue < 100) expect(result.out).toContain('actual 99 is below threshold 100');
+      if (missing) expect(result.out).toContain('missing required evidence: production-flow-integration');
     } finally {
       fs.rmSync(dir, { recursive: true, force: true });
     }

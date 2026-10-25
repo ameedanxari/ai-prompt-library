@@ -165,9 +165,9 @@ def evaluate_release_gates(document: dict) -> dict:
     allowed_kinds = {
         "walking-skeleton", "beta", "production", "store-package",
         "security", "privacy", "destructive-action", "data-integrity",
-        "scorecard", "canary-promotion",
+        "fresh-account", "scorecard", "canary-promotion",
     }
-    tier_zero = {"security", "privacy", "destructive-action", "data-integrity"}
+    tier_zero = {"security", "privacy", "destructive-action", "data-integrity", "fresh-account"}
     raw_gates = document.get("gates") if isinstance(document, dict) else None
     if not isinstance(raw_gates, list) or not raw_gates:
         issues.append("release gate document must contain a non-empty gates array")

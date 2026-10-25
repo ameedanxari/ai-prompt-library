@@ -374,9 +374,12 @@ function parseTaskSection(filename: string, section: Section): ParsedTaskUnit {
     requirementIds: [],
   };
   let hasTypedMetadata = false;
+  let inFieldFence = false;
 
   for (let index = 0; index < section.lines.length; index += 1) {
     const line = section.lines[index];
+    if (isFenceDelimiter(line)) { inFieldFence = !inFieldFence; continue; }
+    if (inFieldFence) continue;
     const field = line.match(fieldPattern);
     if (!field) continue;
     const fieldName = normalizeFieldName(field[1]);

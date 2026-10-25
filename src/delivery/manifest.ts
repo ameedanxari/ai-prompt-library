@@ -31,14 +31,16 @@ const hash = (x: unknown) => typeof x === 'string' && /^[a-f0-9]{64}$/.test(x);
 function unique(items: { id: string }[], label: string): void { assert(new Set(items.map(x => x.id)).size === items.length, `duplicate ${label} IDs`); }
 export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   assert(record(value), 'expected object'); const m = value;
-  keys(m, 'schemaVersion kind runId scopeRevision projectRoot sourceInputs surfaces authorization planningBudget outcomes slices activeSlice nextSlice firstProofSlice evidenceRefs decisionRefs releaseCandidate', 'manifest');
-  assert(m.schemaVersion === 1 && m.kind === 'outcome-delivery', 'unknown schemaVersion or kind (refusing legacy downgrade)');
+  keys(m, 'schemaVersion kind runId scopeRevision projectRoot sourceInputs planningInputs surfaces authorization planningBudget outcomes slices activeSlice nextSlice firstProofSlice evidenceRefs decisionRefs releaseCandidate', 'manifest');
+  assert([1, 2].includes(m.schemaVersion) && m.kind === 'outcome-delivery', 'unknown schemaVersion or kind (refusing legacy downgrade)');
   assert(text(m.runId) && Number.isInteger(m.scopeRevision) && m.scopeRevision > 0 && text(m.projectRoot), 'invalid run identity');
   for (const field of ['sourceInputs', 'surfaces', 'outcomes', 'slices', 'evidenceRefs', 'decisionRefs']) assert(Array.isArray(m[field]), `${field} must be an array`);
   for (const field of ['sourceInputs', 'surfaces', 'outcomes', 'slices']) assert(m[field].length > 0, `${field} must not be empty`);
   for (const field of ['sourceInputs', 'surfaces', 'outcomes', 'slices', 'evidenceRefs', 'decisionRefs']) { assert(m[field].every((x: unknown) => record(x) && text(x.id)), `invalid ${field} IDs`); unique(m[field], field); }
   const binding = (b: any) => record(b) && text(b.path) && hash(b.sha256);
   assert(m.sourceInputs.every(binding), 'invalid source input binding');
+  assert(m.schemaVersion !== 2 || Array.isArray(m.planningInputs) && m.planningInputs.length === 2, 'version 2 requires both planning input bindings');
+  if (m.planningInputs !== undefined) { assert(Array.isArray(m.planningInputs) && m.planningInputs.every(binding), 'invalid planning input bindings'); for (const b of m.planningInputs) keys(b, 'path sha256', 'planning binding'); }
   for (const b of m.sourceInputs) keys(b, 'id path sha256', 'sourceInputs');
   const kinds = ['web','native','desktop','api','sdk','cli','automation','data','ml','infrastructure','document','media'];
   for (const s of m.surfaces) {
@@ -68,11 +70,18 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     assert(Array.isArray(o.dependencies) && o.dependencies.every((d: any) => record(d) && text(d.outcomeId) && ['technical','accepted'].includes(d.kind)), `invalid dependencies ${o.id}`);
   }
   for (const s of m.slices) {
-    keys(s, 'id kind outcomeIds units detailedFiles acceptanceDecisionId acceptanceDecisionIds', 'slice');
-    for (const u of s.units ?? []) keys(u, 'id outcomeIds acceptance affectedPaths dependsOn', 'unit');
+    keys(s, 'id kind outcomeIds deferredOutcomeIds units detailedFiles acceptanceDecisionId acceptanceDecisionIds', 'slice');
+    for (const u of s.units ?? []) keys(u, 'id planningNodeIds outcomeIds acceptance affectedPaths dependsOn', 'unit');
     assert(['proof','delivery'].includes(s.kind) && strings(s.outcomeIds) && s.outcomeIds.length && strings(s.detailedFiles) && Array.isArray(s.units), `invalid slice ${s.id}`);
     assert(s.units.length && s.units.every((u: any) => record(u) && text(u.id) && strings(u.outcomeIds) && u.outcomeIds.length && text(u.acceptance) && strings(u.affectedPaths) && u.affectedPaths.length && strings(u.dependsOn)), `invalid implementation units ${s.id}`);
+    if (s.deferredOutcomeIds !== undefined) {
+      assert(m.schemaVersion === 2 && s.kind === 'proof' && s.id === m.firstProofSlice, 'deferredOutcomeIds is restricted to the version 2 first proof slice');
+      assert(strings(s.deferredOutcomeIds) && new Set(s.deferredOutcomeIds).size === s.deferredOutcomeIds.length, 'deferredOutcomeIds must contain unique outcome IDs');
+      assert(s.deferredOutcomeIds.every((id: string) => s.outcomeIds.includes(id) && m.outcomes.some((o: any) => o.id === id && o.applicability === 'applicable')), 'deferredOutcomeIds must be applicable outcomes within the proof slice');
+      assert(s.units.every((u: any) => !u.outcomeIds.some((id: string) => s.deferredOutcomeIds.includes(id))), 'deferred outcomes must not have implementation units until refined');
+    }
     unique(s.units, `slice ${s.id} unit`);
+    if (m.schemaVersion === 2) assert(s.units.every((u: any) => strings(u.planningNodeIds) && u.planningNodeIds.length > 0), 'version 2 units require planningNodeIds');
     assert(s.acceptanceDecisionIds === undefined || strings(s.acceptanceDecisionIds), `invalid acceptanceDecisionIds ${s.id}`);
   }
   assert(text(m.activeSlice) && text(m.firstProofSlice) && (m.nextSlice === undefined || text(m.nextSlice)), 'missing active/proof slice');

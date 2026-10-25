@@ -39,7 +39,7 @@ describe('release gate evaluation', () => {
     expect(result.blockingGateIds).toEqual(['GATE-PRODUCTION-001']);
   });
 
-  it.each(['security', 'privacy', 'destructive-action', 'data-integrity'] as const)(
+  it.each(['security', 'privacy', 'destructive-action', 'data-integrity', 'fresh-account'] as const)(
     'requires 100 percent for the %s dimension',
     (kind) => {
       const result = evaluateReleaseGate(gate({ kind, threshold: 80, actualValue: 99, blocking: false }));

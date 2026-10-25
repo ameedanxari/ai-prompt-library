@@ -177,6 +177,17 @@ if [ "$ready" != "true" ]; then
   fi
 fi
 
+# Independent findings and cross-artifact contradictions participate in readiness.
+planning_status=0
+planning_output="$(bash "$SCRIPT_DIR/validate-planning-integrity.sh" "$TARGET_DIR" --stage execute 2>&1)" || planning_status=$?
+if [ "$planning_status" -ne 0 ]; then
+  ready="false"
+  RECOMMENDED_STEP="resolve_planning_blockers_then_rerun_ready_gate"
+  add_blocking_artifact "review-findings.json / planning-integrity.json"
+  add_blocking_issue "planning integrity failed with code $planning_status"
+fi
+printf '\n%s\n' "$planning_output" >> "$FINALIZE_OUTPUT"
+
 NOW="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
 {
   echo "---"

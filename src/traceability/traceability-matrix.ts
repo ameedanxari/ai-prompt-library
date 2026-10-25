@@ -270,7 +270,7 @@ function rowForRequirement(
     ...features.filter((feature) => includes(feature.requirementIds, requirement.id)).map((feature) => feature.id),
   ]);
   const taskIds = tasks
-    .filter((task) => includes(task.requirementIds, requirement.id) || intersects(task.featureIds, featureIds))
+    .filter((task) => includes(task.requirementIds, requirement.id))
     .map((task) => task.id);
 
   return baseRow({
@@ -281,8 +281,8 @@ function rowForRequirement(
     flowIds,
     featureIds,
     taskIds,
-    testIds: evidenceIds(tests, requirement.id, flowIds, taskIds),
-    releaseGateIds: evidenceIds(releaseGates, requirement.id, flowIds, taskIds),
+    testIds: requirementEvidenceIds(tests, requirement.id, taskIds),
+    releaseGateIds: requirementEvidenceIds(releaseGates, requirement.id, taskIds),
     reviewedOverrideIds: overrideIdsFor(overrides, requirement.id),
   });
 }
@@ -368,6 +368,21 @@ function baseRow(
     artifactContracts: uniqueSorted(row.artifactContracts ?? []),
     reviewedOverrideIds: uniqueSorted(row.reviewedOverrideIds),
   };
+}
+
+function requirementEvidenceIds(
+  evidence: Array<TraceableTest | TraceableReleaseGate>,
+  requirementId: string,
+  taskIds: string[],
+): string[] {
+  return evidence
+    .filter((item) => (
+      // An explicit requirement scope takes precedence over a shared task link.
+      (item.requirementIds?.length ?? 0) > 0
+        ? includes(item.requirementIds, requirementId)
+        : intersects(item.taskIds, taskIds)
+    ))
+    .map((item) => item.id);
 }
 
 function evidenceIds(

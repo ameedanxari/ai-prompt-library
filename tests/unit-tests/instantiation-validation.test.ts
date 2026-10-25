@@ -3,8 +3,7 @@
  *
  * Guards output-quality invariants shared by both engines:
  *   - No template references (.ai-prompts/prompts/) or placeholder tokens.
- *   - File: fields name exactly one concrete file (no dir, no "multiple
- *     files", no grouping).
+ *   - File: fields enumerate concrete files (no directories or vague groups).
  *   - Acceptance criteria are not tautological.
  *
  * The bash validator (scripts/validate-instantiation.sh) does the same
@@ -2000,7 +1999,7 @@ describe('validator — final-delivery quality checks', () => {
     );
   }
 
-  it('rejects a File field with two backticked paths', () => {
+  it('accepts a coherent File field with two concrete backticked paths', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-multi-file-'));
     try {
       fs.writeFileSync(
@@ -2020,13 +2019,44 @@ describe('validator — final-delivery quality checks', () => {
           '  - B present.',
           '  - C present.',
           '- **Test:** `./gradlew assembleDebug`',
+          '- **Depends on:** none',
+          '- **Estimated LOC:** +20',
           '',
         ].join('\n'),
       );
       passingCompanions(sandbox);
       const { code, out } = runValidator(sandbox);
-      expect(code).not.toBe(0);
-      expect(out).toMatch(/File: field names more than one file path/);
+      expect(out).not.toMatch(/File: field names more than one file path/);
+      expect(code).toBe(0);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it.each(['declared', 'asset', 'lockfile'])('checks acceptance ownership across concrete multifile outputs (%s)', (variant) => {
+    const undeclared = variant !== 'declared';
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'val-coherent-files-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'tasks-search.md'), [
+        '## T1 · Deliver search with its regression coverage',
+        '- **Closes user story:** As a user, I want search results, so that I can find records.',
+        '- **Change type:** create-new',
+        '- **File:** `src/search.ts`, `src/search.test.ts`, `package-lock.json`, `public/search.svg`',
+        '- **Precise change:** Implement search, regression coverage, and the required dependency and asset.',
+        '- **Acceptance:**',
+        '  - `src/search.ts` file exists and returns the matching records.',
+        '  - `src/search.test.ts` file exists and verifies an empty result.',
+        `  - \`${variant === 'asset' ? 'public/undeclared.svg' : 'public/search.svg'}\` file exists and contains the search symbol.`,
+        `  - \`${variant === 'lockfile' ? 'pnpm-lock.yaml' : 'package-lock.json'}\` file exists and pins the search dependency.`,
+        '- **Test:** `npm test -- src/search.test.ts`',
+        '- **Depends on:** none',
+        '- **Estimated LOC:** +90',
+        '',
+      ].join('\n'));
+      passingCompanions(sandbox);
+      const { code, out } = runValidator(sandbox);
+      expect(code, out).toBe(undeclared ? 1 : 0);
+      if (undeclared) expect(out).toMatch(/Acceptance names undeclared output file paths/);
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }

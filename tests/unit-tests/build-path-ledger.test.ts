@@ -78,6 +78,54 @@ describe('build-path-ledger.sh', () => {
     }
   });
 
+  it('records every concrete file in a coherent unit using canonical field and fence parsing', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-multifile-'));
+    try {
+      const retained = '{"retained":"do not replace"}\n';
+      fs.writeFileSync(path.join(sandbox, 'task-contract.json'), retained);
+      writeTask(sandbox, 'tasks-search.md', [
+        '## T1 · Deliver search and its regression coverage',
+        '- **Change type**: create-new',
+        '- **File**: `src/search.ts`, `src/search.test.ts`, `package-lock.json`, `public/search.svg`',
+        '```md',
+        '## T99 · Example task is inert',
+        '- **File:** `src/fake.ts`',
+        '```',
+      ].join('\n'));
+      const { code, ledger } = run(sandbox);
+      expect(code).toBe(0);
+      expect(ledger).toContain('total_paths: 4');
+      for (const file of ['src/search.ts', 'src/search.test.ts', 'package-lock.json', 'public/search.svg']) {
+        expect(ledger).toContain(`\`${file}\` — tasks-search.md:T1 (create-new)`);
+      }
+      expect(ledger).not.toContain('src/fake.ts');
+      expect(fs.readFileSync(path.join(sandbox, 'task-contract.json'), 'utf8')).toBe(retained);
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
+  it('detects a collision on the second declared file of a coherent unit', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-second-path-'));
+    try {
+      writeTask(sandbox, 'tasks-search.md', [
+        '## T1 · Search',
+        '- **Change type:** create-new',
+        '- **File:** `src/search.ts`, `src/search.test.ts`',
+        '## T2 · Duplicate regression owner',
+        '- **Change type:** create-new',
+        '- **File:** `src/search.test.ts`',
+      ].join('\n'));
+      const { code, ledger } = run(sandbox);
+      expect(code).toBe(1);
+      expect(ledger).toContain('Same path claimed by multiple tasks');
+      expect(ledger).toContain('src/search.test.ts');
+      expect(ledger).toContain('total_paths: 3');
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  });
+
   it('flags Collision A: same path claimed by two tasks', () => {
     const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'ledger-collide-a-'));
     try {

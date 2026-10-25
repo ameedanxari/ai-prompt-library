@@ -97,6 +97,8 @@ export interface DeliveryOutcome {
 }
 export interface DeliveryUnit {
   id: string;
+  /** Version 2: applicable planning nodes, including prerequisite closure. */
+  planningNodeIds?: string[];
   outcomeIds: string[];
   acceptance: string;
   affectedPaths: string[];
@@ -106,6 +108,9 @@ export interface DeliverySlice {
   id: string;
   kind: 'proof' | 'delivery';
   outcomeIds: string[];
+  /** Version 2 first proof only: retained outcomes awaiting bounded executable detail.
+   * These outcomes have no units yet and prevent proof/slice acceptance. */
+  deferredOutcomeIds?: string[];
   units: DeliveryUnit[];
   /** Paths relative to runDirectory. Every detailed document must be listed. */
   detailedFiles: string[];
@@ -154,13 +159,15 @@ export interface DeliveryDecision {
   budget?: { maxUnits: number; maxWords: number; maxBytes: number; maxSlices: number };
 }
 export interface DeliveryManifest {
-  schemaVersion: 1;
+  schemaVersion: 1 | 2;
   kind: 'outcome-delivery';
   runId: string;
   scopeRevision: number;
   /** Relative to the run directory; resolver canonicalizes and confines paths. */
   projectRoot: string;
   sourceInputs: SourceInput[];
+  /** Version 2: exact bindings for planning-integrity.json and review-findings.json. */
+  planningInputs?: FileBinding[];
   surfaces: DeliverySurface[];
   authorization: {
     execution: boolean;
@@ -215,6 +222,7 @@ export interface DeliveryValidationOptions {
   now?: Date;
 }
 export interface DeliveryReport {
+  planningIntegrity?: { assessed: boolean; blockers: { code: string; target: string; message: string }[]; warnings: string[] };
   changePolicies?: Record<string, DeliveryChangePolicy>;
   valid: boolean;
   stage: DeliveryStage;

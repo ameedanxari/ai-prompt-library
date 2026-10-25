@@ -80,65 +80,37 @@ fi
 LEDGER="$TARGET_DIR/path-ledger.md"
 NOW=$(date -u +%Y-%m-%dT%H:%M:%SZ)
 
-# Extract one row per task: feature-slug|task-id|change-type|path|plan-file
-# A unit with no **Change type:** is recorded as `unspecified`, which counts
-# as a creator (anything other than `modify-existing`).
-# The task-id is the nearest preceding "## T<n>" or "## R<n>" heading.
-rows_file=$(mktemp)
-for pf in "${plan_files[@]}"; do
-  base=$(basename "$pf" .md)
-  # tasks-<slug>.md → <slug>; remediation-<slug>.md → <slug>
-  slug="${base#tasks-}"
-  slug="${slug#remediation-}"
-  awk -v slug="$slug" -v pfile="$(basename "$pf")" '
-    BEGIN { change = "unspecified"; tid = "?" }
-    /^## [TR][0-9]+/ {
-      # Grab the task id (T1, R2, …)
-      # Reset per-unit state: a unit never inherits the previous unit'"'"'s
-      # change type.
-      change = "unspecified"
-      match($0, /[TR][0-9]+/)
-      if (RSTART) {
-        tid = substr($0, RSTART, RLENGTH)
-      } else {
-        tid = "?"
-      }
-      next
-    }
-    /\*\*Change type:\*\*/ {
-      change = $0
-      sub(/.*\*\*Change type:\*\*[[:space:]]*/, "", change)
-      sub(/[[:space:]].*$/, "", change)
-      change = tolower(change)
-      next
-    }
-    /\*\*File:\*\*/ {
-      line = $0
-      # Strip backticks if the path is wrapped (`path`) and any leading
-      # "- **File:**" prefix, collapse trailing whitespace.
-      sub(/.*\*\*File:\*\*[[:space:]]*/, "", line)
-      gsub(/`/, "", line)
-      sub(/[[:space:]]+$/, "", line)
-      # Skip N/A, none, TBD, obvious non-paths. macOS awk does not
-      # support the /re/i flag, so normalise with tolower() first.
-      lower = tolower(line)
-      if (line == "" || lower == "n/a" || lower == "none" || lower == "tbd" || line == "—") next
-      # Handle pipe-separated cross-platform paths (Phase 7):
-      # e.g. "ios/StorageCleaner/Foo.swift | android/app/.../Foo.kt"
-      # Split on " | " and emit one row per platform path.
-      n = split(line, parts, /[[:space:]]*\|[[:space:]]*/)
-      for (i = 1; i <= n; i++) {
-        p = parts[i]
-        # Strip any remaining leading/trailing whitespace per segment.
-        gsub(/^[[:space:]]+|[[:space:]]+$/, "", p)
-        # Skip empty segments or segments that still look like prose.
-        if (p == "") continue
-        if (p ~ /[[:space:]]/) continue
-        printf("%s|%s|%s|%s|%s\n", slug, tid, change, p, pfile)
-      }
-    }
-  ' "$pf" >> "$rows_file"
-done
+# Read paths from the canonical task contract rather than parsing Markdown
+# again. Each concrete declared file gets a row, including tests, lockfiles,
+# and assets in the same coherent unit. A private directory also contains
+# any contract shards or failure report, preserving retained run artifacts.
+ledger_work=$(mktemp -d) || exit 2
+trap 'rm -rf "$ledger_work"' EXIT
+rows_file="$ledger_work/rows"
+contract_file="$ledger_work/task-contract.json"
+if ! AI_PROMPT_TOOLCHAIN_FAILED_ATTEMPT_REPORT="$ledger_work/failed-attempt.json" \
+  bash "$SCRIPT_DIR/build-task-contract.sh" "$TARGET_DIR" "$contract_file" >/dev/null; then
+  echo "❌ path ledger: canonical task contract generation failed" >&2
+  exit 2
+fi
+if ! python3 - "$SCRIPT_DIR/lib" "$contract_file" > "$rows_file" <<'PYTHON'
+import sys
+sys.dont_write_bytecode = True
+
+sys.path.insert(0, sys.argv[1])
+from task_contract import load_task_contract
+
+report = load_task_contract(sys.argv[2])
+slugs = {entry["filename"]: entry["slug"] for entry in report["files"]}
+for unit in report["units"]:
+    change = (unit.get("changeType") or "unspecified").lower()
+    for path in unit["filePaths"]:
+        print("|".join((slugs[unit["file"]], unit["id"], change, path, unit["file"])))
+PYTHON
+then
+  echo "❌ path ledger: canonical task contract could not be read" >&2
+  exit 2
+fi
 
 total_paths=$(wc -l < "$rows_file" | tr -d ' ')
 

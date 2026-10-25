@@ -1,3 +1,4 @@
+import { undeclaredTestTargets } from './artifact-declarations.js';
 import {
   ARTIFACT_KINDS,
   EVIDENCE_LEVELS,
@@ -51,6 +52,7 @@ export type TaskContractIssueCode =
   | 'missing-phase'
   | 'missing-file-path'
   | 'missing-test'
+  | 'undeclared-test-artifact'
   | 'missing-artifact-kind'
   | 'invalid-artifact-kind'
   | 'missing-requirement-ids'
@@ -530,6 +532,9 @@ function buildIssues(
     }
 
     for (const unit of file.units) {
+      for (const target of undeclaredTestTargets(unit.test, unit.filePaths)) {
+        issues.push(unitIssue(file, unit, 'undeclared-test-artifact', 'error', `${unit.canonicalId} runs ${target} without an unambiguous File declaration; declare tests and supporting artifacts before committing.`));
+      }
       if (unit.schemaVersion === 'legacy') {
         issues.push(unitIssue(
           file,

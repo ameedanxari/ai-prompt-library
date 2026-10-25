@@ -1,0 +1,33 @@
+# Planning audit remediation and regression evidence
+
+The audit exposed failures between otherwise plausible documents: requirement mappings, execution order, runner configuration, commit ownership and readiness had inconsistent contracts. New outcome runs use version 2 with compact planning/review records. Existing version 1 runs remain readable with explicit unassessed planning status; review findings and legacy owner blockers still participate in readiness. Migration never approves unknown decisions.
+
+| Audited defect | Enforcement | Behavioral regression suites |
+| --- | --- | --- |
+| Open external P1 findings ignored by readiness | Scoped stage blockers, digest-bound review inputs, closure evidence, malformed/stale failure; legacy owner rows retained | planning-readiness-integration, planning-delivery-v2, planning-integrity |
+| Shared feature/flow falsely satisfies missing requirement | Exact requirement links, union across tasks, evidence respects explicit scope | traceability-matrix, validate-instantiation-traceability |
+| Checker crash presented as missing Python warning | Distinct tooling-unavailable/checker-failed diagnostics; both block required checks | validate-instantiation-traceability |
+| Tests and lockfiles absent from committed scope | Canonical multi-file parser, bounded omission check, required-path validation; no command-derived staging authority | planning-integrity, commit-task, task-contract-report |
+| Unrelated staged files included; interruption after commit | Reject unrelated index paths, isolated preparation, exact-tree recovery journal; caller advances checkpoint only after success | commit-task real Git hook/crash/clean-checkout tests |
+| Coherent units rejected or paths dropped by legacy adapter | Canonical ledger extraction and concrete multi-file validation | build-path-ledger, instantiation-validation, finalize |
+| Wrong integration suffix/runner, empty collection, wrong environment/bootstrap | Declared runner selectors and bound config, concrete targets, positive collected count, raw Vitest/JUnit count consistency, input currency | planning-integrity, planning-delivery-v2 |
+| Typecheck mistaken for production build | Cheap task boundary distinguished from usable/milestone/release builds; explicit build command for unknown packaging | build-gate real command fixtures |
+| Blanket visual approval dependency / screen before approval | Review applicability plus actual dependency edges; independent work remains selectable | planning-integrity, planning-delivery-v2 |
+| Week-2 delivery or payment prerequisite scheduled later | Capability producer/dependency closure, resource/health/entry/acceptance timing and evidence producers | planning-integrity |
+| Conflicting editions compressed into one interpretation | Source inventory, clause dispositions and comparable fact keys; feedback and formal acceptance remain distinct | planning-integrity, trusted original-source review |
+| Deferred deletion incompatible with mandatory release gate | Every proposed alternative retains concrete obligation/evidence paths; selected branch has decision binding | planning-integrity; delivery-core source exclusion controls |
+| Missing risk, unsupported additions, fixed-budget overclaim | Explicit origin/risk, protected consequential capabilities, complete effort ranges/reserve and provisional/change-request status | planning-integrity |
+| Deferred first-proof work falsely counted as delivered | Explicit deferred outcomes retain source obligations; detailed dependency closure remains enforced; refinement is mandatory before acceptance/advance/release and cannot bypass visual budgets | planning-proof-refinement, planning-delivery-v2 |
+| Stale descendants, fake approval, premature breadth or completion | Existing outcome scope/evidence/review fingerprints and progressive budgets, now including planning sidecars | delivery-core, delivery-design, delivery-review-security, delivery-review-reuse, delivery-lifecycle, outcome-integration |
+| Shell/API fresh-account gate mismatch | Same tier-zero kind, hard gate, 100% requirement and evidence | release-gates, validate-release-readiness |
+| Unsubstantiated claim of superiority over a build prompt | Comparable frozen source/decision/tool/model/budget conditions, repeated paired delivered outcomes, blinded review, total cost including planning/review/rework | delivery-comparison |
+
+The positive control passes before each planning mutation. Assertions name the offending code and target where applicable; an unrelated schema failure is not credited as detection. Fixtures are synthetic and contain no client agreements. The actual legacy readiness wrapper, public outcome API/shell, temporary Git repositories and real command runners are exercised.
+
+## Limits and evaluation protocol
+
+Deterministic checks validate represented facts and raw result consistency. They do not infer every omitted natural-language clause, authenticate a locally authored runner report, inspect arbitrary executable configuration semantics or decide contractual precedence. Trusted original-source review and independent behavioral/visual review remain separate duties. Source, design, operational handover and failure/recovery outcomes cannot be replaced by copied IDs or a generated runbook.
+
+For a delivery-benefit claim, freeze a common source pack and owner-answer sheet, identical starting code, model/tool access and total budgets. Predeclare hidden acceptance, cost measures, repeat count and promotion threshold before trials. Run plain-prompt and library implementations for each seed; include planning, review, coordination, retries and integration. Use blinded reviewers and preserve raw failures. `assessDeliveryComparison` reports inconclusive for unmatched conditions, missing delivery/cost observations, retrospective thresholds or insufficient repetitions; cheaper critical failures never establish improvement.
+
+The Logisrch before/after plan comparison is a structural canary, not this delivery experiment. Later owner decisions and a substantial upstream library update are additional changes; separate their effects. No shipped-product speedup or business-performance claim follows from greener validators or fewer task files.

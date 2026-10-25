@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
-import { execSync } from 'node:child_process';
+import { execSync, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
@@ -13,11 +13,11 @@ import * as os from 'node:os';
 const REPO_ROOT = path.resolve(__dirname, '..', '..');
 const SCRIPT = path.join(REPO_ROOT, 'scripts', 'build-gate.sh');
 
-const run = (dir: string): { out: string; code: number } => {
+const run = (dir: string, boundary = "task"): { out: string; code: number } => {
   let out = '';
   let code = 0;
   try {
-    out = execSync(`bash "${SCRIPT}" "${dir}"`, { encoding: 'utf8' });
+    out = execSync(`bash "${SCRIPT}" "${dir}" --boundary "${boundary}"`, { encoding: 'utf8' });
   } catch (e) {
     const err = e as { stdout?: Buffer; stderr?: Buffer; status?: number };
     out = (err.stdout?.toString() ?? '') + (err.stderr?.toString() ?? '');
@@ -127,6 +127,77 @@ describe('build-gate.sh', () => {
     } finally {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
+  });
+
+  it.each(['usable', 'milestone', 'release'])('requires an actual build at the %s boundary', boundary => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'build-gate-boundary-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'package.json'), JSON.stringify({
+        scripts: { typecheck: 'node -e "process.exit(0)"' },
+      }));
+      expect(run(sandbox).code).toBe(0);
+      expect(run(sandbox, boundary)).toMatchObject({
+        code: 1, out: expect.stringContaining('requires a declared production build'),
+      });
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  });
+
+  it.each([[0, 1], [1, 0], [0, 0]])('runs both commands at a boundary (typecheck=%s, build=%s)', (typecheck, build) => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'build-gate-both-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'package.json'), JSON.stringify({
+        scripts: {
+          typecheck: `node -e "require('fs').writeFileSync('typecheck-ran','yes');process.exit(${typecheck})"`,
+          build: `node -e "require('fs').writeFileSync('build-ran','yes');process.exit(${build})"`,
+        },
+      }));
+      const result = run(sandbox, 'milestone');
+      expect(result.code).toBe(typecheck || build ? 1 : 0);
+      expect(fs.existsSync(path.join(sandbox, 'typecheck-ran'))).toBe(true);
+      expect(fs.existsSync(path.join(sandbox, 'build-ran'))).toBe(true);
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  });
+
+  it('accepts build-only JavaScript at a release boundary', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'build-gate-js-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'package.json'), JSON.stringify({
+        scripts: { build: 'node -e "process.exit(0)"' },
+      }));
+      expect(run(sandbox, 'release')).toMatchObject({ code: 0, out: expect.stringContaining('npm run build') });
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  });
+
+  it('keeps per-task typecheck cheap when a production build also exists', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'build-gate-cheap-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'package.json'), JSON.stringify({
+        scripts: { typecheck: 'node -e "process.exit(0)"', build: 'node -e "process.exit(1)"' },
+      }));
+      expect(run(sandbox).code).toBe(0);
+      expect(run(sandbox, 'usable').code).toBe(1);
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  });
+
+  it('does not mistake a Python syntax check for a production build', () => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'build-gate-python-'));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'requirements.txt'), '');
+      fs.writeFileSync(path.join(sandbox, 'app.py'), 'print("ok")\n');
+      expect(run(sandbox).code).toBe(0);
+      expect(run(sandbox, 'usable')).toMatchObject({ code: 1, out: expect.stringContaining('compileall is syntax only') });
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
+  });
+
+  it.each([0, 1])('honors the explicit project build command and its exit status %s', code => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), "build-gate-python's-"));
+    try {
+      fs.writeFileSync(path.join(sandbox, 'requirements.txt'), '');
+      const result = spawnSync('bash', [SCRIPT, sandbox, '--boundary', 'release', '--build-command',
+        `node -e "require('fs').writeFileSync('production-built', process.cwd());process.exit(${code})"`], { encoding: 'utf8' });
+      expect(result.status).toBe(code);
+      expect(fs.readFileSync(path.join(sandbox, 'production-built'), 'utf8')).toBe(fs.realpathSync(sandbox));
+    } finally { fs.rmSync(sandbox, { recursive: true, force: true }); }
   });
 
   it('passes the library own repo (dogfood)', () => {
