@@ -2,6 +2,7 @@ import type { DeliveryScope, DeliveryValidationOptions, ReviewBinding } from './
 import { canonical } from './manifest.js';
 import { designReviewReady, validateDelivery, deliveryDesignReviewBinding, deliveryReleaseReviewBinding, deliveryReviewBinding, deliveryScopeDigest, readDeliveryRequirements, readDeliveryPlanningInputs } from './validation.js';
 import { deliveryChangePolicy } from './lifecycle.js';
+import { isOwnerAttested, ownerAttestationProblem } from './attestation.js';
 
 import { requiredReviewRoles, reviewRoleSatisfies } from './review-policy.js';
 import type { ReviewPurpose } from './review-policy.js';
@@ -29,6 +30,7 @@ export function planDeliveryReview(scope: DeliveryScope, kind: ReviewPurpose, ou
   const current = m.decisionRefs.filter(d => {
     if (d.kind !== kind || d.scopeDigest !== binding.scopeDigest || !same(d.outcomeIds, binding.outcomeIds) || !same(d.artifactDigests, binding.artifactDigests)) return false;
     if (d.reviewer.role === 'independent' && d.reviewer.contextId === m.authorization.implementerContextId) return false;
+    if (isOwnerAttested(d) && (kind !== 'scope-review' || ownerAttestationProblem(d, binding) !== undefined)) return false;
     try { return options.trustedReviewProvider?.verify(d, binding) === true; } catch { return false; }
   });
   const missingRoles = [...roles].filter(role => !current.some(d => d.result === 'approved' && reviewRoleSatisfies(d.reviewer.role, role)));

@@ -127,7 +127,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
   }
   try {
     const c = rawContract ?? json(confined(context.runDirectory, 'planning-integrity.json'));
-    shape(c, 'schemaVersion sources clauses facts conflicts nodes milestones runners checks variants capacity', 'schemaVersion sources clauses facts conflicts nodes milestones runners checks variants capacity', 'planning contract');
+    shape(c, 'schemaVersion sources clauses facts conflicts nodes milestones runners checks variants capacity releaseScopes', 'schemaVersion sources clauses facts conflicts nodes milestones runners checks variants capacity', 'planning contract');
     if (c.schemaVersion !== 1) throw new Error('unsupported planning contract version');
     const sources = rows(c.sources, 'source'); const clauses = rows(c.clauses, 'clause'); const facts = rows(c.facts, 'fact');
     const conflicts = rows(c.conflicts, 'conflict'); const nodes = rows(c.nodes, 'node'); const milestones = rows(c.milestones, 'milestone');
@@ -171,7 +171,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
       return result;
     };
     for (const n of nodes) {
-      shape(n, 'id stage kind dependsOn provides consumes visual reviewFor origin originRef risk riskReason acceptance effortHours', 'id stage kind dependsOn provides consumes visual reviewFor origin originRef risk riskReason acceptance', 'node');
+      shape(n, 'id stage kind dependsOn provides consumes visual reviewFor origin originRef risk riskReason acceptance effortHours releaseScope', 'id stage kind dependsOn provides consumes visual reviewFor origin originRef risk riskReason acceptance', 'node');
       if (!Number.isInteger(n.stage) || n.stage < 0 || !['work','review','decision','resource','acceptance'].includes(n.kind) || !strings(n.dependsOn) || !strings(n.provides) || !strings(n.consumes) || !strings(n.reviewFor) || typeof n.visual !== 'boolean' || !['required','added'].includes(n.origin) || !text(n.originRef) || !['low','medium','high'].includes(n.risk) || !text(n.riskReason) || !text(n.acceptance)) throw new Error(`invalid node ${n.id}; explicit origin, risk and acceptance required`);
       if (n.effortHours !== undefined && (!Array.isArray(n.effortHours) || n.effortHours.length !== 2 || !n.effortHours.every((v: unknown) => typeof v === 'number' && v >= 0 && Number.isFinite(v)) || n.effortHours[0] > n.effortHours[1])) throw new Error(`invalid effort range ${n.id}`);
     }
@@ -189,7 +189,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
       for (const review of nodes.filter(r => r.kind === 'review' && r.visual && r.reviewFor.includes(n.id))) if (!deps.has(review.id)) add('REVIEW_DEPENDENCY_MISSING', n.id, `Dependent screen requires representative review ${review.id}`);
     }
     for (const milestone of milestones) {
-      shape(milestone, 'id stage requires acceptanceNodeId evidenceIds payment', 'id stage requires acceptanceNodeId evidenceIds', 'milestone');
+      shape(milestone, 'id stage requires acceptanceNodeId evidenceIds payment releaseScope', 'id stage requires acceptanceNodeId evidenceIds', 'milestone');
       if (!Number.isInteger(milestone.stage) || !strings(milestone.requires) || !strings(milestone.evidenceIds)) throw new Error(`invalid milestone ${milestone.id}`);
       if (milestone.payment !== undefined) {
         shape(milestone.payment, 'amount currency sourceRef', 'amount currency sourceRef', 'milestone payment');
@@ -200,6 +200,44 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
       for (const capability of milestone.requires) if (!nodes.some(n => n.provides.includes(capability) && n.stage <= milestone.stage && [...ancestors(n.id)].every(id => byId.get(id)!.stage <= milestone.stage))) add('MILESTONE_NOT_CLOSED', milestone.id, `No complete prerequisite path for ${capability}${milestone.payment ? '; payment-trigger deliverable' : ''}`);
       for (const id of milestone.evidenceIds) if (!checks.some(check => check.id === id && byId.get(check.nodeId)?.stage <= milestone.stage)) add('MILESTONE_EVIDENCE_LATE', milestone.id, `Missing or late evidence producer ${id}`);
       if (!milestone.evidenceIds.some((id: string) => checks.some(check => check.id === id && check.kind === 'build'))) add('BUILD_BOUNDARY_MISSING', milestone.id, 'Usable/milestone/release boundary requires actual build evidence');
+    }
+    // Release trains: the base contract and each change order carry their own milestones and payments.
+    const releaseScopes = c.releaseScopes === undefined ? undefined : rows(c.releaseScopes, 'release scope');
+    for (const scope of releaseScopes ?? []) {
+      shape(scope, 'id kind sourceRef status price decision', 'id kind sourceRef', 'release scope');
+      if (!['base-contract', 'change-order'].includes(scope.kind) || !text(scope.sourceRef)) throw new Error(`invalid release scope ${scope.id}`);
+      if (scope.kind === 'base-contract' && ['status', 'price', 'decision'].some(k => k in scope)) throw new Error(`base-contract scope ${scope.id} takes no change-order status, price or decision`);
+      if (scope.kind === 'change-order') {
+        if (!['proposed', 'approved', 'rejected'].includes(scope.status)) throw new Error(`invalid change-order status ${scope.id}`);
+        if (scope.price !== undefined) { shape(scope.price, 'amount currency sourceRef', 'amount currency sourceRef', 'change-order price'); if (typeof scope.price.amount !== 'number' || !Number.isFinite(scope.price.amount) || scope.price.amount < 0 || !text(scope.price.currency) || !text(scope.price.sourceRef)) throw new Error(`invalid change-order price ${scope.id}`); }
+        if (scope.status === 'approved') { binding(context.projectRoot, scope.decision); if (scope.price === undefined) add('RELEASE_SCOPE_UNPRICED', scope.id, 'Approved change order lacks its agreed price'); }
+      }
+      if (!clauses.some(clause => clause.id === scope.sourceRef) && !sources.some(source => source.binding.path === scope.sourceRef)) add('RELEASE_SCOPE_ORIGIN_UNKNOWN', scope.id, 'Release scope must reference an inventoried source or clause');
+    }
+    if (releaseScopes && releaseScopes.filter(scope => scope.kind === 'base-contract').length !== 1) throw new Error('release scopes require exactly one base-contract scope');
+    const baseScope = releaseScopes?.find(scope => scope.kind === 'base-contract');
+    const scopeOf = (row: Row) => releaseScopes?.find(scope => scope.id === (row.releaseScope ?? baseScope!.id));
+    for (const row of [...nodes, ...milestones]) {
+      if (row.releaseScope !== undefined && !scopeOf(row)) add('RELEASE_SCOPE_UNKNOWN', row.id, `Unknown release scope ${row.releaseScope}`);
+      else if (releaseScopes && row.origin === 'added' && row.releaseScope === undefined) add('RELEASE_SCOPE_UNASSIGNED', row.id, 'Added work must name the base contract or the change order that covers it');
+    }
+    // Without declared scopes, added work has no proven price or approval inside the base contract.
+    const settled = (scope?: Row) => !!scope && (scope.kind === 'base-contract' || scope.status === 'approved' && scope.price !== undefined);
+    const unsettled = (id: string) => { const n = byId.get(id)!; return releaseScopes ? !settled(scopeOf(n)) : n.origin === 'added'; };
+    for (const milestone of milestones) {
+      const scope = releaseScopes ? scopeOf(milestone) : undefined;
+      if (milestone.payment !== undefined && scope?.kind === 'change-order' && !settled(scope)) add('RELEASE_SCOPE_UNPRICED', milestone.id, `Payment needs change order ${scope.id} approved and priced`);
+      if (milestone.payment === undefined || releaseScopes && scope?.kind !== 'base-contract') continue;
+      const coupled = (nodeIds: string[]) => [...new Set(nodeIds.flatMap(id => byId.has(id) ? [id, ...ancestors(id)] : []))].filter(unsettled);
+      const what = releaseScopes ? 'unapproved or unpriced change-order work' : 'added work with no declared release scope';
+      for (const capability of milestone.requires) {
+        const paths = nodes.filter(n => n.provides.includes(capability)).map(n => coupled([n.id]));
+        if (paths.length && paths.every(p => p.length)) add('RELEASE_TRAIN_COUPLED', milestone.id, `Base-contract payment requires ${capability}, which depends on ${what}: ${[...new Set(paths.flat())].join(', ')}`);
+      }
+      for (const id of milestone.evidenceIds) {
+        const check = checks.find(row => row.id === id); const nodeIds = check ? coupled([check.nodeId]) : [];
+        if (nodeIds.length) add('RELEASE_TRAIN_COUPLED', milestone.id, `Base-contract payment evidence ${id} depends on ${what}: ${nodeIds.join(', ')}`);
+      }
     }
     for (const runner of runners) {
       shape(runner, 'id root include exclude configBindings environment bootstrapPaths resultFormat', 'id root include exclude configBindings environment bootstrapPaths', 'runner');

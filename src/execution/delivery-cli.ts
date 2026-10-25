@@ -5,6 +5,8 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolveDeliveryScope, validateDeliveryRun } from './delivery-gate.js';
 import type { DeliveryStage, TrustedReviewProvider } from './delivery-gate.js';
 import { deliveryProjections } from './delivery-projections.js';
+import { ownerAttestationPrompt, ownerAttestationProvider } from '../delivery/attestation.js';
+import { planDeliveryReview } from '../delivery/review-planner.js';
 
 function within(root: string, file: string): boolean {
   const relative = path.relative(root, file);
@@ -27,7 +29,7 @@ async function verifier(file: string | undefined, projectRoot: string): Promise<
 
 export async function runDeliveryCli(args: string[]): Promise<number> {
   if (args.includes('--help')) {
-    console.log('validate-delivery <run-directory-or-checkpoint> --stage plan|execute|advance|release [--review-verifier /host/adapter.mjs] [--resolve] [--project]');
+    console.log('validate-delivery <run-directory-or-checkpoint> --stage plan|execute|advance|release [--review-verifier /host/adapter.mjs] [--owner-attestation] [--resolve] [--project] [--scope-binding]');
     return 0;
   }
   try {
@@ -37,6 +39,8 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
     let adapter: string | undefined;
     let resolveOnly = false;
     let project = false;
+    let ownerAttestation = false;
+    let scopeBinding = false;
     for (let index = 1; index < args.length; index++) {
       const arg = args[index];
       if (arg === '--stage') {
@@ -48,6 +52,8 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
         if (!adapter) throw new Error('--review-verifier requires a path');
       } else if (arg === '--resolve') resolveOnly = true;
       else if (arg === '--project') project = true;
+      else if (arg === '--owner-attestation') ownerAttestation = true;
+      else if (arg === '--scope-binding') scopeBinding = true;
       else throw new Error(`Unknown argument: ${arg}`);
     }
     const scope = resolveDeliveryScope(target, { allowLegacy: false });
@@ -56,7 +62,18 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
       console.log(JSON.stringify({ runDirectory: scope.runDirectory, projectRoot: scope.projectRoot, activeFiles: scope.activeFiles }));
       return 0;
     }
-    const report = validateDeliveryRun(target, { stage, trustedReviewProvider: await verifier(adapter, scope.projectRoot) });
+    if (scopeBinding) {
+      // Values an owner-attested scope review must bind, plus the confirmation to show the owner.
+      const { binding } = planDeliveryReview(scope, 'scope-review', scope.manifest.outcomes.map(o => o.id));
+      console.log(JSON.stringify({ binding, prompt: ownerAttestationPrompt(binding) }, null, 2));
+      return 0;
+    }
+    const host = await verifier(adapter, scope.projectRoot);
+    // The library's own reference adapter accepts only complete owner-attested scope reviews.
+    const provider: TrustedReviewProvider | undefined = ownerAttestation
+      ? { verify: (decision, binding) => ownerAttestationProvider.verify(decision, binding) || host?.verify(decision, binding) === true }
+      : host;
+    const report = validateDeliveryRun(target, { stage, trustedReviewProvider: provider });
     if (project && report.valid) {
       for (const [file, content] of deliveryProjections(scope)) fs.writeFileSync(file, content);
     }

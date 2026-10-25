@@ -3,11 +3,12 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { canonical, deliveryScopeDigest, planDeliveryReview, validateDelivery } from '../../src/delivery/index.js';
+import { architectureRequiredReasons, canonical, deliveryScopeDigest, planDeliveryReview, validateDelivery } from '../../src/delivery/index.js';
 import { validatePlanningIntegrity } from '../../src/delivery/planning-integrity.js';
 import { validateDeliveryRun } from '../../src/execution/delivery-gate.js';
 import { createDeliveryFixture, deliveryFixtureRoots } from './delivery-fixture.js';
 import { planningFixture } from './planning-integrity-fixture.js';
+import { architectureContract } from './architecture-fixture.js';
 
 const packageRoot = path.resolve(__dirname, '../..');
 const otherRoots: string[] = [];
@@ -15,7 +16,7 @@ afterEach(() => [...deliveryFixtureRoots.splice(0), ...otherRoots.splice(0)].for
 
 function fixture() {
   const f = createDeliveryFixture(); const p = planningFixture(); otherRoots.push(p.root);
-  const contract = structuredClone(p.contract); const register = structuredClone(p.register);
+  const contract = structuredClone(p.contract); const register = structuredClone(p.register); const architecture = architectureContract(f.manifest);
   contract.sources[0].binding = f.requirements.originalSources[0]; register.reviewedInputs = [f.requirements.originalSources[0]];
   for (const binding of [p.config, p.decision, p.review]) f.write(binding.path, fs.readFileSync(path.join(p.root, binding.path)));
   contract.checks[0].unitId = 'tasks-proof.md#T1'; contract.checks[0].requiredFiles = ['app.ts','package-lock.json'];
@@ -36,7 +37,8 @@ function fixture() {
   const savePlanning = () => {
     const planning = f.write('runs/current/planning-integrity.json', JSON.stringify(contract));
     const findings = f.write('runs/current/review-findings.json', JSON.stringify(register));
-    f.manifest.planningInputs = [planning, findings]; f.save();
+    const domain = f.write('runs/current/architecture.json', JSON.stringify(architecture));
+    f.manifest.planningInputs = [planning, findings, domain]; f.save();
   };
   const approve = () => {
     f.manifest.decisionRefs = f.manifest.decisionRefs.filter(d => d.kind !== 'scope-review');
@@ -54,7 +56,7 @@ function fixture() {
     f.save(); const result = spawnSync('bash', [path.join(packageRoot, 'scripts', script), f.run, ...extraArgs], { encoding: 'utf8', env: { ...process.env, AI_PROMPT_REVIEW_VERIFIER: adapter } });
     return { code: result.status, out: result.stdout + result.stderr };
   };
-  return { ...f, contract, register, savePlanning, approve, api, shell, refreshAdapter };
+  return { ...f, contract, register, architecture, savePlanning, approve, api, shell, refreshAdapter };
 }
 
 describe('version 2 planning delivery integration', () => {
@@ -184,3 +186,62 @@ describe('version 2 planning delivery integration', () => {
   });
 
 });
+
+describe('version 2 architecture contract', () => {
+  const plan = (f: ReturnType<typeof fixture>) => { f.save(); return validateDeliveryRun(f.run, { stage: 'plan', trustedReviewProvider: f.provider }); };
+  const codes = (f: ReturnType<typeof fixture>) => plan(f).issues.map(i => i.split(':')[0]).filter(code => code.startsWith('ARCHITECTURE_'));
+  const rebind = (f: ReturnType<typeof fixture>) => { f.savePlanning(); f.approve(); };
+  const describeRequirement = (f: ReturnType<typeof fixture>, description: string) => {
+    f.requirements.requirements[0].description = description;
+    f.manifest.sourceInputs[0] = { id: 'brief-requirements', ...f.write('requirements.json', JSON.stringify(f.requirements)) };
+  };
+
+  it('fails --stage plan for a persistent-data run without a domain contract', () => {
+    const f = fixture(); expect(plan(f).issues).toEqual([]);
+    fs.unlinkSync(path.join(f.run, 'architecture.json')); f.manifest.planningInputs = f.manifest.planningInputs!.filter(b => !b.path.endsWith('architecture.json')); f.approve();
+    const report = plan(f); expect(report.valid).toBe(false); expect(report.completion.planReady).toBe(false);
+    expect(report.issues).toEqual([expect.stringMatching(/^ARCHITECTURE_CONTRACT_MISSING: \*: Run has persistent data or roles \(persistent-data requirements R1\)/)]);
+  });
+  it('binds a present contract into the reviewed planning scope', () => {
+    const f = fixture(); f.manifest.planningInputs = f.manifest.planningInputs!.filter(b => !b.path.endsWith('architecture.json'));
+    expect(plan(f).issues.join('\n')).toContain('current run sidecars must be bound in planningInputs (planning-integrity.json, review-findings.json, architecture.json)');
+    f.savePlanning(); expect(plan(f).issues).toEqual([]);
+    f.architecture.api[0].errors.push('409 duplicate request'); f.savePlanning();
+    expect(plan(f).issues).toEqual(['scope: original-source coverage review pending or provenance unverified']);
+  });
+  it('requires provider decisions for capabilities the requirements imply', () => {
+    const f = fixture(); describeRequirement(f, 'Seekers search listings within a radius and receive an email confirmation'); rebind(f);
+    expect(plan(f).issues.filter(i => i.startsWith('ARCHITECTURE_'))).toEqual(['geocoding', 'search', 'email'].map(c => expect.stringContaining(`ARCHITECTURE_PROVIDER_UNDECIDED: ${c}: Requirements R1 imply ${c}`)));
+    f.architecture.providers = [{ capability: 'geocoding', status: 'decided', provider: 'PostGIS with Mapbox geocoding', requirementIds: ['R1'] }, { capability: 'search', status: 'decided', provider: 'Postgres full-text search', requirementIds: ['R1'] }, { capability: 'email', status: 'open', ownerDecisionId: 'D-SENDER', requirementIds: ['R1'] }];
+    rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_PROVIDER_INVALID']);
+    f.register.ownerDecisions.push({ id: 'D-SENDER', source: f.contract.variants[0].decision, status: 'open', targets: ['queue'], blocks: ['execute'] });
+    rebind(f); expect(plan(f).issues).toEqual([]);
+    f.architecture.providers[2] = { capability: 'email', status: 'not-required', reason: 'too short', requirementIds: ['R1'] }; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_PROVIDER_INVALID']);
+  });
+  it('requires roles, a complete access matrix, state machines and an API contract', () => {
+    const f = fixture(); expect(plan(f).issues).toEqual([]);
+    f.architecture.roles[0].actors = ['someone else']; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_ROLE_UNMAPPED']);
+    f.architecture.roles[0].actors = ['consumer']; f.architecture.roles.push({ id: 'admin', actors: [] }); rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_ACCESS_INCOMPLETE']);
+    f.architecture.roles.pop(); f.architecture.stateMachines = []; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_STATE_MACHINE_MISSING']);
+    f.architecture.stateMachines = architectureContract(f.manifest).stateMachines; f.architecture.stateMachines[0].transitions.splice(0, 1); f.architecture.stateMachines[0].transitions[0].to = 'failed'; rebind(f);
+    expect(plan(f).issues.filter(i => i.startsWith('ARCHITECTURE_'))).toEqual([expect.stringContaining('State fulfilled is unreachable from open')]);
+    f.architecture.stateMachines = architectureContract(f.manifest).stateMachines; f.architecture.api = []; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_API_MISSING']);
+    f.architecture.api = architectureContract(f.manifest).api; f.architecture.api[0].errors = []; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_API_INVALID']);
+    f.architecture.api[0].errors = ['422']; Object.assign(f.architecture, { entities: [], access: [], stateMachines: [] }); rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_ENTITIES_MISSING']);
+  });
+  it('exempts bound architecture documents from pending-detail caps but not task sections', () => {
+    const f = fixture(); expect(plan(f).issues).toEqual([]);
+    const prose = '# Domain model\n\n' + 'Listings belong to an organization and publish only after verification. '.repeat(700);
+    f.architecture.documents = [f.write('runs/current/architecture.md', prose)]; rebind(f);
+    const report = plan(f); expect(report.issues).toEqual([]); expect(report.metrics.pendingWords).toBeLessThan(1000);
+    f.architecture.documents = [f.write('runs/current/architecture.md', prose + '\n## T2 - Build listings\n')]; rebind(f); expect(codes(f)).toEqual(['ARCHITECTURE_TASK_DETAIL']);
+    delete f.architecture.documents; rebind(f); expect(plan(f).issues.join('\n')).toMatch(/budget: unregistered pending detail runs\/current\/architecture.md[\s\S]*pending words exceeds/);
+  });
+  it('does not require a contract for a single-actor run without persistent data', () => {
+    const f = fixture(); const scope = f.scope();
+    const stateless = f.requirements.requirements.map(r => ({ ...r, description: 'Render the brochure page', checks: r.checks.map(c => ({ ...c, description: 'Visitor sees the page' })) }));
+    expect(architectureRequiredReasons(scope, stateless)).toEqual([]);
+    expect(architectureRequiredReasons(scope, f.requirements.requirements)).toEqual(['persistent-data requirements R1']);
+  });
+});
+

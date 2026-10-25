@@ -39,7 +39,7 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   for (const field of ['sourceInputs', 'surfaces', 'outcomes', 'slices', 'evidenceRefs', 'decisionRefs']) { assert(m[field].every((x: unknown) => record(x) && text(x.id)), `invalid ${field} IDs`); unique(m[field], field); }
   const binding = (b: any) => record(b) && text(b.path) && hash(b.sha256);
   assert(m.sourceInputs.every(binding), 'invalid source input binding');
-  assert(m.schemaVersion !== 2 || Array.isArray(m.planningInputs) && m.planningInputs.length === 2, 'version 2 requires both planning input bindings');
+  assert(m.schemaVersion !== 2 || Array.isArray(m.planningInputs) && [2, 3].includes(m.planningInputs.length), 'version 2 requires both planning input bindings');
   if (m.planningInputs !== undefined) { assert(Array.isArray(m.planningInputs) && m.planningInputs.every(binding), 'invalid planning input bindings'); for (const b of m.planningInputs) keys(b, 'path sha256', 'planning binding'); }
   for (const b of m.sourceInputs) keys(b, 'id path sha256', 'sourceInputs');
   const kinds = ['web','native','desktop','api','sdk','cli','automation','data','ml','infrastructure','document','media'];
@@ -100,10 +100,12 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   for (const d of m.decisionRefs) {
     keys(d, 'id kind outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget', 'decision');
     if (record(d.reviewer)) keys(d.reviewer, 'id contextId role', 'reviewer');
-    if (record(d.provenance)) keys(d.provenance, 'kind reference', 'provenance');
+    if (record(d.provenance)) keys(d.provenance, 'kind reference attestation', 'provenance');
     if (record(d.budget)) keys(d.budget, 'maxUnits maxWords maxBytes maxSlices', 'extension limits');
     assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review','release-review'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
-    assert(record(d.reviewer) && text(d.reviewer.id) && text(d.reviewer.contextId) && ['owner','independent','agent'].includes(d.reviewer.role) && record(d.provenance) && ['owner-message','review-session','external'].includes(d.provenance.kind) && text(d.provenance.reference) && ['approved','rejected'].includes(d.result) && text(d.reason), `invalid reviewer provenance ${d.id}`);
+    assert(record(d.reviewer) && text(d.reviewer.id) && text(d.reviewer.contextId) && ['owner','independent','agent'].includes(d.reviewer.role) && record(d.provenance) && ['owner-message','review-session','external','owner-attested'].includes(d.provenance.kind) && text(d.provenance.reference) && ['approved','rejected'].includes(d.result) && text(d.reason), `invalid reviewer provenance ${d.id}`);
+    if (d.provenance.kind === 'owner-attested') { assert(record(d.provenance.attestation), `owner-attested decision ${d.id} requires attestation`); keys(d.provenance.attestation, 'quote messageAt scopeDigest', 'owner attestation'); }
+    else assert(d.provenance.attestation === undefined, `attestation is restricted to owner-attested provenance ${d.id}`);
     if (d.requirementIds !== undefined) assert(strings(d.requirementIds), `invalid requirement IDs ${d.id}`);
     if (d.evidenceIds !== undefined) assert(strings(d.evidenceIds), `invalid evidence IDs ${d.id}`);
     if (d.budget !== undefined) assert(record(d.budget) && ['maxUnits','maxWords','maxBytes','maxSlices'].every(k => Number.isInteger(d.budget[k]) && d.budget[k] > 0), `invalid budget extension ${d.id}`);

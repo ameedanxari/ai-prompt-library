@@ -5,6 +5,45 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — plan gate: owner attestation, architecture contract, release trains
+
+A read-only review of a generated consultancy plan found that the plan could
+not pass its own `--stage plan` gate in a single-owner setting, had no domain
+model, and tied the base contract's final payment to an unpriced change order.
+
+### Added
+- **`owner-attested` scope review** (L1). A `scope-review` decision can carry
+  `provenance.kind: owner-attested` with the owner's verbatim chat reply, its
+  timestamp and the scope digest. The reply must repeat an 8-character code
+  from that digest. The reference adapter `ownerAttestationProvider`
+  (`--owner-attestation`, or `AI_PROMPT_OWNER_ATTESTATION=1` in shell
+  wrappers) verifies these records and nothing else.
+  `validate-delivery.sh --scope-binding` prints the binding and the
+  confirmation prompt, and `createOwnerAttestedScopeReview` builds the record.
+  Attestation makes the plan ready; at execute and later it satisfies only
+  the owner duty of scope review. Reports include `scopeReview.provenance`.
+- **Mandatory `architecture.json` for runs with persistent data or roles**
+  (L2): roles, entities, access (RLS/grants) matrix, state machines, URL map,
+  API contract and provider decisions for capabilities the requirements
+  imply (`IMPLIED_CAPABILITIES`). It is bound in `planningInputs`, and it and
+  the documents it binds are exempt from the pending-detail caps unless they
+  contain task sections.
+- **Release trains** (L3). The new `releaseScopes` field in
+  `planning-integrity.json`, with `releaseScope` on nodes and milestones,
+  separates the base contract from change orders. `RELEASE_TRAIN_COUPLED`
+  fails a base-contract payment milestone whose required capabilities or
+  evidence depend on unapproved or unpriced change-order work. Without
+  declared scopes, `origin: added` work counts as unpriced.
+
+### Changed
+- Version 2 manifests accept a third `planningInputs` binding for
+  `architecture.json`. Version 2 runs with persistent data or roles now fail
+  `--stage plan` until they add the contract. No upgrade step is needed: the
+  validator names what to add.
+- `rolling-delivery.md`, `executor.md` and `revise-outputs.md` describe the
+  architecture contract, its exemption from the caps, release trains and the
+  owner-attestation protocol.
+
 ## [Unreleased] — upgrade path for in-flight runs, owner-decision docs, sharded task contracts
 
 The run-economy change below reached the two in-flight runs only because

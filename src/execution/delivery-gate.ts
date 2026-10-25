@@ -9,6 +9,7 @@ export * from '../delivery/types.js';
 export { validatePlanningIntegrity, matchesPlanningGlob } from '../delivery/planning-integrity.js';
 export type { PlanningContext, PlanningIssue, PlanningReport } from '../delivery/planning-integrity.js';
 export { planDeliveryReview, getDeliveryChangePolicy } from '../delivery/review-planner.js';
+export { OWNER_ATTESTATION_DIGEST_PREFIX, createOwnerAttestedScopeReview, isOwnerAttested, ownerAttestationProblem, ownerAttestationPrompt, ownerAttestationProvider } from '../delivery/attestation.js';
 export type { ReviewPlan, ReviewPurpose } from '../delivery/review-planner.js';
 export type { DeliveryChangePolicy } from '../delivery/lifecycle.js';
 export { parseDeliveryManifest, resolveDeliveryScope } from '../delivery/manifest.js';
