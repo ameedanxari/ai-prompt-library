@@ -119,11 +119,16 @@ Surface a runnable target, evidence and limitations at each product checkpoint.
 <!-- /AI Prompt Library Steering (Auto-Managed) -->
 EOF
 
-if grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
+if grep -q "^## AI Prompt Library Steering (Auto-Managed" AGENTS.md; then
   tmp_file="$(mktemp)"
-  awk -v block="$MANAGED_BLOCK" '
+  # BSD awk (macOS) rejects multi-line -v values, so read the block from a file.
+  block_file="$(mktemp)"
+  printf "%s\n" "$MANAGED_BLOCK" > "$block_file"
+  # Older blocks have no end marker; they end at the next level-2 heading.
+  awk -v block_file="$block_file" '
     /^## AI Prompt Library Steering \(Auto-Managed/ {
-      print block
+      while ((getline line < block_file) > 0) print line
+      close(block_file)
       in_block = 1
       next
     }
@@ -131,8 +136,10 @@ if grep -q "AI Prompt Library Steering (Auto-Managed)" AGENTS.md; then
       in_block = 0
       next
     }
+    in_block && /^## / { in_block = 0 }
     !in_block { print }
   ' AGENTS.md > "$tmp_file"
+  rm -f "$block_file"
   mv "$tmp_file" AGENTS.md
 else
   {

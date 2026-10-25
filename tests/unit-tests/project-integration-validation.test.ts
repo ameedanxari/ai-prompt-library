@@ -70,4 +70,44 @@ describe('validate-project-integration.sh', () => {
       fs.rmSync(sandbox, { recursive: true, force: true });
     }
   });
+
+  // The replacement branch only runs when AGENTS.md already has a block; it
+  // must work with BSD awk (macOS), which rejects multi-line -v values.
+  const rerunWith = (agents: string) => {
+    const sandbox = fs.mkdtempSync(path.join(os.tmpdir(), 'integration-rerun-'));
+    try {
+      fs.symlinkSync(REPO_ROOT, path.join(sandbox, '.ai-prompts'));
+      fs.writeFileSync(path.join(sandbox, 'AGENTS.md'), agents, 'utf8');
+      const out = execSync(`bash "${BOOTSTRAP}"`, { cwd: sandbox, encoding: 'utf8' });
+      expect(out).toMatch(/Bootstrap complete/);
+      return fs.readFileSync(path.join(sandbox, 'AGENTS.md'), 'utf8');
+    } finally {
+      fs.rmSync(sandbox, { recursive: true, force: true });
+    }
+  };
+
+  it('replaces an existing managed block and keeps surrounding content', () => {
+    const agents = rerunWith([
+      '# AGENTS', '', 'Project notes before.', '',
+      '## AI Prompt Library Steering (Auto-Managed — do not edit)', '', 'Old steering text.', '',
+      '<!-- /AI Prompt Library Steering (Auto-Managed) -->', '', '## Team rules', '', 'Keep this.', '',
+    ].join('\n'));
+    expect(agents).toMatch(/Project notes before\./);
+    expect(agents).toMatch(/## Team rules\n\nKeep this\./);
+    expect(agents).not.toMatch(/Old steering text/);
+    expect(agents).toMatch(/checkpoint protocol/);
+    expect(agents.match(/## AI Prompt Library Steering \(Auto-Managed/g)).toHaveLength(1);
+    expect(agents.match(/<!-- \/AI Prompt Library Steering \(Auto-Managed\) -->/g)).toHaveLength(1);
+  });
+
+  it('upgrades a legacy block without an end marker up to the next section', () => {
+    const agents = rerunWith([
+      '# AGENTS', '',
+      '## AI Prompt Library Steering (Auto-Managed — do not edit)', '', 'Legacy steering text.', '',
+      '## Team rules', '', 'Keep this too.', '',
+    ].join('\n'));
+    expect(agents).not.toMatch(/Legacy steering text/);
+    expect(agents).toMatch(/## Team rules\n\nKeep this too\./);
+    expect(agents.match(/## AI Prompt Library Steering \(Auto-Managed/g)).toHaveLength(1);
+  });
 });
