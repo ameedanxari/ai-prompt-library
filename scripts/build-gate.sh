@@ -34,7 +34,7 @@ while [ $# -gt 0 ]; do
       [ $# -ge 2 ] || { echo 'build-gate: --boundary needs a value' >&2; exit 2; }
       BOUNDARY="$2"; shift 2 ;;
     --build-command)
-      [ $# -ge 2 ] && [ -n "$2" ] || { echo 'build-gate: --build-command needs a nonempty command' >&2; exit 2; }
+      if [ $# -lt 2 ] || [ -z "$2" ]; then echo 'build-gate: --build-command needs a nonempty command' >&2; exit 2; fi
       BUILD_COMMAND="$2"; shift 2 ;;
     -*) echo "build-gate: unknown option $1" >&2; exit 2 ;;
     *)
