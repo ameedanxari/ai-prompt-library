@@ -7,6 +7,8 @@ import { requiredReviewRoles } from './review-policy.js';
 import { readDeliveryLifecycle, deliveryChangePolicy } from './lifecycle.js';
 import type { DeliveryLifecycle } from './types.js';
 import { canonical, confined, digest, resolveDeliveryScope, sha256 } from './manifest.js';
+import { isOwnerAttested, ownerAttestationProblem } from './attestation.js';
+import { ARCHITECTURE_FILE, architectureDocumentPaths, validateArchitectureContract } from './architecture.js';
 
 function checkedFile(root: string, binding: FileBinding): Buffer {
   const file = confined(root, binding.path);
@@ -42,8 +44,10 @@ export function readDeliveryPlanningInputs(scope: DeliveryScope): FileBinding[] 
   const inputs = scope.manifest.planningInputs ?? [];
   const actual = inputs.map(binding => { checkedFile(scope.projectRoot, binding); return confined(scope.projectRoot, binding.path); }).sort();
   if (scope.manifest.schemaVersion === 2) {
-    const expected = ['planning-integrity.json', 'review-findings.json'].map(file => path.join(scope.runDirectory, file)).sort();
-    if (JSON.stringify(expected) !== JSON.stringify(actual)) throw new Error('planning: both current run sidecars must be bound in planningInputs');
+    // A present architecture contract is part of the reviewed planning scope.
+    const sidecars = ['planning-integrity.json', 'review-findings.json', ...(fs.existsSync(path.join(scope.runDirectory, ARCHITECTURE_FILE)) ? [ARCHITECTURE_FILE] : [])];
+    const expected = sidecars.map(file => path.join(scope.runDirectory, file)).sort();
+    if (JSON.stringify(expected) !== JSON.stringify(actual)) throw new Error(`planning: current run sidecars must be bound in planningInputs (${sidecars.join(', ')})`);
   }
   return inputs;
 }
@@ -216,6 +220,11 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     });
     report.planningIntegrity = { assessed: planning.assessed, blockers: planning.blockers, warnings: planning.warnings };
     for (const problem of planning.issues) issue(`${problem.code}: ${problem.target}: ${problem.message}`);
+    if (m.schemaVersion === 2) {
+      let ownerDecisionIds: string[] = [];
+      try { const register = JSON.parse(fs.readFileSync(confined(scope.runDirectory, 'review-findings.json'), 'utf8')); ownerDecisionIds = (register.ownerDecisions ?? []).map((d: { id: string }) => d.id); } catch { /* Planning integrity reports the malformed register. */ }
+      for (const problem of validateArchitectureContract(scope, requirements, readDeliveryRequirements(scope).lifecycle, ownerDecisionIds)) issue(`${problem.code}: ${problem.target}: ${problem.message}`);
+    }
 
     const allIds = m.outcomes.map(o => o.id); const outcomeById = new Map(m.outcomes.map(o => [o.id, o])); const sliceById = new Map(m.slices.map(s => [s.id, s]));
     const authenticated = (d: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent'): boolean => {
@@ -223,6 +232,8 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       if (role === 'owner' && d.reviewer.role !== 'owner') return false;
       if (role === 'independent' && (d.reviewer.role !== 'independent' || d.reviewer.contextId === m.authorization.implementerContextId)) return false;
       if (d.reviewer.role === 'independent' && d.reviewer.contextId === m.authorization.implementerContextId) return false;
+      // Owner attestation is never authentication: only a complete scope review accepts it, never for an independent duty.
+      if (isOwnerAttested(d) && (d.kind !== 'scope-review' || role === 'independent' || ownerAttestationProblem(d, binding, options.now) !== undefined)) return false;
       try { return options.trustedReviewProvider?.verify(d, binding) === true; } catch { return false; }
     };
     const trusted = (d: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent') => d?.result === 'approved' && authenticated(d, binding, role);
@@ -242,9 +253,16 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       });
     };
     const scopeBinding: ReviewBinding = { scopeDigest: deliveryScopeDigest(m), outcomeIds: [...allIds].sort(), artifactDigests: [...new Set([...m.sourceInputs, ...(m.planningInputs ?? []), ...originalSources].map(s => s.sha256))].sort() };
-    const scopeApproved = requiredReviewRoles(m.authorization, 'scope-review').every(role => m.decisionRefs.some(d => d.kind === 'scope-review' && trusted(d, scopeBinding, role))) && !m.decisionRefs.some(d => d.kind === 'scope-review' && d.result === 'rejected' && authenticated(d, scopeBinding));
+    const scopeRoles = requiredReviewRoles(m.authorization, 'scope-review');
+    const scopeTrusted = (role: 'owner' | 'independent' | 'agent', allowAttested: boolean) => m.decisionRefs.some(d => d.kind === 'scope-review' && (allowAttested || !isOwnerAttested(d)) && trusted(d, scopeBinding, role));
+    const scopeRejected = m.decisionRefs.some(d => d.kind === 'scope-review' && d.result === 'rejected' && authenticated(d, scopeBinding));
+    const missingScopeRoles = scopeRoles.filter(role => !scopeTrusted(role, true));
+    const scopeFullyApproved = !missingScopeRoles.length && !scopeRejected;
+    // Plan readiness may rest on an owner-attested scope review; execution still needs every required role.
+    const scopeApproved = scopeFullyApproved || options.stage === 'plan' && !scopeRejected && m.decisionRefs.some(d => d.kind === 'scope-review' && isOwnerAttested(d) && trusted(d, scopeBinding, 'owner'));
+    report.scopeReview = { approved: scopeApproved, provenance: !scopeApproved ? 'none' : scopeRoles.every(role => scopeTrusted(role, false)) ? 'authenticated' : 'owner-attested', missingRoles: missingScopeRoles };
     if (!scopeApproved) issue('scope: original-source coverage review pending or provenance unverified');
-    report.changePolicies = Object.fromEntries(m.surfaces.map(s => [s.target.id, deliveryChangePolicy(readDeliveryRequirements(scope).lifecycle, scopeApproved, s.target.id)]));
+    report.changePolicies = Object.fromEntries(m.surfaces.map(s => [s.target.id, deliveryChangePolicy(readDeliveryRequirements(scope).lifecycle, scopeFullyApproved, s.target.id)]));
     const active = sliceById.get(m.activeSlice)!; const proof = sliceById.get(m.firstProofSlice);
     if (!proof || proof.kind !== 'proof') issue('scope: firstProofSlice must identify a representative proof slice');
     if (m.nextSlice && (!sliceById.has(m.nextSlice) || m.nextSlice === m.activeSlice)) issue('scope: invalid nextSlice');
@@ -452,6 +470,7 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
   const declaredFiles = new Set(m.slices.flatMap(s => s.detailedFiles.map(f => confined(scope.runDirectory, f))));
   const ledgerFiles = new Set(m.planningBudget.ledgerFiles.map(f => confined(scope.projectRoot, f)));
   const originalPaths = new Set(readDeliveryRequirements(scope).originalSources.map(s => confined(scope.projectRoot, s.path)));
+  const architectureDocuments = new Set(m.schemaVersion === 2 ? architectureDocumentPaths(scope) : []);
   const seen = new Set<string>(); const scanned = new Set<string>();
   const scan = (dir: string) => {
     if (scanned.has(dir)) return; scanned.add(dir);
@@ -459,7 +478,9 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
       const raw = path.join(dir, entry.name); const file = confined(scope.projectRoot, path.relative(scope.projectRoot, raw)); const stat = fs.statSync(file);
       if (stat.isDirectory()) { scan(file); continue; }
       if (!stat.isFile() || file === path.join(scope.runDirectory, 'delivery-manifest.json')) continue;
-      if (path.dirname(file) === scope.runDirectory && ['planning-integrity.json', 'review-findings.json'].includes(path.basename(file))) continue;
+      if (path.dirname(file) === scope.runDirectory && ['planning-integrity.json', 'review-findings.json', ARCHITECTURE_FILE].includes(path.basename(file))) continue;
+      // The domain contract is not slice detail; its own validator rejects embedded task sections.
+      if (architectureDocuments.has(file)) continue;
       // Retained raw artifacts and versioned authoritative source records are not implementation prompts.
       if (currentEvidenceArtifacts.has(file) || m.sourceInputs.some(s => confined(scope.projectRoot, s.path) === file) || originalPaths.has(file)) continue;
       if (seen.has(file)) continue; seen.add(file);

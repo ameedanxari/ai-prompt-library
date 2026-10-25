@@ -149,7 +149,9 @@ export interface DeliveryDecision {
   /** Raw artifacts, canonical full evidence records and reviewed plan content. */
   artifactDigests: string[];
   reviewer: { id: string; contextId: string; role: 'owner' | 'independent' | 'agent' };
-  provenance: { kind: 'owner-message' | 'review-session' | 'external'; reference: string };
+  /** `owner-attested` is a recorded owner chat confirmation, distinct from host
+   * authentication; it carries `attestation` and only covers scope review. */
+  provenance: { kind: 'owner-message' | 'review-session' | 'external' | 'owner-attested'; reference: string; attestation?: OwnerAttestation };
   result: 'approved' | 'rejected';
   reason: string;
   /** Scope-change: exact requirement IDs excluded. */
@@ -158,6 +160,9 @@ export interface DeliveryDecision {
   evidenceIds?: string[];
   budget?: { maxUnits: number; maxWords: number; maxBytes: number; maxSlices: number };
 }
+/** Written only after explicit owner confirmation in chat: the verbatim reply,
+ * its timestamp and the scope digest it confirms (the reply repeats its prefix). */
+export interface OwnerAttestation { quote: string; messageAt: string; scopeDigest: string }
 export interface DeliveryManifest {
   schemaVersion: 1 | 2;
   kind: 'outcome-delivery';
@@ -224,6 +229,8 @@ export interface DeliveryValidationOptions {
 export interface DeliveryReport {
   planningIntegrity?: { assessed: boolean; blockers: { code: string; target: string; message: string }[]; warnings: string[] };
   changePolicies?: Record<string, DeliveryChangePolicy>;
+  /** How original-source scope approval was established for this report. */
+  scopeReview?: { approved: boolean; provenance: 'authenticated' | 'owner-attested' | 'none'; missingRoles: ('owner' | 'independent' | 'agent')[] };
   valid: boolean;
   stage: DeliveryStage;
   issues: string[];

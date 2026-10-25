@@ -89,3 +89,59 @@ describe('planning integrity: passing controls precede each single-defect mutati
     f.receipt(collected); expect(codes(f)).toContain('EVIDENCE_EMPTY');
   });
 });
+
+describe('planning integrity: release trains keep base payments off unpriced change orders', () => {
+  // Base week-2 payment plus change-order parity work that the milestone also requires.
+  const coupled = () => {
+    const f = fixture();
+    f.contract.nodes.push(f.node('change-order', { kind: 'decision', origin: 'added', provides: ['delta-approved'] }), f.node('parity', { stage: 1, origin: 'added', dependsOn: ['change-order'], provides: ['accepted-parity'], consumes: ['delta-approved'] }));
+    f.contract.checks.push({ id: 'parity-build', nodeId: 'parity', kind: 'build', command: 'npm run build', targets: [], requiredFiles: [], collection: 'substantive', environment: 'real-local', bootstrapPaths: [] });
+    f.contract.capacity.nodeIds.push('parity');
+    return f;
+  };
+  const scopes = (f: ReturnType<typeof fixture>, changeOrder: object) => {
+    f.contract.releaseScopes = [{ id: 'R1', kind: 'base-contract', sourceRef: 'C1' }, { id: 'R2', kind: 'change-order', sourceRef: 'C1', ...changeOrder }];
+    for (const n of f.contract.nodes) if (n.origin === 'added') n.releaseScope = 'R2';
+  };
+  const issuesFor = (f: ReturnType<typeof fixture>, code: string) => f.validate().issues.filter(i => i.code === code);
+
+  it('passes added change-order work that no base payment requires', () => {
+    const f = coupled(); expect(f.validate().issues).toEqual([]);
+    scopes(f, { status: 'proposed' }); expect(f.validate().issues).toEqual([]);
+  });
+  it('fails an undeclared base payment that requires added work', () => {
+    const f = coupled(); f.contract.milestones[0].requires.push('accepted-parity');
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED')).toEqual([expect.objectContaining({ target: 'week-2', message: expect.stringMatching(/accepted-parity.*added work with no declared release scope: parity, change-order/) })]);
+  });
+  it('fails a base payment that requires a proposed, unpriced change order and passes once parity moves to R2', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' }); f.contract.milestones[0].requires.push('accepted-parity');
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED')).toEqual([expect.objectContaining({ target: 'week-2', message: expect.stringContaining('unapproved or unpriced change-order work: parity, change-order') })]);
+    f.contract.milestones[0].requires.pop();
+    f.contract.milestones.push({ id: 'parity-release', stage: 1, releaseScope: 'R2', requires: ['accepted-parity'], acceptanceNodeId: 'acceptance', evidenceIds: ['parity-build'] });
+    expect(f.validate().issues).toEqual([]);
+  });
+  it('fails base payment evidence produced by change-order work', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' }); f.contract.milestones[0].evidenceIds.push('parity-build');
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED').map(i => i.message)).toEqual([expect.stringContaining('evidence parity-build depends on unapproved or unpriced change-order work: parity, change-order')]);
+  });
+  it('accepts the coupling only after the change order is approved, priced and decision-bound', () => {
+    const f = coupled(); f.contract.milestones[0].requires.push('accepted-parity');
+    scopes(f, { status: 'approved', decision: f.decision });
+    expect(f.validate().issues.map(i => [i.code, i.target])).toEqual([['RELEASE_SCOPE_UNPRICED', 'R2'], ['RELEASE_TRAIN_COUPLED', 'week-2']]);
+    scopes(f, { status: 'approved', decision: f.decision, price: { amount: 2400, currency: 'CAD', sourceRef: 'C1' } }); expect(f.validate().issues).toEqual([]);
+    scopes(f, { status: 'approved', price: { amount: 2400, currency: 'CAD', sourceRef: 'C1' } }); expect(codes(f)).toEqual(['PLANNING_CONTRACT_INVALID']);
+    scopes(f, { status: 'rejected', decision: f.decision, price: { amount: 2400, currency: 'CAD', sourceRef: 'C1' } }); expect(codes(f)).toEqual(['RELEASE_TRAIN_COUPLED']);
+  });
+  it('fails a change-order payment milestone before the change order is approved and priced', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' });
+    f.contract.milestones.push({ id: 'parity-release', stage: 1, releaseScope: 'R2', requires: ['accepted-parity'], acceptanceNodeId: 'acceptance', evidenceIds: ['parity-build'], payment: { amount: 2400, currency: 'CAD', sourceRef: 'C1' } });
+    expect(f.validate().issues.map(i => [i.code, i.target])).toEqual([['RELEASE_SCOPE_UNPRICED', 'parity-release']]);
+  });
+  it('requires declared scopes to be complete and known', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' }); delete f.contract.nodes.find((n: any) => n.id === 'parity').releaseScope;
+    expect(issuesFor(f, 'RELEASE_SCOPE_UNASSIGNED').map(i => i.target)).toEqual(['parity']);
+    f.contract.nodes.find((n: any) => n.id === 'parity').releaseScope = 'R3'; expect(issuesFor(f, 'RELEASE_SCOPE_UNKNOWN').map(i => i.target)).toEqual(['parity']);
+    f.contract.nodes.find((n: any) => n.id === 'parity').releaseScope = 'R2'; f.contract.releaseScopes[1].sourceRef = 'C9'; expect(codes(f)).toEqual(['RELEASE_SCOPE_ORIGIN_UNKNOWN']);
+    f.contract.releaseScopes[1] = { id: 'R2', kind: 'base-contract', sourceRef: 'C1' }; expect(codes(f)).toEqual(['PLANNING_CONTRACT_INVALID']);
+  });
+});

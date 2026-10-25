@@ -3,6 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { validatePlanningIntegrity } from '../delivery/planning-integrity.js';
+import { ARCHITECTURE_FILE } from '../delivery/architecture.js';
 import { resolveDeliveryScope, readDeliveryRequirements, confined, sha256 } from '../delivery/index.js';
 import { parsePlanTaskDirectory } from '../task-contract/task-parser.js';
 import type { DeliveryStage } from '../delivery/types.js';
@@ -31,8 +32,9 @@ export function runPlanningCli(args: string[]): number {
         if (sha256(fs.readFileSync(file)) !== b.sha256) throw new Error(`planning: stale bound artifact ${b.path}`);
         return file;
       }).sort();
-      const expected = ['planning-integrity.json','review-findings.json'].map(f => path.join(scope.runDirectory, f)).sort();
-      if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error('planning: both current run sidecars must be bound in planningInputs');
+      const sidecars = ['planning-integrity.json','review-findings.json', ...(fs.existsSync(path.join(scope.runDirectory, ARCHITECTURE_FILE)) ? [ARCHITECTURE_FILE] : [])];
+      const expected = sidecars.map(f => path.join(scope.runDirectory, f)).sort();
+      if (JSON.stringify(actual) !== JSON.stringify(expected)) throw new Error(`planning: current run sidecars must be bound in planningInputs (${sidecars.join(', ')})`);
     }
 
     const source = scope ? readDeliveryRequirements(scope) : undefined;

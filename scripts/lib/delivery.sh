@@ -25,16 +25,15 @@ delivery_run_gate() {
   delivery_lib_dir="$(cd -P "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
   if [ "$delivery_stage" = resolve ]; then
     bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --resolve
-  elif [ "$delivery_stage" = project ]; then
-    if [ -n "${AI_PROMPT_REVIEW_VERIFIER:-}" ]; then
-      bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage plan --project --review-verifier "$AI_PROMPT_REVIEW_VERIFIER"
-    else
-      bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage plan --project
-    fi
-  elif [ -n "${AI_PROMPT_REVIEW_VERIFIER:-}" ]; then
-    bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage "$delivery_stage" \
-      --review-verifier "$AI_PROMPT_REVIEW_VERIFIER"
+    return
+  fi
+  # Review provenance: a host-owned verifier and/or the reference owner-attestation adapter.
+  local delivery_review_args=()
+  if [ -n "${AI_PROMPT_REVIEW_VERIFIER:-}" ]; then delivery_review_args+=(--review-verifier "$AI_PROMPT_REVIEW_VERIFIER"); fi
+  if [ "${AI_PROMPT_OWNER_ATTESTATION:-}" = 1 ]; then delivery_review_args+=(--owner-attestation); fi
+  if [ "$delivery_stage" = project ]; then
+    bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage plan --project ${delivery_review_args[@]+"${delivery_review_args[@]}"}
   else
-    bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage "$delivery_stage"
+    bash "$delivery_lib_dir/../validate-delivery.sh" "$delivery_target" --stage "$delivery_stage" ${delivery_review_args[@]+"${delivery_review_args[@]}"}
   fi
 }

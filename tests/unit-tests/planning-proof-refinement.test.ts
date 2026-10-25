@@ -6,6 +6,7 @@ import { validateDeliveryRun } from '../../src/execution/delivery-gate.js';
 import type { DeliverySurface } from '../../src/delivery/types.js';
 import { createDeliveryFixture, deliveryFixtureRoots } from './delivery-fixture.js';
 import { planningFixture } from './planning-integrity-fixture.js';
+import { architectureContract } from './architecture-fixture.js';
 
 const extraRoots: string[] = [];
 afterEach(() => [...deliveryFixtureRoots.splice(0), ...extraRoots.splice(0)].forEach(root => fs.rmSync(root, { recursive: true, force: true })));
@@ -40,7 +41,7 @@ function fixture(kind: DeliverySurface['kind'] = 'api') {
   const saveTasks = () => f.write('runs/current/tasks-proof.md', proof.units.map(unit => task(unit)).join('\n'));
   const savePlanning = () => {
     f.manifest.sourceInputs[0] = { id: 'brief-requirements', ...f.write('requirements.json', JSON.stringify(f.requirements)) };
-    f.manifest.planningInputs = [f.write('runs/current/planning-integrity.json', JSON.stringify(contract)), f.write('runs/current/review-findings.json', JSON.stringify(register))]; f.save();
+    f.manifest.planningInputs = [f.write('runs/current/planning-integrity.json', JSON.stringify(contract)), f.write('runs/current/review-findings.json', JSON.stringify(register)), f.write('runs/current/architecture.json', JSON.stringify(architectureContract(f.manifest)))]; f.save();
   };
   const approve = () => {
     f.manifest.decisionRefs = f.manifest.decisionRefs.filter(d => d.kind !== 'scope-review');
