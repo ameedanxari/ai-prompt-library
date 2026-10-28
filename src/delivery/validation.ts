@@ -9,6 +9,7 @@ import type { DeliveryLifecycle } from './types.js';
 import { canonical, confined, digest, resolveDeliveryScope, sha256 } from './manifest.js';
 import { isOwnerAttested, ownerAttestationProblem } from './attestation.js';
 import { ARCHITECTURE_FILE, architectureDocumentPaths, validateArchitectureContract } from './architecture.js';
+import { assertDeliveryReleaseAuthority, deliveryReleaseSelection } from './release.js';
 
 function checkedFile(root: string, binding: FileBinding): Buffer {
   const file = confined(root, binding.path);
@@ -31,7 +32,7 @@ export function readDeliveryRequirements(scope: DeliveryScope): { requirements: 
     }
     designs.push(...readDesignContracts(doc.designs, doc.originalSources));
     for (const r of doc.requirements) {
-      if (!r || !onlyKeys(r, 'id description sourceRefs explicit nonWaivable releaseRequired surfaceIds checks') || r.description?.trim().split(/\s+/).length > 120 || typeof r.id !== 'string' || !r.id.trim() || typeof r.description !== 'string' || !r.description.trim() || !Array.isArray(r.sourceRefs) || !r.sourceRefs.length || !r.sourceRefs.every(ref => doc.originalSources.some(s => s.path === ref)) || typeof r.explicit !== 'boolean' || typeof r.nonWaivable !== 'boolean' || typeof r.releaseRequired !== 'boolean' || !Array.isArray(r.surfaceIds) || !r.surfaceIds.length || !Array.isArray(r.checks) || !r.checks.length || !r.checks.every(c => c && onlyKeys(c, 'id kind description') && c.description?.trim().split(/\s+/).length <= 80 && typeof c.id === 'string' && c.id.trim() && ['success','recovery'].includes(c.kind) && typeof c.description === 'string' && c.description.trim()) || new Set(r.checks.map(c => c.id)).size !== r.checks.length) throw new Error(`delivery: invalid authoritative requirement ${r?.id}`);
+      if (!r || !onlyKeys(r, 'id releaseScopeId description sourceRefs explicit nonWaivable releaseRequired surfaceIds checks') || r.releaseScopeId !== undefined && (typeof r.releaseScopeId !== 'string' || !r.releaseScopeId.trim() || r.releaseScopeId.length > 2000) || r.description?.trim().split(/\s+/).length > 120 || typeof r.id !== 'string' || !r.id.trim() || typeof r.description !== 'string' || !r.description.trim() || !Array.isArray(r.sourceRefs) || !r.sourceRefs.length || !r.sourceRefs.every(ref => doc.originalSources.some(s => s.path === ref)) || typeof r.explicit !== 'boolean' || typeof r.nonWaivable !== 'boolean' || typeof r.releaseRequired !== 'boolean' || !Array.isArray(r.surfaceIds) || !r.surfaceIds.length || !Array.isArray(r.checks) || !r.checks.length || !r.checks.every(c => c && onlyKeys(c, 'id kind description') && c.description?.trim().split(/\s+/).length <= 80 && typeof c.id === 'string' && c.id.trim() && ['success','recovery'].includes(c.kind) && typeof c.description === 'string' && c.description.trim()) || new Set(r.checks.map(c => c.id)).size !== r.checks.length) throw new Error(`delivery: invalid authoritative requirement ${r?.id}`);
       requirements.push(r);
     }
   }
@@ -175,10 +176,12 @@ export function deliveryDesignReviewBinding(scope: DeliveryScope, outcomeIds: st
     ...[...selected.reports, ...selected.images].flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]),
   ])].sort() };
 }
-export function deliveryReleaseReviewBinding(scope: DeliveryScope): ReviewBinding {
-  const { originalSources } = readDeliveryRequirements(scope);
-  const binding = deliveryReviewBinding(scope, scope.manifest.outcomes.map(o => o.id));
-  return { ...binding, scopeDigest: digest({ scope: deliveryScopeDigest(scope.manifest), releaseCandidate: scope.manifest.releaseCandidate, execution: scope.manifest.outcomes.map(o => ({ id: o.id, ...deliveryEvidenceBinding(scope, o.id) })) }), artifactDigests: [...new Set([...binding.artifactDigests, ...scope.manifest.evidenceRefs.filter(e => { const b = deliveryEvidenceBinding(scope, e.outcomeId); return e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest; }).map(e => digest({ evidenceRecord: e })), ...originalSources.map(s => s.sha256)])].sort() };
+export function deliveryReleaseReviewBinding(scope: DeliveryScope, releaseScopeId?: string): ReviewBinding {
+  const { originalSources, requirements } = readDeliveryRequirements(scope);
+  const selection = deliveryReleaseSelection(scope, requirements, releaseScopeId);
+  const binding = deliveryReviewBinding(scope, selection.outcomeIds);
+  const outcomes = scope.manifest.outcomes.filter(o => selection.outcomeIds.includes(o.id));
+  return { ...binding, ...(releaseScopeId === undefined ? {} : { releaseScopeId }), scopeDigest: digest({ scope: deliveryScopeDigest(scope.manifest), ...(releaseScopeId === undefined ? {} : { releaseScopeId }), releaseCandidate: scope.manifest.releaseCandidate, execution: outcomes.map(o => ({ id: o.id, ...deliveryEvidenceBinding(scope, o.id) })) }), artifactDigests: [...new Set([...binding.artifactDigests, ...scope.manifest.evidenceRefs.filter(e => { if (!selection.outcomeIds.includes(e.outcomeId)) return false; const b = deliveryEvidenceBinding(scope, e.outcomeId); return e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest; }).map(e => digest({ evidenceRecord: e })), ...originalSources.map(s => s.sha256)])].sort() };
 }
 function sameSet(a: string[], b: string[]): boolean { return canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort()) && new Set(a).size === a.length; }
 function isImage(data: Buffer): boolean {
@@ -205,18 +208,22 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
   const report: DeliveryReport = { valid: false, stage: options.stage, issues: [], metrics: { pendingWords: 0, pendingBytes: 0, pendingUnits: 0, pendingSlices: 0, reviewRounds: 0, reworkUnits: 0 }, completion: { planReady: false, proofAccepted: false, sliceAccepted: false, releaseReady: false, acceptedOutcomeIds: [], designAcceptedOutcomeIds: [], technicallyVerifiedOutcomeIds: [], excludedOutcomeIds: [], staleOutcomeIds: [] } };
   const issue = (s: string) => { if (!report.issues.includes(s)) report.issues.push(s); };
   if (!['plan','execute','advance','release'].includes(options.stage)) { issue('delivery: invalid validation stage'); return report; }
+  if (options.releaseScopeId !== undefined && options.stage !== 'release') { issue('RELEASE_SCOPE_INVALID: a named release scope is only valid at stage release'); return report; }
   try {
     const scope = resolveDeliveryScope(targetDir, { allowLegacy: false })!; const m = scope.manifest;
     const { requirements, originalSources, designs } = readDeliveryRequirements(scope);
     readDeliveryPlanningInputs(scope);
+    const release = deliveryReleaseSelection(scope, requirements, options.releaseScopeId);
+    if (options.releaseScopeId !== undefined) report.releaseScopeId = options.releaseScopeId;
+    if (options.stage === 'release') try { assertDeliveryReleaseAuthority(scope, requirements, options.releaseScopeId); } catch (error) { issue((error as Error).message); }
 
     const activePlan = m.slices.find(s => s.id === m.activeSlice)!;
     const executeOutcomeIds = [...new Set(activePlan.units.flatMap(unit => unit.outcomeIds))];
     const planning = validatePlanningIntegrity({ projectRoot: scope.projectRoot, runDirectory: scope.runDirectory, stage: options.stage,
       required: m.schemaVersion === 2, originalSources, requirementIds: requirements.map(r => r.id),
-      units: m.slices.find(s => s.id === m.activeSlice)!.units.map(u => ({ id: u.id, filePaths: u.affectedPaths, nodeIds: u.planningNodeIds })),
+      units: (options.stage === 'release' ? m.slices : [activePlan]).flatMap(s => s.units).map(u => ({ id: u.id, filePaths: u.affectedPaths, nodeIds: u.planningNodeIds })),
       knownTargets: [...m.outcomes.map(o => o.id), ...m.slices.flatMap(s => [s.id, ...s.units.map(u => u.id)])],
-      targetIds: options.stage === 'release' ? undefined : [m.activeSlice, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(m, activePlan) : activePlan.outcomeIds), ...activePlan.units.map(u => u.id)],
+      targetIds: options.stage === 'release' ? release.planningTargetIds : [m.activeSlice, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(m, activePlan) : activePlan.outcomeIds), ...activePlan.units.map(u => u.id)],
     });
     report.planningIntegrity = { assessed: planning.assessed, blockers: planning.blockers, warnings: planning.warnings };
     for (const problem of planning.issues) issue(`${problem.code}: ${problem.target}: ${problem.message}`);
@@ -228,7 +235,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
 
     const allIds = m.outcomes.map(o => o.id); const outcomeById = new Map(m.outcomes.map(o => [o.id, o])); const sliceById = new Map(m.slices.map(s => [s.id, s]));
     const authenticated = (d: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent'): boolean => {
-      if (!d || d.scopeDigest !== binding.scopeDigest || !sameSet(d.artifactDigests, binding.artifactDigests) || !sameSet(d.outcomeIds, binding.outcomeIds)) return false;
+      if (!d || d.releaseScopeId !== binding.releaseScopeId || d.scopeDigest !== binding.scopeDigest || !sameSet(d.artifactDigests, binding.artifactDigests) || !sameSet(d.outcomeIds, binding.outcomeIds)) return false;
       if (role === 'owner' && d.reviewer.role !== 'owner') return false;
       if (role === 'independent' && (d.reviewer.role !== 'independent' || d.reviewer.contextId === m.authorization.implementerContextId)) return false;
       if (d.reviewer.role === 'independent' && d.reviewer.contextId === m.authorization.implementerContextId) return false;
@@ -380,7 +387,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       technicalVisiting.add(id); const o = outcomeById.get(id);
       const ok = !!o && ownChecksPass(o) && o.dependencies.every(d => isTechnical(d.outcomeId)); technicalVisiting.delete(id); if (ok) technical.add(id); return ok;
     };
-    for (const o of m.outcomes) { deliveryEvidenceBinding(scope, o.id); isTechnical(o.id); }
+    for (const o of m.outcomes.filter(o => options.releaseScopeId === undefined || release.outcomeIds.includes(o.id))) { deliveryEvidenceBinding(scope, o.id); isTechnical(o.id); }
     const sliceAccepted = (slice: DeliverySlice): boolean => {
       if (slice.deferredOutcomeIds?.length) return false;
       if (!slice.outcomeIds.every(id => technical.has(id) && (!visual(m.surfaces.find(s => s.id === outcomeById.get(id)?.surfaceId)?.kind ?? '') || designAccepted.has(id)))) return false;
@@ -401,12 +408,12 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     report.completion.acceptedOutcomeIds = [...accepted]; report.completion.technicallyVerifiedOutcomeIds = [...technical];
     report.completion.staleOutcomeIds = m.outcomes.filter(o => evidenceFailures.has(o.id)).map(o => o.id);
     // Proof covers every declared delivery surface; an API behind a UI needs both.
-    if (proof) for (const surface of m.surfaces) if (!proof.outcomeIds.some(id => outcomeById.get(id)?.surfaceId === surface.id)) issue(`proof: representative proof omits surface ${surface.id}`);
+    if (proof) for (const surface of m.surfaces.filter(s => !release.proofSurfaceIds || release.proofSurfaceIds.includes(s.id))) if (!proof.outcomeIds.some(id => outcomeById.get(id)?.surfaceId === surface.id)) issue(`proof: representative proof omits surface ${surface.id}`);
     if (!report.completion.proofAccepted && active.id !== proof?.id) issue('proof: first proof must be accepted before advancing breadth');
     if (!m.authorization.execution && options.stage !== 'plan') issue('authorization: execution has not been granted');
     // Only declared units execute while the proof is being refined. A detailed
     // unit cannot skip readiness for an outcome whose implementation is deferred.
-    const readinessOutcomeIds = active.deferredOutcomeIds?.length && ['plan','execute'].includes(options.stage) ? executeOutcomeIds : active.outcomeIds;
+    const readinessOutcomeIds = options.releaseScopeId !== undefined ? release.outcomeIds : active.deferredOutcomeIds?.length && ['plan','execute'].includes(options.stage) ? executeOutcomeIds : active.outcomeIds;
     for (const id of readinessOutcomeIds) for (const dependency of outcomeById.get(id)?.dependencies ?? []) {
       if (readinessOutcomeIds.includes(dependency.outcomeId)) continue;
       if (!(dependency.kind === 'technical' ? technical : accepted).has(dependency.outcomeId)) issue(`dependency: ${id} requires ${dependency.kind} prerequisite ${dependency.outcomeId}`);
@@ -416,9 +423,10 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     report.completion.planReady = planIssues === 0;
     if (options.stage === 'advance' || options.stage === 'release') {
       for (const slice of options.stage === 'release' ? m.slices : [active]) {
-        if (slice.deferredOutcomeIds?.length) issue(`PROOF_REFINEMENT_PENDING: ${slice.id}: refine deferred outcomes before ${options.stage}: ${slice.deferredOutcomeIds.join(', ')}`);
+        const deferred = (slice.deferredOutcomeIds ?? []).filter(id => options.releaseScopeId === undefined || release.outcomeIds.includes(id));
+        if (deferred.length) issue(`PROOF_REFINEMENT_PENDING: ${slice.id}: refine deferred outcomes before ${options.stage}: ${deferred.join(', ')}`);
       }
-      const requiredIds = options.stage === 'release' ? m.outcomes.filter(o => o.applicability === 'applicable' && o.releaseRequired).map(o => o.id) : active.outcomeIds;
+      const requiredIds = options.stage === 'release' ? m.outcomes.filter(o => o.applicability === 'applicable' && (options.releaseScopeId === undefined ? o.releaseRequired : release.outcomeIds.includes(o.id))).map(o => o.id) : active.outcomeIds;
       for (const id of requiredIds) {
         const outcome = outcomeById.get(id)!;
         if (visual(m.surfaces.find(s => s.id === outcome.surfaceId)?.kind ?? '') && !designAccepted.has(id)) {
@@ -429,12 +437,12 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
         if (!accepted.has(id)) issue(`acceptance: outcome ${id} review pending or provenance unverified`);
       }
       if (options.stage === 'release') {
-        const releaseBinding = deliveryReleaseReviewBinding(scope);
+        const releaseBinding = deliveryReleaseReviewBinding(scope, options.releaseScopeId);
         if (!requiredReviewRoles(m.authorization, 'release-review').every(role => m.decisionRefs.some(d => d.kind === 'release-review' && trusted(d, releaseBinding, role))) || m.decisionRefs.some(d => d.kind === 'release-review' && d.result === 'rejected' && authenticated(d, releaseBinding))) issue('release: independent original-brief completeness and cross-journey review required');
         if (!report.completion.proofAccepted) issue('release: representative first proof not accepted');
         if (!m.releaseCandidate) issue('release: releaseCandidate identity required');
         if (!m.outcomes.some(o => o.releaseRequired && o.applicability === 'applicable')) issue('release: no applicable required outcomes');
-        for (const r of requirements.filter(r => r.releaseRequired)) for (const surface of r.surfaceIds) {
+        for (const r of requirements.filter(r => r.releaseRequired && (options.releaseScopeId === undefined || release.requirementIds.includes(r.id)))) for (const surface of r.surfaceIds) {
           const rows = m.outcomes.filter(o => o.requirementIds.includes(r.id) && o.surfaceId === surface);
           if (!rows.every(o => accepted.has(o.id) || o.applicability === 'excluded' && !r.nonWaivable)) issue(`release: authoritative obligation ${r.id} unproved`);
         }

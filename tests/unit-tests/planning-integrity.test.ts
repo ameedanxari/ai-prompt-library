@@ -48,6 +48,18 @@ describe('planning integrity: passing controls precede each single-defect mutati
     expect(f.validate().valid).toBe(true); expect(f.validate({ stage: 'execute', targetIds: ['queue'] }).issues.map(i => i.code)).toContain('SOURCE_CONFLICT_OPEN');
     f.contract.conflicts[0].status = 'resolved'; f.contract.conflicts[0].resolution = f.decision; expect(f.validate().valid).toBe(true);
   });
+  it('rejects unknown conflict targets while preserving scoped independent work', () => {
+    const f = fixture();
+    f.contract.facts = [{ id: 'A', clauseId: 'C1', key: 'scope', value: 'included' }, { id: 'B', clauseId: 'C1', key: 'scope', value: 'excluded' }];
+    f.contract.conflicts = [{ id: 'scope-conflict', factIds: ['A', 'B'], status: 'open', targets: ['queue'] }];
+    expect(f.validate({ stage: 'execute', targetIds: ['health'] }).valid).toBe(true);
+    expect(f.validate({ stage: 'execute', targetIds: ['queue'] }).issues.map(i => i.code)).toEqual(['SOURCE_CONFLICT_OPEN']);
+    f.contract.conflicts[0].targets = ['queeu'];
+    expect(codes(f)).toEqual(['SOURCE_CONFLICT_TARGET_UNKNOWN']);
+    expect(f.validate({ stage: 'execute', targetIds: ['queue'] }).issues.map(i => i.code)).toEqual(['SOURCE_CONFLICT_TARGET_UNKNOWN']);
+    f.contract.conflicts[0].targets = ['*'];
+    expect(f.validate({ stage: 'execute', targetIds: ['health'] }).issues.map(i => i.code)).toEqual(['SOURCE_CONFLICT_OPEN']);
+  });
   it.each(['health','environment','acceptance'])('rejects late %s producer before a paid milestone', id => { const f = fixture(); f.contract.nodes.find((n: any) => n.id === id).stage = 2; const found = codes(f); expect(found).toContain('PREREQUISITE_LATE'); expect(found).toContain('MILESTONE_NOT_CLOSED'); if (id === 'acceptance') expect(found).toContain('ACCEPTANCE_DEFINED_LATE'); });
   it('rejects the queue itself scheduled after the manual milestone', () => { const f = fixture(); f.contract.nodes[3].stage = 2; expect(codes(f)).toContain('MILESTONE_NOT_CLOSED'); expect(codes(f)).toContain('MILESTONE_EVIDENCE_LATE'); });
   it('requires explicitly connected provisioning and app-entry prerequisites', () => { const f = fixture(); f.contract.nodes[3].dependsOn = ['health','acceptance']; expect(codes(f)).toContain('PREREQUISITE_MISSING'); });
@@ -65,6 +77,16 @@ describe('planning integrity: passing controls precede each single-defect mutati
   it.each(['src/queue.integration.test.ts','package-lock.json','tests/setup.ts'])('requires declared artifact %s', file => { const f = fixture(); f.context.units![0].filePaths = f.context.units![0].filePaths.filter(p => p !== file); expect(codes(f)).toContain('ARTIFACT_UNDECLARED'); });
   it('invalidates receipt inputs but not unrelated receipt-only metadata', () => { const f = fixture(); f.receipt(); expect(f.validate().valid).toBe(true); f.write('receipt-note.md','unrelated'); expect(f.validate().valid).toBe(true); f.write('src/queue.ts','changed'); expect(codes(f)).toContain('EVIDENCE_STALE'); });
   it('requires inputs actually under test in a receipt', () => { const f = fixture(); f.receipt(); f.contract.checks[0].receipt.inputs = [f.brief]; expect(codes(f)).toContain('EVIDENCE_INPUT_UNBOUND'); });
+  it('binds runner configuration to results and requires new evidence after it changes', () => {
+    const f = fixture(); f.receipt(); expect(f.validate().issues).toEqual([]);
+    const receipt = f.contract.checks[0].receipt;
+    receipt.inputs = receipt.inputs.filter((b: any) => b.path !== f.config.path);
+    expect(f.validate().issues).toEqual([expect.objectContaining({ code: 'EVIDENCE_INPUT_UNBOUND', target: 'queue-test', message: expect.stringContaining('vitest.config.ts') })]);
+    receipt.inputs.push(f.config); expect(f.validate().issues).toEqual([]);
+    f.contract.runners[0].configBindings = [f.write('vitest.config.ts', "export default { test: { include: ['src/**/*.integration.test.ts'], testTimeout: 10000 } };")];
+    expect(f.validate().issues).toEqual([expect.objectContaining({ code: 'EVIDENCE_STALE', target: 'queue-test', message: expect.stringContaining('vitest.config.ts') })]);
+    f.receipt(); expect(f.validate().issues).toEqual([]);
+  });
   it('does not accept typecheck as milestone build or planned commands as runtime results', () => { const f = fixture(); f.contract.checks[1].command = 'npm run typecheck'; expect(codes(f)).toContain('BUILD_BOUNDARY_MISSING'); f.contract.checks[1].command = 'npm run build'; expect(f.validate({ stage: 'release' }).issues.map(i => i.code)).toContain('EVIDENCE_NOT_RUN'); });
   it('checks alternate scope even before activation and preserves deletion obligation', () => { const f = fixture(); f.contract.variants[0].selected = false; f.contract.variants[0].obligations[0].evidenceIds = ['nonexistent-self-service-test']; expect(codes(f)).toContain('VARIANT_OBLIGATION_UNSATISFIED'); f.contract.variants[0].obligations[0].evidenceIds = ['queue-test']; expect(f.validate().valid).toBe(true); });
   it('rejects missing risk, budgets and double-counted work; allows honest provisional scope', () => {
@@ -123,6 +145,20 @@ describe('planning integrity: release trains keep base payments off unpriced cha
   it('fails base payment evidence produced by change-order work', () => {
     const f = coupled(); scopes(f, { status: 'proposed' }); f.contract.milestones[0].evidenceIds.push('parity-build');
     expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED').map(i => i.message)).toEqual([expect.stringContaining('evidence parity-build depends on unapproved or unpriced change-order work: parity, change-order')]);
+  });
+  it('cannot use a clean producer after the payment milestone to excuse a coupled timely path', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' }); f.contract.milestones[0].requires.push('accepted-parity');
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED')).toHaveLength(1);
+    const clean = f.node('clean-parity', { stage: 1, provides: ['accepted-parity'], releaseScope: 'R1' });
+    f.contract.nodes.push(clean); f.contract.capacity.nodeIds.push(clean.id);
+    expect(f.validate().issues).toEqual([]);
+    clean.stage = 2;
+    expect(f.validate().issues).toEqual([expect.objectContaining({ code: 'RELEASE_TRAIN_COUPLED', target: 'week-2', message: expect.stringContaining('accepted-parity') })]);
+    clean.stage = 1;
+    const dependency = f.node('clean-prerequisite', { stage: 2, kind: 'resource', releaseScope: 'R1' });
+    f.contract.nodes.push(dependency); clean.dependsOn.push(dependency.id);
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED')).toHaveLength(1);
+    dependency.stage = 1; expect(f.validate().issues).toEqual([]);
   });
   it('accepts the coupling only after the change order is approved, priced and decision-bound', () => {
     const f = coupled(); f.contract.milestones[0].requires.push('accepted-parity');

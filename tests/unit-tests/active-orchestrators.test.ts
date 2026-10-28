@@ -9,6 +9,14 @@ const shared = read('rolling-delivery.md');
 const engines = ['drill-down-engine.md', 'audit-and-remediate.md', 'executor.md'];
 
 describe('outcome delivery steering contract', () => {
+  it('keeps active orchestration within a measured rule budget', () => {
+    const names = ['ai-agent-entry-point.md', 'rolling-delivery.md', 'drill-down-engine.md', 'audit-and-remediate.md', 'executor.md', 'external-input-handler.md', 'revise-outputs.md', 'semantic-review-and-validation.md'];
+    const words = names.reduce((n, name) => n + read(name).trim().split(/\s+/).length, 0);
+    expect(words).toBeLessThanOrEqual(5600);
+    // Dispatch/reuse mechanics have one canonical owner, not copies in every engine.
+    for (const name of engines) expect(read(name).match(/planDeliveryReview\(/g) ?? []).toHaveLength(0);
+  });
+
   it('resolves every installed-layout orchestrator reference to a real asset', () => {
     for (const name of fs.readdirSync(dir).filter(f => f.endsWith('.md'))) {
       const text = read(name);

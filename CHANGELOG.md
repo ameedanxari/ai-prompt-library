@@ -5,6 +5,21 @@ All notable changes to the AI Prompt Library are documented in this file.
 Format loosely follows [Keep a Changelog](https://keepachangelog.com/),
 with versions tagged as `vMAJOR.MINOR.PATCH`.
 
+## [Unreleased] — semantic planning and independent release boundaries
+
+### Fixed
+- Unknown conflict targets fail closed; a later clean producer cannot hide an unpriced dependency at an earlier payment milestone. Test receipts must bind runner configuration.
+- Owner attestation now requires the exact `approve scope <code>` or `reject scope <code>` command. Questions, negative quotations and conditional statements cannot become approval merely by containing a code. Previously accepted prose attestations need a new explicit confirmation; retain their history, never rewrite the owner's quote.
+- Named runtime release boundaries bind complete source/outcome membership, shared hard duties and dependency closure. Base acceptance no longer waits on unrelated change-order implementation. Default full-union release remains supported and cannot bypass change-order approval/pricing. Partial or unknown mappings fail closed; source scope review still covers the entire original ledger.
+
+### Added
+- `--release-scope <train-id>` at stage release and train-bound release-review APIs, with paired successful and adverse API/CLI controls.
+- Pure planning-quality advisories for role/process effort, critical path, owner availability, decision briefs, executable-now and roadmap mappings. Unknown or infeasible assumptions remain provisional; arithmetic does not authenticate evidence or approve work.
+- Frozen fresh-context planning trial guidance and a provenance-declaration checker that distinguishes assisted output from a cold-start candidate. Neither establishes delivered superiority or authenticates the producer.
+
+### Changed
+- Consolidated repeated review/evidence rules into the shared rolling contract; active entry/engine/intake/review prompts have a measured word ceiling. Added chosen-stack prototypes, source-backed lifecycle separation, milestone-first owner output and honest process costs. Instruction checks do not replace semantic or real-consumer validation.
+
 ## [Unreleased] — bootstrap re-run on macOS
 
 ### Fixed

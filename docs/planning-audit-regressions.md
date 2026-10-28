@@ -34,3 +34,23 @@ Deterministic checks validate represented facts and raw result consistency. They
 For a delivery-benefit claim, freeze a common source pack and owner-answer sheet, identical starting code, model/tool access and total budgets. Predeclare hidden acceptance, cost measures, repeat count and promotion threshold before trials. Run plain-prompt and library implementations for each seed; include planning, review, coordination, retries and integration. Use blinded reviewers and preserve raw failures. `assessDeliveryComparison` reports inconclusive for unmatched conditions, missing delivery/cost observations, retrospective thresholds or insufficient repetitions; cheaper critical failures never establish improvement.
 
 The Logisrch before/after plan comparison is a structural canary, not this delivery experiment. Later owner decisions and a substantial upstream library update are additional changes; separate their effects. No shipped-product speedup or business-performance claim follows from greener validators or fewer task files.
+
+## Follow-up audit safeguards
+
+| Reproduced defect or retained planning duty | Repair / assessment | Evidence |
+| --- | --- | --- |
+| Unknown conflict target bypassed scoped blockers | Reject unknown affected targets, including source conflicts | planning-integrity; planning-delivery-v2 real shell control |
+| Future clean producer hid an unpriced prerequisite at an earlier payment | Only timely producer and prerequisite closures qualify as alternatives | planning-integrity release-train controls |
+| Runner configuration changed while old test receipt remained valid | Bind runner configuration in receipt inputs | planning-integrity passing and stale-config controls |
+| Negative/conditional owner quote containing code became approval | Exact `approve scope <code>` / `reject scope <code>` commands; no substring intent inference | delivery-owner-attestation including permissive verifier |
+| Milestones split but final runtime release still required all trains | Explicit complete source/outcome membership and named release boundary; union remains default | delivery-release-scope public API/CLI controls |
+| Disposable prototype on an already selected stack | Real routes/components on the selected stack; alternatives require a reason | rolling-delivery and planning-quality guidance; fresh planning evaluation required |
+| Build-only capacity, absent owner availability | Advisory process-inclusive role totals, dependency critical paths and owner touchpoints; unknown/infeasible stays provisional | planning-quality behavior tests; no resource-leveling claim |
+| Owner cannot understand blockers or next action | Complete decision brief, executable-now units and next unblocker | planning-quality tests plus semantic owner review |
+| Repeated orchestration consumes context | Canonical shared rules, generic cross-document comparisons, bounded active-engine word count | active-orchestrators rule budget; report bytes/words, not inferred charged tokens |
+| Same agent's generated fixture mistaken for a fresh trial | Freeze inputs/hidden rubric before fresh producer; retain invocation and independent review; label assisted output | assessPlanningTrial positive/adverse tests; candidate provenance remains unauthenticated |
+| New-target lifecycle inherited from live legacy | Source-evidenced pre-launch target; separate run for separately live target under current run-wide lifecycle schema | planning-quality guidance and existing lifecycle behavioral tests |
+| Non-milestone work delays useful delivery | Explicit source/safety prerequisites and supported manual alternatives only | shared rolling workflow, variants and milestone closure; independent semantic audit |
+| Scope taxonomy obscures delivery order | Milestone-first roadmap and exact node-to-mindmap leaf coverage | planning-quality tests and semantic plan review |
+
+The follow-up does not certify completeness of arbitrary source prose. Numerical advisories, word ceilings and valid JSON do not substitute for a reviewer tracing real user outcomes. Cold-start generation must be exercised on frozen original inputs, including a second distinct brief, before claiming generic planning improvement; delivered efficiency still needs the comparison protocol above.

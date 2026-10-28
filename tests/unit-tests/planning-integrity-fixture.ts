@@ -27,7 +27,7 @@ export function planningFixture() {
   const save = () => { write('plan/planning-integrity.json', JSON.stringify(contract)); write('plan/review-findings.json', JSON.stringify(register)); };
   const validate = (overrides: Partial<PlanningContext> = {}) => { save(); return validatePlanningIntegrity({ ...context, ...overrides }); };
   const receipt = (collected = 1) => {
-    const inputs = context.units![0].filePaths.map(p => write(p, p.endsWith('.json') ? '{}' : 'export {};'));
+    const inputs = [...context.units![0].filePaths.map(p => write(p, p.endsWith('.json') ? '{}' : 'export {};')), ...contract.runners[0].configBindings];
     const artifact = write('test-results.json', JSON.stringify({ numTotalTests: collected, success: true }));
     contract.checks[0].receipt = { artifact, inputs, collected, exitCode: 0, environment: 'real-local' };
   };

@@ -124,11 +124,20 @@ describe('version 2 planning delivery integration', () => {
     expect(f.api().issues.join('\n')).toContain('REVIEW_REGISTER_INVALID: *: Error: unknown affected target in F1');
     const result = f.shell(); expect(result.code).toBe(1); expect(result.out).toContain('unknown affected target in F1');
   }, 20000);
+  it('fails a misspelled source-conflict target through the API and readiness shell', () => {
+    const f = fixture(); expect(f.api().issues).toEqual([]);
+    f.contract.facts = [{ id: 'A', clauseId: 'C1', key: 'scope', value: 'included' }, { id: 'B', clauseId: 'C1', key: 'scope', value: 'excluded' }];
+    f.contract.conflicts = [{ id: 'scope-conflict', factIds: ['A', 'B'], status: 'open', targets: ['queue'] }];
+    f.savePlanning(); f.approve(); expect(f.api().issues.join('\n')).toContain('SOURCE_CONFLICT_OPEN: scope-conflict');
+    f.contract.conflicts[0].targets = ['queeu']; f.savePlanning(); const approval = f.approve(); f.refreshAdapter(approval);
+    expect(f.api().issues.join('\n')).toContain('SOURCE_CONFLICT_TARGET_UNKNOWN: scope-conflict');
+    const result = f.shell(); expect(result.code).toBe(1); expect(result.out).toContain('SOURCE_CONFLICT_TARGET_UNKNOWN: scope-conflict');
+  }, 20000);
 
   it('rejects raw zero-test results even when the receipt falsely claims a collected test', () => {
     const f = fixture(); expect(f.api().issues).toEqual([]);
     const files = f.manifest.slices[0].units[0].affectedPaths;
-    const inputs = files.map(file => f.write(file, file === 'app.ts' ? fs.readFileSync(path.join(f.root, file)) : file.endsWith('.json') ? '{}' : 'export {};'));
+    const inputs = [...files.map(file => f.write(file, file === 'app.ts' ? fs.readFileSync(path.join(f.root, file)) : file.endsWith('.json') ? '{}' : 'export {};')), ...f.contract.runners[0].configBindings];
     const artifact = f.write('runner-result.json', JSON.stringify({ numTotalTests: 1, success: true }));
     f.contract.checks[0].receipt = { artifact, inputs, collected: 1, exitCode: 0, environment: 'real-local' };
     f.savePlanning(); f.approve(); expect(f.api().issues).toEqual([]);
@@ -142,7 +151,7 @@ describe('version 2 planning delivery integration', () => {
   it('requires actual receipts for the active node at advance, despite complete consumer proof', () => {
     const f = fixture(); expect(f.api().issues).toEqual([]);
     const files = f.manifest.slices[0].units[0].affectedPaths;
-    const inputs = files.map(file => f.write(file, file === 'app.ts' ? fs.readFileSync(path.join(f.root, file)) : file.endsWith('.json') ? '{}' : 'export {};'));
+    const inputs = [...files.map(file => f.write(file, file === 'app.ts' ? fs.readFileSync(path.join(f.root, file)) : file.endsWith('.json') ? '{}' : 'export {};')), ...f.contract.runners[0].configBindings];
     const artifact = f.write('runner-result.json', JSON.stringify({ numTotalTests: 1, success: true }));
     f.contract.checks[0].receipt = { artifact, inputs, collected: 1, exitCode: 0, environment: 'real-local' };
     f.contract.checks[1].receipt = { artifact: f.write('production-build.log', 'Production build completed.'), inputs, collected: 0, exitCode: 0, environment: 'real-local' };

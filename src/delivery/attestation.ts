@@ -26,6 +26,9 @@ export function ownerAttestationProblem(decision: Readonly<DeliveryDecision>, bi
   if (typeof a.scopeDigest !== 'string' || !/^[a-f0-9]{64}$/.test(a.scopeDigest)) return 'attested scope digest missing or malformed';
   if (a.scopeDigest !== decision.scopeDigest || a.scopeDigest !== binding.scopeDigest) return 'attested scope digest does not match the current scope';
   if (!a.quote.toLowerCase().includes(a.scopeDigest.slice(0, OWNER_ATTESTATION_DIGEST_PREFIX))) return `owner quote does not repeat the first ${OWNER_ATTESTATION_DIGEST_PREFIX} characters of the scope digest`;
+  const verb = decision.result === 'approved' ? 'approve' : 'reject';
+  const expected = `${verb} scope ${a.scopeDigest.slice(0, OWNER_ATTESTATION_DIGEST_PREFIX)}`;
+  if (a.quote.trim().toLowerCase().replace(/[.!]$/, '') !== expected) return `owner quote must be the exact confirmation command: ${expected}`;
   if (!sameSet(decision.outcomeIds, binding.outcomeIds) || !sameSet(decision.artifactDigests, binding.artifactDigests)) return 'attested outcomes or artifacts do not match the current scope';
   return undefined;
 }
@@ -38,7 +41,7 @@ export const ownerAttestationProvider: TrustedReviewProvider = {
 };
 export const trustedReviewProvider = ownerAttestationProvider;
 
-/** Message the agent shows before recording; the owner's reply must repeat the code. */
+/** Message the agent shows before recording; the owner's reply must be the exact confirmation command. */
 export function ownerAttestationPrompt(binding: Readonly<ReviewBinding>): string {
   return `Reply "approve scope ${binding.scopeDigest.slice(0, OWNER_ATTESTATION_DIGEST_PREFIX)}" to confirm that the outcome ledger (${binding.outcomeIds.length} outcomes) covers your original sources for scope digest ${binding.scopeDigest}.`;
 }

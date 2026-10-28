@@ -1,0 +1,25 @@
+# Planning quality and economical delivery
+
+This guidance adds judgment and measurements to the existing delivery authority; it never creates acceptance flags. Load during new planning and substantive plan review. Each added rule must name the observed failure it prevents and the duplicated rule or work it replaces.
+
+## Product plan and owner decisions
+
+Produce a concise `OWNER-BRIEF.md`: each open owner decision, plain-language options, recommendation, deadline relative to kickoff and exactly what it blocks. Use product terms rather than validator internals. Every open owner-decision ID appears; decided inputs are reused, not asked again. A short decision table can be linked for a large register. Include executable-now unit IDs and count, their actual authority/dependencies, and the next concrete unblocker. Report zero honestly; a future task or structurally valid plan is not executable now.
+
+Show a milestone-first roadmap with estimates, observable consumer/operator outcome and success/recovery demo. Map each mindmap leaf to a planning node. Keep the full release obligation ledger while expanding only the active slice; future milestones are outcomes, not hidden detailed task packs. Distinguish a proposed roadmap from an approved schedule or production-readiness claim.
+
+Prototype at real routes on the selected stack using existing components and labelled mocks. A different stack requires a recorded reason. Lock consequential shared data/access/state/URL/API/provider contracts before integration; architecture is not a substitute for early composed UX evidence. Avoid all-foundations-first sequencing. Keep unrelated release duties off earlier commercial paths; retain source-required or safety-critical prerequisites and viable manual fulfillment.
+
+## Capacity and lifecycle
+
+Estimate build, review, evidence capture, coordination, integration and recovery explicitly without double-counting reserve. Compare total labor and each role's available hours through each milestone. Compute dependency critical paths plus owner-review delay; document assumptions, not fictitious calendar precision. Compare required touchpoints with owner's source-stated availability. Unknown inputs keep schedule provisional. Re-forecast after actual first-slice work before promising the original date or price. Use `assessPlanningQuality` for reproducible arithmetic and decision/brief checks; it cannot authenticate input assumptions.
+
+New targets with source-evidenced absence of data are pre-launch; existing live targets remain separately live. Never apply the new target's lifecycle/reset permissions to legacy data. The current manifest lifecycle is run-wide: use separate runs for targets with different lifecycle policies rather than assigning a permissive union default. A pre-launch label never authorizes a reset.
+
+## Fresh evaluation and re-audit
+
+Before generation, freeze source bytes, owner answers, library revision, starting project state, producer prompt, hidden rubric and budget. Use a fresh context that receives the original inputs and library instructions, not previous generated plans, findings, rubric or project-local planning generators. Generic JSON serialization is allowed; a script that supplies product requirements, estimates, dependencies or scope makes the result assisted/hand-authored, not a cold-start prompt result. Retain the actual producer invocation and output hashes; self-declared provenance is not independent evidence.
+
+Use a distinct reviewer against the frozen hidden rubric. Grade original-source completeness, contradictory facts, useful outcome ordering, architecture/access/state consistency, resource and role feasibility, recovery, commercial boundaries and executable tests. Evaluate at least a second materially different brief before generalizing library quality. Run paired valid controls and one-defect negative cases; report the named behavioral reason, not any unrelated schema failure. Include semantic wrong-behavior cases that retain all requirement IDs. Those require reviewer judgment/actual consumers, not string lint.
+
+Record first-pass result, repairs, review rounds, elapsed work, observed tokens when available and integration/rework. Do not hide failures by regenerating the baseline. Changed artifacts get focused re-review; unchanged approved inputs reuse judgment. `assessDeliveryComparison` requires repeated matched delivered outcomes before a superiority/savings claim. A plan-only cold-start evaluation establishes planning evidence only; missing authenticated reviewers or runtime targets remain explicit limitations.

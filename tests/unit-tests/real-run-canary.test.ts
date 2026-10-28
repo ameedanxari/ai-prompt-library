@@ -2,7 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import * as fs from 'node:fs';
 import * as os from 'node:os';
 import * as path from 'node:path';
-import { IMPLIED_CAPABILITIES, createOwnerAttestedScopeReview, ownerAttestationProvider, planDeliveryReview, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
+import { createOwnerAttestedScopeReview, ownerAttestationProvider, planDeliveryReview, resolveDeliveryScope, sha256, validateDelivery } from '../../src/delivery/index.js';
 import type { DeliveryDecision, DeliveryManifest } from '../../src/delivery/index.js';
 
 /** Structural canary on a real consumer run (the Logisrch Option A v2 plan). It never
@@ -41,7 +41,7 @@ function copyRun(runDirectory: string) {
 const attest = (run: string, edit: (d: DeliveryDecision) => void = () => {}) => {
   const scope = resolveDeliveryScope(run)!;
   const code = planDeliveryReview(scope, 'scope-review', scope.manifest.outcomes.map(o => o.id)).binding.scopeDigest.slice(0, 8);
-  const decision = createOwnerAttestedScopeReview(scope, { id: 'owner-scope-attested', reviewerId: 'owner', contextId: 'owner-chat', reference: 'chat:canary', quote: `I approve scope ${code} as the complete Option A ledger.`, messageAt: '2026-10-25T12:00:00Z', reason: 'Owner confirmed in chat that the ledger covers the original sources.' });
+  const decision = createOwnerAttestedScopeReview(scope, { id: 'owner-scope-attested', reviewerId: 'owner', contextId: 'owner-chat', reference: 'chat:canary', quote: `approve scope ${code}`, messageAt: '2026-10-25T12:00:00Z', reason: 'Owner confirmed in chat that the ledger covers the original sources.' });
   edit(decision);
   const manifest = JSON.parse(fs.readFileSync(path.join(run, 'delivery-manifest.json'), 'utf8'));
   manifest.decisionRefs = [...manifest.decisionRefs.filter((d: DeliveryDecision) => d.id !== decision.id), decision];
@@ -50,70 +50,59 @@ const attest = (run: string, edit: (d: DeliveryDecision) => void = () => {}) => 
 const plan = (run: string) => validateDelivery(run, { stage: 'plan', trustedReviewProvider: ownerAttestationProvider });
 const pending = 'scope: original-source coverage review pending or provenance unverified';
 
-describe.skipIf(!source)('real-run canary: Logisrch Option A v2 plan gate', () => {
-  it('fails L2 and L3 as generated, and clears only the scope gate with a valid owner attestation', () => {
+describe.skipIf(!source)('real-run canary: current consumer plan with controlled defects', () => {
+  function validControl() {
     const copy = copyRun(source!);
-    const before = plan(copy.run);
-    expect(before.issues).toContain(pending);
-    expect(before.issues).toContainEqual(expect.stringMatching(/^ARCHITECTURE_CONTRACT_MISSING: \*: Run has persistent data or roles/));
-    expect(before.issues).toContainEqual(expect.stringMatching(/^RELEASE_TRAIN_COUPLED: FINAL-HANDOVER: Base-contract payment requires accepted-parity, which depends on added work/));
-    expect(before.issues.filter(i => i.startsWith('RELEASE_TRAIN_COUPLED: WEEK2-MLP'))).toEqual([]);
-
-    attest(copy.run, d => { d.provenance.attestation!.scopeDigest = 'a'.repeat(64); d.provenance.attestation!.quote = 'approve scope aaaaaaaa'; });
-    expect(plan(copy.run).issues).toContain(pending);
+    expect(plan(copy.run).issues).toEqual([pending]);
+    // Synthetic owner record exists only in this disposable test copy.
     attest(copy.run);
-    const after = plan(copy.run);
-    expect(after.issues).not.toContain(pending); expect(after.scopeReview?.provenance).toBe('owner-attested');
-    expect(after.issues).toEqual(before.issues.filter(i => i !== pending));
+    expect(plan(copy.run).issues).toEqual([]);
+    return copy;
+  }
+  function bindPlanning(copy: ReturnType<typeof copyRun>, contract: unknown) {
+    const current = copy.read('delivery-manifest.json') as DeliveryManifest;
+    const changed = copy.write('planning-integrity.json', contract);
+    current.planningInputs = current.planningInputs!.map(b => b.path.endsWith('/planning-integrity.json') ? changed : b);
+    current.decisionRefs = [];
+    copy.write('delivery-manifest.json', current);
+    attest(copy.run);
+  }
+
+  it('passes the current structural control without granting execution or independent approval', () => {
+    const copy = validControl();
+    expect(plan(copy.run).scopeReview).toMatchObject({ approved: true, provenance: 'owner-attested' });
+    expect(validateDelivery(copy.run, { stage: 'execute', trustedReviewProvider: ownerAttestationProvider }).issues).toEqual(expect.arrayContaining([pending, 'authorization: execution has not been granted']));
+    attest(copy.run, d => { d.provenance.attestation!.quote = `Do not approve scope ${d.scopeDigest.slice(0, 8)}. I reject it.`; });
+    expect(plan(copy.run).issues).toContain(pending);
   });
 
-  it('passes --stage plan once the domain contract exists and parity moves to its own change-order train', () => {
-    const copy = copyRun(source!);
-    const contract = copy.read('planning-integrity.json');
-    const base = 'docs/01-final-proposal/PROPOSAL.md';
-    const changeOrderSource = contract.nodes.find((n: any) => n.id === 'change-order').originRef;
-    const changeOrderNodes = ['legacy-review', 'change-order', 'parity-review', 'parity-ui', 'data-decision', 'migration-cutover'];
-    contract.releaseScopes = [{ id: 'R1-OPTION-A', kind: 'base-contract', sourceRef: base }, { id: 'R2-PARITY', kind: 'change-order', sourceRef: changeOrderSource, status: 'proposed' }];
-    for (const n of contract.nodes) if (n.origin === 'added') n.releaseScope = changeOrderNodes.includes(n.id) ? 'R2-PARITY' : 'R1-OPTION-A';
-    const release = contract.nodes.find((n: any) => n.id === 'release');
-    release.dependsOn = release.dependsOn.filter((id: string) => !['parity-ui', 'migration-cutover'].includes(id));
-    release.consumes = release.consumes.filter((c: string) => !['accepted-parity', 'safe-cutover'].includes(c));
-    const final = contract.milestones.find((m: any) => m.id === 'FINAL-HANDOVER');
-    final.requires = final.requires.filter((c: string) => !['accepted-parity', 'safe-cutover'].includes(c));
-    final.evidenceIds = final.evidenceIds.filter((id: string) => id !== 'CHECK-migration-cutover');
-    contract.milestones.push({ id: 'R2-PARITY-CUTOVER', stage: 4, releaseScope: 'R2-PARITY', requires: ['accepted-parity', 'safe-cutover'], acceptanceNodeId: 'acceptance-definition', evidenceIds: ['BUILD-FINAL', 'CHECK-migration-cutover'] });
-
-    const manifest = copy.read('delivery-manifest.json') as DeliveryManifest;
-    const requirements = copy.read('requirements.json');
-    const actors = [...new Set(manifest.outcomes.map(o => o.actor))];
-    const web = manifest.surfaces.find(s => s.kind === 'web')!;
-    const decided: Record<string, string> = { authentication: 'Supabase Auth', geocoding: 'PostGIS with a geocoding adapter', search: 'Postgres full-text search', email: 'Resend', 'file-storage': 'Supabase Storage private buckets' };
-    const implied = IMPLIED_CAPABILITIES.filter(({ pattern }) => requirements.requirements.some((r: any) => pattern.test([r.description, ...r.checks.map((c: any) => c.description)].join(' '))));
-    const architecture = {
-      schemaVersion: 1,
-      roles: [{ id: 'operator', actors: actors.slice(0, 1) }, { id: 'member', actors: actors.slice(1) }],
-      entities: [{ id: 'listing', fields: [{ name: 'id', type: 'uuid' }, { name: 'organization_id', type: 'uuid' }, { name: 'status', type: 'state' }] }, { id: 'storage_request', fields: [{ name: 'id', type: 'uuid' }, { name: 'seeker_id', type: 'uuid' }, { name: 'status', type: 'state' }] }],
-      access: ['listing', 'storage_request'].flatMap(entityId => [{ entityId, roleId: 'operator', read: 'all', create: 'all', update: 'all', delete: 'none' }, { entityId, roleId: 'member', read: entityId === 'listing' ? 'published or own organization' : 'own', create: 'own organization', update: 'own while draft', delete: 'none' }]),
-      stateMachines: [
-        { id: 'listing-status', entityId: 'listing', field: 'status', states: ['draft', 'pending', 'published', 'retired'], initial: 'draft', transitions: [{ from: 'draft', to: 'pending', roleIds: ['member'] }, { from: 'pending', to: 'published', roleIds: ['operator'] }, { from: 'pending', to: 'draft', roleIds: ['operator'] }, { from: 'published', to: 'retired', roleIds: ['member', 'operator'] }] },
-        { id: 'request-status', entityId: 'storage_request', field: 'status', states: ['draft', 'matched', 'quoting', 'selected', 'booked', 'closed'], initial: 'draft', transitions: [{ from: 'draft', to: 'matched', roleIds: ['operator'] }, { from: 'matched', to: 'quoting', roleIds: ['operator'] }, { from: 'quoting', to: 'selected', roleIds: ['member'] }, { from: 'selected', to: 'booked', roleIds: ['operator'] }, { from: 'booked', to: 'closed', roleIds: ['operator'] }, { from: 'draft', to: 'closed', roleIds: ['member'] }] },
-      ],
-      routes: [{ path: '/', surfaceId: web.id, access: ['public'] }, { path: '/app', surfaceId: web.id, access: ['member'] }, { path: '/admin', surfaceId: web.id, access: ['operator'] }],
-      api: [{ id: 'create-request', method: 'POST', path: '/api/v1/requests', roleIds: ['member'], request: '{ location, radiusKm, capacity }', response: '{ id, status }', errors: ['422 invalid requirement preserves the draft', '401 expired session returns to login'] }],
-      providers: implied.map(({ capability }) => decided[capability]
-        ? { capability, status: 'decided', provider: decided[capability], requirementIds: [] }
-        : { capability, status: 'not-required', reason: 'Outside the Option A base contract until the parity change order is priced', requirementIds: [] }),
-    };
-    const planning = copy.write('planning-integrity.json', contract);
-    const domain = copy.write('architecture.json', architecture);
-    manifest.planningInputs = [planning, manifest.planningInputs!.find(b => b.path.endsWith('review-findings.json'))!, domain];
-    copy.write('delivery-manifest.json', manifest);
-    expect(plan(copy.run).issues).toEqual([pending]);
-    attest(copy.run);
+  it('rejects an omitted domain contract from an otherwise valid current run', () => {
+    const copy = validControl();
+    const current = copy.read('delivery-manifest.json') as DeliveryManifest;
+    fs.rmSync(path.join(copy.run, 'architecture.json'));
+    current.planningInputs = current.planningInputs!.filter(b => !b.path.endsWith('/architecture.json'));
+    current.decisionRefs = []; copy.write('delivery-manifest.json', current); attest(copy.run);
     const report = plan(copy.run);
-    expect(report.issues).toEqual([]); expect(report.valid).toBe(true); expect(report.completion.planReady).toBe(true);
-    expect(report.scopeReview).toMatchObject({ approved: true, provenance: 'owner-attested' });
-    // Execution remains gated: no authorization and no independent scope review.
-    expect(validateDelivery(copy.run, { stage: 'execute', trustedReviewProvider: ownerAttestationProvider }).issues).toEqual(expect.arrayContaining([pending, 'authorization: execution has not been granted']));
+    expect(report.issues).toContainEqual(expect.stringMatching(/^ARCHITECTURE_CONTRACT_MISSING:/));
+    expect(report.issues).not.toContain(pending);
+  });
+
+  it('rejects base payment coupling to a proposed change order with a named diagnostic', () => {
+    const copy = validControl(); const contract = copy.read('planning-integrity.json');
+    const base = contract.releaseScopes.find((s: any) => s.kind === 'base-contract');
+    const extra = contract.releaseScopes.find((s: any) => s.kind === 'change-order' && s.status === 'proposed');
+    expect(base).toBeDefined(); expect(extra).toBeDefined();
+    const producer = contract.nodes.find((n: any) => n.releaseScope === extra.id && n.provides.length);
+    const payment = contract.milestones.filter((m: any) => m.payment && (m.releaseScope ?? base.id) === base.id).sort((a: any, b: any) => b.stage - a.stage)[0];
+    expect(producer).toBeDefined(); expect(payment).toBeDefined();
+    payment.requires.push(producer.provides[0]); bindPlanning(copy, contract);
+    expect(plan(copy.run).issues).toContainEqual(expect.stringMatching(new RegExp(`^RELEASE_TRAIN_COUPLED: ${payment.id}:`)));
+  });
+
+  it('rejects mistyped conflict scope instead of silently clearing affected execution', () => {
+    const copy = validControl(); const contract = copy.read('planning-integrity.json');
+    expect(contract.conflicts.length).toBeGreaterThan(0);
+    contract.conflicts[0].targets = ['misspelled-target']; bindPlanning(copy, contract);
+    expect(plan(copy.run).issues).toContainEqual(expect.stringMatching(/^SOURCE_CONFLICT_TARGET_UNKNOWN:/));
   });
 });

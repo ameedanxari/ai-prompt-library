@@ -7,3 +7,5 @@ export * from './lifecycle.js';
 export * from './planning-integrity.js';
 export { ARCHITECTURE_FILE, IMPLIED_CAPABILITIES, architectureRequiredReasons, validateArchitectureContract } from './architecture.js';
 export * from './comparison.js';
+export * from './release.js';
+export * from './planning-quality.js';

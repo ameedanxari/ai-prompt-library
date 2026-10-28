@@ -159,6 +159,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
     for (const conflict of conflicts) {
       shape(conflict, 'id factIds status resolution targets', 'id factIds status targets', 'conflict');
       if (!strings(conflict.factIds) || conflict.factIds.length < 2 || conflict.factIds.some((id: string) => !facts.some(f => f.id === id)) || !['open', 'resolved'].includes(conflict.status) || !strings(conflict.targets) || !conflict.targets.length) throw new Error(`invalid conflict ${conflict.id}`);
+      if (knownTargets.size && conflict.targets.some((id: string) => id !== '*' && !knownTargets.has(id))) add('SOURCE_CONFLICT_TARGET_UNKNOWN', conflict.id, 'Conflict names an unknown affected target; refusing an unscoped contradiction');
       if (conflict.status === 'resolved') binding(context.projectRoot, conflict.resolution);
       else { add('SOURCE_CONFLICT_OPEN', conflict.id, 'Commercial/source contradiction requires authorized resolution', true); if (context.stage !== 'plan' && applicable(conflict.targets)) add('SOURCE_CONFLICT_OPEN', conflict.id, 'Affected execution is blocked by unresolved source conflict'); }
     }
@@ -231,7 +232,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
       const coupled = (nodeIds: string[]) => [...new Set(nodeIds.flatMap(id => byId.has(id) ? [id, ...ancestors(id)] : []))].filter(unsettled);
       const what = releaseScopes ? 'unapproved or unpriced change-order work' : 'added work with no declared release scope';
       for (const capability of milestone.requires) {
-        const paths = nodes.filter(n => n.provides.includes(capability)).map(n => coupled([n.id]));
+        const paths = nodes.filter(n => n.provides.includes(capability) && n.stage <= milestone.stage && [...ancestors(n.id)].every(id => byId.get(id)!.stage <= milestone.stage)).map(n => coupled([n.id]));
         if (paths.length && paths.every(p => p.length)) add('RELEASE_TRAIN_COUPLED', milestone.id, `Base-contract payment requires ${capability}, which depends on ${what}: ${[...new Set(paths.flat())].join(', ')}`);
       }
       for (const id of milestone.evidenceIds) {
@@ -267,7 +268,7 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
       }
       if (check.collection === 'scaffold' && milestones.some(m => m.evidenceIds.includes(check.id))) add('EVIDENCE_SCAFFOLD_NOT_ACCEPTANCE', check.id, 'An empty scaffold check cannot satisfy milestone acceptance');
       if (check.kind === 'build' && !/(?:\bbuild\b|\bcompile-production\b)/.test(check.command)) add('BUILD_BOUNDARY_MISSING', check.id, 'Typecheck is not an actual production build');
-      if (check.receipt) {
+      if (check.receipt && !(context.stage === 'release' && selectedTargets && !selectedTargets.has(check.nodeId))) {
         shape(check.receipt, 'artifact inputs exitCode collected environment', 'artifact inputs exitCode collected environment', 'evidence receipt');
         binding(context.projectRoot, check.receipt.artifact);
         if (['unit','integration'].includes(check.kind)) {
@@ -292,7 +293,8 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
 
         if (!Array.isArray(check.receipt.inputs) || !check.receipt.inputs.length) throw new Error(`receipt inputs missing ${check.id}`);
         try { for (const input of check.receipt.inputs) binding(context.projectRoot, input); } catch (e) { add('EVIDENCE_STALE', check.id, String(e)); }
-        for (const p of new Set([...targets, ...requiredFiles, ...bootstrap, ...(unit?.filePaths ?? [])])) if (!check.receipt.inputs.some((b: FileBinding) => b.path === p)) add('EVIDENCE_INPUT_UNBOUND', check.id, `Receipt does not bind covered input ${p}`);
+        const runnerInputs = runners.find(r => r.id === check.runnerId)?.configBindings.map((b: FileBinding) => b.path) ?? [];
+        for (const p of new Set([...targets, ...requiredFiles, ...bootstrap, ...runnerInputs, ...(unit?.filePaths ?? [])])) if (!check.receipt.inputs.some((b: FileBinding) => b.path === p)) add('EVIDENCE_INPUT_UNBOUND', check.id, `Receipt does not bind covered input ${p}`);
         if (check.receipt.exitCode !== 0) add('EVIDENCE_FAILED', check.id, 'Evidence command failed');
         if (['unit','integration'].includes(check.kind) && check.collection === 'substantive' && (!Number.isInteger(check.receipt.collected) || check.receipt.collected < 1)) add('EVIDENCE_EMPTY', check.id, 'No substantive tests collected');
         if (check.receipt.environment !== check.environment) add('EVIDENCE_ENVIRONMENT_MISMATCH', check.id, 'Receipt does not prove the required environment');

@@ -12,6 +12,8 @@ export interface RequirementRecord {
   explicit: boolean;
   nonWaivable: boolean;
   releaseRequired: boolean;
+  /** Optional exact train membership; `*` denotes a shared non-waivable release duty. */
+  releaseScopeId?: string;
   surfaceIds: string[];
   checks: { id: string; kind: 'success' | 'recovery'; description: string }[];
 }
@@ -81,6 +83,8 @@ export interface DeliverySurface {
 }
 export interface DeliveryOutcome {
   id: string;
+  /** Must match every authoritative requirement when train mapping is used. */
+  releaseScopeId?: string;
   /** Reviewed route/consumer dependencies, combined with target.sharedPaths. */
   bindingPaths?: string[];
   requirementIds: string[];
@@ -143,6 +147,8 @@ export interface DeliveryEvidence {
 }
 export interface DeliveryDecision {
   id: string;
+  /** Present only on a review of a named release train. */
+  releaseScopeId?: string;
   kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review' | 'release-review';
   outcomeIds: string[];
   scopeDigest: string;
@@ -209,6 +215,7 @@ export interface DeliveryScope {
 }
 export interface ReviewBinding {
   scopeDigest: string;
+  releaseScopeId?: string;
   /** Raw artifacts, canonical full evidence records and reviewed plan content. */
   artifactDigests: string[];
   outcomeIds: string[];
@@ -221,12 +228,15 @@ export interface TrustedReviewProvider {
 }
 export interface DeliveryValidationOptions {
   stage: DeliveryStage;
+  /** Release only; omission validates the complete original union. */
+  releaseScopeId?: string;
   trustedReviewProvider?: TrustedReviewProvider;
   /** Host recomputes canonical task projections from active files and compares exact bytes. */
   trustedProjectionProvider?: { verify(filePath: string, content: Buffer): boolean };
   now?: Date;
 }
 export interface DeliveryReport {
+  releaseScopeId?: string;
   planningIntegrity?: { assessed: boolean; blockers: { code: string; target: string; message: string }[]; warnings: string[] };
   changePolicies?: Record<string, DeliveryChangePolicy>;
   /** How original-source scope approval was established for this report. */

@@ -29,7 +29,7 @@ async function verifier(file: string | undefined, projectRoot: string): Promise<
 
 export async function runDeliveryCli(args: string[]): Promise<number> {
   if (args.includes('--help')) {
-    console.log('validate-delivery <run-directory-or-checkpoint> --stage plan|execute|advance|release [--review-verifier /host/adapter.mjs] [--owner-attestation] [--resolve] [--project] [--scope-binding]');
+    console.log('validate-delivery <run-directory-or-checkpoint> --stage plan|execute|advance|release [--release-scope <train-id>] [--review-verifier /host/adapter.mjs] [--owner-attestation] [--resolve] [--project] [--scope-binding]');
     return 0;
   }
   try {
@@ -41,6 +41,7 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
     let project = false;
     let ownerAttestation = false;
     let scopeBinding = false;
+    let releaseScopeId: string | undefined;
     for (let index = 1; index < args.length; index++) {
       const arg = args[index];
       if (arg === '--stage') {
@@ -50,12 +51,16 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
       } else if (arg === '--review-verifier') {
         adapter = args[++index];
         if (!adapter) throw new Error('--review-verifier requires a path');
+      } else if (arg === '--release-scope') {
+        releaseScopeId = args[++index];
+        if (!releaseScopeId || releaseScopeId.startsWith('--')) throw new Error('--release-scope requires a train id');
       } else if (arg === '--resolve') resolveOnly = true;
       else if (arg === '--project') project = true;
       else if (arg === '--owner-attestation') ownerAttestation = true;
       else if (arg === '--scope-binding') scopeBinding = true;
       else throw new Error(`Unknown argument: ${arg}`);
     }
+    if (releaseScopeId !== undefined && (stage !== 'release' || resolveOnly || scopeBinding || project)) throw new Error('--release-scope requires stage release and cannot resolve, project or request a scope binding');
     const scope = resolveDeliveryScope(target, { allowLegacy: false });
     if (!scope) throw new Error('A delivery manifest is required');
     if (resolveOnly) {
@@ -73,7 +78,7 @@ export async function runDeliveryCli(args: string[]): Promise<number> {
     const provider: TrustedReviewProvider | undefined = ownerAttestation
       ? { verify: (decision, binding) => ownerAttestationProvider.verify(decision, binding) || host?.verify(decision, binding) === true }
       : host;
-    const report = validateDeliveryRun(target, { stage, trustedReviewProvider: provider });
+    const report = validateDeliveryRun(target, { stage, releaseScopeId, trustedReviewProvider: provider });
     if (project && report.valid) {
       for (const [file, content] of deliveryProjections(scope)) fs.writeFileSync(file, content);
     }

@@ -1,7 +1,9 @@
-import { confined, resolveDeliveryScope, validateDelivery, validatePlanningIntegrity, deliveryExecutionOutcomeIds } from '../delivery/index.js';
+import * as fs from 'node:fs';
+import * as path from 'node:path';
+import { confined, resolveDeliveryScope, validateDelivery, validatePlanningIntegrity, deliveryExecutionOutcomeIds, deliveryReleaseSelection, readDeliveryRequirements } from '../delivery/index.js';
 import type { DeliveryReport, DeliveryValidationOptions } from '../delivery/index.js';
 import { buildTaskContractReport } from '../task-contract/task-contract-report.js';
-import { parsePlanTaskDirectory } from '../task-contract/task-parser.js';
+import { parsePlanTaskDirectory, parsePlanTaskFile, isPlanTaskFilename } from '../task-contract/task-parser.js';
 
 import { deliveryProjections } from './delivery-projections.js';
 
@@ -13,6 +15,8 @@ export { OWNER_ATTESTATION_DIGEST_PREFIX, createOwnerAttestedScopeReview, isOwne
 export type { ReviewPlan, ReviewPurpose } from '../delivery/review-planner.js';
 export type { DeliveryChangePolicy } from '../delivery/lifecycle.js';
 export { parseDeliveryManifest, resolveDeliveryScope } from '../delivery/manifest.js';
+export { assertDeliveryReleaseAuthority, deliveryReleaseSelection } from '../delivery/release.js';
+export type { DeliveryReleaseSelection } from '../delivery/release.js';
 export {
   deliveryScopeDigest, deliveryEvidenceBinding, deliveryReviewBinding, deliveryDesignReviewBinding, deliveryReleaseReviewBinding, readDeliveryRequirements,
 } from '../delivery/validation.js';
@@ -35,12 +39,14 @@ export function validateDeliveryRun(
   if (!report.valid) return report;
   const scope = resolveDeliveryScope(targetDir, { allowLegacy: false });
   if (!scope) throw new Error('Outcome delivery requires a delivery manifest');
-  const files = parsePlanTaskDirectory(targetDir);
+  const release = deliveryReleaseSelection(scope, readDeliveryRequirements(scope).requirements, options.releaseScopeId);
+  const selectedSlices = options.stage === 'release' ? scope.manifest.slices.filter(slice => options.releaseScopeId === undefined || slice.outcomeIds.some(id => release.outcomeIds.includes(id))) : scope.manifest.slices.filter(slice => slice.id === scope.manifest.activeSlice);
+  const files = options.stage === 'release' ? [...new Set(selectedSlices.flatMap(slice => slice.detailedFiles).map(file => confined(scope.runDirectory, file)))].filter(file => isPlanTaskFilename(path.basename(file))).sort().map(file => parsePlanTaskFile(path.basename(file), fs.readFileSync(file, 'utf8'), file)) : parsePlanTaskDirectory(targetDir);
   const contract = buildTaskContractReport(files, { sourceDirectory: scope.runDirectory });
   const issues = contract.issues.filter((issue) => issue.severity === 'error')
     .map((issue) => `task-contract:${issue.code}: ${issue.message}`);
   const slice = scope.manifest.slices.find((item) => item.id === scope.manifest.activeSlice)!;
-  const declared = new Map(slice.units.map((unit) => [unit.id, unit]));
+  const declared = new Map(selectedSlices.flatMap(s => s.units).map((unit) => [unit.id, unit]));
   const actual = new Map(files.flatMap((file) => file.units.map((unit) => [unit.canonicalId, unit] as const)));
   for (const [id, unit] of declared) {
     const parsed = actual.get(id);
@@ -77,8 +83,8 @@ export function validateDeliveryRun(
   }
   const planning = validatePlanningIntegrity({ projectRoot: scope.projectRoot, runDirectory: scope.runDirectory, stage: options.stage,
     knownTargets: [...scope.manifest.outcomes.map(o => o.id), ...scope.manifest.slices.flatMap(s => [s.id, ...s.units.map(u => u.id)])],
-    required: scope.manifest.schemaVersion === 2, units: [...actual].map(([id, unit]) => ({ id, filePaths: unit.filePaths, test: unit.test, nodeIds: declared.get(id)?.planningNodeIds })),
-    targetIds: options.stage === 'release' ? undefined : [slice.id, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(scope.manifest, slice) : slice.outcomeIds), ...slice.units.map(u => u.id)],
+    required: scope.manifest.schemaVersion === 2, units: options.stage === 'release' ? scope.manifest.slices.flatMap(s => s.units).map(u => ({ id: u.id, filePaths: u.affectedPaths, test: actual.get(u.id)?.test, nodeIds: u.planningNodeIds })) : [...actual].map(([id, unit]) => ({ id, filePaths: unit.filePaths, test: unit.test, nodeIds: declared.get(id)?.planningNodeIds })),
+    targetIds: options.stage === 'release' ? release.planningTargetIds : [slice.id, ...(options.stage === 'execute' ? deliveryExecutionOutcomeIds(scope.manifest, slice) : slice.outcomeIds), ...slice.units.map(u => u.id)],
   });
   for (const problem of planning.issues) issues.push(`${problem.code}: ${problem.target}: ${problem.message}`);
   // A unit cannot hide extra implementation instructions as an unowned task file.
@@ -93,3 +99,4 @@ export function validateDeliveryRun(
   };
 }
 export * from '../delivery/comparison.js';
+export * from '../delivery/planning-quality.js';

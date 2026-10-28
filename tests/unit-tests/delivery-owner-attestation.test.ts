@@ -16,7 +16,7 @@ function fixture() {
   Object.assign(f.manifest.authorization, { designAcceptance: 'owner', checkpoints: 'every-slice', independentReview: true });
   const code = () => planDeliveryReview(f.scope(), 'scope-review', ['O1']).binding.scopeDigest.slice(0, 8);
   const attest = (edit: (d: DeliveryDecision) => void = () => {}) => {
-    const d = createOwnerAttestedScopeReview(f.scope(), { id: 'owner-scope', reviewerId: 'owner', contextId: 'owner-chat', reference: 'chat:owner/2026-10-25T10:00:00Z', quote: `Yes, approve scope ${code()}, the ledger covers my brief.`, messageAt: '2026-10-25T10:00:00Z', reason: 'Owner confirmed in chat that the outcome ledger covers the original sources.' });
+    const d = createOwnerAttestedScopeReview(f.scope(), { id: 'owner-scope', reviewerId: 'owner', contextId: 'owner-chat', reference: 'chat:owner/2026-10-25T10:00:00Z', quote: `approve scope ${code()}`, messageAt: '2026-10-25T10:00:00Z', reason: 'Owner confirmed in chat that the outcome ledger covers the original sources.' });
     edit(d); f.manifest.decisionRefs.push(d); f.save(); return d;
   };
   const plan = (provider: TrustedReviewProvider | undefined = ownerAttestationProvider, stage: 'plan' | 'execute' = 'plan') => { f.save(); return validateDelivery(f.run, { stage, trustedReviewProvider: provider }); };
@@ -63,6 +63,19 @@ describe('owner-attested scope review', () => {
     expect(f.plan(always).issues).toEqual([pending]);
   });
 
+  it.each([
+    'Do not approve scope CODE. I reject this plan.',
+    'Should I approve scope CODE?',
+    'approve scope CODE if the price changes',
+    'The agent asked me to say approve scope CODE',
+    'reject scope CODE',
+  ])('never turns an ambiguous or negative reply into approval: %s', quote => {
+    const f = fixture(); f.attest(); expect(f.plan().valid).toBe(true);
+    f.manifest.decisionRefs[0].provenance.attestation!.quote = quote.replace('CODE', f.code());
+    expect(f.plan().issues).toEqual([pending]);
+    expect(f.plan(always).issues).toEqual([pending]);
+  });
+
   it('stops applying once the attested scope changes', () => {
     const f = fixture(); f.attest(); expect(f.plan().issues).toEqual([]);
     f.manifest.outcomes[0].applicabilityReason = 'Explicitly requested, reworded'; f.save();
@@ -70,7 +83,7 @@ describe('owner-attested scope review', () => {
   });
 
   it('honours an attested rejection over an authenticated approval', () => {
-    const f = fixture(); f.reviewScope(); f.attest(d => { d.result = 'rejected'; });
+    const f = fixture(); f.reviewScope(); f.attest(d => { d.result = 'rejected'; d.provenance.attestation!.quote = `reject scope ${f.code()}`; });
     const both: TrustedReviewProvider = { verify: (d, b) => ownerAttestationProvider.verify(d, b) || f.provider.verify(d, b) };
     expect(f.plan(both).issues).toEqual([pending]);
   });

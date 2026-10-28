@@ -60,7 +60,8 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
   const evidenceKinds = ['execution','recovery','image','consumer','operation','evaluation','render','production-integration','design-review'];
   const checks = (cs: any) => Array.isArray(cs) && cs.length > 0 && cs.every((c: any) => record(c) && text(c.id) && ['success','recovery'].includes(c.kind) && text(c.description)) && new Set(cs.map((c: any) => c.id)).size === cs.length;
   for (const o of m.outcomes) {
-    keys(o, 'id requirementIds actor entryPoint surfaceId applicability applicabilityReason releaseRequired requiredEvidenceKinds checks dependencies decisionId bindingPaths', 'outcome');
+    keys(o, 'id releaseScopeId requirementIds actor entryPoint surfaceId applicability applicabilityReason releaseRequired requiredEvidenceKinds checks dependencies decisionId bindingPaths', 'outcome');
+    assert(o.releaseScopeId === undefined || text(o.releaseScopeId), `invalid release scope for outcome ${o.id}`);
     assert(o.bindingPaths === undefined || strings(o.bindingPaths) && o.bindingPaths.length > 0 && new Set(o.bindingPaths).size === o.bindingPaths.length, 'invalid outcome dependency paths');
     for (const c of o.checks ?? []) keys(c, 'id kind description', 'check');
     for (const d of o.dependencies ?? []) keys(d, 'outcomeId kind', 'dependency');
@@ -98,7 +99,8 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     if (e.capture !== undefined) assert(record(e.capture) && text(e.capture.surfaceId) && ['entry','success','recovery'].includes(e.capture.state) && text(e.capture.viewport) && (e.capture.theme === undefined || text(e.capture.theme)) && (e.capture.route === undefined || text(e.capture.route)) && typeof e.capture.composed === 'boolean', `invalid capture ${e.id}`);
   }
   for (const d of m.decisionRefs) {
-    keys(d, 'id kind outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget', 'decision');
+    keys(d, 'id kind releaseScopeId outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget', 'decision');
+    assert(d.releaseScopeId === undefined || d.kind === 'release-review' && text(d.releaseScopeId) && d.releaseScopeId !== '*', `invalid release scope for decision ${d.id}`);
     if (record(d.reviewer)) keys(d.reviewer, 'id contextId role', 'reviewer');
     if (record(d.provenance)) keys(d.provenance, 'kind reference attestation', 'provenance');
     if (record(d.budget)) keys(d.budget, 'maxUnits maxWords maxBytes maxSlices', 'extension limits');
