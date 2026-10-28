@@ -11,3 +11,4 @@ export * from './release.js';
 export * from './planning-quality.js';
 export * from './execution-policy.js';
 export * from './review-host.js';
+export * from './preflight.js';

@@ -3,7 +3,7 @@ import * as fs from 'node:fs';
 import * as path from 'node:path';
 import * as os from 'node:os';
 import { spawnSync } from 'node:child_process';
-import { architectureRequiredReasons, canonical, deliveryScopeDigest, planDeliveryReview, validateDelivery } from '../../src/delivery/index.js';
+import { architectureRequiredReasons, canonical, deliveryScopeDigest, planDeliveryReview, validateDelivery, dispatchDeliveryReview } from '../../src/delivery/index.js';
 import { validatePlanningIntegrity } from '../../src/delivery/planning-integrity.js';
 import { validateDeliveryRun } from '../../src/execution/delivery-gate.js';
 import { createDeliveryFixture, deliveryFixtureRoots } from './delivery-fixture.js';
@@ -60,6 +60,24 @@ function fixture() {
 }
 
 describe('version 2 planning delivery integration', () => {
+  it('reports canonical task and runner coverage defects before scope review and dispatches no reviewer', async () => {
+    const f = fixture();
+    f.manifest.decisionRefs = [];
+    f.contract.runners[0].include = ['**/*.unit.test.ts'];
+    const task = path.join(f.run, 'tasks-proof.md');
+    fs.writeFileSync(task, fs.readFileSync(task, 'utf8').replace('modify-existing', 'add').replace('- **Risk:** medium\n', ''));
+    f.savePlanning();
+    const report = f.api();
+    expect(report.issues.join(' ')).toContain('original-source coverage review pending');
+    expect(report.issues.join(' ')).toContain('invalid-change-type');
+    expect(report.issues.join(' ')).toContain('RISK_METADATA_MISSING');
+    expect(report.issues.join(' ')).toContain('EVIDENCE_TARGET_EXCLUDED');
+    let calls = 0;
+    const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, { readReceipt: () => undefined, dispatch: async () => { calls++; throw new Error('must not dispatch'); } });
+    expect(calls).toBe(0); expect(result.plan.action).toBe('blocked');
+    expect(result.plan.preflightIssues?.join(' ')).toContain('EVIDENCE_TARGET_EXCLUDED');
+    expect(f.manifest.decisionRefs).toEqual([]);
+  });
   it('accepts a complete bound plan through delivery API, executable gate and actual readiness shell', () => {
     const f = fixture();
     expect(validateDelivery(f.run, { stage: 'execute', trustedReviewProvider: f.provider }).issues).toEqual([]);

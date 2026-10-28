@@ -1,7 +1,7 @@
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { createHostReviewProvider, dispatchDeliveryReview, deliveryUnitReviewBinding, planDeliveryUnitReview, validateDelivery } from '../../src/delivery/index.js';
+import { createHostReviewProvider, dispatchDeliveryReview, deliveryUnitReviewBinding, planDeliveryUnitReview, validateDelivery, preflightDelivery } from '../../src/delivery/index.js';
 import type { DeliveryDecision, DeliveryHostReviewReceipt, DeliveryReviewHost, DeliveryReviewRequest } from '../../src/delivery/index.js';
 import { runDeliveryCli } from '../../src/execution/delivery-cli.js';
 import { createDeliveryFixture, deliveryFixtureRoots } from './delivery-fixture.js';
@@ -24,9 +24,43 @@ function hostFixture() {
   return { host, records, requests, provider: createHostReviewProvider(host) };
 }
 
+
+function hostDeliveryFixture() {
+  const f = createDeliveryFixture();
+    f.write('runs/current/tasks-proof.md', `# Proof\n\n## T1\n**Closes user story:** As a consumer, I want a useful result, so that I can recover from failure.\n**Change type:** modify-existing\n**Precise change:** Implement useful consumer success and recovery\n**File:** app.ts\n**Depends on:** none\n**Test:** Exercise the real consumer result and recovery\n**Estimated LOC:** 25\n**Phase:** foundation\n**Requirement IDs:** R1\n**Artifact kind:** runtime-source\n**Evidence level:** unit\n**Runtime reachability:** production entry point\n**Production owner:** app.ts\n**Composition map:** production\n**Acceptance:**\n- Consumer receives useful persisted result\n- Failed consumer can reach recovery\n- Real invocation produces retained evidence\n`);
+  return f;
+}
+
 describe('configured review host', () => {
+  it('surfaces all cheap task errors beside pending scope and never dispatches known defects', async () => {
+    const f = hostDeliveryFixture(); const h = hostFixture();
+    const task = path.join(f.run, 'tasks-proof.md');
+    fs.writeFileSync(task, fs.readFileSync(task, 'utf8').replace('modify-existing', 'add').replace('As a consumer, I want a useful result, so that I can recover from failure.', 'Useful result').replace('**Artifact kind:** runtime-source\n', ''));
+    const before = fs.readFileSync(path.join(f.run, 'delivery-manifest.json'), 'utf8');
+    const report = preflightDelivery(f.scope(), { stage: 'plan' });
+    expect(report.issues.join(' ')).toContain('original-source coverage review pending');
+    expect(report.issues.join(' ')).toContain('invalid-change-type');
+    expect(report.issues.join(' ')).toContain('malformed-user-story');
+    expect(report.issues.join(' ')).toContain('missing-artifact-kind');
+    const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host);
+    expect(result.plan.action).toBe('blocked'); expect(result.plan.preflightIssues).toEqual(expect.arrayContaining([expect.stringContaining('invalid-change-type'), expect.stringContaining('malformed-user-story'), expect.stringContaining('missing-artifact-kind')]));
+    expect(h.requests).toHaveLength(0); expect(result.decisions).toEqual([]);
+    expect(fs.readFileSync(path.join(f.run, 'delivery-manifest.json'), 'utf8')).toBe(before);
+  });
+  it('blocks scope dispatch for known pending budget violations', async () => {
+    const f = hostDeliveryFixture(); const h = hostFixture();
+    f.write('runs/current/future-detail.md', 'Unregistered future implementation detail '.repeat(1100));
+    const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host);
+    expect(result.plan.action).toBe('blocked'); expect(result.plan.preflightIssues?.join(' ')).toContain('pending words exceeds'); expect(h.requests).toHaveLength(0);
+  });
+  it('does not persist an otherwise authenticated scope receipt when task detail becomes invalid during review', async () => {
+    const f = hostDeliveryFixture(); const h = hostFixture(); const dispatch = h.host.dispatch;
+    h.host.dispatch = async request => { const reference = await dispatch(request); const task = path.join(f.run, 'tasks-proof.md'); fs.writeFileSync(task, fs.readFileSync(task, 'utf8').replace('modify-existing', 'add')); return reference; };
+    await expect(dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host)).rejects.toThrow('became unready');
+    expect(f.manifest.decisionRefs).toEqual([]);
+  });
   it('dispatches missing independent roles, authenticates exact host actor/context and reuses current decisions', async () => {
-    const f = createDeliveryFixture(); const h = hostFixture();
+    const f = hostDeliveryFixture(); const h = hostFixture();
     const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host);
     expect(h.requests).toHaveLength(1); expect(result.decisions).toHaveLength(1);
     f.manifest.decisionRefs.push(...result.decisions); f.save();
@@ -38,12 +72,12 @@ describe('configured review host', () => {
     expect(h.provider.verify(result.decisions[0], { ...result.plan.binding, artifactDigests: [] })).toBe(false);
   });
   it('keeps owner duties for actual human decisions while dispatching independent review', async () => {
-    const f = createDeliveryFixture(); f.manifest.authorization.designAcceptance = 'owner'; const h = hostFixture();
+    const f = hostDeliveryFixture(); f.manifest.authorization.designAcceptance = 'owner'; const h = hostFixture();
     const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host);
     expect(result.plan.missingRoles).toEqual(['owner','independent']); expect(h.requests.map(r => r.role)).toEqual(['independent']);
   });
   it.each(['same-context', 'forged-actor', 'wrong-binding', 'wrong-decision-binding', 'malformed-decision', 'unregistered', 'source-changed'] as const)('rejects %s host results', async change => {
-    const f = createDeliveryFixture(); const h = hostFixture(); const dispatch = h.host.dispatch;
+    const f = hostDeliveryFixture(); const h = hostFixture(); const dispatch = h.host.dispatch;
     h.host.dispatch = async request => {
       const reference = await dispatch(request); const receipt = h.records.get(reference)!;
       if (change === 'same-context') receipt.session.contextId = receipt.decision.reviewer.contextId = request.implementerContextId;
@@ -59,12 +93,12 @@ describe('configured review host', () => {
     expect(f.manifest.decisionRefs).toEqual([]);
   });
   it('does not dispatch acceptance before real consumer evidence exists', async () => {
-    const f = createDeliveryFixture(); f.reviewScope(); const h = hostFixture();
+    const f = hostDeliveryFixture(); f.reviewScope(); const h = hostFixture();
     const result = await dispatchDeliveryReview(f.scope(), { kind: 'acceptance', outcomeIds: ['O1'] }, h.host, { trustedReviewProvider: f.provider });
     expect(result.plan.action).toBe('blocked'); expect(h.requests).toHaveLength(0);
   });
   it('rejects unchanged declared hashes when raw outcome proof becomes invalid during review', async () => {
-    const f = createDeliveryFixture(); f.reviewScope(); f.evidence(); const h = hostFixture(); const dispatch = h.host.dispatch;
+    const f = hostDeliveryFixture(); f.reviewScope(); f.evidence(); const h = hostFixture(); const dispatch = h.host.dispatch;
     h.host.dispatch = async request => {
       const reference = await dispatch(request);
       f.write(f.manifest.evidenceRefs[0].artifact.path, 'Changed raw proof after dispatch');
@@ -75,7 +109,7 @@ describe('configured review host', () => {
     expect(JSON.stringify(f.manifest.decisionRefs)).toBe(before);
   });
   it('rejects stale API scopes and on-disk manifest changes during dispatch', async () => {
-    const f = createDeliveryFixture(); const h = hostFixture(); const scope = f.scope();
+    const f = hostDeliveryFixture(); const h = hostFixture(); const scope = f.scope();
     f.manifest.outcomes[0].actor = 'changed actor'; f.save();
     await expect(dispatchDeliveryReview(scope, { kind: 'scope-review', outcomeIds: ['O1'] }, h.host)).rejects.toThrow('scope is stale');
     expect(h.requests).toHaveLength(0);
@@ -85,12 +119,12 @@ describe('configured review host', () => {
     expect(f.manifest.decisionRefs).toEqual([]);
   });
   it('fails clearly when CLI dispatch has no configured host', async () => {
-    const f = createDeliveryFixture();
+    const f = hostDeliveryFixture();
     vi.spyOn(console, 'error').mockImplementation(() => {}); vi.stubEnv('AI_PROMPT_REVIEW_VERIFIER', '');
     expect(await runDeliveryCli([f.run, '--dispatch-review', 'scope-review'])).toBe(2);
   });
   it('CLI dispatches through an explicitly selected outside-project host module and persists authenticated receipts', async () => {
-    const f = createDeliveryFixture(); const h = hostFixture();
+    const f = hostDeliveryFixture(); const h = hostFixture();
     const output = vi.spyOn(console, 'log').mockImplementation(() => {});
     f.write('runs/current/tasks-proof.md', `# Proof\n\n## T1\n**Closes user story:** As a consumer, I want a useful result, so that I can recover from failure.\n**Change type:** modify-existing\n**Precise change:** Implement useful consumer success and recovery\n**File:** app.ts\n**Depends on:** none\n**Test:** Exercise the real consumer result and recovery\n**Estimated LOC:** 25\n**Phase:** foundation\n**Requirement IDs:** R1\n**Artifact kind:** runtime-source\n**Evidence level:** unit\n**Runtime reachability:** production entry point\n**Production owner:** app.ts\n**Composition map:** production\n**Acceptance:**\n- Consumer receives useful persisted result\n- Failed consumer can reach recovery\n- Real invocation produces retained evidence\n`);
     // A host-owned module/registry is outside this reviewed fixture project. The

@@ -5,6 +5,7 @@ import { canonical, parseDeliveryManifest } from './manifest.js';
 import { planDeliveryReview } from './review-planner.js';
 import type { ReviewPlan, ReviewPurpose } from './review-planner.js';
 import { deliveryUnitReviewBinding, validateDelivery, readDeliveryRequirements } from './validation.js';
+import { preflightDelivery } from './preflight.js';
 
 export interface DeliveryReviewRequest {
   kind: ReviewPurpose | 'unit-completion';
@@ -74,6 +75,11 @@ export async function dispatchDeliveryReview(scope: DeliveryScope, input: { kind
   const plan = input.kind === 'unit-completion' ? planDeliveryUnitReview(scope, input.unitId, { ...options, trustedReviewProvider: provider })
     : planDeliveryReview(scope, input.kind, input.outcomeIds, { ...options, trustedReviewProvider: provider, releaseScopeId: input.releaseScopeId });
   const decisions: DeliveryDecision[] = [];
+  const expectedPending = input.kind === 'scope-review' ? 'scope: original-source coverage review pending or provenance unverified'
+    : input.kind === 'release-review' ? 'release: independent original-brief completeness and cross-journey review required' : undefined;
+  const localPreflightIssues = () => preflightDelivery(scope, { ...options, trustedReviewProvider: provider, stage: input.kind === 'release-review' ? 'release' : 'plan', ...(input.kind === 'release-review' ? { releaseScopeId: input.releaseScopeId } : {}) }).issues.filter(issue => issue !== expectedPending);
+  const preflightIssues = localPreflightIssues();
+  if (preflightIssues.length) return { plan: { ...plan, action: 'blocked', preflightIssues, reason: 'Local preflight found defects; repair the task contract, planning coverage or bounded evidence before requesting review.' }, decisions };
   if (plan.action !== 'review') return { plan, decisions };
   for (const role of plan.missingRoles) {
     if (role === 'owner') continue;
@@ -91,6 +97,6 @@ export async function dispatchDeliveryReview(scope: DeliveryScope, input: { kind
   if (fs.readFileSync(manifestPath, 'utf8') !== manifestBytes || canonical(scope.manifest) !== manifestIdentity) throw new Error('delivery: manifest changed while the review host was running');
   const latestPlan = input.kind === 'unit-completion' ? planDeliveryUnitReview(scope, input.unitId, { ...options, trustedReviewProvider: provider })
     : planDeliveryReview(scope, input.kind, input.outcomeIds, { ...options, trustedReviewProvider: provider, releaseScopeId: input.releaseScopeId });
-  if (latestPlan.action === 'blocked' || canonical(latestPlan.binding) !== canonical(plan.binding)) throw new Error('delivery: reviewed inputs changed or became unready while the review host was running');
+  if (latestPlan.action === 'blocked' || localPreflightIssues().length || canonical(latestPlan.binding) !== canonical(plan.binding)) throw new Error('delivery: reviewed inputs changed or became unready while the review host was running');
   return { plan, decisions };
 }

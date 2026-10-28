@@ -14,6 +14,8 @@ export interface ReviewPlan {
   reason: string;
   decisionIds: string[];
   missingRoles: ('owner' | 'independent' | 'agent')[];
+  /** Cheap local defects that must be repaired before host dispatch. */
+  preflightIssues?: string[];
 }
 const same = (a: string[], b: string[]) => canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort()) && new Set(a).size === a.length;
 /** Call before dispatching a reviewer. A new session is not a new review input. */
