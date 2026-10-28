@@ -10,6 +10,7 @@ import { canonical, confined, digest, resolveDeliveryScope, sha256 } from './man
 import { isOwnerAttested, ownerAttestationProblem } from './attestation.js';
 import { ARCHITECTURE_FILE, architectureDocumentPaths, validateArchitectureContract } from './architecture.js';
 import { assertDeliveryReleaseAuthority, deliveryReleaseSelection } from './release.js';
+import { isPlanTaskFilename, parsePlanTaskFile } from '../task-contract/task-parser.js';
 
 function checkedFile(root: string, binding: FileBinding): Buffer {
   const file = confined(root, binding.path);
@@ -463,11 +464,41 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
     else limits = extension.budget;
   }
   const proof = m.slices.find(s => s.id === m.firstProofSlice);
-  const earlyDesignPending = m.surfaces.some(s => visual(s.kind) && (!proof?.outcomeIds.some(id => m.outcomes.some(o => o.id === id && o.surfaceId === s.id)) || proof.outcomeIds.some(id => m.outcomes.some(o => o.id === id && o.surfaceId === s.id) && !designAccepted.has(id))));
+  const outcomeById = new Map(m.outcomes.map(outcome => [outcome.id, outcome]));
+  const visualOutcome = (id: string) => visual(m.surfaces.find(surface => surface.id === outcomeById.get(id)?.surfaceId)?.kind ?? '');
+  // Deferred screens retain their acceptance duties, but cannot demand that all
+  // future designs exist before independent currently detailed work can proceed.
+  const representativeAccepted = proof?.units.some(unit => unit.outcomeIds.some(id => visualOutcome(id) && designAccepted.has(id)));
+  const earlyDesignPending = !proofAccepted && !!proof?.outcomeIds.some(visualOutcome) && !representativeAccepted;
   if (earlyDesignPending) {
     limits = { maxUnits: Math.min(limits.maxUnits, 2), maxWords: Math.min(limits.maxWords, 1200), maxBytes: Math.min(limits.maxBytes, 9600), maxSlices: 1 };
   }
   const pending = m.slices.filter(s => !acceptedSlices.has(s.id));
+  const pendingUnits = new Map(pending.flatMap(slice => slice.units.map(unit => [unit.id, unit] as const)));
+  const designScopes = new Map<string, { units: Set<string>; words: number; bytes: number }>();
+  for (const unit of pendingUnits.values()) for (const id of unit.outcomeIds) {
+    const outcome = outcomeById.get(id);
+    if (!outcome || !visualOutcome(id) || designAccepted.has(id)) continue;
+    const scoped = designScopes.get(outcome.surfaceId) ?? { units: new Set<string>(), words: 0, bytes: 0 };
+    scoped.units.add(unit.id); designScopes.set(outcome.surfaceId, scoped);
+  }
+  const countDesignDetail = (file: string, content: string) => {
+    if (earlyDesignPending || !designScopes.size) return;
+    const charge = (text: string, unitId?: string) => {
+      for (const scoped of designScopes.values()) if (unitId === undefined || scoped.units.has(unitId)) {
+        scoped.words += text.trim().split(/\s+/).filter(Boolean).length;
+        scoped.bytes += Buffer.byteLength(text);
+      }
+    };
+    if (!isPlanTaskFilename(path.basename(file))) { charge(content); return; }
+    const sections = parsePlanTaskFile(path.basename(file), content).units;
+    const offsets = [0]; for (const match of content.matchAll(/\r?\n/g)) offsets.push(match.index! + match[0].length);
+    const starts = sections.map(unit => offsets[unit.lineNumber - 1]);
+    // Headers and auxiliary/unowned detail are shared conservatively. Only a
+    // canonical owned task section can exclude approved/nonvisual work here.
+    charge(content.slice(0, starts[0] ?? content.length));
+    sections.forEach((unit, index) => charge(content.slice(starts[index], starts[index + 1] ?? content.length), pendingUnits.has(unit.canonicalId) ? unit.canonicalId : undefined));
+  };
   const allowed = new Set([m.activeSlice, ...(proofAccepted && m.nextSlice ? [m.nextSlice] : [])]);
   for (const s of pending) if (!allowed.has(s.id)) issue(`budget: unimplemented detailed slice ${s.id} lies outside active/next window`);
   report.metrics.pendingUnits = pending.reduce((n,s) => n + s.units.length, 0); report.metrics.pendingSlices = pending.length;
@@ -494,13 +525,26 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
       if (seen.has(file)) continue; seen.add(file);
       const rawContent = fs.readFileSync(file);
       if (path.dirname(file) === scope.runDirectory && ['task-contract.json','path-ledger.md','delivery-order.md'].includes(path.basename(file)) && trustedProjectionProvider?.verify(file, rawContent) === true) continue;
-      const decoded = rawContent.toString('utf8'); const words = decoded.includes('\0') ? 0 : decoded.trim().split(/\s+/).filter(Boolean).length;
+      if (completedFiles.has(file)) continue;
+      let decoded: string;
+      try {
+        decoded = new TextDecoder('utf-8', { fatal: true, ignoreBOM: true }).decode(rawContent);
+        if (/[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/.test(decoded)) throw new Error('binary control character');
+      } catch {
+        // Binary sources/evidence/architecture were exempted above. Unbound
+        // pending detail cannot use a binary marker to suppress word accounting.
+        report.metrics.pendingBytes += rawContent.length;
+        issue(`budget: pending detail must be UTF-8 text without binary control characters ${path.relative(scope.projectRoot, file)}`);
+        if (!declaredFiles.has(file) && !ledgerFiles.has(file)) issue(`budget: unregistered pending detail ${path.relative(scope.projectRoot, file)}`);
+        continue;
+      }
+      const words = decoded.trim().split(/\s+/).filter(Boolean).length;
       if (ledgerFiles.has(file)) {
         if (words > Math.max(500, m.outcomes.length * 100) || /(?:^|\n)\s*(?:#{1,6}\s*(?:T\d+|implementation|task\s+\d+)|(?:\d+\.){2,}|```(?:ts|js|python|bash))/im.test(rawContent.toString('utf8'))) issue(`budget: detailed content disguised as concise ledger ${path.relative(scope.projectRoot,file)}`);
         continue;
       }
-      if (completedFiles.has(file)) continue;
       report.metrics.pendingWords += words; report.metrics.pendingBytes += rawContent.length;
+      countDesignDetail(file, decoded);
       if (!declaredFiles.has(file)) issue(`budget: unregistered pending detail ${path.relative(scope.projectRoot,file)}`);
     }
   };
@@ -513,4 +557,9 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
   if (report.metrics.pendingSlices > limits.maxSlices) issue(`budget: ${report.metrics.pendingSlices} pending slices exceeds ${limits.maxSlices}`);
   if (report.metrics.pendingWords > limits.maxWords) issue(`budget: ${report.metrics.pendingWords} pending words exceeds ${limits.maxWords}`);
   if (report.metrics.pendingBytes > limits.maxBytes) issue(`budget: ${report.metrics.pendingBytes} pending bytes exceeds ${limits.maxBytes}`);
+  if (!earlyDesignPending) for (const [surfaceId, scoped] of designScopes) {
+    if (scoped.units.size > 2) issue(`design: surface ${surfaceId} has ${scoped.units.size} unreviewed units exceeds 2`);
+    if (scoped.words > 1200) issue(`design: surface ${surfaceId} has ${scoped.words} unreviewed words exceeds 1200`);
+    if (scoped.bytes > 9600) issue(`design: surface ${surfaceId} has ${scoped.bytes} unreviewed bytes exceeds 9600`);
+  }
 }

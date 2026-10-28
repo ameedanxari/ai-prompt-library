@@ -95,7 +95,15 @@ describe.skipIf(!source)('real-run canary: current consumer plan with controlled
     const producer = contract.nodes.find((n: any) => n.releaseScope === extra.id && n.provides.length);
     const payment = contract.milestones.filter((m: any) => m.payment && (m.releaseScope ?? base.id) === base.id).sort((a: any, b: any) => b.stage - a.stage)[0];
     expect(producer).toBeDefined(); expect(payment).toBeDefined();
-    payment.requires.push(producer.provides[0]); bindPlanning(copy, contract);
+    // The real change-order producer may arrive after this base milestone.
+    // Establish a valid timely synthetic producer in this disposable copy so
+    // the single payment mutation tests commercial coupling, not availability.
+    const capability = 'canary-timely-change-order-capability';
+    contract.nodes.push({ ...producer, id: 'canary-timely-change-order', stage: payment.stage,
+      dependsOn: [], consumes: [], provides: [capability], reviewFor: [], visual: false });
+    bindPlanning(copy, contract);
+    expect(plan(copy.run).issues).toEqual([]);
+    payment.requires.push(capability); bindPlanning(copy, contract);
     expect(plan(copy.run).issues).toContainEqual(expect.stringMatching(new RegExp(`^RELEASE_TRAIN_COUPLED: ${payment.id}:`)));
   });
 

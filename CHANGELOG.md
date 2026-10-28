@@ -8,6 +8,8 @@ with versions tagged as `vMAJOR.MINOR.PATCH`.
 ## [Unreleased] — semantic planning and independent release boundaries
 
 ### Fixed
+- Scoped design budgets no longer let deferred future screens freeze independent work after a current representative design is accepted. Initial and still-unapproved visual work retain small detail limits, including under a trusted overall extension; deferred obligations still block proof and release acceptance.
+- Pending task detail cannot zero its word count by inserting a NUL byte; bound original binary sources and valid evidence retain their existing exemptions.
 - Unknown conflict targets fail closed; a later clean producer cannot hide an unpriced dependency at an earlier payment milestone. Test receipts must bind runner configuration.
 - Owner attestation now requires the exact `approve scope <code>` or `reject scope <code>` command. Questions, negative quotations and conditional statements cannot become approval merely by containing a code. Previously accepted prose attestations need a new explicit confirmation; retain their history, never rewrite the owner's quote.
 - Named runtime release boundaries bind complete source/outcome membership, shared hard duties and dependency closure. Base acceptance no longer waits on unrelated change-order implementation. Default full-union release remains supported and cannot bypass change-order approval/pricing. Partial or unknown mappings fail closed; source scope review still covers the entire original ledger.
