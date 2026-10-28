@@ -18,6 +18,7 @@ with versions tagged as `vMAJOR.MINOR.PATCH`.
 - Frozen fresh-context planning trial guidance and a provenance-declaration checker that distinguishes assisted output from a cold-start candidate. Neither establishes delivered superiority or authenticates the producer.
 
 ### Changed
+- Clarified unbuilt-target input bindings and their transition to exact runtime bindings after a fresh planning trial exposed an empty-binding failure. Clarified real runner configuration and explicit reporter adapters so unsupported text output cannot be labelled JUnit. Existing schema and evidence checks remain unchanged.
 - Consolidated repeated review/evidence rules into the shared rolling contract; active entry/engine/intake/review prompts have a measured word ceiling. Added chosen-stack prototypes, source-backed lifecycle separation, milestone-first owner output and honest process costs. Instruction checks do not replace semantic or real-consumer validation.
 
 ## [Unreleased] — bootstrap re-run on macOS
