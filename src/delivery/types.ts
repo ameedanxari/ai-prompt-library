@@ -149,7 +149,9 @@ export interface DeliveryDecision {
   id: string;
   /** Present only on a review of a named release train. */
   releaseScopeId?: string;
-  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review' | 'release-review';
+  kind: 'scope-review' | 'acceptance' | 'scope-change' | 'budget-extension' | 'carry-forward' | 'design-review' | 'release-review' | 'unit-completion';
+  /** Budget retirement only; never accepts a slice or outcome. */
+  unitId?: string;
   outcomeIds: string[];
   scopeDigest: string;
   /** Raw artifacts, canonical full evidence records and reviewed plan content. */
@@ -169,6 +171,25 @@ export interface DeliveryDecision {
 /** Written only after explicit owner confirmation in chat: the verbatim reply,
  * its timestamp and the scope digest it confirms (the reply repeats its prefix). */
 export interface OwnerAttestation { quote: string; messageAt: string; scopeDigest: string }
+/** Exact retained user instruction, authenticated by the configured host. A
+ * producer-authored quote or an inferred permission is insufficient. */
+export interface DeliveryAuthorizationInstruction {
+  source: FileBinding;
+  quote: string;
+  sourceLocation: string;
+  messageAt: string;
+  reference: string;
+  stopAfter: 'planning' | 'none';
+}
+export interface AuthorizationBinding {
+  runId: string;
+  sourceInputs: SourceInput[];
+  outcomeIds: string[];
+  policy: Omit<DeliveryManifest['authorization'], 'instruction'>;
+}
+export interface TrustedAuthorizationProvider {
+  verify(instruction: Readonly<DeliveryAuthorizationInstruction>, binding: Readonly<AuthorizationBinding>): boolean;
+}
 export interface DeliveryManifest {
   schemaVersion: 1 | 2;
   kind: 'outcome-delivery';
@@ -187,6 +208,7 @@ export interface DeliveryManifest {
     scopeChange: 'owner' | 'agent-applicability';
     independentReview: boolean;
     implementerContextId: string;
+    instruction?: DeliveryAuthorizationInstruction;
   };
   planningBudget: {
     /** Scan roots relative to projectRoot; include every location retaining pending detail. */
@@ -231,6 +253,10 @@ export interface DeliveryValidationOptions {
   /** Release only; omission validates the complete original union. */
   releaseScopeId?: string;
   trustedReviewProvider?: TrustedReviewProvider;
+  trustedAuthorizationProvider?: TrustedAuthorizationProvider;
+  /** Host policy, never producer-controlled manifest state. Defaults to true
+   * when an authorization provider is configured. */
+  requireAuthenticatedAuthorization?: boolean;
   /** Host recomputes canonical task projections from active files and compares exact bytes. */
   trustedProjectionProvider?: { verify(filePath: string, content: Buffer): boolean };
   now?: Date;
@@ -241,6 +267,7 @@ export interface DeliveryReport {
   changePolicies?: Record<string, DeliveryChangePolicy>;
   /** How original-source scope approval was established for this report. */
   scopeReview?: { approved: boolean; provenance: 'authenticated' | 'owner-attested' | 'none'; missingRoles: ('owner' | 'independent' | 'agent')[] };
+  authorization?: { provenance: 'host-authenticated' | 'legacy-explicit' | 'unverified'; reversibleExecution: boolean; ordinaryTransitions: boolean; planningStop: boolean };
   valid: boolean;
   stage: DeliveryStage;
   issues: string[];

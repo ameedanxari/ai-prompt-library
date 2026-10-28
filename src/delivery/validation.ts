@@ -11,6 +11,8 @@ import { isOwnerAttested, ownerAttestationProblem } from './attestation.js';
 import { ARCHITECTURE_FILE, architectureDocumentPaths, validateArchitectureContract } from './architecture.js';
 import { assertDeliveryReleaseAuthority, deliveryReleaseSelection } from './release.js';
 import { isPlanTaskFilename, parsePlanTaskFile } from '../task-contract/task-parser.js';
+import { deliveryAuthorizationProblem, getDeliveryExecutionPolicy } from './execution-policy.js';
+import { deliveryTaskDetailSections, pendingDeliveryTaskDetail } from './task-detail.js';
 
 function checkedFile(root: string, binding: FileBinding): Buffer {
   const file = confined(root, binding.path);
@@ -115,6 +117,31 @@ export function deliveryReviewBinding(scope: DeliveryScope, outcomeIds: string[]
     return scope.manifest.evidenceRefs.find(old => old.kind !== 'design-review' && old.reviewDigest === e.reviewDigest && acceptanceEvidenceDigest(old) === acceptanceEvidenceDigest(e) && Date.parse(old.observedAt) <= Date.parse(e.observedAt)) ?? e;
   });
   return { outcomeIds: ids, scopeDigest: digest(ids.map(id => ({ id, reviewDigest: deliveryEvidenceBinding(scope, id).reviewDigest }))), artifactDigests: [...new Set([...reviewedRecords.flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })]), ...scope.manifest.slices.filter(s => s.outcomeIds.some(id => ids.includes(id))).flatMap(s => s.detailedFiles.map(f => sha256(fs.readFileSync(confined(scope.runDirectory, f)))))])].sort() };
+}
+
+/** Exact completed task proof, deliberately independent of later appended task
+ * sections. This judgment retires detail only; full outcome/slice reviews still
+ * bind their complete plan and evidence. */
+export function deliveryUnitReviewBinding(scope: DeliveryScope, unitId: string): ReviewBinding {
+  const slice = scope.manifest.slices.find(s => s.units.some(u => u.id === unitId));
+  const unit = slice?.units.find(u => u.id === unitId);
+  if (!slice || !unit) throw new Error('delivery: unknown completion unit');
+  const details = slice.detailedFiles.flatMap(file => {
+    const detail = deliveryTaskDetailSections(file, fs.readFileSync(confined(scope.runDirectory, file), 'utf8'));
+    return detail.sections.filter(section => section.id === unitId).map(section => ({ preamble: detail.preamble.trimEnd(), text: section.text.trimEnd() }));
+  });
+  if (details.length !== 1) throw new Error('delivery: completion unit needs exactly one executable task section');
+  const outcomeIds = [...unit.outcomeIds].sort();
+  const current = scope.manifest.evidenceRefs.filter(e => {
+    if (!outcomeIds.includes(e.outcomeId)) return false;
+    const b = deliveryEvidenceBinding(scope, e.outcomeId);
+    return e.targetDigest === b.targetDigest && e.snapshotDigest === b.snapshotDigest;
+  });
+  return {
+    outcomeIds,
+    scopeDigest: digest({ runId: scope.manifest.runId, unit, detail: details[0], outcomes: outcomeIds.map(id => ({ id, reviewDigest: deliveryEvidenceBinding(scope, id).reviewDigest })) }),
+    artifactDigests: [...new Set([digest({ unit, detail: details[0] }), ...current.flatMap(e => [e.artifact.sha256, digest({ evidenceRecord: e })])])].sort(),
+  };
 }
 
 /** Reuse only a judgment whose source inputs are unchanged and whose referenced
@@ -411,7 +438,14 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
     // Proof covers every declared delivery surface; an API behind a UI needs both.
     if (proof) for (const surface of m.surfaces.filter(s => !release.proofSurfaceIds || release.proofSurfaceIds.includes(s.id))) if (!proof.outcomeIds.some(id => outcomeById.get(id)?.surfaceId === surface.id)) issue(`proof: representative proof omits surface ${surface.id}`);
     if (!report.completion.proofAccepted && active.id !== proof?.id) issue('proof: first proof must be accepted before advancing breadth');
+    const executionPolicy = getDeliveryExecutionPolicy(scope, options);
+    report.authorization = { provenance: executionPolicy.provenance, reversibleExecution: executionPolicy.reversibleExecution, ordinaryTransitions: executionPolicy.ordinaryTransitions, planningStop: executionPolicy.planningStop };
     if (!m.authorization.execution && options.stage !== 'plan') issue('authorization: execution has not been granted');
+    if (options.stage !== 'plan') {
+      const authorizationProblem = deliveryAuthorizationProblem(scope, options);
+      if (authorizationProblem) issue(`authorization: ${authorizationProblem}`);
+      if (m.authorization.instruction?.stopAfter === 'planning') issue('authorization: user required a stop after planning');
+    }
     // Only declared units execute while the proof is being refined. A detailed
     // unit cannot skip readiness for an outcome whose implementation is deferred.
     const readinessOutcomeIds = options.releaseScopeId !== undefined ? release.outcomeIds : active.deferredOutcomeIds?.length && ['plan','execute'].includes(options.stage) ? executeOutcomeIds : active.outcomeIds;
@@ -419,7 +453,16 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
       if (readinessOutcomeIds.includes(dependency.outcomeId)) continue;
       if (!(dependency.kind === 'technical' ? technical : accepted).has(dependency.outcomeId)) issue(`dependency: ${id} requires ${dependency.kind} prerequisite ${dependency.outcomeId}`);
     }
-    validateBudget(scope, acceptedSlices, designAccepted, report, trusted, scopeBinding, new Set([...evidenceByOutcome.values()].flat().map(e => confined(scope.projectRoot, e.artifact.path))), options.trustedProjectionProvider);
+    const retiredUnits = new Set<string>();
+    for (const unit of m.slices.flatMap(s => s.units)) {
+      if (!unit.outcomeIds.every(id => technical.has(id) && (!visual(m.surfaces.find(s => s.id === outcomeById.get(id)?.surfaceId)?.kind ?? '') || designAccepted.has(id)))) continue;
+      const decisions = m.decisionRefs.filter(d => d.kind === 'unit-completion' && d.unitId === unit.id);
+      if (!decisions.length) continue;
+      const binding = deliveryUnitReviewBinding(scope, unit.id);
+      if (decisions.some(d => d.result === 'rejected' && authenticated(d, binding))) continue;
+      if (decisions.some(d => trusted(d, binding, 'independent'))) retiredUnits.add(unit.id);
+    }
+    validateBudget(scope, acceptedSlices, retiredUnits, designAccepted, report, trusted, scopeBinding, new Set([...evidenceByOutcome.values()].flat().map(e => confined(scope.projectRoot, e.artifact.path))), options.trustedProjectionProvider);
     const planIssues = report.issues.length;
     report.completion.planReady = planIssues === 0;
     if (options.stage === 'advance' || options.stage === 'release') {
@@ -455,7 +498,7 @@ export function validateDelivery(targetDir: string, options: DeliveryValidationO
   return report;
 }
 
-function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, designAccepted: Set<string>, report: DeliveryReport, trusted: (decision: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent') => boolean, scopeBinding: ReviewBinding, currentEvidenceArtifacts: Set<string>, trustedProjectionProvider?: DeliveryValidationOptions['trustedProjectionProvider']): void {
+function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, retiredUnits: Set<string>, designAccepted: Set<string>, report: DeliveryReport, trusted: (decision: DeliveryDecision | undefined, binding: ReviewBinding, role?: 'owner' | 'independent' | 'agent') => boolean, scopeBinding: ReviewBinding, currentEvidenceArtifacts: Set<string>, trustedProjectionProvider?: DeliveryValidationOptions['trustedProjectionProvider']): void {
   const m = scope.manifest; const issue = (message: string) => { if (!report.issues.includes(message)) report.issues.push(message); };
   const proofAccepted = acceptedSlices.has(m.firstProofSlice); let limits = proofAccepted ? { maxUnits: 8, maxWords: 6000, maxBytes: 48000, maxSlices: 2 } : { maxUnits: 5, maxWords: 4000, maxBytes: 32000, maxSlices: 1 };
   if (m.planningBudget.extensionDecisionId) {
@@ -474,7 +517,7 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
     limits = { maxUnits: Math.min(limits.maxUnits, 2), maxWords: Math.min(limits.maxWords, 1200), maxBytes: Math.min(limits.maxBytes, 9600), maxSlices: 1 };
   }
   const pending = m.slices.filter(s => !acceptedSlices.has(s.id));
-  const pendingUnits = new Map(pending.flatMap(slice => slice.units.map(unit => [unit.id, unit] as const)));
+  const pendingUnits = new Map(pending.flatMap(slice => slice.units.filter(unit => !retiredUnits.has(unit.id)).map(unit => [unit.id, unit] as const)));
   const designScopes = new Map<string, { units: Set<string>; words: number; bytes: number }>();
   for (const unit of pendingUnits.values()) for (const id of unit.outcomeIds) {
     const outcome = outcomeById.get(id);
@@ -501,7 +544,7 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
   };
   const allowed = new Set([m.activeSlice, ...(proofAccepted && m.nextSlice ? [m.nextSlice] : [])]);
   for (const s of pending) if (!allowed.has(s.id)) issue(`budget: unimplemented detailed slice ${s.id} lies outside active/next window`);
-  report.metrics.pendingUnits = pending.reduce((n,s) => n + s.units.length, 0); report.metrics.pendingSlices = pending.length;
+  report.metrics.pendingUnits = pendingUnits.size; report.metrics.pendingSlices = pending.length;
   report.metrics.reviewRounds = m.planningBudget.reviewRounds; report.metrics.reworkUnits = m.planningBudget.reworkUnits;
   if (m.planningBudget.observedTokens !== undefined) report.metrics.observedTokens = m.planningBudget.observedTokens;
   const pendingFiles = new Set(pending.flatMap(s => s.detailedFiles.map(f => confined(scope.runDirectory, f))));
@@ -538,12 +581,16 @@ function validateBudget(scope: DeliveryScope, acceptedSlices: Set<string>, desig
         if (!declaredFiles.has(file) && !ledgerFiles.has(file)) issue(`budget: unregistered pending detail ${path.relative(scope.projectRoot, file)}`);
         continue;
       }
+      if (declaredFiles.has(file)) {
+        const ownedRetired = new Set(m.slices.filter(slice => slice.detailedFiles.some(f => confined(scope.runDirectory, f) === file)).flatMap(slice => slice.units.filter(unit => retiredUnits.has(unit.id)).map(unit => unit.id)));
+        decoded = pendingDeliveryTaskDetail(file, decoded, ownedRetired);
+      }
       const words = decoded.trim().split(/\s+/).filter(Boolean).length;
       if (ledgerFiles.has(file)) {
         if (words > Math.max(500, m.outcomes.length * 100) || /(?:^|\n)\s*(?:#{1,6}\s*(?:T\d+|implementation|task\s+\d+)|(?:\d+\.){2,}|```(?:ts|js|python|bash))/im.test(rawContent.toString('utf8'))) issue(`budget: detailed content disguised as concise ledger ${path.relative(scope.projectRoot,file)}`);
         continue;
       }
-      report.metrics.pendingWords += words; report.metrics.pendingBytes += rawContent.length;
+      report.metrics.pendingWords += words; report.metrics.pendingBytes += Buffer.byteLength(decoded);
       countDesignDetail(file, decoded);
       if (!declaredFiles.has(file)) issue(`budget: unregistered pending detail ${path.relative(scope.projectRoot,file)}`);
     }

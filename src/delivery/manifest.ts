@@ -86,7 +86,11 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     assert(s.acceptanceDecisionIds === undefined || strings(s.acceptanceDecisionIds), `invalid acceptanceDecisionIds ${s.id}`);
   }
   assert(text(m.activeSlice) && text(m.firstProofSlice) && (m.nextSlice === undefined || text(m.nextSlice)), 'missing active/proof slice');
-  const a = m.authorization; assert(record(a), 'invalid authorization'); keys(a, 'execution checkpoints designAcceptance scopeChange independentReview implementerContextId', 'authorization'); assert(record(a) && typeof a.execution === 'boolean' && ['every-slice','autonomous'].includes(a.checkpoints) && ['owner','independent','agent'].includes(a.designAcceptance) && ['owner','agent-applicability'].includes(a.scopeChange) && typeof a.independentReview === 'boolean' && text(a.implementerContextId), 'invalid authorization');
+  const a = m.authorization; assert(record(a), 'invalid authorization'); keys(a, 'execution checkpoints designAcceptance scopeChange independentReview implementerContextId instruction', 'authorization'); assert(record(a) && typeof a.execution === 'boolean' && ['every-slice','autonomous'].includes(a.checkpoints) && ['owner','independent','agent'].includes(a.designAcceptance) && ['owner','agent-applicability'].includes(a.scopeChange) && typeof a.independentReview === 'boolean' && text(a.implementerContextId), 'invalid authorization');
+  if (a.instruction !== undefined) {
+    const i = a.instruction; assert(record(i), 'invalid authorization instruction'); keys(i, 'source quote sourceLocation messageAt reference stopAfter', 'authorization instruction');
+    assert(binding(i.source) && text(i.quote) && text(i.sourceLocation) && text(i.messageAt) && text(i.reference) && ['planning','none'].includes(i.stopAfter), 'invalid source-bound authorization instruction'); keys(i.source, 'path sha256', 'authorization source');
+  }
   const p = m.planningBudget; assert(record(p), 'invalid planning budget'); keys(p, 'corpusRoots ledgerFiles extensionDecisionId observedTokens reviewRounds reworkUnits', 'planning budget'); assert(record(p) && strings(p.corpusRoots) && p.corpusRoots.length && strings(p.ledgerFiles) && Number.isInteger(p.reviewRounds) && p.reviewRounds >= 0 && Number.isInteger(p.reworkUnits) && p.reworkUnits >= 0 && (p.observedTokens === undefined || Number.isInteger(p.observedTokens) && p.observedTokens >= 0), 'invalid planning budget');
   for (const e of m.evidenceRefs) {
     keys(e, 'id outcomeId checkId kind targetId targetDigest targetContextDigest snapshotDigest reviewDigest artifact command observedResult observedAt result capture consumer productionComposition releaseCandidate', 'evidence');
@@ -99,12 +103,13 @@ export function parseDeliveryManifest(value: unknown): DeliveryManifest {
     if (e.capture !== undefined) assert(record(e.capture) && text(e.capture.surfaceId) && ['entry','success','recovery'].includes(e.capture.state) && text(e.capture.viewport) && (e.capture.theme === undefined || text(e.capture.theme)) && (e.capture.route === undefined || text(e.capture.route)) && typeof e.capture.composed === 'boolean', `invalid capture ${e.id}`);
   }
   for (const d of m.decisionRefs) {
-    keys(d, 'id kind releaseScopeId outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget', 'decision');
+    keys(d, 'id kind releaseScopeId outcomeIds scopeDigest artifactDigests reviewer provenance result reason requirementIds evidenceIds budget unitId', 'decision');
+    assert(d.kind === 'unit-completion' ? text(d.unitId) : d.unitId === undefined, 'unitId is required only for unit-completion');
     assert(d.releaseScopeId === undefined || d.kind === 'release-review' && text(d.releaseScopeId) && d.releaseScopeId !== '*', `invalid release scope for decision ${d.id}`);
     if (record(d.reviewer)) keys(d.reviewer, 'id contextId role', 'reviewer');
     if (record(d.provenance)) keys(d.provenance, 'kind reference attestation', 'provenance');
     if (record(d.budget)) keys(d.budget, 'maxUnits maxWords maxBytes maxSlices', 'extension limits');
-    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review','release-review'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
+    assert(['scope-review','acceptance','scope-change','budget-extension','carry-forward','design-review','release-review','unit-completion'].includes(d.kind) && strings(d.outcomeIds) && hash(d.scopeDigest) && strings(d.artifactDigests) && d.artifactDigests.every(hash), `invalid decision ${d.id}`);
     assert(record(d.reviewer) && text(d.reviewer.id) && text(d.reviewer.contextId) && ['owner','independent','agent'].includes(d.reviewer.role) && record(d.provenance) && ['owner-message','review-session','external','owner-attested'].includes(d.provenance.kind) && text(d.provenance.reference) && ['approved','rejected'].includes(d.result) && text(d.reason), `invalid reviewer provenance ${d.id}`);
     if (d.provenance.kind === 'owner-attested') { assert(record(d.provenance.attestation), `owner-attested decision ${d.id} requires attestation`); keys(d.provenance.attestation, 'quote messageAt scopeDigest', 'owner attestation'); }
     else assert(d.provenance.attestation === undefined, `attestation is restricted to owner-attested provenance ${d.id}`);

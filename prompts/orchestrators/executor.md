@@ -11,7 +11,7 @@ Load `.ai-prompts/prompts/orchestrators/rolling-delivery.md` once: it is the can
 3. Run focused meaningful tests and the actual entry-to-value and recovery route. At usable, milestone and release boundaries require the corresponding actual production build through `.ai-prompts/scripts/build-gate.sh`; typechecking is distinct. Capture current composed screens or actual headless consumer/operational evidence. Empty tests and fake providers cannot establish production readiness.
 4. Diagnose rather than weaken checks. Use the relevant harness-recovery guidance when needed; retain failures and stop at missing authority or unrecoverable conditions.
 5. Record raw evidence and required separate design/functional reviews under the shared contract. Use `.ai-prompts/prompts/orchestrators/semantic-review-and-validation.md` to challenge actual behavior. Never self-author owner or independent approval.
-6. Run stage `advance`, repair failed proof before breadth, then update and validate matching manifest/checkpoint state. Present the target, entry/actions, states, evidence, limitations and next slice. Required user checkpoints still stop; prior autonomy covers only authorized ordinary transitions.
+6. Run stage `advance`, repair failed proof before breadth, then update and validate matching manifest/checkpoint state. Present the target, entry/actions, states, evidence, limitations and next slice. User-required checkpoints still stop; plan-and-implement covers ordinary in-scope transitions.
 
 ## Commits and release
 

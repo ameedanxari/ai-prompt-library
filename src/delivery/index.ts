@@ -9,3 +9,5 @@ export { ARCHITECTURE_FILE, IMPLIED_CAPABILITIES, architectureRequiredReasons, v
 export * from './comparison.js';
 export * from './release.js';
 export * from './planning-quality.js';
+export * from './execution-policy.js';
+export * from './review-host.js';

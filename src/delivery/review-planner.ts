@@ -17,7 +17,7 @@ export interface ReviewPlan {
 }
 const same = (a: string[], b: string[]) => canonical([...new Set(a)].sort()) === canonical([...new Set(b)].sort()) && new Set(a).size === a.length;
 /** Call before dispatching a reviewer. A new session is not a new review input. */
-export function planDeliveryReview(scope: DeliveryScope, kind: ReviewPurpose, outcomeIds: string[], options: Pick<DeliveryValidationOptions, 'trustedReviewProvider' | 'releaseScopeId'> = {}): ReviewPlan {
+export function planDeliveryReview(scope: DeliveryScope, kind: ReviewPurpose, outcomeIds: string[], options: Pick<DeliveryValidationOptions, 'trustedReviewProvider' | 'trustedAuthorizationProvider' | 'requireAuthenticatedAuthorization' | 'releaseScopeId'> = {}): ReviewPlan {
   const m = scope.manifest; const requirements = readDeliveryRequirements(scope); const planningInputs = readDeliveryPlanningInputs(scope);
   if (!['scope-review','design-review','acceptance','release-review'].includes(kind)) throw new Error('delivery: unknown review purpose');
   if (options.releaseScopeId !== undefined && kind !== 'release-review') throw new Error('delivery: named release scope is restricted to release review');

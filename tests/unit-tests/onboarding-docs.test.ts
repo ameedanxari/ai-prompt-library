@@ -23,7 +23,11 @@ describe('outcome onboarding', () => {
     expect(blocks).toHaveLength(2);
     expect(blocks[0]).toContain('ai-agent-entry-point.md');
     expect(blocks[0]).toMatch(/full requested scope/);
-    expect(blocks[0]).toMatch(/including recovery/);
+    expect(blocks[0]).toMatch(/first value and recovery/);
+    expect(blocks[0]).toMatch(/Plan and implement/);
+    expect(blocks[0].trim().split(/\s+/).length).toBeLessThanOrEqual(55);
+    expect(body).toMatch(/Plan-only.*review stops persist/);
+    expect(body).toMatch(/independent reviewer must actually be distinct/i);
     expect(blocks[1]).toContain('Continue where you left off');
     expect(body).toMatch(/Do not delete output or application state/);
   });

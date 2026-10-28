@@ -6,16 +6,16 @@ Use this prompt:
 
 ```text
 Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
-Use MY_PROJECT.md and existing source/reference material. Preserve the full requested scope and applicable release duties in the delivery contract. Plan a bounded representative proof from the real entry through first value, including recovery; do not expand all future tasks upfront.
+Plan and implement MY_PROJECT.md using existing source/reference material. Preserve the full requested scope and applicable release duties. Start with a bounded proof from real entry through first value and recovery, then continue through ordinary in-scope slices.
 ```
 
 The agent selects one of Trivial, Execute, Gap-closure or Greenfield. New runs create a versioned `delivery-manifest.json` in an isolated `prompts/outputs/runs/<run-id>/`; the root checkpoint selects it. Existing material is reused when verified and unchanged. New chats do not restart planning.
 
-Unknown preferences choose the smallest platform/capability set consistent with your brief. “Works on phones” may mean a responsive website; it does not automatically request iPhone/Android apps. Accounts, admin, monetization and other features need product justification. Applicable safety/reliability and release duties remain visible even when implementation is deferred.
+Unspecified reversible decisions use the smallest source-consistent default, with assumption, rationale, impact and revisit trigger recorded. Material source contradictions and reserved owner decisions remain explicit. Missing access blocks its actual consumer; independent local work can proceed. Unknown preferences choose the smallest platform/capability set consistent with your brief. “Works on phones” may mean a responsive website; it does not automatically request iPhone/Android apps. Accounts, admin, monetization and other features need product justification. Applicable safety/reliability and release duties remain visible even when implementation is deferred.
 
-Before accepted proof the plan is capped at one slice, five useful units and 4,000 detailed words. Afterward it is one active plus at most one next slice, eight units and 6,000 words total. A unit can change its necessary source/tests/config/assets/docs together. Remaining outcomes stay in a concise ledger rather than hundreds of detailed task files.
+While first-proof visual design is pending the plan is capped at one slice, two useful units and 1,200 detailed words. Nonvisual work or work after that review can use the pre-proof five-unit/4,000-word budget; still-unapproved visual surfaces retain their smaller exploration cap. Afterward it is one active plus at most one next slice, eight units and 6,000 words total. A unit can change its necessary source/tests/config/assets/docs together. Remaining outcomes stay in a concise ledger rather than hundreds of detailed task files.
 
-At a required checkpoint the agent presents a runnable target/artifact, entry/action sequence, relevant captured states, limitations and evidence. Say `Continue` or give feedback. If you explicitly authorize autonomous ordinary transitions, that instruction persists; owner-reserved design, scope, commercial/legal/safety decisions and required reviews still require appropriate provenance. Execution permission alone is not acceptance.
+At a required checkpoint the agent presents a runnable target/artifact, entry/action sequence, relevant captured states, limitations and evidence. A plan-and-implement request authorizes ordinary in-scope transitions and delegated design review without an invented human gate at every slice. Plan-only or explicitly requested review stops persist; at those stops say `Continue` or give feedback. Owner-reserved design, scope, commercial/legal/safety decisions and required independent reviews still need appropriate provenance. An independent reviewer must actually be distinct. Execution permission alone is not acceptance, and never authorizes deployment, live-data changes, spending or messages.
 
 Resume with:
 
@@ -34,7 +34,7 @@ bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<
 bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage release
 ```
 
-Replace `<run-id>` with your selected directory. Read [delivery-contract.md](docs/delivery-contract.md) for target/evidence requirements and trusted review provenance. Visual products need captures from the actual composed application; APIs/SDKs, CLI, data/ML, operations and artifacts need their actual consumer/operational proof. Mixed systems combine requirements. A build, component catalogue, generated mockup or fake provider cannot prove release readiness.
+Replace `<run-id>` with your selected directory. Read [delivery-contract.md](docs/delivery-contract.md) for target/evidence requirements, source-bound execution authorization and trusted review provenance. Unattended authenticated review requires a configured host that can dispatch an actual distinct reviewer and verify its receipt. Without that integration, report the concrete review blocker and continue independent authorized work; a local approval record cannot authenticate itself. Visual products need captures from the actual composed application; APIs/SDKs, CLI, data/ML, operations and artifacts need their actual consumer/operational proof. Mixed systems combine requirements. A build, component catalogue, generated mockup or fake provider cannot prove release readiness.
 
 Release evaluates every required outcome and applicable obligation against one current candidate. Owner inputs remain explicit and independent authorized work can continue. The agent must not invent legal/commercial values, enable charges, perform destructive drills or publish without authority. The workflow reports measured work and limits; it does not promise fixed token savings or guarantee a deployment from a passing plan.
 

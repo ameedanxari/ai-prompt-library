@@ -100,3 +100,6 @@ export function validateDeliveryRun(
 }
 export * from '../delivery/comparison.js';
 export * from '../delivery/planning-quality.js';
+export * from '../delivery/execution-policy.js';
+export * from '../delivery/review-host.js';
+export { deliveryUnitReviewBinding } from '../delivery/validation.js';
