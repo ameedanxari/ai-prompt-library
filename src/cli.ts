@@ -8,7 +8,7 @@ import { evaluateRun, evaluateBoundary } from './workflow/evaluate.js';
 import { planReview, requestProblem } from './workflow/review.js';
 import { evidenceBinding, reviewBinding, scopeFingerprint } from './workflow/evidence.js';
 import { commitRun, inspectLegacy, loadRun, projectPath, readJson, StoreError } from './store.js';
-import { renderViews, writeViews } from './views.js';
+import { compactAssessment, renderViews, writeViews } from './views.js';
 
 const usage = `ai-prompt-workflow <command> <run.json> --project-root <directory> [options]
   validate       Structured integrity/readiness results; no universal ready flag
@@ -109,12 +109,12 @@ export async function main(args: string[]): Promise<number> {
   if (command === 'validate') {
     const boundary = boundaryOf(options);
     if (boundary) { const result = evaluateBoundary(run, boundary, context); print({runId:run.runId, revision:run.revision, boundary, result}); return exitFor(result.status); }
-    const assessment = evaluateRun(run, context); print(assessment); return exitFor(assessment.planReviewed.status);
+    const assessment = evaluateRun(run, context); print(compactAssessment(assessment)); return exitFor(assessment.planReviewed.status);
   }
   if (command === 'view') {
     const projection = renderViews(run, context);
     if (options.output) print({runId:run.runId,revision:run.revision,fingerprint:projection.fingerprint,files:writeViews(context.projectRoot,options.output,projection)});
-    else print(projection);
+    else print({runId:run.runId,revision:run.revision,fingerprint:projection.fingerprint,assessment:compactAssessment(projection.assessment),ownerBrief:projection.files['OWNER-BRIEF.md']});
     return 0;
   }
   if (command === 'review') {

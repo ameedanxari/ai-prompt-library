@@ -26,7 +26,7 @@ it('installs the actual packed library offline and consumes its public API and C
     for(const file of ['run.json','request.md'])fs.copyFileSync(path.join(root,'docs/examples',file),path.join(consumer,'docs/examples',file));
     const cli=path.join(consumer,'node_modules/ai-prompt-library/dist/cli.js');
     const structural=execute(process.execPath,[cli,'validate','docs/examples/run.json','--project-root',consumer,'--boundary','plan-reviewable'],temp);
-    expect(structural.status,structural.stderr).toBe(0);expect(JSON.parse(structural.stdout).result.status).toBe('pass');
+    expect(structural.status,structural.stderr + structural.stdout).toBe(0);expect(JSON.parse(structural.stdout).result.status).toBe('pass');
     const unreviewed=execute(process.execPath,[cli,'validate','docs/examples/run.json','--project-root',consumer],temp);
     expect(unreviewed.status,unreviewed.stderr).toBe(2);expect(JSON.parse(unreviewed.stdout).planReviewed.status).toBe('pending');
   }finally{fs.rmSync(temp,{recursive:true,force:true});}

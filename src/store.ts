@@ -17,8 +17,14 @@ export const sha256 = (value: string | Buffer): string => crypto.createHash('sha
 /** File paths may be absolute at the CLI boundary, but never escape the chosen project. */
 export function projectPath(root: string, name: string): string {
   const base = fs.realpathSync(root);
-  const file = path.resolve(base, name);
-  const rel = path.relative(base, file);
+  const requestedRoot = path.resolve(root);
+  const requestedFile = path.resolve(requestedRoot, name);
+  const within = (relative: string): boolean => !!relative && relative !== '..' && !relative.startsWith(`..${path.sep}`) && !path.isAbsolute(relative);
+  const requestedRelative = path.relative(requestedRoot, requestedFile);
+  // Preserve the caller's chosen root alias (for example macOS /var → /private/var).
+  // This never grants access through an arbitrary symlink below the project root.
+  const rel = within(requestedRelative) ? requestedRelative : path.relative(base, requestedFile);
+  const file = path.resolve(base, rel);
   if (!rel || rel.startsWith(`..${path.sep}`) || rel === '..' || path.isAbsolute(rel))
     throw new StoreError('PATH_OUTSIDE_PROJECT', 'Select a file inside the project root');
   let cursor = base;

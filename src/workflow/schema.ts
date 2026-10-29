@@ -99,7 +99,11 @@ export function parseRun(value: unknown): RunContract {
   const p = shape(r.policy, 'instruction execution checkpoints implementerId implementerContextId reviews grants budget checkpointAcknowledgment', 'instruction execution checkpoints implementerId implementerContextId reviews grants budget', 'policy');
   const i = shape(p.instruction, 'sourceId locator quote reference issuedAt', 'sourceId locator quote reference issuedAt', 'instruction'); assert(Object.values(i).every(v => text(v)), 'instruction', 'invalid retained instruction');
   assert(choices(p.execution, ['plan-only','reversible']) && choices(p.checkpoints, ['every-proof','autonomous']) && text(p.implementerId) && text(p.implementerContextId), 'policy', 'invalid authority policy');
-  const pr = shape(p.reviews, 'scope semantic design release', 'scope semantic design release', 'reviews'); for (const key of Object.keys(pr)) roles(pr[key], `reviews.${key}`);
+  const pr = shape(p.reviews, 'scope semantic design release', 'scope semantic design release', 'reviews');
+  for (const key of Object.keys(pr)) {
+    if (key === 'design' && Array.isArray(pr[key]) && pr[key].length === 0) continue;
+    roles(pr[key], `reviews.${key}`);
+  }
   for (const g of rows(p.grants, 'grants')) { shape(g, 'id targetIds actions sourceRef reference', 'id targetIds actions sourceRef reference', g.id); sourceRef(g.sourceRef, g.id); assert(strings(g.targetIds, false) && strings(g.actions, false) && g.actions.every((a: string) => actionKinds.includes(a)) && text(g.reference), g.id, 'invalid grant'); }
   const b = shape(p.budget, 'maxActiveWork maxDetailBytes', 'maxActiveWork maxDetailBytes', 'budget'); assert(integer(b.maxActiveWork, 1) && integer(b.maxDetailBytes, 1), 'budget', 'positive limits required');
   if (p.checkpointAcknowledgment !== undefined) {

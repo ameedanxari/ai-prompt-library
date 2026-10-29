@@ -112,6 +112,9 @@ export function reviewBinding(run: RunContract, request: ReviewRequest): ReviewB
   return { runId: run.runId, purpose: request.purpose, subjectIds, fingerprint: digest({ runId: run.runId, purpose: request.purpose, subjectIds, inputs }) };
 }
 export function gate(checks: CheckResult[]): GateResult {
+  // The same causal check may be reached through several paths. Preserve every
+  // distinct finding/receipt, but report an identical cause only once.
+  checks = [...new Map(checks.map(c => [canonical(c), c])).values()];
   const priority: Status[] = ['fail','pending','unassessed'];
   const status = priority.find(s => checks.some(c => c.status === s)) ?? (checks.length && checks.every(c => c.status === 'not-applicable') ? 'not-applicable' : 'pass');
   return { status, checks };

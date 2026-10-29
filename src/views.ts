@@ -1,14 +1,32 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import crypto from 'node:crypto';
-import type { EvaluationContext, GateResult, RunAssessment, RunContract, Work } from './workflow/contract.js';
+import type { CheckResult, EvaluationContext, GateResult, RunAssessment, RunContract, Work } from './workflow/contract.js';
 import { evaluateRun } from './workflow/evaluate.js';
-import { scopeFingerprint } from './workflow/evidence.js';
+import { canonical, digest } from './workflow/evidence.js';
 import { projectPath, StoreError } from './store.js';
 
 export interface Projection { runId: string; revision: number; fingerprint: string; assessment: RunAssessment; files: Record<string, string> }
 const cell = (value: unknown): string => String(value).replaceAll('|', '\\|').replaceAll('\n', ' ').replaceAll('<', '&lt;');
-const reasons = (gate: GateResult): string => gate.checks.filter(c => !['pass', 'not-applicable'].includes(c.status)).map(c => `${c.code}: ${c.message}`).join('; ') || 'No remaining check reported for this boundary';
+const reasons = (gate: GateResult): string => {
+  const rows = [...new Map(gate.checks.filter(c => !['pass', 'not-applicable'].includes(c.status)).map(c => [`${c.code}: ${c.message}`, c])).entries()];
+  return rows.slice(0, 4).map(([message]) => message).join('; ') + (rows.length > 4 ? `; ${rows.length - 4} additional causes in STATUS.json` : '') || 'No remaining check reported for this boundary';
+};
+/** Factor repeated diagnostics once; all boundary membership and causes remain recoverable. */
+export function compactAssessment(assessment: RunAssessment) {
+  const diagnostics: Record<string, CheckResult> = {}, ids = new Map<string,string>();
+  const compact = (gate: GateResult) => ({ status: gate.status, diagnosticIds: [...new Set(gate.checks.map(c => {
+    const key = canonical(c); let id = ids.get(key);
+    if (!id) { id = `D${ids.size + 1}`; ids.set(key,id); diagnostics[id] = c; }
+    return id;
+  }))] });
+  const collection = (gates: Record<string,GateResult>) => Object.fromEntries(Object.entries(gates).map(([id,g]) => [id,compact(g)]));
+  return { runId:assessment.runId, revision:assessment.revision,
+    integrity:compact(assessment.integrity), planReviewable:compact(assessment.planReviewable), planReviewed:compact(assessment.planReviewed), proof:compact(assessment.proof),
+    work:Object.fromEntries(Object.entries(assessment.work).map(([id,w])=>[id,{executable:compact(w.executable),verified:compact(w.verified)}])),
+    decisions:collection(assessment.decisions), outcomes:collection(assessment.outcomes), releases:collection(assessment.releases),
+    executableNow:assessment.executableNow, diagnostics };
+}
 function effort(work: Work[]): { hours: [number, number]; unestimated: string[]; roles: Record<string, [number, number]>; ownerTouchpoints: number; unknownTouchpoints: string[] } {
   const hours: [number, number] = [0, 0], roles: Record<string, [number, number]> = {}, unestimated: string[] = [], unknownTouchpoints: string[] = [];
   let ownerTouchpoints = 0;
@@ -23,7 +41,7 @@ function effort(work: Work[]): { hours: [number, number]; unestimated: string[];
   return { hours, unestimated, roles, ownerTouchpoints, unknownTouchpoints };
 }
 export function renderViews(run: RunContract, context: EvaluationContext): Projection {
-  const assessment = evaluateRun(run, context), fingerprint = scopeFingerprint(run);
+  const assessment = evaluateRun(run, context), fingerprint = digest({ run, assessment });
   const header = `<!-- ai-prompt-library generated; run=${run.runId}; revision=${run.revision}; fingerprint=${fingerprint} -->\n`;
   const notes = '\nDerived from run.json. Editing this view changes no authority or readiness. Unknowns remain unknown; a passed structural check does not prove faithful source interpretation or a working product.\n';
   const gates = (items: Record<string, GateResult>) => Object.entries(items).map(([id, g]) => `| ${cell(id)} | ${g.status} | ${cell(reasons(g))} |`).join('\n');
@@ -34,7 +52,7 @@ export function renderViews(run: RunContract, context: EvaluationContext): Proje
   const work = `${header}# Active work\n${notes}\n${run.activeWorkIds.map(id => { const w = run.work.find(w => w.id === id); const result = assessment.work[id]; return w ? `## ${cell(w.id)}: ${cell(w.title)}\n\nExecution: **${result?.executable.status ?? 'unassessed'}**. ${result ? reasons(result.executable) : 'Unknown work'}\n\nTargets: ${w.targetIds.join(', ')}. Action: ${w.action}.\nInputs: ${w.inputs.map(i => `${i.kind}:${i.id}`).join(', ') || 'none'}.\nOwned files: ${w.files.join(', ') || 'none'}.\n\n${w.instructions}\n\nAcceptance criteria: ${w.criterionIds.join(', ')}. Verification: ${result?.verified.status ?? 'unassessed'}.\n` : `Unknown work ${cell(id)}`; }).join('\n')}\nDeferred work: ${run.work.filter(w => !run.activeWorkIds.includes(w.id)).map(w => w.id).join(', ') || 'none'}. Deferred outcomes are not accepted by completing an active unit.\n`;
   return { runId: run.runId, revision: run.revision, fingerprint, assessment, files: {
     'ROADMAP.md': roadmap, 'OWNER-BRIEF.md': owner, 'WORK.md': work,
-    'STATUS.json': `${JSON.stringify({ generatedBy: 'ai-prompt-library', runId: run.runId, revision: run.revision, fingerprint, assessment }, null, 2)}\n`,
+    'STATUS.json': `${JSON.stringify({ generatedBy: 'ai-prompt-library', runId: run.runId, revision: run.revision, fingerprint, assessment:compactAssessment(assessment) }, null, 2)}\n`,
   } };
 }
 export function writeViews(root: string, directory: string, projection: Projection): string[] {
