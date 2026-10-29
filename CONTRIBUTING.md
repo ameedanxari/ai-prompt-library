@@ -10,6 +10,6 @@ Test behavior at the public boundary. Use valid fixtures and one-defect negative
 
 Run `npm test`, `npm run typecheck`, `npm run build` and the relevant CLI/package checks. Inspect the diff and packed files. Change docs/examples with the interface; repeated values should come from one definition. Never delete ignored/untracked consumer outputs or migrate a run without authorization.
 
-Fresh prompt evaluations need frozen original inputs, an ordinary request, a fresh producer context, an independent reviewer and retained first/final artifacts. Use materially different briefs and actual useful consumer/recovery evidence. Record review, coordination, integration and rework; report observed usage only. A plan-only or shape-test result does not establish delivered quality or savings.
+Use the [consumer evaluation procedure](evaluation/README.md) for repeatable source/behavior trials. Fresh prompt evaluations need frozen original inputs, an ordinary request, a fresh producer context, an independent reviewer and retained first/final artifacts. Use materially different briefs and actual useful consumer/recovery evidence. Record review, coordination, integration and rework; report observed usage only. A plan-only or shape-test result does not establish delivered quality or savings.
 
 Version 2 is intentionally a breaking replacement. Retired files remain recoverable through [the baseline and inventory](docs/retirement.md); compatibility inspection stays read-only. Do not reintroduce old completion flags as another authority.
