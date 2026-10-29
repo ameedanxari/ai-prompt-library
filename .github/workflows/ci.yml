@@ -1,56 +1,29 @@
 name: CI
-
-# Phase 0 trust fix: this repo previously shipped with CI running a single
-# untested script. This workflow runs the real gates on every push and PR:
-# typecheck + build + the full vitest suite, and shellcheck over the
-# scripts/ validators that the revise gate depends on.
-# (Review-enforcement already has its own workflow: pre-commit-review.yml.)
-
 on:
   push:
-    branches: [ main ]
+    branches: [main, 'codex/**']
   pull_request:
-    branches: [ main ]
-
+    branches: [main]
+permissions:
+  contents: read
 jobs:
-  build-test:
-    runs-on: ubuntu-latest
+  verify:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: ubuntu-latest
+            node: 22
+          - os: windows-latest
+            node: 24
+          - os: macos-latest
+            node: 24
+    runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v6
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6
+      - uses: actions/setup-node@v6
         with:
-          node-version: 20
+          node-version: ${{ matrix.node }}
           cache: npm
-
-      - name: Install dependencies
-        run: npm ci
-
-      - name: Typecheck
-        run: npm run typecheck
-
-      - name: Build
-        run: npm run build
-
-      - name: Test
-        run: npm test
-
-  shellcheck:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Install shellcheck
-        run: sudo apt-get update && sudo apt-get install -y shellcheck
-
-      - name: Lint shell scripts
-        run: shellcheck -P SCRIPTDIR scripts/*.sh scripts/lib/*.sh
-
-  reference-integrity:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-
-      - name: Sweep corpus references
-        run: bash scripts/check-reference-integrity.sh
+      - run: npm ci
+      - run: npm run check

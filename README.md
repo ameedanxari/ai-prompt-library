@@ -1,49 +1,37 @@
 # AI Prompt Library
 
-A modular workflow for delivering useful, verified outcomes through bounded implementation slices. Preserve the full requested scope and applicable release duties in a versioned contract; detail and prove the next slice before expanding breadth.
+A compact workflow for planning, implementing and reviewing useful outcomes. It keeps original obligations, current work, decisions and evidence in one `run.json`; readiness and owner summaries are derived from that model. It helps organize judgment and verification. It does not guarantee autonomous delivery or production quality.
 
 Install in your project root:
 
 ```bash
 git clone --depth 1 https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
+(cd .ai-prompts && npm ci && npm run build)
 bash .ai-prompts/scripts/bootstrap-project-integration.sh
 ```
 
-Keep an existing `.ai-prompts` checkout; do not overwrite it. Alternatively use a Git submodule at the same path, or install `ai-prompt-library` with npm and link `.ai-prompts` to the package. Package/CLI work requires the repository's declared Node/runtime dependencies. Bootstrap wires agent steering and the project brief; inspect changes before committing.
+Keep an existing checkout and its consumer outputs when upgrading. [Version 2 changes the public workflow and schema](docs/upgrading.md); no historical run is silently migrated. The CLI needs Node.js 22.12.0+; npm builds/installs the package. Bash is optional: `node .ai-prompts/scripts/bootstrap.mjs` also integrates the project. See [Quick Start](QUICK_START.md) for the actual run commands.
 
-Start with [QUICK_START.md](QUICK_START.md). Agents start at [the entry point](prompts/orchestrators/ai-agent-entry-point.md), which keeps the existing four routing modes: Trivial, Execute, Gap-closure and Greenfield. Specialist modules remain available on demand across product domains.
-
-New runs use `delivery-manifest.json` in isolated `prompts/outputs/runs/<run-id>/`. A root checkpoint selects the active run. The manifest retains original requirements, outcomes, targets, authorization, evidence/reviews and continuation. Existing task machinery projects this contract; historical legacy runs remain explicitly supported without rewriting their evidence.
-
-The first proof reaches a valuable result from the actual entry, including relevant recovery. Before accepted proof, detail at most five units and 4,000 words in one slice. After proof, detail at most eight units and 6,000 words across the active and at most one next slice. Pending scope stays in a concise ledger. Units are useful changes across necessary files, not a mandatory ticket and commit per file.
-
-A schema-valid plan or successful build cannot prove a useful product. Visual surfaces require actual composed-screen captures and inspection; headless systems require real consumer/operational evidence. Targets, sources, provider modes and raw artifacts are bound by digests. Required owner/independent acceptance needs trusted provenance; the agent cannot manufacture approval. Controlled-provider proof leaves production duties pending.
-
-See [delivery-contract.md](docs/delivery-contract.md) for canonical fields, budgets, migration and validation stages. New runs use:
+To install a locally built package as a development dependency instead, run `npm pack` in the library checkout, then in the consumer project:
 
 ```bash
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage plan
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage execute
-# Later, with retained current evidence and required reviews:
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage advance
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage release
-```
-
-Replace the run ID with the checkpoint-selected directory. Missing/invalid migrated manifests fail closed. Legacy `finalize.sh`, `revise.sh` and readiness tooling remain for explicit existing legacy contracts; those checks alone do not establish new outcome release readiness.
-
-Execution autonomy and required user checkpoints are recorded separately from design, scope and release acceptance. Explicit instructions persist across chats. Applicable safety, secrets, legal, fixture-isolation and external-action limits remain binding. Missing owner inputs do not prevent independent authorized local work.
-
-The library cannot provision missing accounts, authenticate an invented reviewer receipt or guarantee production quality from templates. Run project checks, inspect the real target, verify integrations and obtain required decisions. Measure actual generated words/bytes and rework; no fixed token-cost savings are promised.
-
-For contributors, consult [CONTRIBUTING.md](CONTRIBUTING.md), [the source map](prompts/README.md) and repository checks. The reviewed change rationale is in [OUTCOME_DELIVERY_DESIGN.md](docs/OUTCOME_DELIVERY_DESIGN.md); its rollout status is distinct from documentation and fixture results.
-
-For the npm layout:
-
-```bash
-npm install --save-dev ai-prompt-library
-ln -sfn node_modules/ai-prompt-library .ai-prompts
+npm install --save-dev /path/to/ai-prompt-library-2.0.0.tgz
+ln -s node_modules/ai-prompt-library .ai-prompts
 bash .ai-prompts/scripts/bootstrap-project-integration.sh
-npx ai-prompt-validate-delivery .ai-prompts/prompts/outputs/runs/<run-id> --stage plan
 ```
 
-Use Node.js 20+, npm, Python 3 and Bash. Legacy package APIs such as `buildTaskContractReportForDirectory` from `ai-prompt-library/task-contract` remain available for existing records. The new `ai-prompt-library/delivery` export uses the shared outcome gate. Treat `npm test` as the source of truth for test results. Before package release run `npm run validate:release`, inspect package metadata and dry-run package contents, and complete applicable delivery/release evidence; a package check alone does not verify the consumer product.
+Create that link only when `.ai-prompts` does not already exist. The installed executable is available through `npx ai-prompt-workflow`; from a consumer project use `node .ai-prompts/dist/cli.js`, or in a built source checkout use `node dist/cli.js`.
+
+This source change does not publish a registry release. Registry installation by version is appropriate only after that version has actually been published.
+
+Keep generated runs at project-relative `prompts/outputs/runs/<run-id>/run.json`, outside the library/dependency directory. Bootstrap changes only its managed AGENTS.md block and creates an absent project brief; it does not create a run or alter IDE configuration.
+
+Agents start at [the entry point](prompts/orchestrators/ai-agent-entry-point.md). Give an ordinary request and relevant original sources. The agent inspects existing state, chooses conservative reversible defaults, preserves missing inputs and owner decisions, then proves a representative useful result and recovery before expanding work. Small changes can be handled directly.
+
+The [version 3 model](docs/model.md) separates source requirements, targets/lifecycle, outcomes, work, resources, decisions, releases, evidence and judgments. A summary is a view of these facts, never a second acceptance contract. Review-only requests stay read-only. Explicit planning stops and owner reservations persist; permission to implement does not authorize publishing, spending or live-data destruction.
+
+Actual consumer behavior matters. Visual products need inspected composed screens; headless products need exercised installation, commands/APIs or operations. Keep mocks and unrun checks labelled. Matching digests identify retained bytes, not an authenticated reviewer or semantic correctness. [Evidence and review](docs/evidence-and-review.md) explains those limits.
+
+The large template catalogue and bundled application scaffolds have been retired. A few [optional references](prompts/README.md) retain specific source, state, visual and recovery mechanisms. [The retirement inventory](docs/retirement.md) preserves decisions and exact Git recovery. We make no token-savings, model-superiority or production-readiness promise from prompt size or structural tests.
+
+Contributors: see [CONTRIBUTING.md](CONTRIBUTING.md). Run repository checks and exercise the public CLI before proposing changes.

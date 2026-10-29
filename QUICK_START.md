@@ -1,41 +1,25 @@
 # Quick start
 
-Install the library as `.ai-prompts/` in your project using the repository's installation instructions. Copy `MY_PROJECT.md.template` to `MY_PROJECT.md` at the project root and describe who the product serves, what they need to do, and the first valuable result. Existing source, specs and references can be listed there or placed in `working_copy/`.
+Install the library at `.ai-prompts` and run its bootstrap script as shown in [README](README.md). For an npm installation, use the package's `ai-prompt-workflow` executable. Build repository sources with `npm ci` and `npm run build` before running its CLI locally.
 
-Use this prompt:
+Give the agent an ordinary request, such as “Plan and implement a local tool that reports duplicate invoices; retain the originals and show success plus invalid-input recovery.” Provide relevant original sources and existing code. You can use [the optional brief](MY_PROJECT.md.template), but filling a long form is not a prerequisite.
 
-```text
-Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
-Plan and implement MY_PROJECT.md using existing source/reference material. Preserve the full requested scope and applicable release duties. Start with a bounded proof from real entry through first value and recovery, then continue through ordinary in-scope slices.
-```
+The agent reads [the entry point](prompts/orchestrators/ai-agent-entry-point.md), inspects existing state and creates one isolated project-relative `prompts/outputs/runs/<run-id>/run.json` for substantial work. Generated runs stay outside `.ai-prompts` and dependency directories. It retains the full concise outcome scope and details only the next useful proof. Missing access/decisions block their actual consumers; reversible defaults and independent work continue within authority. Review/plan-only requests stop at their requested boundary.
 
-The agent selects one of Trivial, Execute, Gap-closure or Greenfield. New runs create a versioned `delivery-manifest.json` in an isolated `prompts/outputs/runs/<run-id>/`; the root checkpoint selects it. Existing material is reused when verified and unchanged. New chats do not restart planning.
+Use [the model guide](docs/model.md) for supported fields and command examples. `validate` checks represented structural/evidence conditions; `view` derives the current owner/work summary; `review` prepares a bound question packet for an actual reviewer; `inspect-legacy` reads historical records. These operations do not deploy, authenticate an invented identity or migrate a legacy run.
 
-Unspecified reversible decisions use the smallest source-consistent default, with assumption, rationale, impact and revisit trigger recorded. Material source contradictions and reserved owner decisions remain explicit. Missing access blocks its actual consumer; independent local work can proceed. Unknown preferences choose the smallest platform/capability set consistent with your brief. “Works on phones” may mean a responsive website; it does not automatically request iPhone/Android apps. Accounts, admin, monetization and other features need product justification. Applicable safety/reliability and release duties remain visible even when implementation is deferred.
+At each meaningful handoff expect the actual runnable target/artifact, entry and recovery actions, raw observations, remaining limits and next action. A schema-valid model or completed work count is not a product acceptance. Release needs the full selected original scope and current candidate evidence, including applicable operator/handover duties.
 
-While first-proof visual design is pending the plan is capped at one slice, two useful units and 1,200 detailed words. Nonvisual work or work after that review can use the pre-proof five-unit/4,000-word budget; still-unapproved visual surfaces retain their smaller exploration cap. Afterward it is one active plus at most one next slice, eight units and 6,000 words total. A unit can change its necessary source/tests/config/assets/docs together. Remaining outcomes stay in a concise ledger rather than hundreds of detailed task files.
+To resume, identify the existing run and ask to continue within the authorization already given. Do not create another run because a chat changed. For old checkpoints/manifests follow [upgrade guidance](docs/upgrading.md); preserve them unchanged until an explicitly authorized transition.
 
-At a required checkpoint the agent presents a runnable target/artifact, entry/action sequence, relevant captured states, limitations and evidence. A plan-and-implement request authorizes ordinary in-scope transitions and delegated design review without an invented human gate at every slice. Plan-only or explicitly requested review stops persist; at those stops say `Continue` or give feedback. Owner-reserved design, scope, commercial/legal/safety decisions and required independent reviews still need appropriate provenance. An independent reviewer must actually be distinct. Execution permission alone is not acceptance, and never authorizes deployment, live-data changes, spending or messages.
-
-Resume with:
-
-```text
-Continue where you left off. Read .ai-prompts/prompts/orchestrators/ai-agent-entry-point.md first.
-```
-
-The checkpoint's `run_directory` and bounded reload list identify the active work. Missing or invalid migrated manifests stop safely; historical legacy runs are continued only through the explicit legacy contract. Do not delete output or application state merely to start a new audit.
-
-Planning, execution authorization, advancement and release use the same delivery resolver:
+From the built library checkout, the bundled plan-only example can be inspected without a host:
 
 ```bash
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage plan
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage execute
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage advance
-bash .ai-prompts/scripts/validate-delivery.sh .ai-prompts/prompts/outputs/runs/<run-id> --stage release
+node dist/cli.js validate docs/examples/run.json --project-root . --boundary plan-reviewable
+node dist/cli.js view docs/examples/run.json --project-root .
+node dist/cli.js review docs/examples/run.json --purpose scope --ids Q1 --project-root .
 ```
 
-Replace `<run-id>` with your selected directory. Read [delivery-contract.md](docs/delivery-contract.md) for target/evidence requirements, source-bound execution authorization and trusted review provenance. Unattended authenticated review requires a configured host that can dispatch an actual distinct reviewer and verify its receipt. Without that integration, report the concrete review blocker and continue independent authorized work; a local approval record cannot authenticate itself. Visual products need captures from the actual composed application; APIs/SDKs, CLI, data/ML, operations and artifacts need their actual consumer/operational proof. Mixed systems combine requirements. A build, component catalogue, generated mockup or fake provider cannot prove release readiness.
+It intentionally has no observed runtime or approvals. Use `--host` only with a real trusted adapter outside the project. Review planning alone does not perform the review. [The command guide](docs/model.md) documents named boundaries, atomic revision-checked updates and verified receipt recording.
 
-Release evaluates every required outcome and applicable obligation against one current candidate. Owner inputs remain explicit and independent authorized work can continue. The agent must not invent legal/commercial values, enable charges, perform destructive drills or publish without authority. The workflow reports measured work and limits; it does not promise fixed token savings or guarantee a deployment from a passing plan.
-
-Installation details and package prerequisites are in [README.md](README.md); the repository is [ameedanxari/ai-prompt-library](https://github.com/ameedanxari/ai-prompt-library). The npm entry point is `npx ai-prompt-validate-delivery <run-directory> --stage plan` (also `advance` and `release`). Existing legacy commands remain available explicitly; never use them to bypass a failed outcome manifest.
+From a consumer project, `node .ai-prompts/dist/cli.js` or `bash .ai-prompts/scripts/workflow.sh` accesses the same CLI. The wrapper only checks for built files; it does not install dependencies or run a build. Bootstrap updates its managed AGENTS.md block and creates an absent brief; it does not create a run, rewrite IDE settings or supply approvals.
