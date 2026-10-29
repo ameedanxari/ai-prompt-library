@@ -225,6 +225,12 @@ export function validatePlanningIntegrity(context: PlanningContext): PlanningRep
     // Without declared scopes, added work has no proven price or approval inside the base contract.
     const settled = (scope?: Row) => !!scope && (scope.kind === 'base-contract' || scope.status === 'approved' && scope.price !== undefined);
     const unsettled = (id: string) => { const n = byId.get(id)!; return releaseScopes ? !settled(scopeOf(n)) : n.origin === 'added'; };
+    // Named base release selects every base node, including work outside payment paths.
+    // Catch that dependency coupling while planning, before a release selector exposes it.
+    if (releaseScopes) for (const node of nodes.filter(n => scopeOf(n)?.kind === 'base-contract')) {
+      const coupled = [...ancestors(node.id)].filter(unsettled);
+      if (coupled.length) add('RELEASE_TRAIN_COUPLED', node.id, `Base-contract release work depends on unapproved or unpriced change-order work: ${coupled.join(', ')}`);
+    }
     for (const milestone of milestones) {
       const scope = releaseScopes ? scopeOf(milestone) : undefined;
       if (milestone.payment !== undefined && scope?.kind === 'change-order' && !settled(scope)) add('RELEASE_SCOPE_UNPRICED', milestone.id, `Payment needs change order ${scope.id} approved and priced`);

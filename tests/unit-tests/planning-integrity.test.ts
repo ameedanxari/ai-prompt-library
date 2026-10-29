@@ -131,6 +131,31 @@ describe('planning integrity: release trains keep base payments off unpriced cha
     const f = coupled(); expect(f.validate().issues).toEqual([]);
     scopes(f, { status: 'proposed' }); expect(f.validate().issues).toEqual([]);
   });
+  it('rejects base release dependencies outside payment paths, including transitive review work', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' });
+    const extra = f.node('extra-composition', { stage: 1, releaseScope: 'R1' });
+    const review = f.node('extra-review', { stage: 1, kind: 'review', releaseScope: 'R1', dependsOn: [extra.id] });
+    f.contract.nodes.push(extra, review); f.contract.capacity.nodeIds.push(extra.id);
+    expect(f.validate().issues).toEqual([]);
+    extra.dependsOn.push('parity');
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED').map(i => i.target)).toEqual([extra.id, review.id]);
+    extra.releaseScope = 'R2'; review.releaseScope = 'R2';
+    expect(f.validate().issues).toEqual([]);
+  });
+  it('allows approved priced dependencies and change-order work to depend on the base', () => {
+    const f = coupled(); scopes(f, { status: 'proposed' });
+    f.contract.nodes.find((n: any) => n.id === 'parity').dependsOn.push('health');
+    const extra = f.node('extra-base', { stage: 1, releaseScope: 'R1', dependsOn: ['parity'] });
+    f.contract.nodes.push(extra); f.contract.capacity.nodeIds.push(extra.id);
+    expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED').map(i => i.target)).toEqual([extra.id]);
+    scopes(f, { status: 'approved', decision: f.decision, price: { amount: 2400, currency: 'CAD', sourceRef: 'C1' } });
+    expect(f.validate().issues).toEqual([]);
+    scopes(f, { status: 'approved', decision: f.decision });
+    expect(codes(f)).toContain('RELEASE_TRAIN_COUPLED');
+    delete f.contract.releaseScopes; delete extra.releaseScope;
+    for (const n of f.contract.nodes) delete n.releaseScope;
+    expect(f.validate().issues).toEqual([]);
+  });
   it('fails an undeclared base payment that requires added work', () => {
     const f = coupled(); f.contract.milestones[0].requires.push('accepted-parity');
     expect(issuesFor(f, 'RELEASE_TRAIN_COUPLED')).toEqual([expect.objectContaining({ target: 'week-2', message: expect.stringMatching(/accepted-parity.*added work with no declared release scope: parity, change-order/) })]);
