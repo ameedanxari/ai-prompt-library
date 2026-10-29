@@ -59,6 +59,27 @@ describe('configured review host', () => {
     await expect(dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host)).rejects.toThrow('became unready');
     expect(f.manifest.decisionRefs).toEqual([]);
   });
+  it('reports historical host reference and concrete postflight defects without applying the receipt', async () => {
+    const f = hostDeliveryFixture(); const h = hostFixture(); const dispatch = h.host.dispatch;
+    const before = fs.readFileSync(path.join(f.run, 'delivery-manifest.json'), 'utf8');
+    let reference = '';
+    h.host.dispatch = async request => {
+      reference = await dispatch(request);
+      f.write('runs/current/unregistered-quality.md', 'Planning detail added while the independent reviewer was running.');
+      return reference;
+    };
+    let error: Error | undefined;
+    try { await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host); }
+    catch (caught) { error = caught as Error; }
+    expect(error).toBeInstanceOf(Error);
+    expect(error!.message).toContain(reference);
+    expect(error!.message).toContain('Historical, unapplied host receipt references');
+    expect(error!.message).toContain('No current decision was recorded');
+    expect(error!.message).toContain('budget: unregistered pending detail runs/current/unregistered-quality.md');
+    expect(error!.message).not.toContain(h.records.get(reference)!.decision.reason);
+    expect(f.manifest.decisionRefs).toEqual([]);
+    expect(fs.readFileSync(path.join(f.run, 'delivery-manifest.json'), 'utf8')).toBe(before);
+  });
   it('dispatches missing independent roles, authenticates exact host actor/context and reuses current decisions', async () => {
     const f = hostDeliveryFixture(); const h = hostFixture();
     const result = await dispatchDeliveryReview(f.scope(), { kind: 'scope-review', outcomeIds: ['O1'] }, h.host);

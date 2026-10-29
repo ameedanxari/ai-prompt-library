@@ -97,6 +97,14 @@ export async function dispatchDeliveryReview(scope: DeliveryScope, input: { kind
   if (fs.readFileSync(manifestPath, 'utf8') !== manifestBytes || canonical(scope.manifest) !== manifestIdentity) throw new Error('delivery: manifest changed while the review host was running');
   const latestPlan = input.kind === 'unit-completion' ? planDeliveryUnitReview(scope, input.unitId, { ...options, trustedReviewProvider: provider })
     : planDeliveryReview(scope, input.kind, input.outcomeIds, { ...options, trustedReviewProvider: provider, releaseScopeId: input.releaseScopeId });
-  if (latestPlan.action === 'blocked' || localPreflightIssues().length || canonical(latestPlan.binding) !== canonical(plan.binding)) throw new Error('delivery: reviewed inputs changed or became unready while the review host was running');
+  const postflightIssues = localPreflightIssues();
+  const bindingChanged = canonical(latestPlan.binding) !== canonical(plan.binding);
+  if (latestPlan.action === 'blocked' || postflightIssues.length || bindingChanged) {
+    const diagnostics = [...postflightIssues, ...(latestPlan.action === 'blocked' ? [latestPlan.reason] : []), ...(bindingChanged ? ['Current source/artifact binding differs from the reviewed binding.'] : [])];
+    const bounded = diagnostics.slice(0, 8).map(issue => issue.length > 500 ? `${issue.slice(0, 500)}…` : issue);
+    if (diagnostics.length > bounded.length) bounded.push(`${diagnostics.length - bounded.length} additional diagnostics omitted.`);
+    const references = decisions.map(decision => decision.provenance.reference);
+    throw new Error(`delivery: reviewed inputs changed or became unready while the review host was running. Historical, unapplied host receipt references: ${JSON.stringify(references)}. No current decision was recorded. Diagnostics: ${bounded.join('; ')}`);
+  }
   return { plan, decisions };
 }
