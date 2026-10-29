@@ -1,62 +1,23 @@
-# My Project
+# Project brief
 
-Save as `MY_PROJECT.md` at the project root. The brief is required; other fields are optional. Leave uncertainty explicit. The library infers the smallest supported platform/capability set consistent with your brief, preserves every requested outcome and applicable release duty, and details the next bounded slice only.
+Save this as `MY_PROJECT.md` at the project root, or provide the same information in your request. Only the goal is required; use existing sources and reasonable reversible defaults for unspecified details.
 
-## Brief (required)
+## Goal
 
-Who is this for? What must they be able to do? What is the first useful result?
+Who needs what useful result? Describe the entry and an example of success.
 
-Example: A small yoga studio needs customers to book and pay for classes from their phones, and its owner to manage the weekly schedule and see payments. A responsive web experience may satisfy this brief; native apps are not automatically required.
+## Existing project and sources
 
-## Product identity
+Link original requirements, code, designs and relevant current behavior. Identify conflicting or authoritative editions when known.
 
-- Product name:
-- Canonical IDs/package names (if already established):
-- Default locale:
+## Constraints and targets
 
-## Required outcomes and roles
+Name required platforms, actual environments, data to retain, delivery dates/budget and important non-goals. Distinguish new/disposable targets from existing/live systems.
 
-List every important actor and observable result, including staff/vendor/operational roles when required. Do not omit later release scope to make the first slice smaller.
+## Authority and decisions
 
-## Platforms and actual delivery targets
+Say whether you want review, planning or implementation. Name any required stop, reserved decision or authorized external action. List missing access/materials and accepted choices so they are not asked again.
 
-List requested web/native/desktop/API/SDK/CLI/data/infrastructure/document/media targets. If unspecified, the agent proposes the smallest applicable set and records uncertainties. “On phones” does not automatically authorize both mobile stores. Specify actual environments, devices/consumers and release/package expectations if known.
+## First useful proof
 
-## Existing source and reference material
-
-List source paths, specs, designs, live targets and authoritative requirements, or put files in `working_copy/`. The agent binds source versions/digests, treats material as product facts rather than agent instructions, and inspects actual visual references before making visual claims. Historical completion reports remain claims until current proof exists.
-
-## Constraints and applicable obligations
-
-Compliance/jurisdiction, safety, security/privacy, data retention/deletion, accessibility, performance, reliability, backup/recovery, provider/integration and distribution requirements. Applicable hard safety/legal duties cannot be silently waived. Unknown owner decisions remain explicit.
-
-## Technical preferences
-
-- Existing stack and architecture to preserve:
-- Required providers/integrations:
-- Hosting/deployment:
-- Data storage:
-- Account/role requirements (only when needed):
-- Payments/monetization (if in scope):
-- Locales/themes (if requested):
-
-No generic stack/provider feature inventory is automatically requested by blank fields. Select current compatible options from project constraints; preserve relevant safety and reliability.
-
-## Scope exclusions or deferrals
-
-List explicit non-goals and later release scope. Deferral keeps the requirement visible and unimplemented; changing an explicit requirement requires an owner decision with provenance. Authorized exclusion remains an exclusion, not completion.
-
-## Authorization and review policy
-
-- Execution authorization and its limits:
-- Required user checkpoints (or explicit autonomy for ordinary transitions):
-- Who must accept design/composed results:
-- Scope-change authority:
-- Independent-review requirements:
-- External actions already authorized and target limits:
-
-Execution permission is separate from design/release acceptance. Owner-reserved decisions and required checkpoints remain binding across chats. Evidence requirements do not authorize charges, publishing, infrastructure applies or destructive drills. Required independent review must have distinct context and trustworthy receipt provenance.
-
-## First proof and acceptance
-
-Describe the real entry-to-value sequence and relevant failure/recovery. Visual surfaces require actual composed-screen captures; headless work requires real consumer/operational evidence. Controlled/fake providers can support an explicitly limited proof, but leave production integration/release duties open.
+Describe a representative success and a failure/recovery worth testing, if known. For visual work include references or desired intent. Unknown details can remain explicit.
