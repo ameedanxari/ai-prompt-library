@@ -54,6 +54,8 @@ function durableFile(file: string, contents: string): void {
   try { fs.writeFileSync(fd, contents); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
 }
 function preserveRecords(previous: RunContract, next: RunContract): void {
+  if (previous.policy.operationConsistency && next.policy.operationConsistency !== previous.policy.operationConsistency)
+    throw new StoreError('OPERATION_CONSISTENCY_DOWNGRADE', 'Configured operation consistency cannot be removed from this run');
   const priorRoles = previous.policy.reviews.implementation;
   if (priorRoles && (!next.policy.reviews.implementation || priorRoles.some(role => !next.policy.reviews.implementation!.includes(role))))
     throw new StoreError('IMPLEMENTATION_REVIEW_DOWNGRADE', 'Configured implementation review roles cannot be removed from this run; create a separate run for a changed duty');
@@ -89,6 +91,10 @@ export function commitRun(root: string, fileName: string, candidate: unknown, ex
     const previous = fs.existsSync(file) ? loadRun(root, file) : undefined;
     if ((previous?.revision ?? 0) !== expectedRevision) throw new StoreError('REVISION_CONFLICT', `Expected ${expectedRevision}; actual ${previous?.revision ?? 0}`);
     if (next.revision !== expectedRevision + 1) throw new StoreError('REVISION_SEQUENCE', 'Candidate revision must be expected revision + 1');
+    if (!previous && next.policy.operationConsistency !== 'declared-targets')
+      throw new StoreError('NEW_RUN_OPERATION_CONSISTENCY_REQUIRED', 'New runs must set policy.operationConsistency to declared-targets');
+    if (!previous && !next.policy.reviews.implementation?.includes('independent'))
+      throw new StoreError('NEW_RUN_IMPLEMENTATION_REVIEW_REQUIRED', 'New runs must include independent in policy.reviews.implementation');
     if (previous) {
       if (next.runId !== previous.runId) throw new StoreError('RUN_ID_CHANGED', 'Create a separate run to change identity');
       preserveRecords(previous, next);

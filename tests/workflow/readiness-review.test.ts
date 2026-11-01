@@ -63,7 +63,7 @@ it('preserves historical scope and exposes that detail review was not configured
 });
 
 it('prevents an opt-in run from reviving historical approvals by removing or weakening roles', () => {
-  const f=setup(); commitRun(f.root,'run.json',f.run,0);
+  const f=setup(); f.file('run.json',JSON.stringify(f.run)); // Pre-existing legacy run, not new creation.
   const legacy=structuredClone(f.run); legacy.revision=2; commitRun(f.root,'run.json',legacy,1);
   const opted=structuredClone(legacy); opted.revision=3; opted.policy.reviews.implementation=['independent','owner']; commitRun(f.root,'run.json',opted,2);
   const downgraded=structuredClone(opted); downgraded.revision=4; delete downgraded.policy.reviews.implementation;

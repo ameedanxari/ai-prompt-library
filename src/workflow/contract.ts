@@ -85,6 +85,8 @@ export interface CheckpointAcknowledgment {
 }
 export interface Policy {
   instruction: Instruction;
+  /** Absent on historical runs; newly created runs must select this check. */
+  operationConsistency?: 'declared-targets';
   execution: 'plan-only' | 'reversible';
   checkpoints: 'every-proof' | 'autonomous';
   implementerId: string;

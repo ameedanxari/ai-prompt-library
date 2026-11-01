@@ -31,6 +31,15 @@ function evaluator(run: RunContract, context: EvaluationContext) {
   const valid = integrity.status === 'pass';
   const blockedIntegrity = () => gate([check('fail','CONTRACT_INTEGRITY_REQUIRED','run','Repair contract integrity before evaluating this boundary'), ...integrity.checks.filter(c => c.status !== 'pass')]);
   const basePlanChecks: CheckResult[] = [];
+  if (run.policy.operationConsistency === 'declared-targets') for (const w of run.work) {
+    if (w.action !== 'local-write') continue;
+    for (const tid of w.targetIds) {
+      const target = run.targets.find(t => t.id === tid);
+      // Graph validation reports unknown targets; do not mask it with a runtime error.
+      if (target && (target.lifecycle.stage === 'live' || target.environment === 'production'))
+        basePlanChecks.push(check('fail','ACTION_TARGET_MISMATCH',w.id,`Local mutation cannot target live/production ${tid}; classify the actual operation`));
+    }
+  }
   for (const source of run.sources) if (source.inspection !== 'complete') basePlanChecks.push(check('pending','SOURCE_INSPECTION_PENDING',source.id,`Original source inspection is ${source.inspection}`));
   const active = run.work.filter(w => run.activeWorkIds.includes(w.id));
   if (active.length > run.policy.budget.maxActiveWork) basePlanChecks.push(check('fail','ACTIVE_WORK_BUDGET_EXCEEDED','activeWork',`${active.length} active work items exceed ${run.policy.budget.maxActiveWork}`));

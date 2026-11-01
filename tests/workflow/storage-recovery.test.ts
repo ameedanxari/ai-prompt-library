@@ -14,7 +14,7 @@ function child(args:string[]) {
 }
 it('two real writers cannot both commit the same expected revision',async()=>{
   const f=createFixture();try{
-    commitRun(f.root,'run.json',f.run,0);const next=structuredClone(f.run);next.revision=2;f.file('candidate.json',JSON.stringify(next));
+    f.run.policy.operationConsistency='declared-targets';f.run.policy.reviews.implementation=['independent'];commitRun(f.root,'run.json',f.run,0);const next=structuredClone(f.run);next.revision=2;f.file('candidate.json',JSON.stringify(next));
     const args=[path.resolve('dist/cli.js'),'commit','run.json','--from','candidate.json','--expect-revision','1','--project-root',f.root];
     const results=await Promise.all([child(args),child(args)]);
     expect(results.map(r=>r.code).sort()).toEqual([0,1]);expect(loadRun(f.root,'run.json').revision).toBe(2);
@@ -24,7 +24,7 @@ it('two real writers cannot both commit the same expected revision',async()=>{
 it('an actual killed writer leaves the previous canonical revision recoverable',async()=>{
   const f=createFixture();let worker:ReturnType<typeof spawn>|undefined;
   try{
-    commitRun(f.root,'run.json',f.run,0);const before=fs.readFileSync(path.join(f.root,'run.json'),'utf8');
+    f.run.policy.operationConsistency='declared-targets';f.run.policy.reviews.implementation=['independent'];commitRun(f.root,'run.json',f.run,0);const before=fs.readFileSync(path.join(f.root,'run.json'),'utf8');
     const next=structuredClone(f.run);next.revision=2;f.file('candidate.json',JSON.stringify(next));
     // Fault injection is at the filesystem boundary in a separate process, not a production test hook.
     const script=`import fs from 'node:fs';import {commitRun} from ${JSON.stringify(pathToFileURL(path.resolve('dist/store.js')).href)};

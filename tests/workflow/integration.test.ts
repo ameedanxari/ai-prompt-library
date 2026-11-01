@@ -10,7 +10,7 @@ import { evaluateRun } from '../../src/workflow/evaluate.js';
 
 const fixtures: ReturnType<typeof createFixture>[] = [];
 const extra: string[] = [];
-const fixture = () => { const f = createFixture(); fixtures.push(f); return f; };
+const fixture = () => { const f = createFixture(); f.run.policy.operationConsistency='declared-targets'; f.run.policy.reviews.implementation=['independent']; fixtures.push(f); return f; };
 afterEach(() => { for (const f of fixtures.splice(0)) f.cleanup(); for (const f of extra.splice(0)) fs.rmSync(f,{recursive:true,force:true}); });
 const repo = process.cwd();
 const cli = (args: string[]) => spawnSync(process.execPath,[path.join(repo,'dist/cli.js'),...args],{encoding:'utf8'});

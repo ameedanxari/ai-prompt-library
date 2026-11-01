@@ -102,7 +102,7 @@ describe('independent frozen cases A01–A14, simulated immutable host receipts'
   });
 
   it('A08/A12 recovers orphan artifact and interrupted pre-publish commit without changing previous bytes',()=>{
-    const f=setup();commitRun(f.root,'run.json',f.run,0);const before=fs.readFileSync(path.join(f.root,'run.json'));f.file('observed/orphan.json','{"unapplied":true}');
+    const f=setup();f.run.policy.operationConsistency='declared-targets';f.run.policy.reviews.implementation=['independent'];commitRun(f.root,'run.json',f.run,0);const before=fs.readFileSync(path.join(f.root,'run.json'));f.file('observed/orphan.json','{"unapplied":true}');
     const next=structuredClone(f.run);next.revision=2;const rename=vi.spyOn(fs,'renameSync').mockImplementationOnce(()=>{throw Error('deterministic interruption before canonical publish');});
     expect(()=>commitRun(f.root,'run.json',next,1)).toThrow('interruption');rename.mockRestore();expect(fs.readFileSync(path.join(f.root,'run.json'))).toEqual(before);expect(loadRun(f.root,'run.json').evidence).toHaveLength(0);
     expect(commitRun(f.root,'run.json',next,1).revision).toBe(2);expect(()=>commitRun(f.root,'run.json',next,1)).toThrow(/Expected 1; actual 2/);

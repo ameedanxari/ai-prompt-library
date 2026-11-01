@@ -1,5 +1,7 @@
 # Validation of the version 2 overhaul
 
+For new canonical runs, `policy.operationConsistency: "declared-targets"` checks every declared local write against its named target lifecycle and environment at plan-reviewable. A live or production target fails with `ACTION_TARGET_MISMATCH`; properly classified future live work does not need a grant merely to be planned. Separate local preparation, live reads and live mutations. The check cannot discover missing targets or infer an action from prose; original-source review remains necessary. Existing runs without the mode retain their prior planning behavior, while execution continues to check actual authority and target consistency.
+
 Observed 2026-10-29. This is a bounded implementation and consumer evaluation, not a guarantee of autonomous or production-ready delivery. [Public regression briefs and procedure](../evaluation/README.md) preserve the actual minimal requests and interpretation limits.
 
 The original 970 tracked paths are inventoried and recoverable by the baseline tag. The replacement has one canonical authority, typed causal prerequisites, per-target lifecycle, separate readiness contracts, current evidence and genuine review provenance, atomic revision history, derived views and explicit legacy inspection. Package installation and the public executable are exercised outside the repository.
