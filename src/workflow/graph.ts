@@ -19,7 +19,7 @@ export function validateGraph(run: RunContract): Diagnostic[] {
   if (run.capacity) { sourceRefs(run.capacity.sourceRefs, 'capacity'); const scope = run.capacity.scope; if (scope?.kind === 'release') refs([scope.id], 'release', 'capacity.scope'); if (scope?.kind === 'milestone' && !run.milestones?.some(m => m.id === scope.id)) add('REFERENCE_UNKNOWN','capacity.scope',`Unknown milestone ${scope.id}`); }
   for (const m of run.milestones ?? []) { refs(m.outcomeIds, 'outcome', m.id); refs(m.workIds, 'work', m.id); sourceRefs(m.sourceRefs, m.id); }
   for (const g of run.policy.grants) { refs(g.targetIds, 'target', g.id); sourceRefs([g.sourceRef], g.id); }
-  for (const t of run.targets) if (t.lifecycle.sourceRef) sourceRefs([t.lifecycle.sourceRef], t.id);
+  for (const t of run.targets) { if (t.lifecycle.sourceRef) sourceRefs([t.lifecycle.sourceRef], t.id); if (t.buildExemption) sourceRefs([t.buildExemption.sourceRef], t.id); }
   for (const c of run.criteria) {
     refs([c.targetId], 'target', c.id);
     if (c.captures?.length && !c.evidenceKinds.includes('image')) add('CAPTURE_KIND_MISSING', c.id, 'Capture requirements require image evidence');
@@ -56,8 +56,15 @@ export function validateGraph(run: RunContract): Diagnostic[] {
     const criterionIds = new Set(releaseClosure(run,r.id).criterionIds);
     if (!run.outcomes.some(o => r.outcomeIds.includes(o.id) && o.criterionIds.some(id => { const c = run.criteria.find(c => c.id === id); return c && c.releaseRole !== 'supporting'; }))) add('RELEASE_DELIVERED_OUTCOME_REQUIRED', r.id, 'Release needs a directly selected outcome with a delivered criterion');
     for (const q of run.requirements.filter(q => q.mandatory && (q.releaseIds.length === 0 || q.releaseIds.includes(r.id)))) for (const cid of q.criterionIds) if (!criterionIds.has(cid)) add('RELEASE_OBLIGATION_OMITTED', r.id, `Mandatory ${q.id}/${cid} is absent from the release boundary`);
-    const executable = [...criterionIds].some(id => { const criterion = run.criteria.find(c => c.id === id); const target = run.targets.find(t => t.id === criterion?.targetId); return target && !['document','media'].includes(target.kind); });
-    if (executable && ![...criterionIds].some(id => run.criteria.find(c => c.id === id)?.evidenceKinds.includes('build'))) add('RELEASE_BUILD_MISSING', r.id, 'An executable release boundary requires actual build evidence');
+    const selected = run.criteria.filter(c => criterionIds.has(c.id));
+    const hasPhysical = selected.some(c => run.targets.find(t => t.id === c.targetId)?.kind === 'physical-operation');
+    if (!hasPhysical) {
+      const executable = selected.some(c => { const target = run.targets.find(t => t.id === c.targetId); return target && !['document','media'].includes(target.kind); });
+      if (executable && !selected.some(c => c.evidenceKinds.includes('build'))) add('RELEASE_BUILD_MISSING', r.id, 'An executable release boundary requires actual build evidence');
+    } else {
+      const softwareTargets = new Set(selected.map(c => run.targets.find(t => t.id === c.targetId)).filter(t => t && !['document','media','physical-operation'].includes(t.kind)).map(t => t!.id));
+      for (const targetId of softwareTargets) if (!selected.some(c => c.targetId === targetId && c.evidenceKinds.includes('build'))) add('RELEASE_BUILD_MISSING', r.id, `Executable target ${targetId} requires its own actual build evidence`);
+    }
   }
   refs(run.proofOutcomeIds, 'outcome', 'proof'); refs(run.activeWorkIds, 'work', 'activeWork');
   for (const e of run.evidence) { refs([e.criterionId], 'criterion', e.id); refs([e.targetId], 'target', e.id); }

@@ -95,6 +95,7 @@ export function evidenceBinding(run: RunContract, criterionId: string): Evidence
   const target = run.targets.find(t => t.id === criterion.targetId);
   const requirements = run.requirements.filter(q => q.criterionIds.includes(criterionId));
   const sourceIds = new Set(requirements.flatMap(q => q.sourceRefs.map(r => r.sourceId)));
+  if (target?.kind === 'physical-operation' && target.buildExemption) sourceIds.add(target.buildExemption.sourceRef.sourceId);
   const outcomes = run.outcomes.filter(o => o.criterionIds.includes(criterionId));
   const work = run.work.filter(w => w.criterionIds.includes(criterionId)).map(({ estimate, ...w }) => w);
   return { runId: run.runId, criterionId, targetId: criterion.targetId, fingerprint: digest({ runId: run.runId, criterion, target, requirements, sources: run.sources.filter(s => sourceIds.has(s.id)), work, outcomeDependencies: outcomes.map(o => ({ id: o.id, inputs: o.inputs })) }) };
@@ -109,12 +110,12 @@ export function reviewBinding(run: RunContract, request: ReviewRequest): ReviewB
     const outcomes = run.outcomes.filter(o => work.outcomeIds.includes(o.id));
     const criteria = run.criteria.filter(c => work.criterionIds.includes(c.id) || outcomes.some(o => o.criterionIds.includes(c.id)));
     const requirements = run.requirements.filter(q => outcomes.some(o => o.requirementIds.includes(q.id)) || q.criterionIds.some(cid => criteria.some(c => c.id === cid)));
-    const targets = run.targets.filter(t => work.targetIds.includes(t.id)).map(({ bindings, revision, ...t }) => t);
+    const targets = run.targets.filter(t => work.targetIds.includes(t.id) || (t.kind === 'physical-operation' && criteria.some(c => c.targetId === t.id))).map(({ bindings, revision, ...t }) => t);
     const resources = run.resources.filter(r => work.inputs.some(i => i.kind === 'resource' && i.id === r.id)).map(({ status, reference, binding, ...r }) => r);
     const decisions = run.decisions.filter(d => work.inputs.some(i => i.kind === 'decision' && i.id === d.id));
     const grants = run.policy.grants.filter(g => g.targetIds.some(tid => work.targetIds.includes(tid)));
     const forecast = forecastContext(run,id);
-    const sourceIds = new Set([run.policy.instruction.sourceId, ...requirements.flatMap(q => q.sourceRefs.map(r => r.sourceId)), ...targets.flatMap(t => t.lifecycle.sourceRef ? [t.lifecycle.sourceRef.sourceId] : []), ...resources.flatMap(r => r.sourceRefs.map(s => s.sourceId)), ...decisions.flatMap(d => d.sourceRefs.map(s => s.sourceId)), ...grants.map(g => g.sourceRef.sourceId), ...(forecast.capacity?.sourceRefs.map(s => s.sourceId) ?? []), ...forecast.milestones.flatMap(m => m.sourceRefs.map(s => s.sourceId))]);
+    const sourceIds = new Set([run.policy.instruction.sourceId, ...requirements.flatMap(q => q.sourceRefs.map(r => r.sourceId)), ...targets.flatMap(t => [...(t.lifecycle.sourceRef ? [t.lifecycle.sourceRef.sourceId] : []), ...(t.kind === 'physical-operation' && t.buildExemption ? [t.buildExemption.sourceRef.sourceId] : [])]), ...resources.flatMap(r => r.sourceRefs.map(s => s.sourceId)), ...decisions.flatMap(d => d.sourceRefs.map(s => s.sourceId)), ...grants.map(g => g.sourceRef.sourceId), ...(forecast.capacity?.sourceRefs.map(s => s.sourceId) ?? []), ...forecast.milestones.flatMap(m => m.sourceRefs.map(s => s.sourceId))]);
     return { work, outcomes, criteria, requirements, targets, resources, decisions, grants, sources: run.sources.filter(s => sourceIds.has(s.id)), ...(!forecast.milestones.length && !forecast.capacity?.scope ? { capacity:forecast.capacity } : { forecast }), instruction: run.policy.instruction, implementationRoles: run.policy.reviews.implementation };
   });
   else if (request.purpose === 'semantic' || request.purpose === 'design') inputs = subjectIds.map(id => ({ binding: evidenceBinding(run, id), evidence: run.evidence.filter(e => e.criterionId === id && e.fingerprint === evidenceBinding(run, id).fingerprint) }));

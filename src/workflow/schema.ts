@@ -66,8 +66,10 @@ export function parseRun(value: unknown): RunContract {
     assert(q.ownerSummary === undefined || text(q.ownerSummary), q.id, 'invalid owner summary');
   }
   for (const t of r.targets) {
-    shape(t, 'id kind identity environment providerMode revision bindings lifecycle', 'id kind identity environment providerMode revision bindings lifecycle', t.id);
-    assert(choices(t.kind, ['web','native','desktop','api','sdk','cli','automation','data','ml','infrastructure','document','media']) && choices(t.environment, ['local','staging','production','unknown']) && choices(t.providerMode, ['real','controlled','fake','unknown']), t.id, 'invalid target kind/environment/provider');
+    shape(t, 'id kind identity environment providerMode revision bindings lifecycle buildExemption', 'id kind identity environment providerMode revision bindings lifecycle', t.id);
+    assert(choices(t.kind, ['web','native','desktop','api','sdk','cli','automation','data','ml','infrastructure','document','media','physical-operation']) && choices(t.environment, ['local','staging','production','unknown']) && choices(t.providerMode, ['real','controlled','fake','unknown']), t.id, 'invalid target kind/environment/provider');
+    if (t.kind === 'physical-operation') { const e = shape(t.buildExemption, 'reason sourceRef', 'reason sourceRef', t.id); assert(text(e.reason), t.id, 'build exemption reason required'); sourceRef(e.sourceRef, t.id); }
+    else assert(t.buildExemption === undefined, t.id, 'build exemption is only valid for physical-operation');
     assert(t.identity === null || !!t.identity && typeof t.identity === 'object' && !Array.isArray(t.identity) && Object.keys(t.identity).length > 0 && Object.entries(t.identity).every(([k,v]) => text(k) && text(v)), t.id, 'identity must be known nonempty object or null');
     assert(t.revision === null || text(t.revision), t.id, 'invalid target revision'); bindings(t.bindings, t.id);
     const l = shape(t.lifecycle, 'stage dataPolicy sourceRef', 'stage dataPolicy sourceRef', t.id);

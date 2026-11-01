@@ -10,7 +10,8 @@ export interface Source { id: string; binding: FileBinding; authority: 'user' | 
 export interface Requirement { id: string; description: string; sourceRefs: SourceRef[]; criterionIds: string[]; releaseIds: string[]; mandatory: boolean; ownerSummary?: string }
 export interface Target {
   id: string;
-  kind: 'web' | 'native' | 'desktop' | 'api' | 'sdk' | 'cli' | 'automation' | 'data' | 'ml' | 'infrastructure' | 'document' | 'media';
+  kind: 'web' | 'native' | 'desktop' | 'api' | 'sdk' | 'cli' | 'automation' | 'data' | 'ml' | 'infrastructure' | 'document' | 'media' | 'physical-operation';
+  buildExemption?: { reason: string; sourceRef: SourceRef };
   identity: Record<string, string> | null;
   environment: 'local' | 'staging' | 'production' | 'unknown';
   providerMode: 'real' | 'controlled' | 'fake' | 'unknown';
