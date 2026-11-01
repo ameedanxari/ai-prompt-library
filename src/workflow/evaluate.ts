@@ -80,11 +80,11 @@ function evaluator(run: RunContract, context: EvaluationContext) {
     const closure = releaseClosure(run,id); const production: CheckResult[] = [];
     for (const cid of closure.criterionIds) {
       const c = run.criteria.find(c => c.id === cid)!; const target = run.targets.find(t => t.id === c.targetId)!;
-      if (target.providerMode !== 'real') production.push(check('pending','REAL_RELEASE_TARGET_REQUIRED',cid,'A controlled/fake/unknown target cannot establish release readiness'));
+      if (c.releaseRole !== 'supporting' && target.providerMode !== 'real') production.push(check('pending','REAL_RELEASE_TARGET_REQUIRED',cid,'A controlled/fake/unknown target cannot establish release readiness'));
       if (target.lifecycle.stage === 'unknown' || target.lifecycle.dataPolicy === 'unknown' || !target.lifecycle.sourceRef) production.push(check('pending','RELEASE_LIFECYCLE_REQUIRED',cid,'Release needs the actual target lifecycle and retained source authority'));
       const selectedIds = new Set(criterionGate(run,cid,context).checks.flatMap(c => c.evidenceIds ?? []));
       const records = run.evidence.filter(e => selectedIds.has(e.id));
-      if (!records.length || records.some(e => !e.production)) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use the actual production composition'));
+      if (c.releaseRole !== 'supporting' && (!records.length || records.some(e => !e.production))) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use the actual production composition'));
     }
     const selectedProof = run.proofOutcomeIds.filter(oid => closure.outcomeIds.includes(oid));
     return combine(planReviewed,...selectedProof.map(outcome),inputs(r.inputs),...closure.outcomeIds.map(outcome),...closure.criterionIds.map(cid => criterionGate(run,cid,context)),semantic(closure.criterionIds),design(closure.criterionIds),gate(production));

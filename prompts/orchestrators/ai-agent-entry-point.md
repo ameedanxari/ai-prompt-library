@@ -10,6 +10,8 @@ Read original requirements before prior plans. Preserve every requested behavior
 
 Select the smallest representative journey that exposes integration or experience risk. Detail its cohesive work across necessary files; keep future scope as outcomes. Identify real prerequisites: input/access enables a producer; the producer's completed result enables its consumers. A decision accepting a review or quote cannot block the work that produces it. Model each target's lifecycle, data and operator separately. Missing live authority blocks that operation, not independent authorized local work.
 
+When asked for a roadmap or development plan, make the delivery forecast useful: name the user result and recovery at each milestone, link the work and real input/decision producers that enable it, and record disjoint role effort, owner waiting and uncertainty. Compare the same release scope with any stated budget or deadline; include testing, integration, review and recovery once. Bounded detail does not remove future outcome semantics or provisional estimates. If capacity is unknown, show the next evidence and reforecast point rather than imply that the plan fits.
+
 ## Implement and prove
 
 Define observable success and reachable recovery before implementation. Confirm work can run with its actual resources, dependencies, paths and test/build commands. Inspect shared state, access and interfaces enough for this journey; load only references needed for a concrete uncertainty from `.ai-prompts/prompts/README.md`. Research current primary facts when the decision depends on them. Delegate bounded independent work when it helps completion, not to meet a worker count.

@@ -72,8 +72,9 @@ export function parseRun(value: unknown): RunContract {
     assert(choices(l.stage, ['pre-launch','live','unknown']) && choices(l.dataPolicy, ['disposable','retain','unknown']), t.id, 'invalid lifecycle'); if (l.sourceRef !== null) sourceRef(l.sourceRef, t.id);
   }
   for (const c of r.criteria) {
-    shape(c, 'id description scenario targetId evidenceKinds inputs productionRequired captures minimumCollected', 'id description scenario targetId evidenceKinds inputs productionRequired', c.id);
+    shape(c, 'id description scenario targetId evidenceKinds inputs productionRequired releaseRole captures minimumCollected', 'id description scenario targetId evidenceKinds inputs productionRequired', c.id);
     assert(text(c.description) && choices(c.scenario, ['success','recovery']) && text(c.targetId) && strings(c.evidenceKinds, false) && c.evidenceKinds.every((k: string) => evidenceKinds.includes(k)) && typeof c.productionRequired === 'boolean', c.id, 'invalid criterion'); bindings(c.inputs, c.id);
+    assert(c.releaseRole === undefined || choices(c.releaseRole, ['delivered','supporting']), c.id, 'invalid release role');
     if (c.captures !== undefined) { assert(Array.isArray(c.captures), c.id, 'invalid captures'); for (const v of c.captures) capture(v, c.id); assert(new Set(c.captures.map((v: Row) => `${v.state}:${v.context}`)).size === c.captures.length, c.id, 'duplicate capture'); }
     assert(c.minimumCollected === undefined || integer(c.minimumCollected, 1), c.id, 'minimumCollected must be positive');
   }

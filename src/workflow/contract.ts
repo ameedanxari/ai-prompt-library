@@ -27,6 +27,8 @@ export interface Criterion {
   evidenceKinds: EvidenceKind[];
   inputs: FileBinding[];
   productionRequired: boolean;
+  /** Reviewed source classification; omission means a delivered release criterion. */
+  releaseRole?: 'delivered' | 'supporting';
   /** Every declared composed state/context must have an actual image observation. */
   captures?: Capture[];
   /** A substantive test check must collect at least one real test. */

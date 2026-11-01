@@ -52,6 +52,7 @@ export function validateGraph(run: RunContract): Diagnostic[] {
   for (const r of run.releases) {
     refs(r.outcomeIds, 'outcome', r.id); refs(r.sharedCriterionIds, 'criterion', r.id); sourceRefs(r.sourceRefs, r.id); inputs(`release:${r.id}`, [...r.inputs, ...r.outcomeIds.map(id => ({ kind: 'outcome' as const, id }))]);
     const criterionIds = new Set(releaseClosure(run,r.id).criterionIds);
+    if (!run.outcomes.some(o => r.outcomeIds.includes(o.id) && o.criterionIds.some(id => { const c = run.criteria.find(c => c.id === id); return c && c.releaseRole !== 'supporting'; }))) add('RELEASE_DELIVERED_OUTCOME_REQUIRED', r.id, 'Release needs a directly selected outcome with a delivered criterion');
     for (const q of run.requirements.filter(q => q.mandatory && (q.releaseIds.length === 0 || q.releaseIds.includes(r.id)))) for (const cid of q.criterionIds) if (!criterionIds.has(cid)) add('RELEASE_OBLIGATION_OMITTED', r.id, `Mandatory ${q.id}/${cid} is absent from the release boundary`);
     const executable = [...criterionIds].some(id => { const criterion = run.criteria.find(c => c.id === id); const target = run.targets.find(t => t.id === criterion?.targetId); return target && !['document','media'].includes(target.kind); });
     if (executable && ![...criterionIds].some(id => run.criteria.find(c => c.id === id)?.evidenceKinds.includes('build'))) add('RELEASE_BUILD_MISSING', r.id, 'An executable release boundary requires actual build evidence');
