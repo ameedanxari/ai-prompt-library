@@ -35,3 +35,10 @@ it('retains canonical source constraints and forecast assumptions in readable de
  expect(views['ROADMAP.md']).toContain('Criteria: C-OK, C-RECOVER');
  expect(views['OWNER-BRIEF.md']).toContain('[Roadmap](ROADMAP.md#source-obligations-and-planning-assumptions)');
 });
+
+it('does not turn optional unassigned scope into an obligation for every release',()=>{
+ const f=setup();f.run.requirements[0].releaseIds=[];f.run.requirements[0].mandatory=false;
+ expect(renderViews(f.run,f.context).files['ROADMAP.md']).toContain('Releases: none specified (optional)');
+ f.run.requirements[0].mandatory=true;
+ expect(renderViews(f.run,f.context).files['ROADMAP.md']).toContain('Releases: all applicable');
+});
