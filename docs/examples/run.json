@@ -1,0 +1,170 @@
+{
+  "schemaVersion": 3,
+  "kind": "canonical-workflow",
+  "runId": "documentation-example",
+  "revision": 1,
+  "projectRoot": ".",
+  "sources": [
+    {
+      "id": "S1",
+      "binding": {
+        "path": "docs/examples/request.md",
+        "sha256": "979bb457f62a52e932c7e0cda7ec0719c61907e65fc265953ed6afc4c83b06ee"
+      },
+      "authority": "user",
+      "inspection": "complete"
+    }
+  ],
+  "requirements": [
+    {
+      "id": "Q1",
+      "description": "Plan a local duplicate-invoice report with immutable input and recovery.",
+      "sourceRefs": [
+        {
+          "sourceId": "S1",
+          "locator": "Example request, paragraph 1"
+        }
+      ],
+      "criterionIds": [
+        "C1",
+        "C2"
+      ],
+      "releaseIds": [],
+      "mandatory": true
+    }
+  ],
+  "targets": [
+    {
+      "id": "T1",
+      "kind": "cli",
+      "identity": null,
+      "environment": "local",
+      "providerMode": "controlled",
+      "revision": null,
+      "bindings": [],
+      "lifecycle": {
+        "stage": "pre-launch",
+        "dataPolicy": "disposable",
+        "sourceRef": {
+          "sourceId": "S1",
+          "locator": "Example request, paragraph 1"
+        }
+      }
+    }
+  ],
+  "criteria": [
+    {
+      "id": "C1",
+      "description": "The planned command lists duplicate invoice IDs while retaining the input.",
+      "scenario": "success",
+      "targetId": "T1",
+      "evidenceKinds": [
+        "consumer"
+      ],
+      "inputs": [
+        {
+          "path": "docs/examples/request.md",
+          "sha256": "979bb457f62a52e932c7e0cda7ec0719c61907e65fc265953ed6afc4c83b06ee"
+        }
+      ],
+      "productionRequired": false
+    },
+    {
+      "id": "C2",
+      "description": "Invalid invoice input produces a clear error and permits retry with corrected input.",
+      "scenario": "recovery",
+      "targetId": "T1",
+      "evidenceKinds": [
+        "consumer"
+      ],
+      "inputs": [
+        {
+          "path": "docs/examples/request.md",
+          "sha256": "979bb457f62a52e932c7e0cda7ec0719c61907e65fc265953ed6afc4c83b06ee"
+        }
+      ],
+      "productionRequired": false
+    }
+  ],
+  "outcomes": [
+    {
+      "id": "O1",
+      "title": "Identify duplicate invoice IDs and recover from invalid input.",
+      "requirementIds": [
+        "Q1"
+      ],
+      "criterionIds": [
+        "C1",
+        "C2"
+      ],
+      "targetId": "T1",
+      "inputs": []
+    }
+  ],
+  "work": [
+    {
+      "id": "W1",
+      "title": "Build and exercise the local report.",
+      "outcomeIds": [
+        "O1"
+      ],
+      "criterionIds": [
+        "C1",
+        "C2"
+      ],
+      "targetIds": [
+        "T1"
+      ],
+      "action": "local-write",
+      "inputs": [],
+      "files": [
+        "invoice_report.py",
+        "tests/test_invoice_report.py"
+      ],
+      "instructions": "After separate implementation authorization, implement a standard-library command accepting a synthetic CSV path. Report duplicate IDs without writing input; return a clear nonzero invalid-input result. Exercise valid, duplicate and malformed inputs, compare input bytes before/after, and retain raw consumer output. Confirm the project runner and actual paths before implementation."
+    }
+  ],
+  "resources": [],
+  "decisions": [],
+  "releases": [],
+  "policy": {
+    "instruction": {
+      "sourceId": "S1",
+      "locator": "Example request, paragraph 1",
+      "quote": "Stop after planning.",
+      "reference": "documentation-example-only",
+      "issuedAt": "2026-10-29T00:00:00.000Z"
+    },
+    "execution": "plan-only",
+    "checkpoints": "every-proof",
+    "implementerId": "example-author",
+    "implementerContextId": "example-context",
+    "reviews": {
+      "scope": [
+        "independent"
+      ],
+      "semantic": [
+        "independent"
+      ],
+      "design": [
+        "independent"
+      ],
+      "release": [
+        "independent"
+      ]
+    },
+    "grants": [],
+    "budget": {
+      "maxActiveWork": 1,
+      "maxDetailBytes": 4000
+    }
+  },
+  "proofOutcomeIds": [
+    "O1"
+  ],
+  "activeWorkIds": [
+    "W1"
+  ],
+  "evidence": [],
+  "judgments": []
+}

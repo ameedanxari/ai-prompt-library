@@ -1,8 +1,9 @@
 {
   "name": "ai-prompt-library",
-  "version": "1.0.0",
-  "description": "AI Prompt Library for generating production-ready software specifications",
+  "version": "2.0.0",
+  "description": "A canonical planning and evidence workflow for bounded software delivery",
   "license": "MIT",
+  "type": "module",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/ameedanxari/ai-prompt-library.git"
@@ -14,134 +15,57 @@
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "exports": {
-    "./delivery": {
-      "types": "./dist/execution/delivery-gate.d.ts",
-      "import": "./dist/execution/delivery-gate.js"
-    },
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
-    },
-    "./completion": {
-      "types": "./dist/completion/completion-state.d.ts",
-      "import": "./dist/completion/completion-state.js"
-    },
-    "./execution-status": {
-      "types": "./dist/execution/execution-status.d.ts",
-      "import": "./dist/execution/execution-status.js"
-    },
-    "./release-gates": {
-      "types": "./dist/release/release-gates.d.ts",
-      "import": "./dist/release/release-gates.js"
-    },
-    "./semantic-review": {
-      "types": "./dist/review/index.d.ts",
-      "import": "./dist/review/index.js"
-    },
-    "./task-contract": {
-      "types": "./dist/task-contract/index.d.ts",
-      "import": "./dist/task-contract/index.js"
-    },
-    "./validators": {
-      "types": "./dist/validators/index.d.ts",
-      "import": "./dist/validators/index.js"
-    },
-    "./traceability": {
-      "types": "./dist/traceability/traceability-matrix.d.ts",
-      "import": "./dist/traceability/traceability-matrix.js"
     }
   },
+  "bin": {
+    "ai-prompt-workflow": "./dist/cli.js"
+  },
   "files": [
-    "dist/delivery",
-    "dist/index.*",
-    "dist/completion",
-    "dist/execution",
-    "dist/release",
-    "dist/review",
-    "dist/task-contract",
-    "dist/traceability",
-    "dist/validators",
-    "dist/template-validator.*",
-    "docs",
+    "dist",
     "prompts/AGENTS.md",
     "prompts/README.md",
-    "prompts/TAXONOMY.md",
-    "prompts/ai-native",
-    "prompts/deployment",
-    "prompts/desktop",
-    "prompts/modules",
-    "prompts/monitoring",
-    "prompts/orchestrators",
-    "prompts/performance",
-    "prompts/review",
-    "prompts/security",
-    "prompts/steering",
-    "prompts/technology-stacks",
-    "prompts/testing",
+    "prompts/orchestrators/ai-agent-entry-point.md",
+    "prompts/references",
+    "prompts/steering/library-context.md",
     "prompts/outputs/README.md",
-    "project-templates",
-    "scripts",
-    "MY_PROJECT.md.template",
-    "QUICK_START.md",
+    "prompts/working_copy/README.md",
+    "docs/model.md",
+    "docs/evidence-and-review.md",
+    "docs/upgrading.md",
+    "docs/validation.md",
+    "evaluation/README.md",
+    "evaluation/brief-a.md",
+    "evaluation/brief-b.md",
+    "docs/retirement.md",
+    "docs/retired-files.json",
+    "docs/examples",
+    "scripts/bootstrap-project-integration.sh",
+    "scripts/bootstrap.mjs",
+    "scripts/workflow.sh",
     "README.md",
+    "QUICK_START.md",
+    "MY_PROJECT.md.template",
     "LICENSE"
   ],
-  "bin": {
-    "ai-prompt-validate-delivery": "./scripts/validate-delivery.sh",
-    "ai-prompt-build-task-contract": "./scripts/build-task-contract.sh",
-    "ai-prompt-finalize": "./scripts/finalize.sh",
-    "ai-prompt-generate-design-review": "./scripts/generate-design-system-review-artifact.sh",
-    "ai-prompt-ready": "./scripts/validate-ready-to-execute.sh",
-    "ai-prompt-repair-task-schema-fields": "./scripts/repair-task-schema-fields.sh",
-    "ai-prompt-validate-semantic-review": "./scripts/validate-semantic-review.sh",
-    "ai-prompt-validate-baseline-task-coverage": "./scripts/validate-baseline-task-coverage.sh",
-    "ai-prompt-validate-design-review": "./scripts/validate-design-system-review-artifact.sh",
-    "ai-prompt-validate-instantiation": "./scripts/validate-instantiation.sh",
-    "ai-prompt-validate-phase-order": "./scripts/validate-phase-order.sh",
-    "ai-prompt-validate-release-readiness": "./scripts/validate-release-readiness.sh",
-    "ai-prompt-validate-regulated-architecture": "./scripts/validate-regulated-architecture.sh",
-    "ai-prompt-validate-resumption-checkpoint": "./scripts/validate-resumption-checkpoint.sh",
-    "ai-prompt-validate-screenshot-matrix": "./scripts/validate-screenshot-matrix.sh",
-    "ai-prompt-validate-task-contract": "./scripts/validate-task-contract.sh",
-    "ai-prompt-validate-ui-reference-source-map": "./scripts/validate-ui-reference-source-map.sh",
-    "ai-prompt-validate-user-review-checkpoints": "./scripts/validate-user-review-checkpoints.sh",
-    "ai-prompt-validate-planning": "./scripts/validate-planning-integrity.sh"
+  "engines": {
+    "node": ">=22.12.0"
   },
   "scripts": {
-    "clean": "rm -rf dist",
-    "build": "tsc -p tsconfig.build.json",
-    "test": "vitest --run",
-    "test:watch": "vitest",
-    "test:pbt": "vitest --run --reporter=verbose tests/property-tests",
-    "prepare": "husky install",
-    "prepack": "npm run clean && npm run build",
-    "lint-staged": "lint-staged",
-    "safeguard-status": "bash scripts/validate-safeguards.sh",
-    "safeguard-recovery": "git restore docs/optional/PREVENTION_CHECKLIST.md docs/optional/COMMIT_GUIDELINES.md docs/optional/SAFEGUARDS.md prompts/orchestrators/ && npm run safeguard-status",
-    "validate:instantiation": "bash scripts/validate-instantiation.sh",
-    "validate:release": "bash scripts/validate-release-readiness.sh",
-    "validate:review": "bash scripts/validate-review-enforcement.sh",
+    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
+    "build": "npm run clean && tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.typecheck.json",
-    "validate:planning": "bash scripts/validate-planning-integrity.sh"
-  },
-  "engines": {
-    "node": ">=20"
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "check:references": "node scripts/check-references.mjs",
+    "check": "npm run typecheck && npm run build && npm test && npm run check:references",
+    "prepack": "npm run build"
   },
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "fast-check": "^3.15.0",
-    "husky": "^8.0.0",
-    "lint-staged": "^15.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
-  },
-  "lint-staged": {
-    "*.{ts,js,md}": [
-      "npm test"
-    ],
-    "prompts/modules/**/*.md": [
-      "npm run test:pbt"
-    ]
-  },
-  "type": "module"
+    "@types/node": "^22.20.5",
+    "typescript": "^5.9.3",
+    "vitest": "^5.0.5"
+  }
 }

@@ -1,7 +1,14 @@
-# Library content
+# Workflow and optional references
 
-Agents start at `.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md`; `AGENTS.md` summarizes shared rules. `orchestrators/` contains four-mode routing, planning/execution, shared rolling delivery and on-demand specialists. `modules/` contains domain/stack guidance loaded only for the current slice. `review/` contains semantic review dimensions. `steering/` supplies IDE steering.
+Start at [the entry point](orchestrators/ai-agent-entry-point.md). Read [the model guide](../docs/model.md) when creating or changing `run.json`. Do not load this folder wholesale.
 
-New outputs live in isolated `outputs/runs/<run-id>/`; the root checkpoint under `outputs/current/` selects the run. Existing legacy outputs remain supported explicitly. `working_copy/` is optional source/reference material. Other top-level domain directories are indexed in `TAXONOMY.md`; do not bulk-load them.
+Use a reference only when it helps answer a concrete question:
 
-Preserve full requested outcome/release scope concisely and detail the bounded next slice. Actual target evidence and required trusted review establish acceptance; task volume and mechanically valid files alone do not.
+| Question | Reference |
+| --- | --- |
+| Which source is authoritative, what can be defaulted, and what needs an owner? | [Sources and decisions](references/sources-and-decisions.md) |
+| Who owns state, access, operations and recovery? | [State and operations](references/state-and-operations.md) |
+| Does the actual visual journey meet its intent? | [Visual proof](references/visual-proof.md) |
+| Can the real consumer use it, and do checks detect failure? | [Consumer proof](references/consumer-proof.md) |
+
+These guides supply questions and mechanisms, not features or mandatory document outputs. [Evidence and review](../docs/evidence-and-review.md) explains the boundary between retained observations, judgments and verified provenance. [Upgrade guidance](../docs/upgrading.md) covers historical runs. [Retirement decisions](../docs/retirement.md) identifies the preserved baseline and removed surface.
