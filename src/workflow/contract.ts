@@ -3,7 +3,7 @@ export type Status = 'pass' | 'fail' | 'pending' | 'unassessed' | 'not-applicabl
 export type Role = 'owner' | 'independent' | 'agent';
 export type Action = 'read' | 'local-write' | 'live-write' | 'deploy' | 'send' | 'spend' | 'delete';
 export type EvidenceKind = 'execution' | 'consumer' | 'image' | 'operation' | 'build' | 'test' | 'document';
-export type ReviewPurpose = 'scope' | 'semantic' | 'design' | 'decision' | 'release';
+export type ReviewPurpose = 'scope' | 'implementation' | 'semantic' | 'design' | 'decision' | 'release';
 export interface FileBinding { path: string; sha256: string }
 export interface SourceRef { sourceId: string; locator: string }
 export interface Source { id: string; binding: FileBinding; authority: 'user' | 'contract' | 'reference'; inspection: 'complete' | 'partial' | 'unread' }
@@ -50,7 +50,7 @@ export interface Work {
   files: string[];
   /** Only active work is detailed. Empty means retained, deferred work. */
   instructions: string;
-  estimate?: { hours: [number, number] | null; role: string; ownerDelayHours: [number, number] | null; ownerTouchpoints: number | null };
+  estimate?: ({ hours: [number, number] | null; role: string; allocations?: never } | { allocations: { role: string; hours: [number, number] | null }[]; hours?: never; role?: never }) & { ownerDelayHours: [number, number] | null; ownerTouchpoints: number | null };
 }
 export interface Resource {
   id: string;
@@ -74,7 +74,9 @@ export interface Decision {
   requiredRoles: Role[];
 }
 export interface Outcome { id: string; title: string; requirementIds: string[]; criterionIds: string[]; targetId: string; inputs: Prerequisite[] }
-export interface Release { id: string; title: string; outcomeIds: string[]; sharedCriterionIds: string[]; sourceRefs: SourceRef[]; inputs: Prerequisite[] }
+export interface Release { id: string; title: string; outcomeIds: string[]; sharedCriterionIds: string[]; sourceRefs: SourceRef[]; inputs: Prerequisite[]; /** Omission preserves production-composition requirements. Actual-target is a reviewed local/artifact delivery boundary. */ composition?: 'production' | 'actual-target' }
+export type ForecastScope = { kind: 'all-work' } | { kind: 'release' | 'milestone'; id: string };
+export interface Milestone { id: string; title: string; result: string; recovery: string; outcomeIds: string[]; workIds: string[]; assumptions: string; reforecast: string; sourceRefs: SourceRef[] }
 export interface Instruction { sourceId: string; locator: string; quote: string; reference: string; issuedAt: string }
 export interface AuthorityGrant { id: string; targetIds: string[]; actions: Action[]; sourceRef: SourceRef; reference: string }
 export interface CheckpointAcknowledgment {
@@ -87,7 +89,7 @@ export interface Policy {
   checkpoints: 'every-proof' | 'autonomous';
   implementerId: string;
   implementerContextId: string;
-  reviews: { scope: Role[]; semantic: Role[]; design: Role[]; release: Role[] };
+  reviews: { scope: Role[]; implementation?: Role[]; semantic: Role[]; design: Role[]; release: Role[] };
   grants: AuthorityGrant[];
   budget: { maxActiveWork: number; maxDetailBytes: number };
   checkpointAcknowledgment?: CheckpointAcknowledgment;
@@ -140,7 +142,8 @@ export interface RunContract {
   policy: Policy;
   proofOutcomeIds: string[];
   activeWorkIds: string[];
-  capacity?: { period: string; hours: number; roles: { role: string; hours: number }[]; ownerTouchpoints: number | null; sourceRefs: SourceRef[] };
+  milestones?: Milestone[];
+  capacity?: { scope?: ForecastScope; period: string; hours: number; roles: { role: string; hours: number }[]; ownerTouchpoints: number | null; sourceRefs: SourceRef[] };
   evidence: Evidence[];
   judgments: Judgment[];
 }

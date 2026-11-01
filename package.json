@@ -21,7 +21,8 @@
     }
   },
   "bin": {
-    "ai-prompt-workflow": "./dist/cli.js"
+    "ai-prompt-workflow": "./dist/cli.js",
+    "ai-prompt-host": "./dist/host-cli.js"
   },
   "files": [
     "dist",
@@ -48,7 +49,9 @@
     "README.md",
     "QUICK_START.md",
     "MY_PROJECT.md.template",
-    "LICENSE"
+    "LICENSE",
+    "docs/host-integration.md",
+    "prompts/orchestrators/native-coordinator.md"
   ],
   "engines": {
     "node": ">=22.12.0"

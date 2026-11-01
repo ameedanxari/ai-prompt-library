@@ -54,6 +54,9 @@ function durableFile(file: string, contents: string): void {
   try { fs.writeFileSync(fd, contents); fs.fsyncSync(fd); } finally { fs.closeSync(fd); }
 }
 function preserveRecords(previous: RunContract, next: RunContract): void {
+  const priorRoles = previous.policy.reviews.implementation;
+  if (priorRoles && (!next.policy.reviews.implementation || priorRoles.some(role => !next.policy.reviews.implementation!.includes(role))))
+    throw new StoreError('IMPLEMENTATION_REVIEW_DOWNGRADE', 'Configured implementation review roles cannot be removed from this run; create a separate run for a changed duty');
   for (const key of ['evidence', 'judgments'] as const) {
     if (next[key].length < previous[key].length || previous[key].some((record, index) => stable(record) !== stable(next[key][index])))
       throw new StoreError('HISTORY_REWRITE', `${key} are append-only; retain previous records in order`);

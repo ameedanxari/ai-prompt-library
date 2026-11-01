@@ -9,12 +9,13 @@ import { planReview, requestProblem } from './workflow/review.js';
 import { evidenceBinding, reviewBinding, scopeFingerprint } from './workflow/evidence.js';
 import { commitRun, inspectLegacy, loadRun, projectPath, readJson, StoreError } from './store.js';
 import { compactAssessment, renderViews, writeViews } from './views.js';
+import { traceabilityPacket } from './workflow/traceability.js';
 
 const usage = `ai-prompt-workflow <command> <run.json> --project-root <directory> [options]
   validate       Structured integrity/readiness results; no universal ready flag
                  --boundary plan-reviewable|plan-reviewed|proof|work-executable|work-verified|outcome|decision|release [--id ID]
   view           Generate canonical views; optional --output <project-relative directory>
-  review         Prepare a real review packet: --purpose scope|semantic|design|decision|release --ids id,id
+  review         Prepare a real review packet: --purpose scope|implementation|semantic|design|decision|release --ids id,id [--previous same-run-history.json]
   commit         Atomic revision-checked update: --from candidate.json --expect-revision N
   record         Append authenticated evidence/judgment: --from receipt.json --expect-revision N --host module.mjs
   inspect-legacy Read-only historical summary; never imports approvals or migrates
@@ -26,7 +27,7 @@ function argumentsOf(args: string[]): { command: string; file: string; options: 
   const [command, file, ...rest] = args;
   if (!command || !file || file.startsWith('--')) throw new StoreError('USAGE', usage);
   const options: Options = {};
-  const allowed = new Set(['project-root','host','boundary','id','output','purpose','ids','from','expect-revision']);
+  const allowed = new Set(['project-root','host','boundary','id','output','purpose','ids','from','expect-revision','previous']);
   for (let i = 0; i < rest.length; i += 2) {
     const key = rest[i]?.replace(/^--/, ''), value = rest[i + 1];
     if (!rest[i]?.startsWith('--') || !allowed.has(key) || !value || value.startsWith('--') || key in options) throw new StoreError('USAGE', `Unknown, repeated or incomplete option ${rest[i]}\n${usage}`);
@@ -64,11 +65,20 @@ function revisionOf(options: Options): number {
 }
 const questions: Record<ReviewPurpose, string[]> = {
   scope: [
-    'Read the original source bytes and conflicting editions. Which requested behavior or release duty is missing, narrowed or invented?',
-    'Trace a representative success and recovery journey through criteria, targets and prerequisites. Does each operation name its actual target and lifecycle?',
-    'Can inspection and quote preparation run before the decisions they produce? Distinguish missing access from acceptance of its result.',
-    'Are ordinary reversible choices made, genuine owner inputs scoped to their consumers, and effort/capacity limits honest?',
-    'Report specific contrary evidence and unresolved findings. Structural validity or covered IDs are not semantic approval.'
+    'Compare original sources and accepted architecture with the criteria: which specific actors, operational qualifiers, rules, recovery or obligations are missing or narrowed?',
+    'Do milestones cover their own contractual and operational duties at the actual stage, with lifecycle and authority distinct from later release?',
+    'Can preparation produce its own reviewable success and recovery artifact before the decision it enables? Are reserved decisions and real inputs distinct?',
+    'Which choices are already accepted or ordinary reversible defaults? Reject redundant owner approvals and missing-access dependencies that block independent authorized preparation; require real capability and authority at the consumer that needs them.',
+    'Does the bounded journey have usable interfaces, consumer evidence and a meaningful failure-detecting runner? Are role effort, dependencies, owner waits and capacity compared on the same scope?',
+    'Describe a plausible wrong implementation current criteria would still admit; retain contrary evidence and unresolved findings. Structural validity is not semantic approval.'
+  ],
+  implementation: [
+    'Inspect the exact selected instructions, files and estimates against original obligations, accepted architecture, operational qualifiers, target lifecycle and authority.',
+    'Trace each required consumer entry, route/interface and acceptance action to an owned implementation path. Reconcile stable identity, redirects and failure behavior; mentioning a later outcome does not cover an omitted selected journey.',
+    'Starting from the actual repository state, walk the proposed setup and verification commands in order. Are manifests, lock generation, framework entry points, configuration, bootstrap, fixtures and runner roots already present or explicitly owned, with effort included? Do not claim execution from this planning walkthrough.',
+    'Can the bounded journey and its interfaces be exercised with meaningful success and recovery checks? Do preparation artifacts precede their decisions, and do milestone duties and scoped role/dependency assumptions remain complete?',
+    'Check protocol and capability assumptions at integration boundaries against current primary documentation. Preserve accepted intent while reconciling incompatible methods, schedules, limits or account capabilities; do not silently change providers or infer purchase authority.',
+    'Describe a plausible wrong implementation current criteria would still admit. Reject blocking contradictions and retain a separately bound implementation judgment even when reviewing scope in the same session.'
   ],
   semantic: [
     'Inspect original intent, actual consumer actions and raw evidence on the bound target, including recovery and forbidden behavior.',
@@ -122,7 +132,17 @@ export async function main(args: string[]): Promise<number> {
     if (!(purpose in questions)) throw new StoreError('USAGE', 'Unknown review purpose');
     const subjectIds = required(options,'ids').split(',').map(s=>s.trim()).filter(Boolean);
     const request = {purpose,subjectIds}; const plan = planReview(run,request,context);
-    print({ ...plan, questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
+    const trace = traceabilityPacket(run, options.previous ? loadRun(context.projectRoot,options.previous) : undefined);
+    const problem = requestProblem(run,request);
+    const projection = problem ? undefined : renderViews(run,context);
+    const views = projection ? { revision:run.revision, fingerprint:projection.fingerprint, files:writeViews(context.projectRoot,path.join(path.dirname(file),'views'),projection) } : undefined;
+    print({ ...plan, ...(views ? {views} : {}), questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
+      traceability: {
+        requirements:trace.requirements.map(q=>({id:q.id,outcomeIds:q.outcomeIds})),
+        criteria:trace.criteria.map(c=>({id:c.id,effectiveReleaseRole:c.effectiveReleaseRole,evidenceIds:c.evidenceIds})),
+        releases:trace.releases.map(r=>({id:r.id,closure:r.closure})),
+        unmappedSourceIds:trace.unmappedSourceIds, previous:trace.previous, changes:trace.changes, reviewerQuestions:trace.reviewerQuestions,
+      },
       instruction:'A real distinct reviewer must inspect source/consumer evidence and return an authenticated judgment. This packet is not an approval.' });
     return plan.action === 'blocked' ? exitFor(plan.prerequisites.status === 'pass' ? 'fail' : plan.prerequisites.status) : 0;
   }

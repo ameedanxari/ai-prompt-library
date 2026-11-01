@@ -84,7 +84,9 @@ function evaluator(run: RunContract, context: EvaluationContext) {
       if (target.lifecycle.stage === 'unknown' || target.lifecycle.dataPolicy === 'unknown' || !target.lifecycle.sourceRef) production.push(check('pending','RELEASE_LIFECYCLE_REQUIRED',cid,'Release needs the actual target lifecycle and retained source authority'));
       const selectedIds = new Set(criterionGate(run,cid,context).checks.flatMap(c => c.evidenceIds ?? []));
       const records = run.evidence.filter(e => selectedIds.has(e.id));
-      if (c.releaseRole !== 'supporting' && (!records.length || records.some(e => !e.production))) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use the actual production composition'));
+      const localDelivery = r.composition === 'actual-target' && target.environment === 'local';
+      if (c.releaseRole !== 'supporting' && r.composition === 'actual-target' && !['local','production'].includes(target.environment)) production.push(check('pending','DELIVERED_TARGET_ENVIRONMENT_REQUIRED',cid,'Actual-target delivery needs a local artifact or production target; staging/unknown observations cannot stand in for delivered behavior'));
+      if (c.releaseRole !== 'supporting' && (!records.length || (!localDelivery && records.some(e => !e.production)))) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use its target-specific release composition'));
     }
     const selectedProof = run.proofOutcomeIds.filter(oid => closure.outcomeIds.includes(oid));
     return combine(planReviewed,...selectedProof.map(outcome),inputs(r.inputs),...closure.outcomeIds.map(outcome),...closure.criterionIds.map(cid => criterionGate(run,cid,context)),semantic(closure.criterionIds),design(closure.criterionIds),gate(production));
@@ -123,11 +125,12 @@ function evaluator(run: RunContract, context: EvaluationContext) {
       } catch { /* actual instruction and authenticated named proof are required */ }
       if (!acknowledged) checks.push(check('pending','USER_CHECKPOINT_REQUIRED',id,'A user-reserved checkpoint needs a current host-authenticated acknowledgment of this exact proof'));
     }
-    return combine(planReviewed,authorization(),inputs(w.inputs),gate(checks));
+    return combine(planReviewed,authorization(),inputs(w.inputs),gate(checks), ...(run.policy.reviews.implementation ? [judgmentGate(run,{ purpose:'implementation', subjectIds:[id] },context)] : []));
   });
   const reviewReady = (request: ReviewRequest): GateResult => {
     const problem = requestProblem(run,request); if (problem) return failed('REVIEW_SUBJECT_INVALID',request.purpose,problem);
     if (request.purpose === 'scope') return planReviewable;
+    if (request.purpose === 'implementation') return combine(planReviewed, gate(request.subjectIds.flatMap(id => { const w = run.work.find(w => w.id === id)!; return [!run.activeWorkIds.includes(id) ? check('pending','WORK_NOT_ACTIVE',id,'Select this work for detailed review') : check('pass','WORK_SELECTED',id,'Work selected for detailed review'), !w.instructions.trim() ? check('pending','WORK_DETAIL_MISSING',id,'Refine implementation details before review') : check('pass','WORK_DETAIL_PRESENT',id,'Implementation details present')]; })));
     if (request.purpose === 'decision') return combine(...request.subjectIds.map(decisionPrerequisites));
     if (request.purpose === 'release') return combine(...request.subjectIds.map(releasePrerequisites));
     const affectedOutcomes = run.outcomes.filter(o => o.criterionIds.some(id => request.subjectIds.includes(id)));
