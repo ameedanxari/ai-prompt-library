@@ -26,7 +26,7 @@ This source change does not publish a registry release. Registry installation by
 
 Keep generated runs at project-relative `prompts/outputs/runs/<run-id>/run.json`, outside the library/dependency directory. Bootstrap changes only its managed AGENTS.md block and creates an absent project brief; it does not create a run or alter IDE configuration.
 
-Substantial automated execution requires a configured trusted host adapter to verify the actual instruction, observations and distinct reviewer responses. This package supplies the workflow and adapter interface, not a turnkey Codex/Claude integration or an autonomous command runner. Planning can be inspected without a host; missing host verification remains pending. See [trust and integration](docs/evidence-and-review.md).
+Substantial execution needs actual instruction, observation and distinct-review provenance. The shipped [native coordinator integration](docs/host-integration.md) supplies setup, receipt storage and a verifier for a parent with actual command/subagent tools; it removes bespoke adapter code. The parent still must observe genuine instructions and results. It is not platform identity authentication, an OS sandbox, or a model service. Existing trusted adapters remain supported; missing capabilities stay pending. See [trust limits](docs/evidence-and-review.md).
 
 Agents start at [the entry point](prompts/orchestrators/ai-agent-entry-point.md). Give an ordinary request and relevant original sources. The agent inspects existing state, chooses conservative reversible defaults, preserves missing inputs and owner decisions, then proves a representative useful result and recovery before expanding work. Small changes can be handled directly.
 

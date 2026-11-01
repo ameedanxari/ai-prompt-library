@@ -2,6 +2,8 @@
 
 Inspect the user's request, repository and existing run before writing. Review requests authorize inspection and findings; a checkpoint does not turn them into implementation. Resume the explicitly selected run rather than create another. If no run identifies a bare continuation request, ask what to continue. Reject unknown versions and unsafe paths; never reinterpret invalid state as legacy.
 
+When substantial work has no configured trusted host, a native parent with actual command and distinct-subagent capabilities follows [the native coordinator workflow](native-coordinator.md). Delegated producers/reviewers must not create or register their own approvals. Reuse a valid host when resuming; missing native capability remains a real integration input, never a permissive verifier.
+
 For a small straightforward change, edit and verify directly. For substantial work, use one schema version 3 `run.json` at project-relative `prompts/outputs/runs/<run-id>/run.json`. See `.ai-prompts/docs/model.md` when authoring it. Keep generated runs outside `.ai-prompts` and dependency directories. Sources, requirements, criteria, outcomes, targets, work, resources, decisions, releases, policy, evidence and judgments belong to that model. Owner summaries, readiness and next actions are derived views, not separately writable contracts.
 
 ## Establish what is needed

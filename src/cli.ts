@@ -9,12 +9,13 @@ import { planReview, requestProblem } from './workflow/review.js';
 import { evidenceBinding, reviewBinding, scopeFingerprint } from './workflow/evidence.js';
 import { commitRun, inspectLegacy, loadRun, projectPath, readJson, StoreError } from './store.js';
 import { compactAssessment, renderViews, writeViews } from './views.js';
+import { traceabilityPacket } from './workflow/traceability.js';
 
 const usage = `ai-prompt-workflow <command> <run.json> --project-root <directory> [options]
   validate       Structured integrity/readiness results; no universal ready flag
                  --boundary plan-reviewable|plan-reviewed|proof|work-executable|work-verified|outcome|decision|release [--id ID]
   view           Generate canonical views; optional --output <project-relative directory>
-  review         Prepare a real review packet: --purpose scope|semantic|design|decision|release --ids id,id
+  review         Prepare a real review packet: --purpose scope|semantic|design|decision|release --ids id,id [--previous same-run-history.json]
   commit         Atomic revision-checked update: --from candidate.json --expect-revision N
   record         Append authenticated evidence/judgment: --from receipt.json --expect-revision N --host module.mjs
   inspect-legacy Read-only historical summary; never imports approvals or migrates
@@ -26,7 +27,7 @@ function argumentsOf(args: string[]): { command: string; file: string; options: 
   const [command, file, ...rest] = args;
   if (!command || !file || file.startsWith('--')) throw new StoreError('USAGE', usage);
   const options: Options = {};
-  const allowed = new Set(['project-root','host','boundary','id','output','purpose','ids','from','expect-revision']);
+  const allowed = new Set(['project-root','host','boundary','id','output','purpose','ids','from','expect-revision','previous']);
   for (let i = 0; i < rest.length; i += 2) {
     const key = rest[i]?.replace(/^--/, ''), value = rest[i + 1];
     if (!rest[i]?.startsWith('--') || !allowed.has(key) || !value || value.startsWith('--') || key in options) throw new StoreError('USAGE', `Unknown, repeated or incomplete option ${rest[i]}\n${usage}`);
@@ -122,7 +123,14 @@ export async function main(args: string[]): Promise<number> {
     if (!(purpose in questions)) throw new StoreError('USAGE', 'Unknown review purpose');
     const subjectIds = required(options,'ids').split(',').map(s=>s.trim()).filter(Boolean);
     const request = {purpose,subjectIds}; const plan = planReview(run,request,context);
+    const trace = traceabilityPacket(run, options.previous ? loadRun(context.projectRoot,options.previous) : undefined);
     print({ ...plan, questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
+      traceability: {
+        requirements:trace.requirements.map(q=>({id:q.id,outcomeIds:q.outcomeIds})),
+        criteria:trace.criteria.map(c=>({id:c.id,effectiveReleaseRole:c.effectiveReleaseRole,evidenceIds:c.evidenceIds})),
+        releases:trace.releases.map(r=>({id:r.id,closure:r.closure})),
+        unmappedSourceIds:trace.unmappedSourceIds, previous:trace.previous, changes:trace.changes, reviewerQuestions:trace.reviewerQuestions,
+      },
       instruction:'A real distinct reviewer must inspect source/consumer evidence and return an authenticated judgment. This packet is not an approval.' });
     return plan.action === 'blocked' ? exitFor(plan.prerequisites.status === 'pass' ? 'fail' : plan.prerequisites.status) : 0;
   }
