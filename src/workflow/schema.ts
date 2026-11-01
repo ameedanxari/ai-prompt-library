@@ -100,8 +100,9 @@ export function parseRun(value: unknown): RunContract {
     assert(text(d.description) && d.sourceRefs.length > 0 && strings(d.producedBy), d.id, 'invalid decision producer');
   }
   for (const x of r.releases) { shape(x, 'id title outcomeIds sharedCriterionIds sourceRefs inputs composition', 'id title outcomeIds sharedCriterionIds sourceRefs inputs', x.id); refs(x.sourceRefs, x.id); inputs(x.inputs, x.id); assert(text(x.title) && strings(x.outcomeIds, false) && strings(x.sharedCriterionIds) && (x.composition === undefined || choices(x.composition, ['production','actual-target'])), x.id, 'invalid release'); }
-  const p = shape(r.policy, 'instruction execution checkpoints implementerId implementerContextId reviews grants budget checkpointAcknowledgment operationConsistency', 'instruction execution checkpoints implementerId implementerContextId reviews grants budget', 'policy');
+  const p = shape(r.policy, 'instruction execution checkpoints implementerId implementerContextId reviews grants budget checkpointAcknowledgment operationConsistency reviewBindingVersion', 'instruction execution checkpoints implementerId implementerContextId reviews grants budget', 'policy');
   assert(p.operationConsistency === undefined || p.operationConsistency === 'declared-targets', 'policy.operationConsistency', 'unsupported operation consistency mode');
+  assert(p.reviewBindingVersion === undefined || p.reviewBindingVersion === 2, 'policy.reviewBindingVersion', 'unsupported review binding version');
   const i = shape(p.instruction, 'sourceId locator quote reference issuedAt', 'sourceId locator quote reference issuedAt', 'instruction'); assert(Object.values(i).every(v => text(v)), 'instruction', 'invalid retained instruction');
   assert(choices(p.execution, ['plan-only','reversible']) && choices(p.checkpoints, ['every-proof','autonomous']) && text(p.implementerId) && text(p.implementerContextId), 'policy', 'invalid authority policy');
   const pr = shape(p.reviews, 'scope implementation semantic design release', 'scope semantic design release', 'reviews');

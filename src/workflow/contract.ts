@@ -87,6 +87,8 @@ export interface Policy {
   instruction: Instruction;
   /** Absent on historical runs; newly created runs must select this check. */
   operationConsistency?: 'declared-targets';
+  /** Absent retains the historical scope-binding algorithm. Version 2 is new-run only. */
+  reviewBindingVersion?: 2;
   execution: 'plan-only' | 'reversible';
   checkpoints: 'every-proof' | 'autonomous';
   implementerId: string;

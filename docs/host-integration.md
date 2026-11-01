@@ -2,6 +2,8 @@
 
 The package ships `ai-prompt-host` (or `node .ai-prompts/dist/host-cli.js`) and a [native coordinator workflow](../prompts/orchestrators/native-coordinator.md). A native parent with actual user context, command tools and distinct subagent results can operate it without writing an adapter. This is a **trusted coordinator attestation** system. It does not authenticate callers, sign platform identities, run a model service, isolate the filesystem or make an invented observer real. If those native capabilities are unavailable, use an already trusted external integration or retain the missing-host blocker.
 
+New runs use `policy.reviewBindingVersion: 2` through supported creation. An existing absent-mode run keeps its historical binding algorithm; the supported store refuses an in-place transition or downgrade. Pinned hosts continue to use their retained runtime: initialize a separately reviewed host with a runtime that supports the new mode for a new run. An older host must not silently reinterpret or authenticate version-2 state, and old receipts are never migrated.
+
 The producer authors the product and run. The parent owns host profiles, captures and registration; a distinct reviewer returns actual judgments. Native subagent instructions do not create an OS permission boundary. Use available sandbox controls independently, never assume different folders establish isolation. For Codex, [official subagent documentation](https://learn.chatgpt.com/docs/agent-configuration/subagents) describes delegation and inherited permissions. The workflow requests delegation through the managed project instructions, subject to higher-priority policy and actual tool availability.
 
 ## Setup once per actual instruction and producer context

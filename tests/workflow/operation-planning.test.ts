@@ -16,12 +16,14 @@ describe('new-run operation consistency through the public CLI',()=>{
       f.run.policy.operationConsistency='declared-targets';write(f.root,'candidate.json',f.run);
       expect(JSON.parse(create().stderr).code).toBe('NEW_RUN_IMPLEMENTATION_REVIEW_REQUIRED');
       f.run.policy.reviews.implementation=['independent'];write(f.root,'candidate.json',f.run);
+      expect(JSON.parse(create().stderr).code).toBe('NEW_RUN_REVIEW_BINDING_VERSION_REQUIRED');
+      f.run.policy.reviewBindingVersion=2;write(f.root,'candidate.json',f.run);
       expect(create().status).toBe(0);
       const downgrade=structuredClone(f.run);downgrade.revision=2;delete downgrade.policy.operationConsistency;write(f.root,'downgrade.json',downgrade);
       expect(JSON.parse(cli(f.root,['commit','run.json','--from','downgrade.json','--expect-revision','1']).stderr).code).toBe('OPERATION_CONSISTENCY_DOWNGRADE');
       downgrade.policy.operationConsistency='declared-targets';delete downgrade.policy.reviews.implementation;write(f.root,'downgrade.json',downgrade);
       expect(JSON.parse(cli(f.root,['commit','run.json','--from','downgrade.json','--expect-revision','1']).stderr).code).toBe('IMPLEMENTATION_REVIEW_DOWNGRADE');
-      const legacy=structuredClone(f.run);delete legacy.policy.operationConsistency;delete legacy.policy.reviews.implementation;write(f.root,'legacy.json',legacy);
+      const legacy=structuredClone(f.run);delete legacy.policy.operationConsistency;delete legacy.policy.reviewBindingVersion;delete legacy.policy.reviews.implementation;write(f.root,'legacy.json',legacy);
       const before=fs.readFileSync(path.join(f.root,'legacy.json'),'utf8');const updated=structuredClone(legacy);updated.revision=2;write(f.root,'legacy-next.json',updated);
       expect(cli(f.root,['validate','legacy.json','--boundary','plan-reviewable']).status).toBe(0);
       expect(fs.readFileSync(path.join(f.root,'legacy.json'),'utf8')).toBe(before);

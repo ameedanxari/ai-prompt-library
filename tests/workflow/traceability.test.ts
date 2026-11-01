@@ -6,6 +6,65 @@ import { traceabilityPacket } from '../../src/workflow/traceability.js';
 import { createFixture } from './fixture.js';
 
 describe('traceability review packet', () => {
+  it('exposes proof and active selectors with their different scope-binding effects',()=>{
+    const f=createFixture();try {
+      f.run.policy.reviewBindingVersion=2;
+      f.run.outcomes.push({...structuredClone(f.run.outcomes[0]),id:'O-OTHER'});
+      f.run.work.push({...structuredClone(f.run.work[0]),id:'W-OTHER',action:'read',files:[],instructions:''});
+      const before=structuredClone(f.run);fs.writeFileSync(path.join(f.root,'before.json'),JSON.stringify(before));
+      const invoke=()=>spawnSync(process.execPath,[path.resolve('dist/cli.js'),'review','run.json','--project-root',f.root,'--purpose','scope','--ids','R-GREETING','--previous','before.json'],{encoding:'utf8'});
+      f.run.proofOutcomeIds=['O-OTHER'];fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      let result=invoke();expect(result.status,result.stderr).toBe(0);let t=JSON.parse(result.stdout).traceability;
+      expect(t.bindingComparison.status).toBe('changed');expect(t.changes.root).toEqual([expect.objectContaining({field:'proofOutcomeIds',before:['O-GREETING'],after:['O-OTHER']})]);
+      f.run.proofOutcomeIds=before.proofOutcomeIds;f.run.activeWorkIds=['W-OTHER'];fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      result=invoke();expect(result.status).toBe(1);t=JSON.parse(result.stdout).traceability;
+      expect(t.bindingComparison.status).toBe('unchanged');expect(t.changes.root).toEqual([expect.objectContaining({field:'activeWorkIds',before:['W-CLI'],after:['W-OTHER']})]);
+      expect(JSON.parse(result.stdout).action).toBe('blocked');
+    }finally{f.cleanup();}
+  });
+  it('shows unchanged direct producer and declared milestone links for changed work',()=>{
+    const f=createFixture();try {
+      f.run.work.push({...structuredClone(f.run.work[0]),id:'W-OTHER',action:'read',files:[],instructions:''});
+      f.run.decisions.push({id:'D-INSPECTION',description:'Consider inspection',sourceRefs:[{sourceId:'request',locator:'Source'}],producedBy:['W-CLI'],inputs:[],requiredRoles:['owner']});
+      f.run.resources.push({id:'R-REPORT',description:'Observed report',kind:'input',targetId:'cli',status:'unknown',sourceRefs:[{sourceId:'request',locator:'Source'}],producedBy:['W-CLI']});
+      f.run.milestones=[{id:'M-WORK',title:'Work',result:'Result',recovery:'Retry',outcomeIds:['O-GREETING'],workIds:['W-CLI'],assumptions:'Unknown',reforecast:'After proof',sourceRefs:[{sourceId:'request',locator:'Source'}]},{id:'M-OUTCOME',title:'Outcome',result:'Result',recovery:'Retry',outcomeIds:['O-GREETING'],workIds:['W-OTHER'],assumptions:'Unknown',reforecast:'After proof',sourceRefs:[{sourceId:'request',locator:'Source'}]}];
+      const before=structuredClone(f.run);f.run.work[0].instructions+=' Changed detail.';
+      fs.writeFileSync(path.join(f.root,'before.json'),JSON.stringify(before));fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      const result=spawnSync(process.execPath,[path.resolve('dist/cli.js'),'review','run.json','--project-root',f.root,'--purpose','scope','--ids','R-GREETING','--previous','before.json'],{encoding:'utf8'});
+      expect(result.status,result.stderr || result.stdout).toBe(0);const changes=JSON.parse(result.stdout).traceability.changes;
+      expect(changes.decisions).toEqual([]);expect(changes.resources).toEqual([]);expect(changes.milestones).toEqual([]);
+      expect(changes.work[0].affected.direct).toEqual({producedDecisionIds:['D-INSPECTION'],producedResourceIds:['R-REPORT'],declaredMilestoneIds:['M-OUTCOME','M-WORK']});
+    }finally{f.cleanup();}
+  });
+  it('shows changed causal and forecast fields through public review without repeating unchanged work', () => {
+    const f=createFixture();try {
+      const before=structuredClone(f.run);f.run.targets.push({...structuredClone(f.run.targets[0]),id:'other'});
+      f.run.resources.push({id:'RES',description:'Inspection access',kind:'access',targetId:'other',status:'missing',sourceRefs:[{sourceId:'request',locator:'Source'}]});
+      f.run.decisions.push({id:'D',description:'Choose after inspection',sourceRefs:[{sourceId:'request',locator:'Source'}],producedBy:[],inputs:[],requiredRoles:['owner']});
+      f.run.work[0].inputs=[{kind:'resource',id:'RES'}];f.run.work[0].targetIds.push('other');f.run.work[0].action='read';f.run.work[0].instructions='Changed inspection.';
+      f.run.policy.budget.maxDetailBytes=7000;f.run.milestones=[{id:'M',title:'Result',result:'Useful output',recovery:'Retry',outcomeIds:['O-GREETING'],workIds:['W-CLI'],assumptions:'Staff unknown',reforecast:'After proof',sourceRefs:[{sourceId:'request',locator:'Source'}]}];
+      f.run.capacity={scope:{kind:'all-work'},period:'week',hours:20,roles:[],ownerTouchpoints:null,sourceRefs:[{sourceId:'request',locator:'Source'}]};
+      fs.writeFileSync(path.join(f.root,'before.json'),JSON.stringify(before));fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      const result=spawnSync(process.execPath,[path.resolve('dist/cli.js'),'review','run.json','--project-root',f.root,'--purpose','scope','--ids','R-GREETING','--previous','before.json'],{encoding:'utf8'});
+      expect(result.status,result.stderr).toBe(0);const t=JSON.parse(result.stdout).traceability;
+      expect(t.bindingComparison.status).toBe('changed');expect(t.changes.work[0].id).toBe('W-CLI');
+      expect(t.changes.work[0].fields.map((x:any)=>x.field)).toEqual(expect.arrayContaining(['inputs','targetIds','action','instructions']));
+      expect(t.changes.work[0].affected).toMatchObject({outcomeIds:['O-GREETING'],targetIds:['cli','other']});
+      expect(t.changes.resources[0]).toMatchObject({id:'RES',consumers:{workIds:['W-CLI']}});expect(t.changes.decisions[0].id).toBe('D');expect(t.changes.milestones[0].id).toBe('M');
+      expect(t.changes.policy.some((x:any)=>x.field==='budget')).toBe(true);expect(t.changes.capacity.some((x:any)=>x.field==='hours')).toBe(true);
+    }finally{f.cleanup();}
+  });
+  it('distinguishes version-2 budget-only scope reuse from changed implementation detail',()=>{
+    const f=createFixture();try {
+      f.run.policy.reviewBindingVersion=2;f.run.policy.reviews.implementation=['independent'];const before=structuredClone(f.run);
+      f.run.policy.budget.maxDetailBytes=7000;f.run.work[0].instructions+=' Detailed change.';
+      fs.writeFileSync(path.join(f.root,'before.json'),JSON.stringify(before));fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      const invoke=(purpose:string,ids:string)=>spawnSync(process.execPath,[path.resolve('dist/cli.js'),'review','run.json','--project-root',f.root,'--purpose',purpose,'--ids',ids,'--previous','before.json'],{encoding:'utf8'});
+      const scope=invoke('scope','R-GREETING');expect(scope.status,scope.stderr).toBe(0);const packet=JSON.parse(scope.stdout).traceability;
+      expect(packet.bindingComparison.status).toBe('unchanged');expect(packet.changes.work[0].fields.map((x:any)=>x.field)).toEqual(['instructions']);expect(packet.changes.policy[0].field).toBe('budget');
+      const detail=invoke('implementation','W-CLI');expect(detail.status).toBe(2);expect(JSON.parse(detail.stdout).traceability.bindingComparison.status).toBe('changed');
+    }finally{f.cleanup();}
+  });
   it('places original obligation and weakened acceptance together for public review, including unmapped sources', () => {
     const f = createFixture();
     try {

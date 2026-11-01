@@ -132,8 +132,18 @@ export async function main(args: string[]): Promise<number> {
     if (!(purpose in questions)) throw new StoreError('USAGE', 'Unknown review purpose');
     const subjectIds = required(options,'ids').split(',').map(s=>s.trim()).filter(Boolean);
     const request = {purpose,subjectIds}; const plan = planReview(run,request,context);
-    const trace = traceabilityPacket(run, options.previous ? loadRun(context.projectRoot,options.previous) : undefined);
+    const previous = options.previous ? loadRun(context.projectRoot,options.previous) : undefined;
+    const trace = traceabilityPacket(run, previous);
     const problem = requestProblem(run,request);
+    let bindingComparison: { status:'changed'|'unchanged'|'unavailable'; previous?:string; current?:string; reason?:string } | undefined;
+    if (previous) {
+      const priorProblem = requestProblem(previous,request);
+      if (problem || priorProblem) bindingComparison = { status:'unavailable',reason:problem ?? priorProblem };
+      else try {
+        const before = reviewBinding(previous,request).fingerprint, after = reviewBinding(run,request).fingerprint;
+        bindingComparison = { status:before === after ? 'unchanged' : 'changed',previous:before,current:after };
+      } catch { bindingComparison = { status:'unavailable',reason:'The requested binding could not be computed for both candidates.' }; }
+    }
     const projection = problem ? undefined : renderViews(run,context);
     const views = projection ? { revision:run.revision, fingerprint:projection.fingerprint, files:writeViews(context.projectRoot,path.join(path.dirname(file),'views'),projection) } : undefined;
     print({ ...plan, ...(views ? {views} : {}), questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
@@ -150,7 +160,7 @@ export async function main(args: string[]): Promise<number> {
           })),
           targets:run.targets,
         },
-        unmappedSourceIds:trace.unmappedSourceIds, previous:trace.previous, changes:trace.changes, reviewerQuestions:trace.reviewerQuestions,
+        unmappedSourceIds:trace.unmappedSourceIds, previous:trace.previous, changes:trace.changes, bindingComparison, reviewerQuestions:trace.reviewerQuestions,
       },
       instruction:'A real distinct reviewer must inspect source/consumer evidence and return an authenticated judgment. This packet is not an approval.' });
     return plan.action === 'blocked' ? exitFor(plan.prerequisites.status === 'pass' ? 'fail' : plan.prerequisites.status) : 0;

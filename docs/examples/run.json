@@ -128,6 +128,7 @@
   "decisions": [],
   "releases": [],
   "policy": {
+    "reviewBindingVersion": 2,
     "operationConsistency": "declared-targets",
     "instruction": {
       "sourceId": "S1",
