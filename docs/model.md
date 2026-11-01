@@ -16,7 +16,7 @@ Package version 2 uses `schemaVersion: 3`, `kind: "canonical-workflow"`. `run.js
 | `work` | Cohesive `title`, affected outcome/criterion/target IDs, `action`, typed `inputs`, owned `files` and bounded `instructions`. Optional estimate names hours, role, owner delay and touchpoints; unknown estimates stay null. |
 | `resources` | Missing/available/unknown `access|input|authority`, actual `targetId`, source references, optional preparation `producedBy` work IDs and binding/host receipt reference. Producer completion does not by itself prove resource availability. Status alone does not authenticate availability. |
 | `decisions` | Question `description`, source references, `producedBy` work IDs, typed `inputs` and `requiredRoles`. The decision follows its producers. |
-| `releases` | Selected original-scope boundary, `outcomeIds`, `sharedCriterionIds`, source references and typed `inputs`. Never relabel a partial boundary as full completion. |
+| `releases` | Selected original-scope boundary, `outcomeIds`, `sharedCriterionIds`, source references and typed `inputs`. Optional `composition: production|actual-target` defaults to production. Actual-target identifies a source-reviewed delivered local tool/artifact; it does not mean deployed production. Never relabel a partial boundary as full completion. |
 | `policy` | Retained instruction, execution/checkpoint policy, implementer/context identity, required review roles, explicit grants and active-work/detail budget. Optional `checkpointAcknowledgment` retains a fresh user instruction bound to the exact accepted proof. |
 | `evidence` / `judgments` | Append-only observations and assessment records with exact bindings and actual host-verifiable references. See [trust limits](evidence-and-review.md). |
 

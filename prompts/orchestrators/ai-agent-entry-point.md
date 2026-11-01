@@ -14,6 +14,8 @@ Select the smallest representative journey that exposes integration or experienc
 
 When refining or repairing the plan, compare each changed requirement-to-criterion mapping with its original obligation; adding a forecast or prerequisite must not displace an existing acceptance condition. Separate rehearsal/staging proof from delivered behavior, then ensure the selected release's actual production criteria cover every required delivered behavior, including recovery and operational duties. A shared source reference or a broad release title does not establish that coverage.
 
+Match proof to the actual delivery target: a local tool or artifact can use a source-reviewed `actual-target` release and local evidence. Reserve `productionRequired` for obligations requiring a production environment. Never relabel local observations as production, or use an actual-target boundary to omit required deployed behavior.
+
 When asked for a roadmap or development plan, make the delivery forecast useful: name the user result and recovery at each milestone, link the work and real input/decision producers that enable it, and record disjoint role effort, owner waiting and uncertainty. Compare the same release scope with any stated budget or deadline; include testing, integration, review and recovery once. Bounded detail does not remove future outcome semantics or provisional estimates. If capacity is unknown, show the next evidence and reforecast point rather than imply that the plan fits.
 
 ## Implement and prove

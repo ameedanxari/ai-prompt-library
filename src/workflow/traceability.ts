@@ -42,6 +42,7 @@ export function traceabilityPacket(run: RunContract, previous?: RunContract) {
       'For every changed or removed mapping, did any previous requirement, source reference, criterion or acceptance condition disappear or change meaning?',
       'Do the selected release closures cover all required delivered behavior and reachable recovery on the actual target, including shared criteria and dependencies?',
       'Which criteria and observations describe staging or rehearsal, and which establish the delivered production behavior? Are supporting classifications justified by the source?',
+      'Does the source require a production environment, or is the actual local tool/artifact the delivered result? Verify release composition and productionRequired against that distinction; do not relabel local evidence.',
       'Do raw observations and their target, revision, lifecycle and provenance support the claim, and what remains unknown or unverified?',
     ],
   };

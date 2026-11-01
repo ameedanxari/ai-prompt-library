@@ -84,7 +84,9 @@ function evaluator(run: RunContract, context: EvaluationContext) {
       if (target.lifecycle.stage === 'unknown' || target.lifecycle.dataPolicy === 'unknown' || !target.lifecycle.sourceRef) production.push(check('pending','RELEASE_LIFECYCLE_REQUIRED',cid,'Release needs the actual target lifecycle and retained source authority'));
       const selectedIds = new Set(criterionGate(run,cid,context).checks.flatMap(c => c.evidenceIds ?? []));
       const records = run.evidence.filter(e => selectedIds.has(e.id));
-      if (c.releaseRole !== 'supporting' && (!records.length || records.some(e => !e.production))) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use the actual production composition'));
+      const localDelivery = r.composition === 'actual-target' && target.environment === 'local';
+      if (c.releaseRole !== 'supporting' && r.composition === 'actual-target' && !['local','production'].includes(target.environment)) production.push(check('pending','DELIVERED_TARGET_ENVIRONMENT_REQUIRED',cid,'Actual-target delivery needs a local artifact or production target; staging/unknown observations cannot stand in for delivered behavior'));
+      if (c.releaseRole !== 'supporting' && (!records.length || (!localDelivery && records.some(e => !e.production)))) production.push(check('pending','RELEASE_COMPOSITION_REQUIRED',cid,'Every selected release observation must use its target-specific release composition'));
     }
     const selectedProof = run.proofOutcomeIds.filter(oid => closure.outcomeIds.includes(oid));
     return combine(planReviewed,...selectedProof.map(outcome),inputs(r.inputs),...closure.outcomeIds.map(outcome),...closure.criterionIds.map(cid => criterionGate(run,cid,context)),semantic(closure.criterionIds),design(closure.criterionIds),gate(production));

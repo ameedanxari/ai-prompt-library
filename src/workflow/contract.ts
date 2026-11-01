@@ -74,7 +74,7 @@ export interface Decision {
   requiredRoles: Role[];
 }
 export interface Outcome { id: string; title: string; requirementIds: string[]; criterionIds: string[]; targetId: string; inputs: Prerequisite[] }
-export interface Release { id: string; title: string; outcomeIds: string[]; sharedCriterionIds: string[]; sourceRefs: SourceRef[]; inputs: Prerequisite[] }
+export interface Release { id: string; title: string; outcomeIds: string[]; sharedCriterionIds: string[]; sourceRefs: SourceRef[]; inputs: Prerequisite[]; /** Omission preserves production-composition requirements. Actual-target is a reviewed local/artifact delivery boundary. */ composition?: 'production' | 'actual-target' }
 export interface Instruction { sourceId: string; locator: string; quote: string; reference: string; issuedAt: string }
 export interface AuthorityGrant { id: string; targetIds: string[]; actions: Action[]; sourceRef: SourceRef; reference: string }
 export interface CheckpointAcknowledgment {
