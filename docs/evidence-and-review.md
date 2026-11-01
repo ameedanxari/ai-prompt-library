@@ -29,3 +29,5 @@ Schema 3 runs with the field absent retain their historical behavior. Their scop
 Once configured, the supported canonical commit path does not permit removing or weakening implementation review roles for that run; create a separate run for a changed duty. This protects the supported workflow from reviving earlier receipts, but direct filesystem tampering is outside the host's non-sandbox trust boundary.
 
 Implementation review also binds relevant source-bound milestones, scoped capacity and the estimates and prerequisite links that feed their selected forecast; unrelated scoped milestones and capacity do not stale it. Actual source review must assess assumptions and missing scope rather than accept sums as proof of feasibility.
+
+A valid public `review` request refreshes the run's sibling generated views and identifies their current fingerprint and paths in the packet. If a destination contains a non-generated file, the command fails closed without replacing it. Review still requires the actual original sources, current contract, evidence and a distinct authenticated judgment; refreshed views are not review or authority.

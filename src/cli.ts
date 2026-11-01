@@ -125,7 +125,10 @@ export async function main(args: string[]): Promise<number> {
     const subjectIds = required(options,'ids').split(',').map(s=>s.trim()).filter(Boolean);
     const request = {purpose,subjectIds}; const plan = planReview(run,request,context);
     const trace = traceabilityPacket(run, options.previous ? loadRun(context.projectRoot,options.previous) : undefined);
-    print({ ...plan, questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
+    const problem = requestProblem(run,request);
+    const projection = problem ? undefined : renderViews(run,context);
+    const views = projection ? { revision:run.revision, fingerprint:projection.fingerprint, files:writeViews(context.projectRoot,path.join(path.dirname(file),'views'),projection) } : undefined;
+    print({ ...plan, ...(views ? {views} : {}), questions:questions[purpose], sourceFiles:run.sources, contract:run, scopeFingerprint:scopeFingerprint(run),
       traceability: {
         requirements:trace.requirements.map(q=>({id:q.id,outcomeIds:q.outcomeIds})),
         criteria:trace.criteria.map(c=>({id:c.id,effectiveReleaseRole:c.effectiveReleaseRole,evidenceIds:c.evidenceIds})),
