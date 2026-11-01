@@ -14,6 +14,7 @@ export function validateGraph(run: RunContract): Diagnostic[] {
   for (const q of run.requirements) { sourceRefs(q.sourceRefs, q.id); refs(q.criterionIds, 'criterion', q.id); refs(q.releaseIds, 'release', q.id); }
   refs([run.policy.instruction.sourceId], 'source', 'policy.instruction');
   for (const purpose of ['scope','semantic','release'] as const) if (!run.policy.reviews[purpose].includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', `policy.reviews.${purpose}`, 'Outcome runs require an actual distinct independent review duty');
+  if (run.policy.reviews.implementation && !run.policy.reviews.implementation.includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', 'policy.reviews.implementation', 'Configured implementation review requires a distinct independent reviewer');
   if (run.targets.some(t => visualTarget(t.kind)) && !run.policy.reviews.design.includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', 'policy.reviews.design', 'Composed visual acceptance requires a distinct independent reviewer');
   if (run.capacity) sourceRefs(run.capacity.sourceRefs, 'capacity');
   for (const g of run.policy.grants) { refs(g.targetIds, 'target', g.id); sourceRefs([g.sourceRef], g.id); }
@@ -60,7 +61,7 @@ export function validateGraph(run: RunContract): Diagnostic[] {
   refs(run.proofOutcomeIds, 'outcome', 'proof'); refs(run.activeWorkIds, 'work', 'activeWork');
   for (const e of run.evidence) { refs([e.criterionId], 'criterion', e.id); refs([e.targetId], 'target', e.id); }
   for (const j of run.judgments) {
-    const kind = j.purpose === 'scope' ? 'requirement' : j.purpose === 'semantic' || j.purpose === 'design' ? 'criterion' : j.purpose;
+    const kind = j.purpose === 'scope' ? 'requirement' : j.purpose === 'implementation' ? 'work' : j.purpose === 'semantic' || j.purpose === 'design' ? 'criterion' : j.purpose;
     refs(j.subjectIds, kind, j.id); for (const f of j.findings) refs(f.criterionIds, 'criterion', f.id);
   }
   const done = new Set<string>(); const stack: string[] = [];

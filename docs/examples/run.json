@@ -140,6 +140,9 @@
     "implementerId": "example-author",
     "implementerContextId": "example-context",
     "reviews": {
+      "implementation": [
+        "independent"
+      ],
       "scope": [
         "independent"
       ],

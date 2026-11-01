@@ -3,7 +3,7 @@ export type Status = 'pass' | 'fail' | 'pending' | 'unassessed' | 'not-applicabl
 export type Role = 'owner' | 'independent' | 'agent';
 export type Action = 'read' | 'local-write' | 'live-write' | 'deploy' | 'send' | 'spend' | 'delete';
 export type EvidenceKind = 'execution' | 'consumer' | 'image' | 'operation' | 'build' | 'test' | 'document';
-export type ReviewPurpose = 'scope' | 'semantic' | 'design' | 'decision' | 'release';
+export type ReviewPurpose = 'scope' | 'implementation' | 'semantic' | 'design' | 'decision' | 'release';
 export interface FileBinding { path: string; sha256: string }
 export interface SourceRef { sourceId: string; locator: string }
 export interface Source { id: string; binding: FileBinding; authority: 'user' | 'contract' | 'reference'; inspection: 'complete' | 'partial' | 'unread' }
@@ -87,7 +87,7 @@ export interface Policy {
   checkpoints: 'every-proof' | 'autonomous';
   implementerId: string;
   implementerContextId: string;
-  reviews: { scope: Role[]; semantic: Role[]; design: Role[]; release: Role[] };
+  reviews: { scope: Role[]; implementation?: Role[]; semantic: Role[]; design: Role[]; release: Role[] };
   grants: AuthorityGrant[];
   budget: { maxActiveWork: number; maxDetailBytes: number };
   checkpointAcknowledgment?: CheckpointAcknowledgment;

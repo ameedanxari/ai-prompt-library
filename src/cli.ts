@@ -15,7 +15,7 @@ const usage = `ai-prompt-workflow <command> <run.json> --project-root <directory
   validate       Structured integrity/readiness results; no universal ready flag
                  --boundary plan-reviewable|plan-reviewed|proof|work-executable|work-verified|outcome|decision|release [--id ID]
   view           Generate canonical views; optional --output <project-relative directory>
-  review         Prepare a real review packet: --purpose scope|semantic|design|decision|release --ids id,id [--previous same-run-history.json]
+  review         Prepare a real review packet: --purpose scope|implementation|semantic|design|decision|release --ids id,id [--previous same-run-history.json]
   commit         Atomic revision-checked update: --from candidate.json --expect-revision N
   record         Append authenticated evidence/judgment: --from receipt.json --expect-revision N --host module.mjs
   inspect-legacy Read-only historical summary; never imports approvals or migrates
@@ -71,6 +71,7 @@ const questions: Record<ReviewPurpose, string[]> = {
     'Are ordinary reversible choices made, genuine owner inputs scoped to their consumers, and effort/capacity limits honest?',
     'Report specific contrary evidence and unresolved findings. Structural validity or covered IDs are not semantic approval.'
   ],
+  implementation: ['Inspect the exact selected work instructions, owned files, estimates, source obligations, target authority and relevant forecast assumptions. Identify omissions, stale assumptions and practical execution risks.', 'Reject blocking contradictions; retain independent findings and a separate bound implementation judgment even when reviewing scope in the same session.'],
   semantic: [
     'Inspect original intent, actual consumer actions and raw evidence on the bound target, including recovery and forbidden behavior.',
     'Does the observed behavior preserve actor/permission/state/provider semantics? Challenge a plausible wrong implementation.',

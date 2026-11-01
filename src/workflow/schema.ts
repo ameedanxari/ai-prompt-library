@@ -100,7 +100,7 @@ export function parseRun(value: unknown): RunContract {
   const p = shape(r.policy, 'instruction execution checkpoints implementerId implementerContextId reviews grants budget checkpointAcknowledgment', 'instruction execution checkpoints implementerId implementerContextId reviews grants budget', 'policy');
   const i = shape(p.instruction, 'sourceId locator quote reference issuedAt', 'sourceId locator quote reference issuedAt', 'instruction'); assert(Object.values(i).every(v => text(v)), 'instruction', 'invalid retained instruction');
   assert(choices(p.execution, ['plan-only','reversible']) && choices(p.checkpoints, ['every-proof','autonomous']) && text(p.implementerId) && text(p.implementerContextId), 'policy', 'invalid authority policy');
-  const pr = shape(p.reviews, 'scope semantic design release', 'scope semantic design release', 'reviews');
+  const pr = shape(p.reviews, 'scope implementation semantic design release', 'scope semantic design release', 'reviews');
   for (const key of Object.keys(pr)) {
     if (key === 'design' && Array.isArray(pr[key]) && pr[key].length === 0) continue;
     roles(pr[key], `reviews.${key}`);
@@ -121,7 +121,7 @@ export function parseRun(value: unknown): RunContract {
   for (const j of r.judgments) {
     shape(j, 'id purpose subjectIds fingerprint result reviewer reference observedAt observations findings', 'id purpose subjectIds fingerprint result reviewer reference observedAt observations findings', j.id);
     const reviewer = shape(j.reviewer, 'id contextId role', 'id contextId role', j.id); assert(text(reviewer.id) && text(reviewer.contextId) && choices(reviewer.role, ['owner','independent','agent']), j.id, 'invalid reviewer');
-    assert(choices(j.purpose, ['scope','semantic','design','decision','release']) && strings(j.subjectIds, false) && hash(j.fingerprint) && choices(j.result, ['approved','rejected']) && text(j.reference) && text(j.observedAt) && strings(j.observations, false), j.id, 'invalid judgment');
+    assert(choices(j.purpose, ['scope','implementation','semantic','design','decision','release']) && strings(j.subjectIds, false) && hash(j.fingerprint) && choices(j.result, ['approved','rejected']) && text(j.reference) && text(j.observedAt) && strings(j.observations, false), j.id, 'invalid judgment');
     for (const f of rows(j.findings, `${j.id}.findings`)) { shape(f, 'id severity criterionIds message', 'id severity criterionIds message', f.id); assert(choices(f.severity, ['P0','P1','P2','P3']) && strings(f.criterionIds) && text(f.message), f.id, 'invalid finding'); }
   }
   return structuredClone(r) as RunContract;

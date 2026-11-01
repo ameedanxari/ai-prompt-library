@@ -39,3 +39,5 @@ The large template catalogue and bundled application scaffolds have been retired
 Read the [dated validation report](docs/validation.md) for actual first/final trial results and limits.
 
 Contributors: see [CONTRIBUTING.md](CONTRIBUTING.md). Run repository checks and exercise the public CLI before proposing changes.
+
+New runs configure `policy.reviews.implementation` with `independent` and obtain a separate current implementation judgment before selected work executes. Scope and detail may be reviewed in one session with separate receipts. Historical runs without that field have no configured detail review; scope approval does not cover detail. See [evidence and review](docs/evidence-and-review.md).

@@ -5,10 +5,11 @@ import { reviewPrerequisites } from './evaluate.js';
 const same = (a: string[], b: string[]) => canonical([...a].sort()) === canonical([...b].sort());
 export function requiredRoles(run: RunContract, request: ReviewRequest): Role[] {
   if (request.purpose === 'decision') return [...new Set(run.decisions.filter(d => request.subjectIds.includes(d.id)).flatMap(d => d.requiredRoles))];
-  return run.policy.reviews[request.purpose];
+  return run.policy.reviews[request.purpose] ?? [];
 }
 export function requestProblem(run: RunContract, request: ReviewRequest): string | undefined {
-  const ids = request.purpose === 'scope' ? run.requirements.map(q => q.id) : request.purpose === 'semantic' || request.purpose === 'design' ? run.criteria.map(c => c.id) : request.purpose === 'decision' ? run.decisions.map(d => d.id) : run.releases.map(r => r.id);
+  if (request.purpose === 'implementation' && !run.policy.reviews.implementation) return 'Implementation detail review is not configured for this run';
+  const ids = request.purpose === 'scope' ? run.requirements.map(q => q.id) : request.purpose === 'implementation' ? run.work.map(w => w.id) : request.purpose === 'semantic' || request.purpose === 'design' ? run.criteria.map(c => c.id) : request.purpose === 'decision' ? run.decisions.map(d => d.id) : run.releases.map(r => r.id);
   if (!request.subjectIds.length || new Set(request.subjectIds).size !== request.subjectIds.length || request.subjectIds.some(id => !ids.includes(id))) return 'Review subjects are empty, duplicated or unknown';
   if (request.purpose === 'scope' && !same(request.subjectIds, ids)) return 'Original-source scope review must cover every retained requirement';
   return undefined;
@@ -30,7 +31,7 @@ export function judgmentGate(run: RunContract, request: ReviewRequest, context: 
   const checks = [];
   for (const id of request.subjectIds) {
     const applicable = current.filter(j => j.subjectIds.includes(id));
-    const rejected = applicable.filter(j => j.result === 'rejected' || j.findings.some(f => ['P0','P1'].includes(f.severity) && (!f.criterionIds.length || f.criterionIds.includes(id) || request.purpose === 'scope' || request.purpose === 'release' || request.purpose === 'decision')));
+    const rejected = applicable.filter(j => j.result === 'rejected' || j.findings.some(f => ['P0','P1'].includes(f.severity) && (!f.criterionIds.length || f.criterionIds.includes(id) || request.purpose === 'scope' || request.purpose === 'implementation' || request.purpose === 'release' || request.purpose === 'decision')));
     if (rejected.length) { checks.push(check('fail','CURRENT_REVIEW_REJECTED', id, 'A current authenticated rejection or unresolved blocking finding remains', { judgmentIds: rejected.map(j => j.id) })); continue; }
     const roles = request.purpose === 'decision' ? run.decisions.find(d => d.id === id)!.requiredRoles : requiredRoles(run, request);
     for (const role of roles) {

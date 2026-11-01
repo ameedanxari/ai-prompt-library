@@ -125,11 +125,12 @@ function evaluator(run: RunContract, context: EvaluationContext) {
       } catch { /* actual instruction and authenticated named proof are required */ }
       if (!acknowledged) checks.push(check('pending','USER_CHECKPOINT_REQUIRED',id,'A user-reserved checkpoint needs a current host-authenticated acknowledgment of this exact proof'));
     }
-    return combine(planReviewed,authorization(),inputs(w.inputs),gate(checks));
+    return combine(planReviewed,authorization(),inputs(w.inputs),gate(checks), ...(run.policy.reviews.implementation ? [judgmentGate(run,{ purpose:'implementation', subjectIds:[id] },context)] : []));
   });
   const reviewReady = (request: ReviewRequest): GateResult => {
     const problem = requestProblem(run,request); if (problem) return failed('REVIEW_SUBJECT_INVALID',request.purpose,problem);
     if (request.purpose === 'scope') return planReviewable;
+    if (request.purpose === 'implementation') return combine(planReviewed, gate(request.subjectIds.flatMap(id => { const w = run.work.find(w => w.id === id)!; return [!run.activeWorkIds.includes(id) ? check('pending','WORK_NOT_ACTIVE',id,'Select this work for detailed review') : check('pass','WORK_SELECTED',id,'Work selected for detailed review'), !w.instructions.trim() ? check('pending','WORK_DETAIL_MISSING',id,'Refine implementation details before review') : check('pass','WORK_DETAIL_PRESENT',id,'Implementation details present')]; })));
     if (request.purpose === 'decision') return combine(...request.subjectIds.map(decisionPrerequisites));
     if (request.purpose === 'release') return combine(...request.subjectIds.map(releasePrerequisites));
     const affectedOutcomes = run.outcomes.filter(o => o.criterionIds.some(id => request.subjectIds.includes(id)));

@@ -59,6 +59,16 @@ describe('native host simulated coordinator',()=>{
     const projectProfile=path.join(f.root,'profile.json');fs.writeFileSync(projectProfile,JSON.stringify(f.profile));expect(()=>initHost(path.join(f.dir,'third'),f.root,projectProfile)).toThrow(/outside/);
     f.run.policy.instruction.reference='different';f.save();expect(()=>authorizeHost(f.hostDir,'run.json')).toThrow(/does not match/);
   });
+  it('registers a separate implementation judgment against selected work and rejects a stale response',()=>{
+    const f=setup(); f.run.policy.reviews.implementation=['independent']; f.save(); authorizeHost(f.hostDir,'run.json');
+    const scope=f.judge('scope',['R-GREETING']); f.run.judgments=[]; f.save();
+    const sc=f.capture(scope); fs.renameSync(sc.artifact,path.join(f.hostDir,'captures','scope.txt')); sc.c.artifact.path='captures/scope.txt'; fs.writeFileSync(sc.file,JSON.stringify(sc.c)); registerHost(f.hostDir,'run.json',sc.file);
+    f.run.judgments.push(scope); const detail=f.judge('implementation',['W-CLI']); f.run.judgments.pop(); f.save();
+    const dc=f.capture(detail); f.run.work[0].instructions+=' corrected'; f.save();
+    expect(()=>registerHost(f.hostDir,'run.json',dc.file)).toThrow(/Stale/);
+    f.run.work[0].instructions=f.run.work[0].instructions.slice(0,-10); f.save();
+    registerHost(f.hostDir,'run.json',dc.file); expect(createHost(f.hostDir).verifyJudgment(detail,reviewBinding(f.run,detail))).toBe(true);
+  });
   it('requires raw reviewer output to match captured judgment',()=>{
     const f=setup();const j=f.judge('scope',['R-GREETING'],'approved');f.run.judgments=[];f.save();const c=f.capture(j);
     const rejected=JSON.stringify({kind:'judgment',value:{...j,result:'rejected'}});fs.writeFileSync(c.artifact,rejected);c.c.artifact.sha256=sha256(rejected);fs.writeFileSync(c.file,JSON.stringify(c.c));expect(()=>registerHost(f.hostDir,'run.json',c.file)).toThrow(/differs from reviewer envelope/);
