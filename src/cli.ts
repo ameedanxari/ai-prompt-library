@@ -143,8 +143,9 @@ export async function main(args: string[]): Promise<number> {
         releases:trace.releases.map(r=>({id:r.id,closure:r.closure})),
         sourceComparison: {
           sources:trace.sourceComparison,
-          acceptance:trace.criteria.map(({ id, description, scenario, targetId, productionRequired, effectiveReleaseRole }) => ({
-            id, description, scenario, targetId, productionRequired, effectiveReleaseRole,
+          acceptance:trace.criteria.map(({ id, description, scenario, targetId, productionRequired, effectiveReleaseRole, evidenceIds }) => ({
+            id, description, scenario, targetId, productionRequired, effectiveReleaseRole, evidenceIds,
+            producerWorkIds:run.work.filter(w => w.criterionIds.includes(id)).map(w => w.id),
             releaseIds:trace.releases.filter(r => r.closure.criterionIds.includes(id)).map(r => r.id),
           })),
           targets:run.targets,

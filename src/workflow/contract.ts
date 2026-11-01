@@ -7,7 +7,7 @@ export type ReviewPurpose = 'scope' | 'implementation' | 'semantic' | 'design' |
 export interface FileBinding { path: string; sha256: string }
 export interface SourceRef { sourceId: string; locator: string }
 export interface Source { id: string; binding: FileBinding; authority: 'user' | 'contract' | 'reference'; inspection: 'complete' | 'partial' | 'unread' }
-export interface Requirement { id: string; description: string; sourceRefs: SourceRef[]; criterionIds: string[]; releaseIds: string[]; mandatory: boolean }
+export interface Requirement { id: string; description: string; sourceRefs: SourceRef[]; criterionIds: string[]; releaseIds: string[]; mandatory: boolean; ownerSummary?: string }
 export interface Target {
   id: string;
   kind: 'web' | 'native' | 'desktop' | 'api' | 'sdk' | 'cli' | 'automation' | 'data' | 'ml' | 'infrastructure' | 'document' | 'media';

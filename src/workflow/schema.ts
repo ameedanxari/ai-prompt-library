@@ -61,8 +61,9 @@ export function parseRun(value: unknown): RunContract {
     assert(choices(s.authority, ['user','contract','reference']) && choices(s.inspection, ['complete','partial','unread']), s.id, 'invalid source authority/inspection');
   }
   for (const q of r.requirements) {
-    shape(q, 'id description sourceRefs criterionIds releaseIds mandatory', 'id description sourceRefs criterionIds releaseIds mandatory', q.id); refs(q.sourceRefs, q.id);
+    shape(q, 'id description sourceRefs criterionIds releaseIds mandatory ownerSummary', 'id description sourceRefs criterionIds releaseIds mandatory', q.id); refs(q.sourceRefs, q.id);
     assert(text(q.description) && q.sourceRefs.length > 0 && strings(q.criterionIds, false) && strings(q.releaseIds) && typeof q.mandatory === 'boolean', q.id, 'invalid obligation');
+    assert(q.ownerSummary === undefined || text(q.ownerSummary), q.id, 'invalid owner summary');
   }
   for (const t of r.targets) {
     shape(t, 'id kind identity environment providerMode revision bindings lifecycle', 'id kind identity environment providerMode revision bindings lifecycle', t.id);
