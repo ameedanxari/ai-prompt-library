@@ -43,15 +43,16 @@ const evidenceKinds = ['execution','consumer','image','operation','build','test'
 /** Parse only v3. Structural parsing never certifies source semantics or authority. */
 export function parseRun(value: unknown): RunContract {
   const names = 'schemaVersion kind runId revision projectRoot sources requirements targets criteria outcomes work resources decisions releases policy proofOutcomeIds activeWorkIds evidence judgments';
-  const r = shape(value, `${names} capacity`, names, 'run');
+  const r = shape(value, `${names} capacity milestones`, names, 'run');
   if (r.schemaVersion !== 3 || r.kind !== 'canonical-workflow') throw new WorkflowError('CONTRACT_UNSUPPORTED', 'Only canonical-workflow schemaVersion 3 is supported; historical state is read-only.');
   assert(text(r.runId) && integer(r.revision, 1) && isRelativePath(r.projectRoot), 'run', 'invalid run identity/root');
   for (const name of ['sources','requirements','targets','criteria','outcomes','work','resources','decisions','releases','evidence','judgments']) rows(r[name], name);
   assert(['sources','requirements','targets','criteria','outcomes'].every(k => r[k].length > 0), 'run', 'sources/requirements/targets/criteria/outcomes cannot be empty');
   assert(strings(r.proofOutcomeIds, false) && strings(r.activeWorkIds), 'run', 'invalid proof/active work selection');
   if (r.capacity !== undefined) {
-    const c = shape(r.capacity, 'period hours roles ownerTouchpoints sourceRefs', 'period hours roles ownerTouchpoints sourceRefs', 'capacity'); refs(c.sourceRefs, 'capacity');
+    const c = shape(r.capacity, 'scope period hours roles ownerTouchpoints sourceRefs', 'period hours roles ownerTouchpoints sourceRefs', 'capacity'); refs(c.sourceRefs, 'capacity');
     assert(text(c.period) && typeof c.hours === 'number' && Number.isFinite(c.hours) && c.hours >= 0 && (c.ownerTouchpoints === null || integer(c.ownerTouchpoints)) && Array.isArray(c.roles), 'capacity', 'invalid capacity');
+    if (c.scope !== undefined) { const sc = shape(c.scope, 'kind id', 'kind', 'capacity.scope'); assert(choices(sc.kind, ['all-work','release','milestone']) && (sc.kind === 'all-work' ? sc.id === undefined : text(sc.id)), 'capacity.scope', 'invalid scope'); }
     for (const v of c.roles) { const row = shape(v, 'role hours', 'role hours', 'capacity.roles'); assert(text(row.role) && typeof row.hours === 'number' && Number.isFinite(row.hours) && row.hours >= 0, 'capacity.roles', 'invalid role availability'); }
     assert(new Set(c.roles.map((v: Row) => v.role)).size === c.roles.length, 'capacity.roles', 'duplicate role');
   }
@@ -82,10 +83,11 @@ export function parseRun(value: unknown): RunContract {
     shape(o, 'id title requirementIds criterionIds targetId inputs', 'id title requirementIds criterionIds targetId inputs', o.id); inputs(o.inputs, o.id);
     assert(text(o.title) && strings(o.requirementIds, false) && strings(o.criterionIds, false) && text(o.targetId), o.id, 'invalid outcome');
   }
+  if (r.milestones !== undefined) for (const m of rows(r.milestones, 'milestones')) { shape(m, 'id title result recovery outcomeIds workIds assumptions reforecast sourceRefs', 'id title result recovery outcomeIds workIds assumptions reforecast sourceRefs', m.id); refs(m.sourceRefs, m.id); assert(text(m.title) && text(m.result) && text(m.recovery) && strings(m.outcomeIds, false) && strings(m.workIds, false) && text(m.assumptions) && text(m.reforecast) && m.sourceRefs.length > 0, m.id, 'invalid milestone'); }
   for (const w of r.work) {
     shape(w, 'id title outcomeIds criterionIds targetIds action inputs files instructions estimate', 'id title outcomeIds criterionIds targetIds action inputs files instructions', w.id); inputs(w.inputs, w.id);
     assert(text(w.title) && strings(w.outcomeIds, false) && strings(w.criterionIds, false) && strings(w.targetIds, false) && choices(w.action, actionKinds) && strings(w.files) && w.files.every(isRelativePath) && typeof w.instructions === 'string' && w.instructions.length <= 100_000, w.id, 'invalid work');
-    if (w.estimate !== undefined) { const e = shape(w.estimate, 'hours role ownerDelayHours ownerTouchpoints', 'hours role ownerDelayHours ownerTouchpoints', w.id); assert(range(e.hours) && range(e.ownerDelayHours) && text(e.role) && (e.ownerTouchpoints === null || integer(e.ownerTouchpoints)), w.id, 'invalid estimate'); }
+    if (w.estimate !== undefined) { const e = shape(w.estimate, 'hours role allocations ownerDelayHours ownerTouchpoints', 'ownerDelayHours ownerTouchpoints', w.id); const legacy = 'hours' in e || 'role' in e; assert(range(e.ownerDelayHours) && (e.ownerTouchpoints === null || integer(e.ownerTouchpoints)), w.id, 'invalid owner estimate'); if (legacy) assert('hours' in e && 'role' in e && !('allocations' in e) && range(e.hours) && text(e.role), w.id, 'invalid single-role estimate'); else { assert(Array.isArray(e.allocations) && e.allocations.length > 0, w.id, 'allocations required'); for (const a of e.allocations) { const row = shape(a, 'role hours', 'role hours', w.id); assert(text(row.role) && range(row.hours), w.id, 'invalid allocation'); } assert(new Set(e.allocations.map((a: Row) => a.role)).size === e.allocations.length, w.id, 'duplicate allocation role'); } }
   }
   for (const x of r.resources) {
     shape(x, 'id description kind targetId status sourceRefs producedBy reference binding', 'id description kind targetId status sourceRefs', x.id); refs(x.sourceRefs, x.id);

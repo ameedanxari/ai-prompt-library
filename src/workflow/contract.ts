@@ -50,7 +50,7 @@ export interface Work {
   files: string[];
   /** Only active work is detailed. Empty means retained, deferred work. */
   instructions: string;
-  estimate?: { hours: [number, number] | null; role: string; ownerDelayHours: [number, number] | null; ownerTouchpoints: number | null };
+  estimate?: ({ hours: [number, number] | null; role: string; allocations?: never } | { allocations: { role: string; hours: [number, number] | null }[]; hours?: never; role?: never }) & { ownerDelayHours: [number, number] | null; ownerTouchpoints: number | null };
 }
 export interface Resource {
   id: string;
@@ -75,6 +75,8 @@ export interface Decision {
 }
 export interface Outcome { id: string; title: string; requirementIds: string[]; criterionIds: string[]; targetId: string; inputs: Prerequisite[] }
 export interface Release { id: string; title: string; outcomeIds: string[]; sharedCriterionIds: string[]; sourceRefs: SourceRef[]; inputs: Prerequisite[]; /** Omission preserves production-composition requirements. Actual-target is a reviewed local/artifact delivery boundary. */ composition?: 'production' | 'actual-target' }
+export type ForecastScope = { kind: 'all-work' } | { kind: 'release' | 'milestone'; id: string };
+export interface Milestone { id: string; title: string; result: string; recovery: string; outcomeIds: string[]; workIds: string[]; assumptions: string; reforecast: string; sourceRefs: SourceRef[] }
 export interface Instruction { sourceId: string; locator: string; quote: string; reference: string; issuedAt: string }
 export interface AuthorityGrant { id: string; targetIds: string[]; actions: Action[]; sourceRef: SourceRef; reference: string }
 export interface CheckpointAcknowledgment {
@@ -140,7 +142,8 @@ export interface RunContract {
   policy: Policy;
   proofOutcomeIds: string[];
   activeWorkIds: string[];
-  capacity?: { period: string; hours: number; roles: { role: string; hours: number }[]; ownerTouchpoints: number | null; sourceRefs: SourceRef[] };
+  milestones?: Milestone[];
+  capacity?: { scope?: ForecastScope; period: string; hours: number; roles: { role: string; hours: number }[]; ownerTouchpoints: number | null; sourceRefs: SourceRef[] };
   evidence: Evidence[];
   judgments: Judgment[];
 }

@@ -16,7 +16,7 @@ When refining or repairing the plan, compare each changed requirement-to-criteri
 
 Match proof to the actual delivery target: a local tool or artifact can use a source-reviewed `actual-target` release and local evidence. Reserve `productionRequired` for obligations requiring a production environment. Never relabel local observations as production, or use an actual-target boundary to omit required deployed behavior.
 
-When asked for a roadmap or development plan, make the delivery forecast useful: name the user result and recovery at each milestone, link the work and real input/decision producers that enable it, and record disjoint role effort, owner waiting and uncertainty. Compare the same release scope with any stated budget or deadline; include testing, integration, review and recovery once. Bounded detail does not remove future outcome semantics or provisional estimates. If capacity is unknown, show the next evidence and reforecast point rather than imply that the plan fits.
+When asked for a roadmap or development plan, make the delivery forecast useful: record source-bound canonical milestones naming the user result and recovery, linked outcome and work IDs, assumptions and a reforecast trigger; link the work and real input/decision producers that enable it, and record disjoint role effort, owner waiting and uncertainty. Compare the same release scope with any stated budget or deadline; include testing, integration, review and recovery once. Bounded detail does not remove future outcome semantics or provisional estimates. If capacity is unknown, show the next evidence and reforecast point rather than imply that the plan fits.
 
 ## Implement and prove
 
@@ -33,3 +33,5 @@ Validate and inspect the derived view before asking for applicable review. The r
 Honor explicit plan/review stops and persisted user instructions. A request to plan and implement permits ordinary in-scope transitions; do not repeatedly ask permission. Scope changes, reserved owner decisions and consequential external acts require their actual authority. Evidence does not authorize publishing, spending, live-data mutation, messages or destruction.
 
 At a handoff show the actual target/artifact, success and recovery actions, observed evidence, remaining limits and next action. For release reconcile the full selected original scope on one current candidate, including operator/handover duties. Keep exclusions and unverified obligations visible. Report structural readiness separately from semantic acceptance and real reviewer provenance. Never infer release from completed work counts.
+
+Declare capacity scope explicitly as a milestone, release, or all-work boundary before comparing it with labor. Use a single role estimate or disjoint role allocations; unknown estimates, owner waits, missing staffing and downstream scope remain visible.

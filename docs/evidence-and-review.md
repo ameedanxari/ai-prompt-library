@@ -27,3 +27,5 @@ For newly authored runs, set `policy.reviews.implementation` to include `indepen
 Schema 3 runs with the field absent retain their historical behavior. Their scope judgments never approved implementation detail; generated views explicitly say that detail review is not configured. Adding the duty changes the scope and authorization bindings and requires current review and host authorization. Already verified work is not retroactively represented as having received implementation review.
 
 Once configured, the supported canonical commit path does not permit removing or weakening implementation review roles for that run; create a separate run for a changed duty. This protects the supported workflow from reviving earlier receipts, but direct filesystem tampering is outside the host's non-sandbox trust boundary.
+
+Implementation review also binds relevant source-bound milestones, scoped capacity and the estimates and prerequisite links that feed their selected forecast; unrelated scoped milestones and capacity do not stale it. Actual source review must assess assumptions and missing scope rather than accept sums as proof of feasibility.

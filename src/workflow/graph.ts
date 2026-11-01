@@ -16,7 +16,8 @@ export function validateGraph(run: RunContract): Diagnostic[] {
   for (const purpose of ['scope','semantic','release'] as const) if (!run.policy.reviews[purpose].includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', `policy.reviews.${purpose}`, 'Outcome runs require an actual distinct independent review duty');
   if (run.policy.reviews.implementation && !run.policy.reviews.implementation.includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', 'policy.reviews.implementation', 'Configured implementation review requires a distinct independent reviewer');
   if (run.targets.some(t => visualTarget(t.kind)) && !run.policy.reviews.design.includes('independent')) add('INDEPENDENT_REVIEW_REQUIRED', 'policy.reviews.design', 'Composed visual acceptance requires a distinct independent reviewer');
-  if (run.capacity) sourceRefs(run.capacity.sourceRefs, 'capacity');
+  if (run.capacity) { sourceRefs(run.capacity.sourceRefs, 'capacity'); const scope = run.capacity.scope; if (scope?.kind === 'release') refs([scope.id], 'release', 'capacity.scope'); if (scope?.kind === 'milestone' && !run.milestones?.some(m => m.id === scope.id)) add('REFERENCE_UNKNOWN','capacity.scope',`Unknown milestone ${scope.id}`); }
+  for (const m of run.milestones ?? []) { refs(m.outcomeIds, 'outcome', m.id); refs(m.workIds, 'work', m.id); sourceRefs(m.sourceRefs, m.id); }
   for (const g of run.policy.grants) { refs(g.targetIds, 'target', g.id); sourceRefs([g.sourceRef], g.id); }
   for (const t of run.targets) if (t.lifecycle.sourceRef) sourceRefs([t.lifecycle.sourceRef], t.id);
   for (const c of run.criteria) {

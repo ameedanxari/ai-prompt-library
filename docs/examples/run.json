@@ -169,5 +169,27 @@
     "W1"
   ],
   "evidence": [],
-  "judgments": []
+  "judgments": [],
+  "milestones": [
+    {
+      "id": "M1",
+      "title": "First useful local journey",
+      "result": "A consumer completes the selected journey",
+      "recovery": "The consumer can correct the demonstrated failure",
+      "outcomeIds": [
+        "O1"
+      ],
+      "workIds": [
+        "W1"
+      ],
+      "assumptions": "Staffing and duration are unknown until estimated.",
+      "reforecast": "After the first verified journey and staffing confirmation.",
+      "sourceRefs": [
+        {
+          "sourceId": "S1",
+          "locator": "Original request"
+        }
+      ]
+    }
+  ]
 }
