@@ -73,7 +73,10 @@ const questions: Record<ReviewPurpose, string[]> = {
   ],
   implementation: [
     'Inspect the exact selected instructions, files and estimates against original obligations, accepted architecture, operational qualifiers, target lifecycle and authority.',
+    'Trace each required consumer entry, route/interface and acceptance action to an owned implementation path. Reconcile stable identity, redirects and failure behavior; mentioning a later outcome does not cover an omitted selected journey.',
+    'Starting from the actual repository state, walk the proposed setup and verification commands in order. Are manifests, lock generation, framework entry points, configuration, bootstrap, fixtures and runner roots already present or explicitly owned, with effort included? Do not claim execution from this planning walkthrough.',
     'Can the bounded journey and its interfaces be exercised with meaningful success and recovery checks? Do preparation artifacts precede their decisions, and do milestone duties and scoped role/dependency assumptions remain complete?',
+    'Check protocol and capability assumptions at integration boundaries against current primary documentation. Preserve accepted intent while reconciling incompatible methods, schedules, limits or account capabilities; do not silently change providers or infer purchase authority.',
     'Describe a plausible wrong implementation current criteria would still admit. Reject blocking contradictions and retain a separately bound implementation judgment even when reviewing scope in the same session.'
   ],
   semantic: [
