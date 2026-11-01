@@ -6,6 +6,29 @@ import { traceabilityPacket } from '../../src/workflow/traceability.js';
 import { createFixture } from './fixture.js';
 
 describe('traceability review packet', () => {
+  it('places original obligation and weakened acceptance together for public review, including unmapped sources', () => {
+    const f = createFixture();
+    try {
+      f.run.requirements[0].description = 'A greeting must preserve the supplied name and allow correction of invalid input.';
+      f.run.sources[0].binding = f.file('USER-REQUEST.md',fs.readFileSync(path.join(f.root,'USER-REQUEST.md'),'utf8') + '\n' + f.run.requirements[0].description);
+      f.run.requirements[0].sourceRefs[0].locator = 'Request paragraph 1';
+      f.run.criteria[0].description = 'Display any greeting.'; // IDs and links still match; a reviewer must spot the loss.
+      f.run.sources.push({ id:'unmapped',binding:f.file('OTHER.md','The owner also requires an export.'),authority:'user',inspection:'complete' });
+      fs.writeFileSync(path.join(f.root,'run.json'),JSON.stringify(f.run));
+      const result = spawnSync(process.execPath,[path.resolve('dist/cli.js'),'review','run.json','--project-root',f.root,'--purpose','scope','--ids','R-GREETING'],{encoding:'utf8'});
+      expect(result.status,result.stderr).toBe(0);
+      const packet = JSON.parse(result.stdout);
+      const comparison = packet.traceability.sourceComparison;
+      const source = comparison.sources.find((s: any) => s.source.id === 'request');
+      expect(fs.readFileSync(path.join(f.root,source.source.binding.path),'utf8')).toContain(source.obligations[0].description);
+      expect(source.obligations[0]).toMatchObject({ description:f.run.requirements[0].description,locators:['Request paragraph 1'],declaredReleaseIds:['R1'],criterionIds:['C-OK','C-RECOVER'] });
+      expect(comparison.acceptance[0]).toMatchObject({ id:'C-OK',description:'Display any greeting.',targetId:'cli',releaseIds:['R1'] });
+      expect(comparison.targets.find((t: any) => t.id === 'cli')).toMatchObject({ environment:'local' });
+      expect(comparison.sources.find((s: any) => s.source.id === 'unmapped')).toMatchObject({ source:{ inspection:'complete' },obligations:[] });
+      expect(packet.traceability.unmappedSourceIds).toContain('unmapped');
+      expect(packet.traceability.sourceComparison).not.toHaveProperty('pass');
+    } finally { f.cleanup(); }
+  });
   it('the public review command retains changed acceptance bytes from same-run history', () => {
     const f=createFixture();
     try {

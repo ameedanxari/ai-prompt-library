@@ -141,6 +141,14 @@ export async function main(args: string[]): Promise<number> {
         requirements:trace.requirements.map(q=>({id:q.id,outcomeIds:q.outcomeIds})),
         criteria:trace.criteria.map(c=>({id:c.id,effectiveReleaseRole:c.effectiveReleaseRole,evidenceIds:c.evidenceIds})),
         releases:trace.releases.map(r=>({id:r.id,closure:r.closure})),
+        sourceComparison: {
+          sources:trace.sourceComparison,
+          acceptance:trace.criteria.map(({ id, description, scenario, targetId, productionRequired, effectiveReleaseRole }) => ({
+            id, description, scenario, targetId, productionRequired, effectiveReleaseRole,
+            releaseIds:trace.releases.filter(r => r.closure.criterionIds.includes(id)).map(r => r.id),
+          })),
+          targets:run.targets,
+        },
         unmappedSourceIds:trace.unmappedSourceIds, previous:trace.previous, changes:trace.changes, reviewerQuestions:trace.reviewerQuestions,
       },
       instruction:'A real distinct reviewer must inspect source/consumer evidence and return an authenticated judgment. This packet is not an approval.' });

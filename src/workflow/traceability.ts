@@ -17,6 +17,17 @@ export function traceabilityPacket(run: RunContract, previous?: RunContract) {
     unmappedSourceIds:state.sources.filter(s => !state.requirements.some(q => q.sourceRefs.some(ref => ref.sourceId === s.id))).map(s => s.id),
   });
   const current = project(run);
+  // Navigation for a human source reviewer, not an assessment of meaning. Keep
+  // unmapped sources visible: absence of a requirement is itself a question.
+  const sourceComparison = run.sources.map(source => ({
+    source,
+    obligations: run.requirements.filter(q => q.sourceRefs.some(ref => ref.sourceId === source.id)).map(q => ({
+      id:q.id, description:q.description, mandatory:q.mandatory,
+      locators:q.sourceRefs.filter(ref => ref.sourceId === source.id).map(ref => ref.locator),
+      declaredReleaseIds:q.releaseIds,
+      criterionIds:q.criterionIds,
+    })),
+  }));
   const prior = previous ? project(previous) : undefined;
   // Only changed records are retained: IDs link each mapping to its normalized records.
   const diff = <T extends { id:string }>(before: T[], after: T[]) =>
@@ -36,6 +47,7 @@ export function traceabilityPacket(run: RunContract, previous?: RunContract) {
   } : undefined;
   return {
     ...current,
+    sourceComparison,
     ...(changes ? { previous:{ runId:prior!.runId,revision:prior!.revision },changes } : {}),
     reviewerQuestions:[
       'Against each original source and locator, do the requirement and linked criteria preserve every obligation, qualifier, exception and release duty? Inspect unmapped, partially inspected and unread sources for omissions.',
