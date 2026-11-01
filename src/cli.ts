@@ -68,6 +68,7 @@ const questions: Record<ReviewPurpose, string[]> = {
     'Compare original sources and accepted architecture with the criteria: which specific actors, operational qualifiers, rules, recovery or obligations are missing or narrowed?',
     'Do milestones cover their own contractual and operational duties at the actual stage, with lifecycle and authority distinct from later release?',
     'Can preparation produce its own reviewable success and recovery artifact before the decision it enables? Are reserved decisions and real inputs distinct?',
+    'Which choices are already accepted or ordinary reversible defaults? Reject redundant owner approvals and missing-access dependencies that block independent authorized preparation; require real capability and authority at the consumer that needs them.',
     'Does the bounded journey have usable interfaces, consumer evidence and a meaningful failure-detecting runner? Are role effort, dependencies, owner waits and capacity compared on the same scope?',
     'Describe a plausible wrong implementation current criteria would still admit; retain contrary evidence and unresolved findings. Structural validity is not semantic approval.'
   ],
