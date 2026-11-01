@@ -1,8 +1,8 @@
-# Workflow and optional references
+# Workflow and references
 
 Start at [the entry point](orchestrators/ai-agent-entry-point.md). Read [the model guide](../docs/model.md) when creating or changing `run.json`. Do not load this folder wholesale.
 
-Use a reference only when it helps answer a concrete question:
+For substantial planning and review, read sources and decisions and consumer proof. Use state and operations when relevant to state, access or operations, and visual proof for a visual journey:
 
 | Question | Reference |
 | --- | --- |

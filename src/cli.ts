@@ -65,13 +65,17 @@ function revisionOf(options: Options): number {
 }
 const questions: Record<ReviewPurpose, string[]> = {
   scope: [
-    'Read the original source bytes and conflicting editions. Which requested behavior or release duty is missing, narrowed or invented?',
-    'Trace a representative success and recovery journey through criteria, targets and prerequisites. Does each operation name its actual target and lifecycle?',
-    'Can inspection and quote preparation run before the decisions they produce? Distinguish missing access from acceptance of its result.',
-    'Are ordinary reversible choices made, genuine owner inputs scoped to their consumers, and effort/capacity limits honest?',
-    'Report specific contrary evidence and unresolved findings. Structural validity or covered IDs are not semantic approval.'
+    'Compare original sources and accepted architecture with the criteria: which specific actors, operational qualifiers, rules, recovery or obligations are missing or narrowed?',
+    'Do milestones cover their own contractual and operational duties at the actual stage, with lifecycle and authority distinct from later release?',
+    'Can preparation produce its own reviewable success and recovery artifact before the decision it enables? Are reserved decisions and real inputs distinct?',
+    'Does the bounded journey have usable interfaces, consumer evidence and a meaningful failure-detecting runner? Are role effort, dependencies, owner waits and capacity compared on the same scope?',
+    'Describe a plausible wrong implementation current criteria would still admit; retain contrary evidence and unresolved findings. Structural validity is not semantic approval.'
   ],
-  implementation: ['Inspect the exact selected work instructions, owned files, estimates, source obligations, target authority and relevant forecast assumptions. Identify omissions, stale assumptions and practical execution risks.', 'Reject blocking contradictions; retain independent findings and a separate bound implementation judgment even when reviewing scope in the same session.'],
+  implementation: [
+    'Inspect the exact selected instructions, files and estimates against original obligations, accepted architecture, operational qualifiers, target lifecycle and authority.',
+    'Can the bounded journey and its interfaces be exercised with meaningful success and recovery checks? Do preparation artifacts precede their decisions, and do milestone duties and scoped role/dependency assumptions remain complete?',
+    'Describe a plausible wrong implementation current criteria would still admit. Reject blocking contradictions and retain a separately bound implementation judgment even when reviewing scope in the same session.'
+  ],
   semantic: [
     'Inspect original intent, actual consumer actions and raw evidence on the bound target, including recovery and forbidden behavior.',
     'Does the observed behavior preserve actor/permission/state/provider semantics? Challenge a plausible wrong implementation.',
