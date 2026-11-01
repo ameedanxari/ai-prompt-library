@@ -96,7 +96,7 @@ describe('native host simulated coordinator',()=>{
     const call=(executable:string,args:string[])=>spawnSync(process.execPath,[executable,...args],{encoding:'utf8'});
     const init=call(cli,['init','--directory',host,'--project-root',f.root,'--profile',f.profilePath]);expect(init.status,init.stderr).toBe(0);const retained=JSON.parse(init.stdout).cli;expect(retained).toBe(path.join(host,'runtime','host-cli.js'));
     fs.appendFileSync(path.join(dist,'workflow','graph.js'),'\n// simulated package upgrade\n');
-    const denied=call(cli,['authorize','--directory',host,'--run','run.json']);expect(denied.status).not.toBe(0);expect(denied.stderr).toContain(retained);
+    const denied=call(cli,['authorize','--directory',host,'--run','run.json']);expect(denied.status).not.toBe(0);expect(JSON.parse(denied.stderr).error).toContain(retained);
     const auth=call(retained,['authorize','--directory',host,'--run','run.json']);expect(auth.status,auth.stderr).toBe(0);
     const j=f.judge('scope',['R-GREETING']);f.run.judgments=[];f.save();const raw=JSON.stringify({kind:'judgment',value:j});fs.writeFileSync(path.join(host,'captures','review.json'),raw);const capture={kind:'judgment',value:j,origin:{id:j.reviewer.id,contextId:j.reviewer.contextId,reference:j.reference,observedAt:j.observedAt},artifact:{path:'captures/review.json',sha256:sha256(raw)}};const cap=path.join(host,'captures','capture.json');fs.writeFileSync(cap,JSON.stringify(capture));
     const deniedRecord=call(cli,['register','--directory',host,'--run','run.json','--capture',cap]);expect(deniedRecord.status).not.toBe(0);const registered=call(retained,['register','--directory',host,'--run','run.json','--capture',cap]);expect(registered.status,registered.stderr).toBe(0);
