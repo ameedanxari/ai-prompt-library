@@ -1,14 +1,37 @@
-# Workflow and references
+# Planning pipeline
 
-Start at [the entry point](orchestrators/ai-agent-entry-point.md). Read [the model guide](../docs/model.md) when creating or changing `run.json`. Do not load this folder wholesale.
+Turns a project's documents into a complete, granular development plan, then builds it. It follows the conventional order:
 
-For substantial planning and review, read sources and decisions and consumer proof. Use state and operations when relevant to state, access or operations, and visual proof for a visual journey:
+1. Understand the work.
+2. Split it into modules.
+3. Detail each module.
+4. Assemble the roadmap.
 
-| Question | Reference |
-| --- | --- |
-| Which source is authoritative, what can be defaulted, and what needs an owner? | [Sources and decisions](references/sources-and-decisions.md) |
-| Who owns state, access, operations and recovery? | [State and operations](references/state-and-operations.md) |
-| Does the actual visual journey meet its intent? | [Visual proof](references/visual-proof.md) |
-| Can the real consumer use it, and do checks detect failure? | [Consumer proof](references/consumer-proof.md) |
+Each stage is one prompt. Each stage writes readable markdown under `plan/` in the consumer project. A gap gets a stated default; the pipeline never stops to wait for one.
 
-These guides supply questions and mechanisms, not features or mandatory document outputs. [Evidence and review](../docs/evidence-and-review.md) explains the boundary between retained observations, judgments and verified provenance. [Upgrade guidance](../docs/upgrading.md) covers historical runs. [Retirement decisions](../docs/retirement.md) identifies the preserved baseline and removed surface.
+| Stage | Prompt | Writes |
+|---|---|---|
+| 1 Inventory | `01-inventory.md` | `plan/01-SOURCES.md` |
+| 2 Understand | `02-understand.md` | `plan/02-BRIEF.md` |
+| 3 Decompose | `03-decompose.md` | `plan/03-ARCHITECTURE.md`, `plan/03-MODULES.md` |
+| 4 Elaborate | `04-elaborate.md` | `plan/modules/<id>.md`, one run per module |
+| 5 Integrate | `05-integrate.md` | `plan/05-ROADMAP.md` |
+| 6 Critique | `06-critique.md` | `plan/reviews/<stage>.md`, after any stage |
+| 7 Implement | `07-implement.md` | Code, tests and roadmap updates, milestone by milestone |
+
+## Running a stage
+
+Give the agent `00-RULES.md`, the stage prompt, and the location of the sources and the `plan/` folder. Run each stage in a fresh context; later stages read earlier outputs rather than relying on conversation memory. After a stage, optionally run stage 6 on its output with a different agent. The producer fixes critical and major findings, for at most two rounds.
+
+Optional owner checkpoints, about 15 minutes each:
+
+- after stage 2, review the assumption register
+- after stage 3, review the module split
+
+The pipeline continues on its defaults if nobody reviews.
+
+## Gates
+
+- **Coverage check** (`node .ai-prompts/scripts/coverage.mjs plan`): every requirement maps to a module, at least one acceptance criterion and at least one task; no dangling IDs.
+- **Critique**: the stage 6 checklist, judged against the sources.
+- **Tests and CI** during implementation: every acceptance criterion becomes an automated test where feasible.

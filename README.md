@@ -1,43 +1,59 @@
 # AI Prompt Library
 
-A compact workflow for planning, implementing and reviewing useful outcomes. It keeps original obligations, current work, decisions and evidence in one `run.json`; readiness and owner summaries are derived from that model. It helps organize judgment and verification. It does not guarantee autonomous delivery or production quality.
+Staged prompts that turn a project's documents into a complete, traceable development plan, and then build it. They follow the conventional order:
 
-Install in your project root:
+1. Understand the work from the docs.
+2. Split it into modules, with the docs as guardrails.
+3. Detail each module with its own focused prompt.
+4. Assemble a roadmap whose milestones each end in something a user can try.
+
+Gaps get stated defaults instead of stopping the work. Every requirement cites its source. A small script checks that every requirement reaches a module, an acceptance criterion and a task.
+
+## Install
+
+In your project root:
 
 ```bash
 git clone --depth 1 https://github.com/ameedanxari/ai-prompt-library.git .ai-prompts
-(cd .ai-prompts && npm ci && npm run build)
-bash .ai-prompts/scripts/bootstrap-project-integration.sh
+node .ai-prompts/scripts/bootstrap.mjs
 ```
 
-Keep an existing checkout and its consumer outputs when upgrading. [Version 2 changes the public workflow and schema](docs/upgrading.md); no historical run is silently migrated. The CLI needs Node.js 22.12.0+; npm builds/installs the package. Bash is optional: `node .ai-prompts/scripts/bootstrap.mjs` also integrates the project. See [Quick Start](QUICK_START.md) for the actual run commands.
+Bootstrap adds a short managed block to `AGENTS.md`, pointing agents at the pipeline. It also creates `MY_PROJECT.md` from the template if that file is absent, and changes nothing else. Node.js 22.12 or newer is needed only for the scripts; there are no dependencies to install.
 
-To install a locally built package as a development dependency instead, run `npm pack` in the library checkout, then in the consumer project:
+## Use
+
+Ask your agent, for example: "Use ai-prompt-library to plan this project from the documents in `docs/`, then build milestone 1."
+
+The agent follows [prompts/README.md](prompts/README.md):
+
+| Stage | Prompt | Output in `plan/` |
+|---|---|---|
+| 1 Inventory | [01-inventory.md](prompts/01-inventory.md) | `01-SOURCES.md`: sources, authority order, contradictions |
+| 2 Understand | [02-understand.md](prompts/02-understand.md) | `02-BRIEF.md`: scope, requirements, assumption register |
+| 3 Decompose | [03-decompose.md](prompts/03-decompose.md) | `03-ARCHITECTURE.md`, `03-MODULES.md` |
+| 4 Elaborate | [04-elaborate.md](prompts/04-elaborate.md) | `modules/M-##.md`: behaviour, data, interfaces, acceptance criteria, tests, tasks |
+| 5 Integrate | [05-integrate.md](prompts/05-integrate.md) | `05-ROADMAP.md`: milestones, demo scripts, gates, forecast |
+| 6 Critique | [06-critique.md](prompts/06-critique.md) | `reviews/<stage>.md` |
+| 7 Implement | [07-implement.md](prompts/07-implement.md) | Code and tests, milestone by milestone |
+
+Every stage also follows [00-RULES.md](prompts/00-RULES.md). Run each stage in a fresh context; stages communicate only through the files in `plan/`.
+
+Check traceability at any point after stage 4:
 
 ```bash
-npm install --save-dev /path/to/ai-prompt-library-2.0.0.tgz
-ln -s node_modules/ai-prompt-library .ai-prompts
-bash .ai-prompts/scripts/bootstrap-project-integration.sh
+node .ai-prompts/scripts/coverage.mjs plan
 ```
 
-Create that link only when `.ai-prompts` does not already exist. The installed executable is available through `npx ai-prompt-workflow`; from a consumer project use `node .ai-prompts/dist/cli.js`, or in a built source checkout use `node dist/cli.js`.
+## What the gates are for
 
-This source change does not publish a registry release. Registry installation by version is appropriate only after that version has actually been published.
+- **Coverage** catches dropped requirements, untested requirements, tasks that trace to nothing, and dangling IDs.
+- **Critique** is a fixed checklist, run by a reviewer who did not write the stage and who judges against the sources.
+- **Tests and CI** come during implementation. Every acceptance criterion becomes an automated test where feasible.
 
-Keep generated runs at project-relative `prompts/outputs/runs/<run-id>/run.json`, outside the library/dependency directory. Bootstrap changes only its managed AGENTS.md block and creates an absent project brief; it does not create a run or alter IDE configuration.
+There is no provenance bookkeeping. The gates exist to protect the product.
 
-Substantial execution needs actual instruction, observation and distinct-review provenance. The shipped [native coordinator integration](docs/host-integration.md) supplies setup, receipt storage and a verifier for a parent with actual command/subagent tools; it removes bespoke adapter code. The parent still must observe genuine instructions and results. It is not platform identity authentication, an OS sandbox, or a model service. Existing trusted adapters remain supported; missing capabilities stay pending. See [trust limits](docs/evidence-and-review.md).
+## Limits
 
-Agents start at [the entry point](prompts/orchestrators/ai-agent-entry-point.md). Give an ordinary request and relevant original sources. The agent inspects existing state, chooses conservative reversible defaults, preserves missing inputs and owner decisions, then proves a representative useful result and recovery before expanding work. Small changes can be handled directly.
+Prompts do not guarantee a correct plan. The highest-value human time is two optional 15-minute reviews: the assumption register after stage 2, and the module split after stage 3. See [docs/validation.md](docs/validation.md) for what has been tested so far, and [evaluation/](evaluation/README.md) for how to test changes.
 
-The [version 3 model](docs/model.md) separates source requirements, targets/lifecycle, outcomes, work, resources, decisions, releases, evidence and judgments. A summary is a view of these facts, never a second acceptance contract. Review-only requests stay read-only. Explicit planning stops and owner reservations persist; permission to implement does not authorize publishing, spending or live-data destruction.
-
-Actual consumer behavior matters. Visual products need inspected composed screens; headless products need exercised installation, commands/APIs or operations. Keep mocks and unrun checks labelled. Matching digests identify retained bytes, not an authenticated reviewer or semantic correctness. [Evidence and review](docs/evidence-and-review.md) explains those limits.
-
-The large template catalogue and bundled application scaffolds have been retired. A few [optional references](prompts/README.md) retain specific source, state, visual and recovery mechanisms. [The retirement inventory](docs/retirement.md) preserves decisions and exact Git recovery. We make no token-savings, model-superiority or production-readiness promise from prompt size or structural tests.
-
-Read the [dated validation report](docs/validation.md) for actual first/final trial results and limits.
-
-Contributors: see [CONTRIBUTING.md](CONTRIBUTING.md). Run repository checks and exercise the public CLI before proposing changes.
-
-New runs configure `policy.reviews.implementation` with `independent` and obtain a separate current implementation judgment before selected work executes. Scope and detail may be reviewed in one session with separate receipts. Historical runs without that field have no configured detail review; scope approval does not cover detail. See [evidence and review](docs/evidence-and-review.md).
+Upgrading from version 2: see [docs/upgrading.md](docs/upgrading.md).

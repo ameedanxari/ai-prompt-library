@@ -1,18 +1,20 @@
-# Retirement decisions
+# Retired versions
 
-The previous library is preserved exactly by Git tag `archive/pre-overhaul-2026-10-29` at `e91c5bf`. Recover a file with `git show archive/pre-overhaul-2026-10-29:<path>`. The overhaul replaces the active product; it does not ship a second archive of the old catalogue.
+Each earlier version is preserved exactly by a Git tag. Recover any file with `git show <tag>:<path>`, or check out the tag.
 
-[The path inventory](retired-files.json) records all 970 baseline tracked paths, their original SHA-256, and retained/rewritten/retired disposition, including runtime, command chains, tests, prompts, documentation and scaffolds. Only tracked baseline files were selected for removal; ignored and untracked consumer outputs were not selected.
+| Tag | Commit | What it holds |
+|---|---|---|
+| `archive/v2-final-2026-11-01` | `a97cada` | Version 2 as merged on `main`: canonical `run.json` workflow, CLI, host coordinator |
+| `archive/v2-semantic-source-preservation-2026-11-01` | `2645b99` | Unmerged v2 repair branch (pull request 7), closed without merging when v3 replaced v2 |
+| `archive/pre-logisrch-rerun-2026-10-31` | — | Version 2 before the Logisrch reruns |
+| `archive/pre-overhaul-2026-10-29` | `e91c5bf` | Version 1 template catalogue, before the v2 overhaul |
 
-| Previous surface | Decision and reason |
-| --- | --- |
-| Domain/stack template catalogue and top-level supplemental prompts | Retired. Generic code, feature inventories and cross-domain integration lists encouraged broad scope and duplicated current provider expertise. No count/category obligation survives. |
-| Four engines, rolling/revise/schema/baseline contracts and review suite | Replaced by one compact entry workflow and specific review questions. Repeated rules and independently authored readiness records created consistency work. |
-| Bundled iOS/Android gallery application and screenshot templates | Retired. A domain-specific scaffold is not a general delivery workflow and should not become an implied product default. |
-| Historical plans, upgrade notes, optional safeguards and API guides | Retired from current documentation. Exact history remains in Git; current docs describe actual shipped behavior. |
-| Free-tier/tool marketing | Retired. Time-sensitive claims and interaction estimates were unsupported and not needed for the workflow. |
-| Public install/start/contribution/brief guides | Rewritten for the new model, tooling, limits and compatibility boundary. |
+## Why version 2 was retired
 
-A specialist mechanism survives only if it offers unique actionable guidance for a real decision/failure, has truthful limits, applies to bounded work and creates neither product scope nor a duplicate mandatory artifact. Selected mechanisms were rewritten into four short [references](../prompts/README.md): source/decision handling, state/operations, composed visual proof and consumer/test recovery. The whole old corpus was inventoried, not individually certified as current or incorrect.
+Twenty repair rounds on a real project did not converge: external scores went 12→13, 16→19, then 21→21 out of 24, and a fixed regression came back. Its design worked against the goal:
 
-The redesign is motivated by observed operational inconsistency, not a demonstrated absence of instructions. Earlier evaluations found source and readiness errors despite instructions covering them. Text/shape tests do not prove prompt efficacy. Fresh consumer trials and independent reviews must judge the replacement's behavior; no autonomous production-quality or superiority claim follows from cleanup.
+- It detailed only the next work item.
+- It blocked on missing inputs instead of defaulting.
+- It modelled proof and authority in eleven cross-linked collections.
+
+Each repair added rules on top of that design. Version 3 starts again from the conventional plan-then-build sequence.

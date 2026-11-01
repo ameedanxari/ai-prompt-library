@@ -1,23 +1,18 @@
 # Project brief
 
-Save this as `MY_PROJECT.md` at the project root, or provide the same information in your request. Only the goal is required; use existing sources and reasonable reversible defaults for unspecified details.
+Optional. Use it for anything the project's documents do not already say. Leave any section empty; the pipeline fills gaps with stated defaults.
 
 ## Goal
+Who needs what, and what does success look like?
 
-Who needs what useful result? Describe the entry and an example of success.
+## Documents
+Where the source documents are, and which one wins if they disagree.
 
-## Existing project and sources
+## Constraints
+Platforms, environments, budget, deadlines, data to keep, and anything that must not be built.
 
-Link original requirements, code, designs and relevant current behavior. Identify conflicting or authoritative editions when known.
+## Decisions already made
+Choices the pipeline should not reopen.
 
-## Constraints and targets
-
-Name required platforms, actual environments, data to retain, delivery dates/budget and important non-goals. Distinguish new/disposable targets from existing/live systems.
-
-## Authority and decisions
-
-Say whether you want review, planning or implementation. Name any required stop, reserved decision or authorized external action. List missing access/materials and accepted choices so they are not asked again.
-
-## First useful proof
-
-Describe a representative success and a failure/recovery worth testing, if known. For visual work include references or desired intent. Unknown details can remain explicit.
+## What to do
+Plan only, or plan and build. Name any actions that need your approval first, such as deploying, sending email or spending money.

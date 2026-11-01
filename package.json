@@ -1,7 +1,7 @@
 {
   "name": "ai-prompt-library",
-  "version": "2.0.0",
-  "description": "A canonical planning and evidence workflow for bounded software delivery",
+  "version": "3.0.0",
+  "description": "Staged prompts that turn project documents into a complete, traceable development plan, then build it",
   "license": "MIT",
   "type": "module",
   "repository": {
@@ -12,63 +12,24 @@
     "url": "https://github.com/ameedanxari/ai-prompt-library/issues"
   },
   "homepage": "https://github.com/ameedanxari/ai-prompt-library#readme",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    }
-  },
-  "bin": {
-    "ai-prompt-workflow": "./dist/cli.js",
-    "ai-prompt-host": "./dist/host-cli.js"
-  },
   "files": [
-    "dist",
-    "prompts/AGENTS.md",
-    "prompts/README.md",
-    "prompts/orchestrators/ai-agent-entry-point.md",
-    "prompts/references",
-    "prompts/steering/library-context.md",
-    "prompts/outputs/README.md",
-    "prompts/working_copy/README.md",
-    "docs/model.md",
-    "docs/evidence-and-review.md",
-    "docs/upgrading.md",
-    "docs/validation.md",
-    "evaluation/README.md",
-    "evaluation/brief-a.md",
-    "evaluation/brief-b.md",
-    "docs/retirement.md",
-    "docs/retired-files.json",
-    "docs/examples",
-    "scripts/bootstrap-project-integration.sh",
-    "scripts/bootstrap.mjs",
-    "scripts/workflow.sh",
+    "prompts",
+    "scripts",
+    "evaluation",
+    "docs",
     "README.md",
     "QUICK_START.md",
     "MY_PROJECT.md.template",
-    "LICENSE",
-    "docs/host-integration.md",
-    "prompts/orchestrators/native-coordinator.md"
+    "CHANGELOG.md",
+    "LICENSE"
   ],
   "engines": {
     "node": ">=22.12.0"
   },
   "scripts": {
-    "clean": "node -e \"require('node:fs').rmSync('dist',{recursive:true,force:true})\"",
-    "build": "npm run clean && tsc -p tsconfig.build.json",
-    "typecheck": "tsc -p tsconfig.typecheck.json",
-    "test": "vitest run",
-    "test:watch": "vitest",
+    "test": "node --test",
     "check:references": "node scripts/check-references.mjs",
-    "check": "npm run typecheck && npm run build && npm test && npm run check:references",
-    "prepack": "npm run build"
-  },
-  "devDependencies": {
-    "@types/node": "^22.20.5",
-    "typescript": "^5.9.3",
-    "vitest": "^5.0.5"
+    "check": "npm test && npm run check:references",
+    "coverage": "node scripts/coverage.mjs"
   }
 }

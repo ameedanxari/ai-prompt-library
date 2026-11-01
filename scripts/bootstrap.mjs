@@ -7,7 +7,7 @@ const library = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const root = fs.realpathSync(process.argv[2] ?? process.cwd());
 const start = '## AI Prompt Library Steering (Auto-Managed — do not edit)';
 const end = '<!-- /AI Prompt Library Steering (Auto-Managed) -->';
-const block = `${start}\n\nRead \`.ai-prompts/prompts/orchestrators/ai-agent-entry-point.md\` for substantial work.\nUse available native subagents for distinct source and consumer review; follow the\nshipped native coordinator workflow when host setup is missing.\nUse one versioned \`run.json\` as planning authority; derive summaries and readiness.\nKeep full requested outcomes, detail and prove the next useful journey, and retain\nactual source/target-bound evidence and reviewer provenance. Model each target's\nlifecycle and authority separately. Missing access blocks its consumer, not\nindependent authorized work. Honor explicit planning/review stops and persisted\nauthorization. Existing historical runs stay unchanged; never silently migrate\nor interpret invalid state as legacy.\n\n${end}`;
+const block = `${start}\n\nTo plan or build this project from its documents, follow \`.ai-prompts/prompts/README.md\`.\nRun the stages in order, each in a fresh context, writing to \`plan/\`. Fill gaps with\nstated defaults instead of stopping; cite sources for every requirement; elaborate\nevery module; check traceability with \`node .ai-prompts/scripts/coverage.mjs plan\`.\nSmall straightforward changes can be made and verified directly.\n\n${end}`;
 function writeAtomic(file, text) {
   if (fs.existsSync(file) && fs.lstatSync(file).isSymbolicLink()) throw new Error(`Refusing symlink: ${file}`);
   const temporary = `${file}.${crypto.randomUUID()}.tmp`;

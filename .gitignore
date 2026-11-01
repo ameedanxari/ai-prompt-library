@@ -44,11 +44,8 @@ tmp/
 temp/
 *.tmp
 
-# Generated outputs (when using the library)
-prompts/outputs/*
-!prompts/outputs/README.md
-prompts/working_copy/*
-!prompts/working_copy/README.md
+# Plans generated while testing the library
+plan/
 
 # Internal development artifacts
 .kiro/

@@ -1,13 +1,8 @@
-# Upgrade from version 1
+# Upgrading from version 2
 
-Version 2 of the package uses schema version 3 `run.json`. It replaces the manifest/companion/task-authority workflow and does not silently migrate historical consumer state. Public APIs and old executable wrappers are a breaking change. Pin the earlier library version if an existing run depends on them; inspect the historical record before choosing any new work.
+Version 3 replaces version 2's single `run.json` workflow with staged markdown prompts. Version 3 has no CLI, schema, host adapter or reviewer-receipt store, and nothing migrates automatically.
 
-The `inspect-legacy` command is read-only. It summarizes supported historical files without executing work or treating their completion flags as current outcome acceptance. Unknown or invalid new state must be diagnosed, never sent down a legacy fallback.
-
-For an authorized transition, create a separate version 3 run. Preserve originals, historical IDs and raw evidence. Reconcile original obligations into the new model, mark existing claims as historical/unverified and obtain current target evidence where needed. Do not copy approval booleans or invent reviewers/operators. Keep actual execution authority and owner stops explicit. No migration implies permission to reset consumer data, deploy or publish.
-
-The exact old tracked library is recoverable at `archive/pre-overhaul-2026-10-29`; see [retirement decisions](retirement.md). Consumer ignored outputs and source material remain consumer-owned and must not be removed by library cleanup.
-
-Run the new bootstrap to replace only its managed AGENTS.md block. Audit old generated integration artifacts separately: `.ai-prompts-version`, the old `validate-integration.sh` wrapper and IDE steering symlinks may still name retired code. Archive their current bytes/targets before retiring only confirmed library-generated artifacts. Preserve user-written files, settings and working links; bootstrap deliberately does not rewrite IDE configuration. An old host adapter is not implicitly compatible with the new `TrustedHost` interface. Configure and verify the new host before executing a new run; retaining an old instruction does not authenticate it under a different contract.
-
-Newly authored schema 3 runs configure `policy.reviews.implementation: ["independent"]`. Older runs lacking it keep their original receipt semantics; they have no configured detail review, and scope review is not detail approval. Opting in changes policy bindings and requires new authenticated scope and execution authorization as well as the separate detail judgment.
+- **Existing v2 runs** under `prompts/outputs/runs/` stay as they are. To continue a project on v3, start at stage 1 with the original documents, not the v2 run. The v2 run is a prior plan: stage 1 lists it as reference only, unless an owner decision adopts it.
+- **Update the checkout:** `git -C .ai-prompts pull`, then `node .ai-prompts/scripts/bootstrap.mjs`. Bootstrap replaces the old managed block in `AGENTS.md` in place and leaves the rest of the file alone.
+- **Old commands** (`ai-prompt-workflow`, `ai-prompt-host`, `validate --boundary …`) are gone. The only script is `scripts/coverage.mjs`.
+- **Recovering v2:** see [retirement.md](retirement.md).

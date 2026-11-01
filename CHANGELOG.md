@@ -1,5 +1,21 @@
 # Changelog
 
+## 3.0.0 — staged planning pipeline
+
+Breaking replacement of version 2. The library is now eight short markdown prompts that run in order:
+
+1. inventory the sources
+2. write the brief and requirements
+3. architecture and modules
+4. detail each module
+5. integrate the roadmap
+6. critique
+7. implement
+
+Stages communicate through readable files in `plan/`. Gaps get stated defaults instead of blocking. Every module is fully elaborated. One zero-dependency script, `scripts/coverage.mjs`, checks requirement → module → acceptance criterion → task → roadmap traceability.
+
+Removed: the `run.json` schema, the `ai-prompt-workflow` and `ai-prompt-host` CLIs, the TypeScript sources and build, the host coordinator, the reviewer-receipt and evidence model, and the old references. Version 2 is preserved at tag `archive/v2-final-2026-11-01`; see [retirement](docs/retirement.md) and [upgrading](docs/upgrading.md). First validation results are in [docs/validation.md](docs/validation.md).
+
 ## 2.0.0 — canonical workflow overhaul
 
 Breaking replacement of the multiple planning sidecars, Markdown task parser and legacy command chains with one schema-version-3 `run.json`, typed prerequisites, per-target lifecycle, scoped authenticated evidence/review and derived views. The public CLI is `ai-prompt-workflow`; old CLI/package subpaths are not silently redirected.
