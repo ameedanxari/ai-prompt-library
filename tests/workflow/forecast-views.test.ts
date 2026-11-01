@@ -27,3 +27,11 @@ it('an all-work subtotal does not certify a phase overrun without aligned capaci
  expect(owner).toContain('Known all-work high estimate is numerically above declared capacity');
  expect(owner).toContain('only if scope and period align');expect(owner).not.toContain('**High estimate exceeds capacity');
 });
+
+it('retains canonical source constraints and forecast assumptions in readable derived handoff',()=>{
+ const f=setup();f.run.requirements[0].description='Milestone depends on staffed availability; reforecast after the first useful journey.';
+ const views=renderViews(f.run,f.context).files;
+ expect(views['ROADMAP.md']).toContain(f.run.requirements[0].description);
+ expect(views['ROADMAP.md']).toContain('Criteria: C-OK, C-RECOVER');
+ expect(views['OWNER-BRIEF.md']).toContain('[Roadmap](ROADMAP.md#source-obligations-and-planning-assumptions)');
+});

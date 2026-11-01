@@ -10,6 +10,8 @@ Read original requirements before prior plans. Preserve every requested behavior
 
 Select the smallest representative journey that exposes integration or experience risk. Detail its cohesive work across necessary files; keep future scope as outcomes. Identify real prerequisites: input/access enables a producer; the producer's completed result enables its consumers. A decision accepting a review or quote cannot block the work that produces it. Model each target's lifecycle, data and operator separately. Missing live authority blocks that operation, not independent authorized local work.
 
+When refining or repairing the plan, compare each changed requirement-to-criterion mapping with its original obligation; adding a forecast or prerequisite must not displace an existing acceptance condition. Separate rehearsal/staging proof from delivered behavior, then ensure the selected release's actual production criteria cover every required delivered behavior, including recovery and operational duties. A shared source reference or a broad release title does not establish that coverage.
+
 When asked for a roadmap or development plan, make the delivery forecast useful: name the user result and recovery at each milestone, link the work and real input/decision producers that enable it, and record disjoint role effort, owner waiting and uncertainty. Compare the same release scope with any stated budget or deadline; include testing, integration, review and recovery once. Bounded detail does not remove future outcome semantics or provisional estimates. If capacity is unknown, show the next evidence and reforecast point rather than imply that the plan fits.
 
 ## Implement and prove

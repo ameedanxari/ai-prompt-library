@@ -42,7 +42,7 @@ export function readBinding(root: string, binding: FileBinding): Buffer {
   if (!data.length || sha256(data) !== binding.sha256) throw new WorkflowError('BINDING_STALE', `Missing, empty or changed bytes: ${binding.path}`);
   return data;
 }
-/** Scope binds source meaning and the complete declared contract, never mutable receipts. */
+/** Scope binds declared source/behavior relationships, not work detail, estimates or mutable receipts. */
 export function scopeFingerprint(run: RunContract): string {
   const { checkpointAcknowledgment, ...policy } = run.policy;
   return digest({ runId: run.runId, sources: run.sources, requirements: run.requirements,
