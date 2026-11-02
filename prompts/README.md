@@ -42,7 +42,7 @@ Every file a stage writes starts with a stamp such as `<!-- ai-prompt-library 3.
 node .ai-prompts/scripts/status.mjs plan
 ```
 
-It lists each plan file as current, stale, unstamped or missing, and names the earliest stage to re-run. Re-run that stage and every later planning stage in order. A re-run updates the existing files in place: it keeps the IDs of items that still apply, never reuses removed IDs, and keeps progress marks such as done tasks. Re-run a stage the same way when the sources change.
+It lists each plan file as current, stale, unstamped or missing, and names the earliest stage to re-run. Re-run that stage and every later planning stage in order. A re-run updates the existing files in place: it keeps the IDs of items that still apply, never reuses removed IDs, keeps progress marks such as done tasks, and lists what it added, changed and removed under `## Changes` at the end of the file. Re-run a stage the same way when the sources change.
 
 ## Gates
 

@@ -1,5 +1,36 @@
 # Validation record
 
+## 2026-11-02 — upgrading Logisrch to 3.2.0 and regenerating its plan in place
+
+**Setup.**
+- Logisrch's plan was seeded from run-02 as it stood after the critique. Its files predate stamps, so they were stamped 3.1.0, the version that generated them.
+- Bootstrap then upgraded the project:
+  - refreshed the `AGENTS.md` block
+  - replaced the v2 commit hash in `.ai-prompts-version`
+  - re-pointed six dangling v2 steering links in `.cursor`, `.windsurf`, `.kiro`, `.idea`, `.vscode` and `.ai-steering`
+  - warned that `MY_PROJECT.md` still sent agents to the v2 run
+- `status.mjs` named stage 2 as stale. After stage 2 re-ran, it named stages 3–5, then stage 5 alone, and finally reported the plan current.
+- Each stage re-ran in place in a fresh Claude Opus 5.5 agent. Stage 4 ran its 12 modules in parallel.
+
+| Measure | Result |
+|---|---|
+| IDs | No ID removed or renumbered. New: R-177–R-181, 6 tasks, about 20 acceptance criteria |
+| Coverage | PASS: 181 requirements, 379 criteria, 143 tasks all placed |
+| Golden score (Claude Sonnet scorer, spot-checked) | **118/120**, no critical item at 0, all must-not rules pass |
+| Forecast | 615 task hours, 713 h with fixing (687 h before), against the 168 h plan of record |
+
+**What the new stage 2 rules changed.** The brief now names Option A as the build, and G-A1 rose from 1 to 2. The brief again excluded the unsubscribe, this time citing a higher source as the new rule requires ("no marketing email in R1" in the adopted architecture contract). The key still scores that item 1.
+
+**Points lost.**
+- The unsubscribe item, as above.
+- `/search` is disallowed in `robots.txt` and also marked noindex, so crawlers never see the noindex. Run-02 had the same design but a different scorer gave it 2, which shows how much scores vary between scorers.
+
+**Found and fixed while doing this.** An independent review of the new scripts found two real bugs, both now fixed and covered by tests:
+- a plan where only the stale stage had been re-run reported as current
+- a dangling `AGENTS.md` symlink would have been replaced by a regular file
+
+Stage 3 also showed that downstream re-runs could not tell what had changed, so the rules now require a `## Changes` line on every in-place re-run.
+
 ## 2026-11-02 — v3 run-02 on Logisrch (stages 1–6, prompts 3.1.0)
 
 **Setup.** Same as run-01: a fresh Claude Opus 5.5 agent per stage, the same 28 sources, no access to the key or earlier runs. Stage 4 ran its 12 modules in parallel, as 3.1.0 now allows.
@@ -39,4 +70,4 @@
 
 **Compared with v2.** The v2 runs on the same sources were rejected six times in one planning pass and never reached a scored final plan. v3 run-01 finished all five planning stages on the first pass.
 
-**Not yet validated:** stage 6 catching over-scope, stage 7 implementation, Briefs A and B, and an independent (non-Claude) scorer.
+**Not yet validated:** repeated runs (run-to-run variation), a stage 6 critique after an in-place regeneration, stage 7 implementation, Briefs A and B, and an independent (non-Claude) scorer.

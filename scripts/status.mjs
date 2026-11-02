@@ -111,8 +111,8 @@ export function advice(result) {
   if (result.state === 'current') return 'Plan is current for this library version.';
   if (result.state === 'partial') return `Plan is current through stage ${result.rerunFrom - 1}; continue with stage ${result.rerunFrom}.`;
   const from = result.rerunFrom;
-  const range = from === 5 ? 'stage 5' : `stages ${from}–5`;
-  return `Re-run ${range} in order${from <= 4 ? ' (stage 4 once per module)' : ''}, updating the files in place and keeping their IDs. Then run the coverage check; stage 6 critique is optional.`;
+  const range = from === 5 ? 'stage 5' : `stages ${from}–5 in order`;
+  return `Re-run ${range}${from <= 4 ? ' (stage 4 once per module)' : ''}, updating the files in place and keeping their IDs. Then run the coverage check; stage 6 critique is optional.`;
 }
 
 const realpath = p => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
