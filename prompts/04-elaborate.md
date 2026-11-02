@@ -2,7 +2,9 @@
 
 Goal: a module specification complete enough that a developer can build it task by task without coming back with questions.
 
-Run this stage once per module, each in a fresh context. You are given one module ID (for example `M-04`). Read `plan/02-BRIEF.md`, `plan/03-ARCHITECTURE.md` and `plan/03-MODULES.md`. Read other module files in `plan/modules/` only to check an interface you depend on. Go back to a source only to check a requirement's locator or detail.
+Run this stage once per module, each in a fresh context; modules may run in parallel, so write only your module file. You are given one module ID (for example `M-04`). Read `plan/02-BRIEF.md`, `plan/03-ARCHITECTURE.md` and `plan/03-MODULES.md`. Read other module files in `plan/modules/` only to check an interface you depend on; they may not exist yet. Go back to a source only to check a requirement's locator or detail.
+
+Length budget: about 2,000–5,000 words. Use tables, cite brief and architecture IDs instead of restating them, and specify only what this module adds.
 
 ## Steps
 
@@ -18,18 +20,21 @@ Run this stage once per module, each in a fresh context. You are given one modul
    - For each email or notification: trigger, recipient and content outline.
 5. **Write acceptance criteria.** Each criterion is a Given/When/Then statement a tester can run, and cites the requirement(s) it proves. Every requirement this module owns needs at least one success criterion. Where the brief or sources name a failure or recovery path, it needs one for that too. Keep the sources' numbers: thresholds, limits, windows, roles.
 6. **Write the test plan.** Map each criterion to a test level: unit, integration, end-to-end or manual. Name the fixtures and test data it needs. Prefer automated tests. Manual checks are only for what cannot reasonably be automated, and say why.
-7. **Write the tasks.** Break the work into tasks of 0.5–2 days. Each task:
+7. **Write the tasks.** Break the work into tasks of 2–16 focused hours, typically 4–8. Estimate the hours an experienced developer who knows the stack needs, including the task's tests; do not round small work up to fill a day. Each task:
    - names the files or areas it touches
-   - lists what it depends on
+   - lists in `Depends on` only the IDs of tasks (in any module) that must finish first, nothing else
    - states a done-definition that includes its tests passing
    - covers requirement IDs, or is marked `enabler` with a reason
 
    Order the tasks so each one leaves the module working. Build the thinnest end-to-end path first, then the remaining cases.
-8. **Note assumptions** you had to make. Append them to the assumption register in `plan/02-BRIEF.md` with new IDs.
+8. **Check the size.** Total your task hours. If the sources give an hour line for this work, state your total next to it under "Purpose and requirements". If yours is more than about 1.5 times that line, look for design detail the sources do not require (see "Keep the design proportionate" in the rules) and remove it; then state the remaining gap in one line. Never drop required behaviour to close the gap.
+9. **Note assumptions and cross-module needs** in your own file, not in shared files:
+   - `## New assumptions`: only those that change what a user, tester or the budget would notice, with IDs `A-MM-NN`. Usually fewer than eight.
+   - `## Needs from other modules`: anything you call that the owning module does not yet list. Stage 5 resolves these.
 
 ## IDs
 
-Acceptance criteria and tasks are prefixed with the module number, so module files never collide: `AC-04-01`, `T-04-01`. Never renumber them after another stage has used them.
+Acceptance criteria, tasks and assumptions are prefixed with the module number, so module files never collide: `AC-04-01`, `T-04-01`, `A-04-01`. Never renumber them after another stage has used them.
 
 ## Output: `plan/modules/<module ID>.md` (for example `plan/modules/M-04.md`)
 
@@ -62,7 +67,13 @@ Trigger · Steps · Result · Failures and recovery
 | Criterion | Level | Fixtures / data | Notes |
 
 ## Tasks
-| ID | Task | Covers | Criteria | Files / areas | Depends on | Estimate (days) | Done when |
+| ID | Task | Covers | Criteria | Files / areas | Depends on | Estimate (h) | Done when |
+
+## New assumptions
+| ID | Assumption | Why | Impact if wrong |
+
+## Needs from other modules
+| Module | What | Why |
 ```
 
 In the Tasks table, `Covers` lists `R-###` IDs or the word `enabler` followed by the reason.
@@ -73,5 +84,7 @@ In the Tasks table, `Covers` lists `R-###` IDs or the word `enabler` followed by
 - Every acceptance criterion is proved by at least one test-plan row and one task.
 - Every data access rule matches the authorization design in `03-ARCHITECTURE.md`.
 - Every interface this module calls exists in the module that owns it, or is listed as a dependency to be added there.
-- No task exceeds 2 days, and no task lacks a done-definition with tests.
+- No task exceeds 16 hours, and no task lacks a done-definition with tests.
+- The module total is compared with any source hour line, and any gap over about 1.5 times is explained.
+- Run `node .ai-prompts/scripts/coverage.mjs plan` from the project root. Fix every error that names your module's IDs; errors about modules not yet written are expected.
 - Nothing deferred or excluded in the brief is being built.

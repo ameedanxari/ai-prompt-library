@@ -25,6 +25,7 @@ test('a complete plan passes', () => {
   const result = variant(null);
   assert.deepEqual(result.errors, []);
   assert.deepEqual(result.counts, { requirements: 3, modules: 1, criteria: 3, tasks: 3, placedTasks: 3 });
+  assert.deepEqual(result.estimates, { unit: 'hours', byModule: { 'M-01': 20 }, total: 20 });
 });
 
 test('a must requirement with no task fails', () => {
@@ -58,6 +59,21 @@ test('a task missing from the roadmap fails, and mentions outside order rows do 
   const result = variant('05-ROADMAP.md', t => t.replace(/\| 3 \| T-01-03.*\n/, ''));
   assert.ok(result.errors.some(e => e === 'T-01-03: placed in the roadmap 0 times (expected 1)'));
   assert.ok(!result.errors.some(e => e.startsWith('T-01-02: placed')));
+});
+
+test('a task placed before its dependency fails, within a milestone or across milestones', () => {
+  const reordered = variant('05-ROADMAP.md', t => t.replace('| 1 | T-01-01', '| 4 | T-01-01'));
+  assert.ok(reordered.errors.includes('T-01-02: placed before its dependency T-01-01'), reordered.errors.join('\n'));
+  const later = variant('05-ROADMAP.md', t => {
+    const row = /\| 1 \| T-01-01.*\n/.exec(t)[0];
+    return t.replace(row, '').replace('## Cross-module fixes made', `## R2\n\n| Order | Task | Module | Depends on | Estimate (h) |\n|---|---|---|---|---|\n${row}\n## Cross-module fixes made`);
+  });
+  assert.ok(later.errors.includes('T-01-02: placed before its dependency T-01-01'), later.errors.join('\n'));
+});
+
+test('a dependency on an unknown task fails', () => {
+  const result = variant('modules/M-01.md', t => t.replace('| src/publish.js | T-01-02 |', '| src/publish.js | T-01-09 |'));
+  assert.ok(result.errors.includes('T-01-03: depends on unknown T-01-09'), result.errors.join('\n'));
 });
 
 test('the CLI exits nonzero on errors and zero on a pass', () => {

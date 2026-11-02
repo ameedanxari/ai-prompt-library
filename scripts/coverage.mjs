@@ -1,6 +1,8 @@
 #!/usr/bin/env node
 // Traceability check for a v3 plan folder: every requirement reaches a module,
-// an acceptance criterion and a task; every task traces back; no dangling IDs.
+// an acceptance criterion and a task; every task traces back; no dangling IDs;
+// the roadmap places each task once and after its dependencies. Also totals
+// task estimates per module so the stage 5 forecast starts from checked sums.
 // Usage: node scripts/coverage.mjs <plan-folder> [--json]
 import fs from 'node:fs';
 import path from 'node:path';
@@ -35,6 +37,9 @@ function rows(text, heading) {
 }
 
 const ids = (text, re) => [...new Set(text.match(re) ?? [])];
+
+// Index of the first header cell matching re, or -1.
+const column = (header, re) => (header ?? []).findIndex(c => re.test(c));
 
 export function check(planDir) {
   const errors = [];
@@ -73,6 +78,7 @@ export function check(planDir) {
   const modDir = path.join(planDir, 'modules');
   const criteria = new Map();
   const tasks = new Map();
+  const estimates = { unit: null, byModule: {}, total: 0 };
   const files = fs.existsSync(modDir) ? fs.readdirSync(modDir).filter(f => /^M-\d{2}\.md$/.test(f)) : [];
   if (files.length === 0) errors.push('modules/: no M-##.md files');
   for (const m of modules) if (!files.includes(`${m}.md`)) errors.push(`${m}: no modules/${m}.md`);
@@ -85,12 +91,30 @@ export function check(planDir) {
       if (criteria.has(cells[0])) errors.push(`${cells[0]}: defined twice`);
       criteria.set(cells[0], { file, reqs: ids(cells.slice(1).join(' '), REQ) });
     }
-    for (const cells of rows(text, 'Tasks')) {
+    const taskRows = rows(text, 'Tasks');
+    const header = taskRows.find(c => c[0] === 'ID');
+    const estCol = column(header, /^estimate/i);
+    const depCol = column(header, /^depends/i);
+    if (estCol >= 0) {
+      const unit = /\(h|hours?\)/i.test(header[estCol]) ? 'hours' : /days?/i.test(header[estCol]) ? 'days' : null;
+      if (estimates.unit && unit && unit !== estimates.unit) warnings.push(`${file}: estimates in ${unit}, other modules use ${estimates.unit}`);
+      estimates.unit ??= unit;
+    }
+    for (const cells of taskRows) {
       if (!/^T-\d{2}-\d{2,3}$/.test(cells[0])) continue;
       if (cells[0].slice(2, 4) !== prefix) errors.push(`${cells[0]}: prefix does not match ${file}`);
       if (tasks.has(cells[0])) errors.push(`${cells[0]}: defined twice`);
       const rest = cells.slice(1).join(' ');
-      tasks.set(cells[0], { file, reqs: ids(rest, REQ), acs: ids(rest, AC), enabler: /\benabler\b/i.test(rest) });
+      const deps = depCol >= 0 ? ids(cells[depCol] ?? '', TASK) : [];
+      tasks.set(cells[0], { file, reqs: ids(rest, REQ), acs: ids(rest, AC), deps, enabler: /\benabler\b/i.test(rest) });
+      if (estCol >= 0) {
+        const n = Number.parseFloat((cells[estCol] ?? '').replace(',', '.'));
+        if (Number.isFinite(n)) {
+          const m = `M-${prefix}`;
+          estimates.byModule[m] = (estimates.byModule[m] ?? 0) + n;
+          estimates.total += n;
+        } else warnings.push(`${cells[0]}: estimate "${cells[estCol] ?? ''}" is not a number`);
+      }
     }
   }
 
@@ -113,19 +137,36 @@ export function check(planDir) {
     if (t.reqs.length === 0 && !t.enabler) errors.push(`${id}: covers no requirement and is not marked enabler`);
     for (const r of t.reqs) if (!requirements.has(r)) errors.push(`${id}: covers unknown ${r}`);
     for (const a of t.acs) if (!criteria.has(a)) errors.push(`${id}: refers to unknown ${a}`);
+    for (const d of t.deps) if (!tasks.has(d)) errors.push(`${id}: depends on unknown ${d}`);
   }
 
-  // Roadmap: every task placed exactly once, no unknown tasks.
+  // Roadmap: every task placed exactly once, after its dependencies, no unknown tasks.
+  // A task's position is (milestone section, order number); sections are level-2 headings.
   const roadmapFile = path.join(planDir, '05-ROADMAP.md');
   let placed = null;
   if (fs.existsSync(roadmapFile)) {
     const roadmap = fs.readFileSync(roadmapFile, 'utf8');
     placed = new Map();
-    // Task-order rows only: "| <order number> | <task ID> ... |".
-    for (const cells of rows(roadmap, null)) {
+    const position = new Map();
+    let section = 0;
+    for (const line of roadmap.split('\n')) {
+      if (/^##\s/.test(line)) { section++; continue; }
+      // Task-order rows only: "| <order number> | <task ID> ... |".
+      const cells = line.trim().startsWith('|') ? line.trim().replace(/^\||\|$/g, '').split('|').map(c => c.trim()) : [];
       if (!/^\d+$/.test(cells[0] ?? '')) continue;
       const id = /^T-\d{2}-\d{2,3}\b/.exec(cells[1] ?? '')?.[0];
-      if (id) placed.set(id, (placed.get(id) ?? 0) + 1);
+      if (!id) continue;
+      placed.set(id, (placed.get(id) ?? 0) + 1);
+      if (!position.has(id)) position.set(id, [section, Number(cells[0])]);
+    }
+    const before = ([s1, o1], [s2, o2]) => s1 < s2 || (s1 === s2 && o1 < o2);
+    for (const [id, t] of tasks) {
+      const at = position.get(id);
+      if (!at) continue;
+      for (const d of t.deps) {
+        const dat = position.get(d);
+        if (dat && !before(dat, at)) errors.push(`${id}: placed before its dependency ${d}`);
+      }
     }
     for (const id of tasks.keys()) {
       const n = placed.get(id) ?? 0;
@@ -136,6 +177,7 @@ export function check(planDir) {
 
   return {
     counts: { requirements: requirements.size, modules: modules.size, criteria: criteria.size, tasks: tasks.size, placedTasks: placed ? placed.size : null },
+    estimates,
     errors,
     warnings,
   };
@@ -149,6 +191,8 @@ if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.me
   else {
     const c = result.counts;
     console.log(`requirements ${c.requirements} · modules ${c.modules} · criteria ${c.criteria} · tasks ${c.tasks}${c.placedTasks === null ? '' : ` · placed ${c.placedTasks}`}`);
+    const e = result.estimates;
+    if (e.total) console.log(`estimates (${e.unit ?? 'unknown unit'}): ${Object.entries(e.byModule).map(([m, n]) => `${m} ${n}`).join(' · ')} · total ${e.total}`);
     for (const w of result.warnings) console.log(`warning: ${w}`);
     for (const e of result.errors) console.log(`error: ${e}`);
     console.log(result.errors.length ? `FAIL: ${result.errors.length} error(s)` : 'PASS');

@@ -1,5 +1,16 @@
 # Changelog
 
+## 3.1.0 — tuning from the first full Logisrch run
+
+Changes driven by the first run of stages 1–5 on Logisrch (see [validation](docs/validation.md)). That run traced every requirement, but its forecast came out about 11 times the sources' hours and its module files totalled about 138,000 words.
+
+- **Estimates in hours.** Tasks are 2–16 focused hours, not 0.5–2 days; the old day-sized minimum put a floor under every forecast. Stage 4 compares its module total with any source hour line and removes design detail the sources don't require before reporting a gap. Required behaviour is never dropped.
+- **Proportionate design.** The rules say to use the simplest mechanism that meets the requirement, and to treat prior plans, even adopted ones, as design references rather than requirement sources.
+- **Length budgets** for stages 2, 3 and 4. The brief describes behaviour, not implementation. Assumptions are recorded only when they change what a user, tester or the budget would notice.
+- **Parallel module runs.** Stage 4 writes only its own file: module assumptions use `A-MM-NN` IDs, and cross-module needs go in a `Needs from other modules` section that stage 5 resolves. Stage 4 runs the coverage check for its own IDs.
+- **Stage 5** also checks that shared values (limits, sizes, windows, names) agree across modules, and compares the forecast with each source package line.
+- **Coverage check** now fails a roadmap that places a task before a task in its `Depends on` cell, or a dependency on an unknown task. It also prints estimate totals per module. On the Logisrch run it found three ordering errors that stage 5 had reported as clean, plus one free-text note in a dependency cell.
+
 ## 3.0.0 — staged planning pipeline
 
 Breaking replacement of version 2. The library is now eight short markdown prompts that run in order:

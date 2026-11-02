@@ -1,6 +1,6 @@
 {
   "name": "ai-prompt-library",
-  "version": "3.0.0",
+  "version": "3.1.0",
   "description": "Staged prompts that turn project documents into a complete, traceable development plan, then build it",
   "license": "MIT",
   "type": "module",

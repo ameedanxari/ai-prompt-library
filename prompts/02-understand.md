@@ -4,6 +4,8 @@ Goal: one brief that says what is being built, for whom, in what phases, and eve
 
 Read `plan/01-SOURCES.md` first and apply its authority order and contradiction resolutions. Then read the sources themselves, highest authority first.
 
+Length budget: about 5,000–10,000 words. The brief says what the product must do; how it is built belongs to stages 3 and 4.
+
 ## Steps
 
 1. **Summarize the product**: the problem, the users, the value, and what success looks like in the sources' own metrics.
@@ -12,6 +14,7 @@ Read `plan/01-SOURCES.md` first and apply its authority order and contradiction 
 4. **Draw the scope line**: what is in, what is out, and what is deferred. Cite each item.
 5. **Write the requirements.** Go through the sources section by section, highest authority first. Every obligation becomes one or more requirements. Rules:
    - one testable behaviour or constraint per requirement, written as "The system/staff/team shall …"
+   - describe observable behaviour and constraints, not implementation: no table, function or library names unless a source mandates them. A prior plan's design detail is input to stage 3, not a requirement (see the rules)
    - keep the qualifiers: quantities, thresholds, states and transitions, roles, regions, timing, error and recovery behaviour
    - type: `functional`, `non-functional`, `security-privacy`, `operational` (deployment, backup, monitoring, handover), `delivery` (milestones, acceptance, documentation) or `enabler`
    - priority: `must` or `should`. The phase or milestone where it is due comes from the sources, or is assumed and recorded.
@@ -60,6 +63,7 @@ Group requirements by product area: accounts, the core entities, each workflow, 
 ## Self-check
 
 - **Coverage, both directions.** Every material section of every *owner decision*, *contract* and *plan of record* source appears in Source coverage. Every requirement cites at least one source or is an enabler with a reason.
+- **Named mechanisms kept.** Every mechanism a contract, owner decision or plan of record names (for example a working unsubscribe, a restore drill, an audit trail) has a requirement or an explicit exclusion with its reason.
 - **Contradictions applied.** Every resolution in `01-SOURCES.md` is reflected: nothing excluded by a resolution appears as a requirement.
 - **Checkable.** Pick five requirements at random and ask: could a tester write a pass/fail test from this line alone? Rewrite any that fail.
 - **No blocking.** Nothing says "TBD", "to be confirmed" or "pending" without a default next to it.

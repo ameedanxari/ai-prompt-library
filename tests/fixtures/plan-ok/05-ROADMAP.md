@@ -4,11 +4,11 @@
 
 **Tasks, in order:**
 
-| Order | Task | Module | Depends on | Estimate (days) |
+| Order | Task | Module | Depends on | Estimate (h) |
 |---|---|---|---|---|
-| 1 | T-01-01 Project setup | M-01 | — | 0.5 |
-| 2 | T-01-02 Publish daily usage | M-01 | T-01-01 | 1 |
-| 3 | T-01-03 Reject conflicts | M-01 | T-01-02 | 1 |
+| 1 | T-01-01 Project setup | M-01 | — | 4 |
+| 2 | T-01-02 Publish daily usage | M-01 | T-01-01 | 8 |
+| 3 | T-01-03 Reject conflicts | M-01 | T-01-02 | 8 |
 
 ## Cross-module fixes made
 

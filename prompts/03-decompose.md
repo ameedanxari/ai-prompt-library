@@ -4,6 +4,8 @@ Goal: a technical design and a module breakdown that together cover every requir
 
 Read `plan/02-BRIEF.md` and `plan/01-SOURCES.md`. Go back to a source only to check a cited locator or a technical detail the brief summarizes.
 
+Length budget: about 3,000–6,000 words across both files. Decide here what later stages need to stay consistent (stack, entities, ownership, access rules, state machines, shared conventions); leave field-level detail to stage 4.
+
 ## Steps
 
 1. **Choose the architecture.** Use what the sources specify. Where they are silent, choose the conventional default for this kind of product and team, and add it to the assumption register in `02-BRIEF.md`. Cover:
@@ -22,7 +24,7 @@ Read `plan/02-BRIEF.md` and `plan/01-SOURCES.md`. Go back to a source only to ch
    - testing strategy (which layer is tested how)
    - CI/CD and migrations
 4. **Record the key decisions** as short ADRs: the decision, the alternatives considered, why, and the source or assumption it rests on.
-5. **Split the work into modules.** A module is a cohesive business capability or platform piece that one developer could own: typically 2–10 days of work, with clear data ownership and interfaces. Usually:
+5. **Split the work into modules.** A module is a cohesive business capability or platform piece that one developer could own: typically 16–80 hours of work, with clear data ownership and interfaces. Usually:
    - one foundation module (project setup, environments, CI/CD, auth plumbing, base schema, design system shell)
    - one module per core workflow or capability
    - modules for admin and operations, the public site, notifications, and analytics where the brief has them

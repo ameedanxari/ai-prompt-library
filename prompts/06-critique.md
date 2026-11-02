@@ -56,7 +56,8 @@ The producer fixes critical and major findings, and you check the fixes once. An
 - A developer could build each task from this file and the architecture alone, with no open questions.
 - Data access rules and transitions match the architecture. Nothing lets one tenant or role reach another's data.
 - Tests are automated wherever feasible. Each manual check says why it is manual.
-- Tasks are 0.5–2 days and ordered thin end-to-end path first. Each has a done-definition with tests.
+- Tasks are 2–16 hours and ordered thin end-to-end path first. Each has a done-definition with tests.
+- The design is proportionate: no infrastructure or mechanism without a requirement or likely failure that needs it.
 
 ## Stage 5 — Roadmap
 
