@@ -183,7 +183,8 @@ export function check(planDir) {
   };
 }
 
-if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+const realpath = p => { try { return fs.realpathSync(p); } catch { return path.resolve(p); } };
+if (process.argv[1] && realpath(process.argv[1]) === realpath(fileURLToPath(import.meta.url))) {
   const dir = process.argv[2];
   if (!dir) { console.error('usage: node scripts/coverage.mjs <plan-folder> [--json]'); process.exit(2); }
   const result = check(path.resolve(dir));

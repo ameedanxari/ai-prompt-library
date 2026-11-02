@@ -10,7 +10,7 @@ Length budget: about 5,000–10,000 words. The brief says what the product must 
 
 1. **Summarize the product**: the problem, the users, the value, and what success looks like in the sources' own metrics.
 2. **Name the actors**: user roles, staff roles and external systems, each with what it may and may not do.
-3. **Capture the delivery shape**: phases or releases, milestones with their dates, payment or acceptance triggers, acceptance windows, budget and hour envelopes (as forecasts), and what later phases must be able to build on.
+3. **Capture the delivery shape**: phases or releases, milestones with their dates, payment or acceptance triggers, acceptance windows, budget and hour envelopes (as forecasts), and what later phases must be able to build on. If the sources offer alternative options or packages, say which one is being built, cite the decision, and record what the others would add as out of scope.
 4. **Draw the scope line**: what is in, what is out, and what is deferred. Cite each item.
 5. **Write the requirements.** Go through the sources section by section, highest authority first. Every obligation becomes one or more requirements. Rules:
    - one testable behaviour or constraint per requirement, written as "The system/staff/team shall …"
@@ -63,7 +63,8 @@ Group requirements by product area: accounts, the core entities, each workflow, 
 ## Self-check
 
 - **Coverage, both directions.** Every material section of every *owner decision*, *contract* and *plan of record* source appears in Source coverage. Every requirement cites at least one source or is an enabler with a reason.
-- **Named mechanisms kept.** Every mechanism a contract, owner decision or plan of record names (for example a working unsubscribe, a restore drill, an audit trail) has a requirement or an explicit exclusion with its reason.
+- **Named mechanisms kept.** Every mechanism a contract, owner decision or plan of record names (for example a working unsubscribe, a restore drill, an audit trail) has a requirement, or is excluded by a higher-authority source that you cite. Never exclude one on your own reasoning.
+- **Option stated.** Where the sources offer options or packages, the delivery shape names the one being built.
 - **Contradictions applied.** Every resolution in `01-SOURCES.md` is reflected: nothing excluded by a resolution appears as a requirement.
 - **Checkable.** Pick five requirements at random and ask: could a tester write a pass/fail test from this line alone? Rewrite any that fail.
 - **No blocking.** Nothing says "TBD", "to be confirmed" or "pending" without a default next to it.

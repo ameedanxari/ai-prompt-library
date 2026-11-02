@@ -1,6 +1,6 @@
 {
   "name": "ai-prompt-library",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "description": "Staged prompts that turn project documents into a complete, traceable development plan, then build it",
   "license": "MIT",
   "type": "module",
@@ -30,6 +30,7 @@
     "test": "node --test",
     "check:references": "node scripts/check-references.mjs",
     "check": "npm test && npm run check:references",
-    "coverage": "node scripts/coverage.mjs"
+    "coverage": "node scripts/coverage.mjs",
+    "status": "node scripts/status.mjs"
   }
 }

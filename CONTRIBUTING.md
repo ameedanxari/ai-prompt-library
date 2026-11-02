@@ -1,13 +1,14 @@
 # Contributing
 
-Keep the library small. A stage prompt should stay at or under about 800 words, concrete, with one output template and one self-check. Before adding a rule, ask whether an existing rule already covers the failure. Fix the stage where the failure starts, not a later one.
+Keep the library small. A stage prompt should stay at or under about 1,000 words, concrete, with one output template and one self-check. Before adding a rule, ask whether an existing rule already covers the failure. Fix the stage where the failure starts, not a later one.
 
 ## Changing a prompt
 
 1. Reproduce the problem on a fixture: the Logisrch run, or the briefs in [evaluation/](evaluation/README.md).
 2. Change the one stage responsible.
-3. Re-run that stage alone, in a fresh context, and compare with the previous output and the scoring key.
-4. Record the result in [docs/validation.md](docs/validation.md): what changed, the before and after, and the limits.
+3. If the change alters what the stage writes, set that stage's entry in [prompts/stage-versions.json](prompts/stage-versions.json) to the release version, so existing plans are reported stale and get regenerated. A change to `00-RULES.md` that alters output bumps every stage it affects.
+4. Re-run that stage alone, in a fresh context, and compare with the previous output and the scoring key.
+5. Record the result in [docs/validation.md](docs/validation.md): what changed, the before and after, and the limits. Name the changed stages in the [changelog](CHANGELOG.md).
 
 Prompts must stay generic. Never copy project-specific content into them.
 

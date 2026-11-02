@@ -1,5 +1,19 @@
 # Changelog
 
+## 3.2.0 — upgrades regenerate stale plans; alignment first
+
+Stages changed: **2** (brief) and **6** (critique). Plans written by 3.1.0 re-run from stage 2.
+
+- **Plans know their version.** Every stage stamps its files with the library version and stage (`<!-- ai-prompt-library 3.2.0 · stage 2 -->`). [`prompts/stage-versions.json`](prompts/stage-versions.json) records when each stage last changed its output.
+- **`scripts/status.mjs`** reports each plan file as current, stale, unstamped or missing, and names the earliest stage to re-run. `--check` exits 1 while the plan is stale.
+- **Re-runs update in place.** A stage whose output already exists redoes the work against the current prompt and sources, keeping IDs and progress marks, so built work stays traced.
+- **Bootstrap is the upgrade path.** It refreshes the `AGENTS.md` block (now from [`prompts/steering.md`](prompts/steering.md), and telling agents to check status first), writes `.ai-prompts-version`, re-points IDE steering links that earlier versions left inside `.ai-prompts/`, warns when `MY_PROJECT.md` still points at version 2 runs, and reports the plan's status.
+- **Alignment first.** The rules state that a stage is judged on whether a team building from the plan delivers what the sources want built; hours are a forecast and more detail than the minimum is acceptable. The evaluation guide no longer passes or fails runs on size.
+- **Stage 2** names the option or package being built when the sources offer several, and never drops a mechanism a contract or plan of record names unless a higher source excludes it. (Both were the brief's misses on the Logisrch runs.)
+- **Stage 6** documents the fix flow that converged on Logisrch: fixes in stage order, modules in parallel with cross-module needs, stage 5 re-run on the existing roadmap, new IDs in the owning file's numbering, a producer response table, and a round 2 that checks fixes only.
+- **Stage 7** checks plan status before building.
+- New docs: prompts for common requests in the [quick start](QUICK_START.md), and a general [upgrade guide](docs/upgrading.md).
+
 ## 3.1.0 — tuning from the first full Logisrch run
 
 Changes driven by the first run of stages 1–5 on Logisrch (see [validation](docs/validation.md)). That run traced every requirement, but its forecast came out about 11 times the sources' hours and its module files totalled about 138,000 words.

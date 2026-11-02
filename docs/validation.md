@@ -1,5 +1,21 @@
 # Validation record
 
+## 2026-11-02 — v3 run-02 on Logisrch (stages 1–6, prompts 3.1.0)
+
+**Setup.** Same as run-01: a fresh Claude Opus 5.5 agent per stage, the same 28 sources, no access to the key or earlier runs. Stage 4 ran its 12 modules in parallel, as 3.1.0 now allows.
+
+| Measure | Run-01 (3.0.0) | Run-02 (3.1.0) |
+|---|---|---|
+| Golden score | 119/120 | 117/120, no critical item at 0, all must-not rules pass |
+| Forecast | 1,846 h (8.2× the 224 h re-estimate) | 570 h (2.5×), with the gap explained per package |
+| Modules, criteria, tasks | 15, 488, 228 | 12, 321, 129 |
+| Module specs | 138,000 words | 68,000 words (4.7–6.2k each) |
+| Assumptions | 257 | 112 (5–8 per module) |
+
+**Still too large.** 65 of 175 requirements rest only on the adopted prior plan's detail. Stage 1 recorded that this detail is a design reference, but stage 2 still made it required. Stage 4 then priced schema, access rules and tests for every table. The scorer found 6 places that build more than the sources ask for, such as admin tooling for a privacy process the owner said is manual in R1, and test automation beyond the manual browser checks the proposal prices. The unsubscribe point was lost again, this time because the brief reasoned that R1 sends no marketing email.
+
+**Stage 6 critique on run-02.** Round 1 (16 Opus reviewers) found 0 critical, 75 major and 138 minor problems, mostly real defects. All 75 majors were fixed and checked closed in round 2. The fixes introduced 2 new majors, which are left as residual issues. **The critique converged within its two rounds**; v2 never converged. But the critique only adds work: the fixes raised the forecast from 570 h to 687 h and the module specs from about 66k to 83k words. It flagged none of the 6 over-scope items the scorer found, because it judges each output against the brief rather than against cheaper options in the sources.
+
 ## 2026-11-01 — v3 run-01 on Logisrch (stages 1–5, prompts 3.0.0)
 
 **Setup.** Each stage ran in a fresh Claude Opus 5.5 agent. Each agent saw only `00-RULES.md`, its stage prompt, the 28 Logisrch source files and earlier `plan/` outputs. The scoring key and prior plans were not available to it. The same person who wrote the prompts wrote the key, before the prompts. Stage 4 ran its 15 modules in parallel. Because 3.0.0 told each module to append to the shared assumption register, the harness had them write assumptions in their own files instead. 3.1.0 makes that the rule.
@@ -23,4 +39,4 @@
 
 **Compared with v2.** The v2 runs on the same sources were rejected six times in one planning pass and never reached a scored final plan. v3 run-01 finished all five planning stages on the first pass.
 
-**Not yet validated:** a run with 3.1.0 prompts, stage 6 critique, stage 7 implementation, Briefs A and B, and an independent (non-Claude) scorer.
+**Not yet validated:** stage 6 catching over-scope, stage 7 implementation, Briefs A and B, and an independent (non-Claude) scorer.

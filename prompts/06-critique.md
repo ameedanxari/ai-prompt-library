@@ -14,7 +14,7 @@ You are reviewing one stage's output for a team that will build from it. You did
    - severity: **critical** (wrong product, missed must-have, contract or safety breach), **major** (missing or untestable detail that will cause rework) or **minor**
 4. Do not report style preferences or restate the checklist. If an item passes, say nothing about it.
 
-The producer fixes critical and major findings, and you check the fixes once. Anything still open after two rounds goes into "Residual issues" and does not block the next stage.
+There are at most two rounds: you review, the producer fixes, and you check the fixes once. Anything still open after that goes into "Residual issues" and does not block the next stage.
 
 ## General checks (every stage)
 
@@ -40,6 +40,8 @@ The producer fixes critical and major findings, and you check the fixes once. An
 - Assumptions are reasonable for this kind of product, and each states the impact if it is wrong.
 - Milestones, acceptance triggers and windows match the sources that win under the authority order.
 - Hour or budget envelopes are not used to drop required scope.
+- Every mechanism a contract or plan of record names is a requirement, or is excluded by a higher-authority source the brief cites.
+- Where the sources offer options or packages, the brief says which one is being built.
 
 ## Stage 3 — Architecture and modules
 
@@ -67,11 +69,31 @@ The producer fixes critical and major findings, and you check the fixes once. An
 - The forecast is honest against the sources' envelope and lists levers without dropping scope.
 - Outside inputs have a needed-by date and a placeholder, so work is not blocked.
 
+## Fixing findings
+
+- The producer of each output fixes its critical and major findings, and minor ones that take a line. Check each finding first; if one is wrong, say why instead of applying it. Fixes may add work; they never drop what the sources require.
+- Fix in stage order, because later stages build on earlier ones. Module files can be fixed in parallel. A fix that needs work in another module goes under that module's "Needs from other modules", not into its file.
+- After module fixes, re-run stage 5 on the existing roadmap: it resolves the new needs, places new tasks and re-checks shared values. Then run the coverage check.
+- New IDs take the next free number in the file that owns them (see the rules); never invent a new prefix.
+- The producer appends a "Producer response" table to the review file.
+
+## Round 2
+
+Check each critical and major finding once: closed, partly or open, citing the location you checked. Report a new problem only if the fixes introduced it; do not review the whole output again.
+
 ## Output: `plan/reviews/<stage>.md`
 
+Stage 4 reviews are per module: `plan/reviews/04-M-04.md`.
+
 ```markdown
-# Review — <stage>, round <n>
-## Findings
+<!-- ai-prompt-library <version> · stage 6 -->
+# Review — <stage>
+## Findings (round 1)
 | # | Severity | Location | Problem | Evidence | Fix |
-## Residual issues (after round 2)
+## Producer response
+| # | Action (fixed / not applied) | What changed or why not |
+## Fix check (round 2)
+| # | Status (closed / partly / open) | Evidence | What is still wrong |
+New problems from the fixes, if any, as in "Findings".
+## Residual issues
 ```

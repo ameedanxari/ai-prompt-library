@@ -9,11 +9,13 @@
 ## Procedure
 
 1. Run the stage under test in a fresh context. Give it only the rules file, the stage prompt, the fixture sources and the earlier stages' `plan/` files. No scoring key, no prior plans.
-2. Score the output against the fixture's key:
+2. Score the output against the fixture's key for alignment with the development goal:
    - each item is 2 (present, correctly scoped and traced), 1 (present but vague or untraced) or 0 (missing or contradicted)
    - any critical item at 0 fails the run
-3. Run `node scripts/coverage.mjs <plan>` once stage 4 or 5 has run.
-4. For implementation runs, the real test is whether milestone 1 builds from the plan and its tests pass.
-5. Record the result in [docs/validation.md](../docs/validation.md), with the limits: one run per model, the scorer's independence, and anything not checked.
+   - contradictions must be found and resolved as the key expects, and no must-not rule may be broken
+3. Run `node scripts/coverage.mjs <plan>` once stage 4 or 5 has run, and `node scripts/status.mjs <plan>` to confirm every file was written by the stage version under test.
+4. Report size (forecast hours, words, assumption counts) alongside the score, but do not pass or fail a run on size. More detail than the minimum is acceptable; missing or contradicted intent is not.
+5. For implementation runs, the real test is whether milestone 1 builds from the plan and its tests pass.
+6. Record the result in [docs/validation.md](../docs/validation.md), with the limits: how many runs (one run says little about run-to-run variation), the scorer's independence, and anything not checked.
 
 Tune one stage at a time, and re-run only that stage. A full cold run is for confirming the end-to-end result, not for finding which stage is weak.

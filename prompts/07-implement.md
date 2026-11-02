@@ -4,6 +4,8 @@ Goal: build the product task by task from `plan/05-ROADMAP.md`, so that each mil
 
 Read `00-RULES.md`, the roadmap, and for the current task its module file and `plan/03-ARCHITECTURE.md`. Work milestone by milestone, in roadmap order.
 
+Before you start, and whenever the library has been upgraded, run `node .ai-prompts/scripts/status.mjs plan`. If it reports stale or missing stages, regenerate them first (see `prompts/README.md`): the plan is the specification you build to. Regeneration keeps task IDs and done marks, so work already built stays traced.
+
 ## For each task
 
 1. Read the task row, its acceptance criteria, and the module sections they refer to.
